@@ -169,7 +169,7 @@ function HeroSection() {
       {/* Background Image */}
       <div className="absolute inset-0">
         <Image
-          src="/login-agence-bg.png"
+          src="/images/hero-bg.png"
           alt="Voyageurs avec bagages à l'aéroport"
           fill
           className="object-cover scale-105"
