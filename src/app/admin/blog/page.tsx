@@ -390,177 +390,150 @@ export default function BlogAdminPage() {
         </Button>
       </div>
 
-      {/* Posts Table */}
-      <Card className="bg-white dark:bg-slate-800 border-slate-100 dark:border-slate-700 shadow-sm rounded-2xl overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead className="bg-slate-50 dark:bg-slate-700/50 border-b border-slate-200 dark:border-slate-700">
-              <tr>
-                <th className="text-left px-5 py-3 text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">
-                  Article
-                </th>
-                <th className="text-left px-5 py-3 text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">
-                  Catégorie
-                </th>
-                <th className="text-left px-5 py-3 text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">
-                  Statut
-                </th>
-                <th className="text-left px-5 py-3 text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">
-                  Date
-                </th>
-                <th className="text-left px-5 py-3 text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">
-                  Vues
-                </th>
-                <th className="text-right px-5 py-3 text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">
-                  Actions
-                </th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
-              {loading ? (
-                <tr>
-                  <td colSpan={6} className="px-5 py-12 text-center">
-                    <div className="flex items-center justify-center">
-                      <div className="w-8 h-8 border-2 border-[#ff7f00]/30 border-t-[#ff7f00] rounded-full animate-spin" />
-                    </div>
-                  </td>
-                </tr>
-              ) : data?.posts.length === 0 ? (
-                <tr>
-                  <td colSpan={6} className="px-5 py-12 text-center">
-                    <div className="flex flex-col items-center">
-                      <FileText className="w-12 h-12 text-slate-300 dark:text-slate-600 mb-3" />
-                      <p className="text-slate-500 dark:text-slate-400">Aucun article trouvé</p>
-                      <Button
-                        onClick={openCreateModal}
-                        variant="link"
-                        className="text-[#ff7f00] mt-2"
-                      >
-                        Créer le premier article
-                      </Button>
-                    </div>
-                  </td>
-                </tr>
-              ) : (
-                data?.posts.map((post) => (
-                  <tr key={post.id} className="hover:bg-slate-50 dark:hover:bg-slate-700/30 transition-colors">
-                    <td className="px-5 py-4">
-                      <div className="flex items-center gap-3">
-                        <div className="w-12 h-12 rounded-lg overflow-hidden bg-slate-100 dark:bg-slate-700 flex-shrink-0">
-                          {post.coverImage ? (
-                            <img 
-                              src={post.coverImage} 
-                              alt={post.title}
-                              className="w-full h-full object-cover"
-                            />
-                          ) : (
-                            <div className="w-full h-full flex items-center justify-center">
-                              <FileText className="w-5 h-5 text-slate-400" />
-                            </div>
-                          )}
-                        </div>
-                        <div>
-                          <p className="font-medium text-slate-800 dark:text-white">{post.title}</p>
-                          <p className="text-xs text-slate-500 dark:text-slate-400 truncate max-w-xs">
-                            {post.excerpt || post.content.replace(/[#*`>\-\[\]]/g, '').substring(0, 80)}...
-                          </p>
-                        </div>
-                      </div>
-                    </td>
-                    <td className="px-5 py-4">
-                      {getCategoryBadge(post.category)}
-                    </td>
-                    <td className="px-5 py-4">
-                      {getStatusBadge(post.status)}
-                    </td>
-                    <td className="px-5 py-4">
-                      <div className="text-sm">
-                        <p className="text-slate-800 dark:text-white">
-                          {post.publishedAt 
-                            ? new Date(post.publishedAt).toLocaleDateString('fr-FR')
-                            : new Date(post.createdAt).toLocaleDateString('fr-FR')
-                          }
-                        </p>
-                        <p className="text-slate-500 dark:text-slate-400 text-xs">
-                          {post.author?.name || 'Anonyme'}
-                        </p>
-                      </div>
-                    </td>
-                    <td className="px-5 py-4">
-                      <span className="flex items-center gap-1 text-sm text-slate-600 dark:text-slate-400">
-                        <EyeIcon className="w-3 h-3" />
-                        {post.views}
-                      </span>
-                    </td>
-                    <td className="px-5 py-4 text-right">
-                      <div className="flex items-center justify-end gap-2">
-                        <Button
-                          onClick={() => toggleStatus(post)}
-                          variant="ghost"
-                          size="sm"
-                          className="h-8 w-8 p-0"
-                          title={post.status === 'published' ? 'Dépublier' : 'Publier'}
-                        >
-                          {post.status === 'published' ? (
-                            <FileText className="w-4 h-4 text-amber-500" />
-                          ) : (
-                            <Globe className="w-4 h-4 text-emerald-500" />
-                          )}
-                        </Button>
-                        <Button
-                          onClick={() => openEditModal(post)}
-                          variant="ghost"
-                          size="sm"
-                          className="h-8 w-8 p-0"
-                        >
-                          <Edit className="w-4 h-4 text-slate-500" />
-                        </Button>
-                        <Button
-                          onClick={() => handleDelete(post.id)}
-                          variant="ghost"
-                          size="sm"
-                          className="h-8 w-8 p-0"
-                        >
-                          <Trash2 className="w-4 h-4 text-red-500" />
-                        </Button>
-                      </div>
-                    </td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
+      {/* Posts Grid */}
+      {loading ? (
+        <div className="flex items-center justify-center py-12">
+          <div className="w-8 h-8 border-2 border-[#ff7f00]/30 border-t-[#ff7f00] rounded-full animate-spin" />
         </div>
-
-        {/* Pagination */}
-        {data && data.pagination.totalPages > 1 && (
-          <div className="flex items-center justify-between px-5 py-4 border-t border-slate-100 dark:border-slate-700">
-            <p className="text-sm text-slate-500 dark:text-slate-400">
-              {((page - 1) * 10) + 1} à {Math.min(page * 10, data.pagination.total)} sur {data.pagination.total}
-            </p>
-            <div className="flex gap-2">
-              <Button
-                onClick={() => setPage(p => Math.max(1, p - 1))}
-                disabled={page === 1}
-                variant="outline"
-                size="sm"
-                className="rounded-lg"
-              >
-                Précédent
-              </Button>
-              <Button
-                onClick={() => setPage(p => Math.min(data.pagination.totalPages, p + 1))}
-                disabled={page === data.pagination.totalPages}
-                variant="outline"
-                size="sm"
-                className="rounded-lg"
-              >
-                Suivant
-              </Button>
-            </div>
+      ) : data?.posts.length === 0 ? (
+        <div className="bg-white dark:bg-slate-800 rounded-2xl p-12 border border-slate-200 dark:border-slate-700 text-center">
+          <div className="flex flex-col items-center">
+            <FileText className="w-12 h-12 text-slate-300 dark:text-slate-600 mb-3" />
+            <p className="text-slate-500 dark:text-slate-400">Aucun article trouvé</p>
+            <Button
+              onClick={openCreateModal}
+              variant="link"
+              className="text-[#ff7f00] mt-2"
+            >
+              Créer le premier article
+            </Button>
           </div>
-        )}
-      </Card>
+        </div>
+      ) : (
+        <>
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+            {data?.posts.map((post) => (
+              <div
+                key={post.id}
+                className="bg-white dark:bg-slate-800 rounded-2xl p-5 border border-slate-200 dark:border-slate-700 hover:shadow-md transition-all"
+              >
+                {/* Card Header with cover image */}
+                <div className="flex items-start gap-3 mb-3">
+                  <div className="w-12 h-12 rounded-xl overflow-hidden bg-slate-100 dark:bg-slate-700 flex-shrink-0">
+                    {post.coverImage ? (
+                      <img
+                        src={post.coverImage}
+                        alt={post.title}
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center">
+                        <FileText className="w-5 h-5 text-slate-400" />
+                      </div>
+                    )}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="font-medium text-slate-800 dark:text-white line-clamp-2">{post.title}</p>
+                    <p className="text-xs text-slate-500 dark:text-slate-400 line-clamp-2 mt-0.5">
+                      {post.excerpt || post.content.replace(/[#*`>\-\[\]]/g, '').substring(0, 80)}...
+                    </p>
+                  </div>
+                </div>
+
+                {/* Badges row */}
+                <div className="flex items-center gap-2 mb-3">
+                  {getCategoryBadge(post.category)}
+                  {getStatusBadge(post.status)}
+                </div>
+
+                {/* Meta info */}
+                <div className="space-y-1.5 text-xs text-slate-500 dark:text-slate-400 mb-4">
+                  <div className="flex items-center gap-2">
+                    <Calendar className="w-3 h-3 shrink-0" />
+                    <span>
+                      {post.publishedAt
+                        ? new Date(post.publishedAt).toLocaleDateString('fr-FR')
+                        : new Date(post.createdAt).toLocaleDateString('fr-FR')
+                      }
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-slate-400">✍️</span>
+                    <span>{post.author?.name || 'Anonyme'}</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <EyeIcon className="w-3 h-3 shrink-0" />
+                    <span>{post.views} vue(s)</span>
+                  </div>
+                </div>
+
+                {/* Actions */}
+                <div className="flex items-center gap-2 pt-3 border-t border-slate-100 dark:border-slate-700">
+                  <Button
+                    onClick={() => toggleStatus(post)}
+                    variant="ghost"
+                    size="sm"
+                    className="h-8 px-2 text-xs"
+                    title={post.status === 'published' ? 'Dépublier' : 'Publier'}
+                  >
+                    {post.status === 'published' ? (
+                      <FileText className="w-3.5 h-3.5 text-amber-500 mr-1" />
+                    ) : (
+                      <Globe className="w-3.5 h-3.5 text-emerald-500 mr-1" />
+                    )}
+                    {post.status === 'published' ? 'Dépublier' : 'Publier'}
+                  </Button>
+                  <Button
+                    onClick={() => openEditModal(post)}
+                    variant="ghost"
+                    size="sm"
+                    className="h-8 w-8 p-0"
+                  >
+                    <Edit className="w-4 h-4 text-slate-500" />
+                  </Button>
+                  <Button
+                    onClick={() => handleDelete(post.id)}
+                    variant="ghost"
+                    size="sm"
+                    className="h-8 w-8 p-0"
+                  >
+                    <Trash2 className="w-4 h-4 text-red-500" />
+                  </Button>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* Pagination */}
+          {data && data.pagination.totalPages > 1 && (
+            <div className="flex items-center justify-between mt-4 px-2">
+              <p className="text-sm text-slate-500 dark:text-slate-400">
+                {((page - 1) * 10) + 1} à {Math.min(page * 10, data.pagination.total)} sur {data.pagination.total}
+              </p>
+              <div className="flex gap-2">
+                <Button
+                  onClick={() => setPage(p => Math.max(1, p - 1))}
+                  disabled={page === 1}
+                  variant="outline"
+                  size="sm"
+                  className="rounded-lg"
+                >
+                  Précédent
+                </Button>
+                <Button
+                  onClick={() => setPage(p => Math.min(data.pagination.totalPages, p + 1))}
+                  disabled={page === data.pagination.totalPages}
+                  variant="outline"
+                  size="sm"
+                  className="rounded-lg"
+                >
+                  Suivant
+                </Button>
+              </div>
+            </div>
+          )}
+        </>
+      )}
 
       {/* Create/Edit Modal */}
       {showModal && (

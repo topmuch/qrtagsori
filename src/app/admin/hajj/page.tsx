@@ -6,14 +6,6 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow
-} from "@/components/ui/table";
-import {
   Select,
   SelectContent,
   SelectItem,
@@ -362,98 +354,82 @@ export default function HajjAdminPage() {
         </CardContent>
       </Card>
 
-      {/* Table */}
-      <Card className="bg-white dark:bg-slate-800 border-slate-100 dark:border-slate-700 shadow-sm rounded-2xl">
-        <CardContent className="p-0">
-          <Table>
-            <TableHeader>
-              <TableRow className="border-slate-100 dark:border-slate-700 hover:bg-transparent">
-                <TableHead className="text-slate-500 dark:text-slate-400">Nom complet</TableHead>
-                <TableHead className="text-slate-500 dark:text-slate-400">Agence</TableHead>
-                <TableHead className="text-slate-500 dark:text-slate-400">Bagages</TableHead>
-                <TableHead className="text-slate-500 dark:text-slate-400">Statut global</TableHead>
-                <TableHead className="text-slate-500 dark:text-slate-400">Dernier scan</TableHead>
-                <TableHead className="text-slate-500 dark:text-slate-400">Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {loading ? (
-                <TableRow>
-                  <TableCell colSpan={6} className="text-center text-slate-500 py-8">
-                    Chargement...
-                  </TableCell>
-                </TableRow>
-              ) : filteredPilgrims.length === 0 ? (
-                <TableRow>
-                  <TableCell colSpan={6} className="text-center text-slate-500 py-8">
-                    Aucun pèlerin trouvé
-                  </TableCell>
-                </TableRow>
-              ) : (
-                filteredPilgrims.map((pilgrim) => {
-                  const globalStatus = getGlobalStatus(pilgrim.baggages);
-                  return (
-                    <TableRow
-                      key={pilgrim.id}
-                      className="border-slate-100 cursor-pointer hover:bg-slate-50"
-                      onClick={() => {
-                        setSelectedPilgrim(pilgrim);
-                        setModalOpen(true);
-                      }}
-                    >
-                      <TableCell className="text-slate-800">
-                        <div className="flex items-center gap-2">
-                          <span className="text-lg">🕋</span>
-                          <span className="font-medium">{pilgrim.firstName} {pilgrim.lastName}</span>
-                        </div>
-                      </TableCell>
-                      <TableCell className="text-slate-600">
-                        {pilgrim.agency?.name || '-'}
-                      </TableCell>
-                      <TableCell className="text-slate-800">
-                        <span className="flex items-center gap-1">
-                          🧳×{pilgrim.baggages.length}
-                        </span>
-                      </TableCell>
-                      <TableCell>
-                        <Badge className={globalStatus.color}>
-                          {globalStatus.label}
-                        </Badge>
-                      </TableCell>
-                      <TableCell className="text-slate-600">
-                        {getLastScan(pilgrim.baggages)}
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex gap-1" onClick={(e) => e.stopPropagation()}>
-                          <Button
-                            size="sm"
-                            variant="ghost"
-                            className="text-slate-500 hover:text-slate-700 hover:bg-slate-100 rounded-xl"
-                            onClick={() => {
-                              setSelectedPilgrim(pilgrim);
-                              setModalOpen(true);
-                            }}
-                          >
-                            <Eye className="w-4 h-4" />
-                          </Button>
-                          <Button
-                            size="sm"
-                            variant="ghost"
-                            className="text-red-500 hover:text-red-600 hover:bg-red-50 rounded-xl"
-                            onClick={() => handleDeletePilgrim(pilgrim.id)}
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </Button>
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  );
-                })
-              )}
-            </TableBody>
-          </Table>
-        </CardContent>
-      </Card>
+      {/* Pilgrim Cards */}
+      {loading ? (
+        <div className="flex items-center justify-center py-12">
+          <div className="w-8 h-8 border-2 border-[#ff7f00]/30 border-t-[#ff7f00] rounded-full animate-spin" />
+        </div>
+      ) : filteredPilgrims.length === 0 ? (
+        <div className="bg-white dark:bg-slate-800 rounded-2xl p-12 border border-slate-200 dark:border-slate-700 text-center">
+          <p className="text-slate-500 dark:text-slate-400">Aucun pèlerin trouvé</p>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+          {filteredPilgrims.map((pilgrim) => {
+            const globalStatus = getGlobalStatus(pilgrim.baggages);
+            return (
+              <div
+                key={pilgrim.id}
+                className="bg-white dark:bg-slate-800 rounded-2xl p-5 border border-slate-200 dark:border-slate-700 hover:shadow-md transition-all cursor-pointer"
+                onClick={() => {
+                  setSelectedPilgrim(pilgrim);
+                  setModalOpen(true);
+                }}
+              >
+                {/* Card Header */}
+                <div className="flex items-center justify-between mb-3">
+                  <div className="flex items-center gap-2">
+                    <span className="text-xl">🕋</span>
+                    <span className="font-medium text-slate-800 dark:text-white">{pilgrim.firstName} {pilgrim.lastName}</span>
+                  </div>
+                  <Badge className={globalStatus.color}>
+                    {globalStatus.label}
+                  </Badge>
+                </div>
+
+                {/* Info */}
+                <div className="space-y-2 text-sm">
+                  <div className="flex items-center gap-2 text-slate-600 dark:text-slate-300">
+                    <Building2 className="w-3 h-3 text-slate-400 shrink-0" />
+                    <span className="truncate">{pilgrim.agency?.name || 'Non renseignée'}</span>
+                  </div>
+                  <div className="flex items-center gap-2 text-slate-600 dark:text-slate-300">
+                    <Luggage className="w-3 h-3 text-slate-400 shrink-0" />
+                    <span>🧳 ×{pilgrim.baggages.length} bagages</span>
+                  </div>
+                  <div className="flex items-center gap-2 text-slate-500 dark:text-slate-400">
+                    <Clock className="w-3 h-3 text-slate-400 shrink-0" />
+                    <span className="text-xs">Dernier scan: {getLastScan(pilgrim.baggages)}</span>
+                  </div>
+                </div>
+
+                {/* Actions */}
+                <div className="flex items-center justify-end gap-2 mt-4 pt-3 border-t border-slate-100 dark:border-slate-700" onClick={(e) => e.stopPropagation()}>
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    className="text-slate-500 hover:text-slate-700 hover:bg-slate-100 rounded-xl"
+                    onClick={() => {
+                      setSelectedPilgrim(pilgrim);
+                      setModalOpen(true);
+                    }}
+                  >
+                    <Eye className="w-4 h-4" />
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    className="text-red-500 hover:text-red-600 hover:bg-red-50 rounded-xl"
+                    onClick={() => handleDeletePilgrim(pilgrim.id)}
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </Button>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
 
       {/* Pilgrim Details Modal */}
       <Dialog open={modalOpen} onOpenChange={setModalOpen}>

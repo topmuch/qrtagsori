@@ -1,7 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { PrismaClient } from '@prisma/client';
-
-const prisma = new PrismaClient();
+import { db } from '@/lib/db';
 
 // GET - Get daily report for a specific date
 export async function GET(request: NextRequest) {
@@ -27,7 +25,7 @@ export async function GET(request: NextRequest) {
       where.userId = userId;
     }
 
-    const reports = await prisma.dailyReport.findMany({
+    const reports = await db.dailyReport.findMany({
       where,
       include: {
         user: {
@@ -64,7 +62,7 @@ export async function POST(request: NextRequest) {
     startOfDay.setHours(0, 0, 0, 0);
 
     // Check if report exists for this user and date
-    const existingReport = await prisma.dailyReport.findFirst({
+    const existingReport = await db.dailyReport.findFirst({
       where: {
         userId: userId || 'system',
         date: {
@@ -78,13 +76,13 @@ export async function POST(request: NextRequest) {
 
     if (existingReport) {
       // Update existing report
-      report = await prisma.dailyReport.update({
+      report = await db.dailyReport.update({
         where: { id: existingReport.id },
         data: { content }
       });
     } else {
       // Create new report
-      report = await prisma.dailyReport.create({
+      report = await db.dailyReport.create({
         data: {
           userId: userId || 'system',
           content,

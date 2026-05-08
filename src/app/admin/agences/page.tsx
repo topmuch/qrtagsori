@@ -6,14 +6,6 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
-import { 
-  Table, 
-  TableBody, 
-  TableCell, 
-  TableHead, 
-  TableHeader, 
-  TableRow 
-} from "@/components/ui/table";
 import {
   Dialog,
   DialogContent,
@@ -21,13 +13,16 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { 
+import {
   Plus,
   Trash2,
   Edit,
   CheckCircle,
   Building,
-  RefreshCw
+  RefreshCw,
+  Mail,
+  Phone,
+  Users,
 } from "lucide-react";
 
 // Types
@@ -318,77 +313,73 @@ export default function AgencesPage() {
         </Card>
       </div>
 
-      {/* Agencies Table */}
-      <Card className="bg-white dark:bg-slate-800 border-slate-100 dark:border-slate-700 shadow-sm rounded-2xl">
-        <CardContent className="p-0">
-          <Table>
-            <TableHeader>
-              <TableRow className="border-slate-100 dark:border-slate-700 hover:bg-transparent">
-                <TableHead className="text-slate-500 dark:text-slate-400">Nom</TableHead>
-                <TableHead className="text-slate-500 dark:text-slate-400">Slug</TableHead>
-                <TableHead className="text-slate-500 dark:text-slate-400">Contact</TableHead>
-                <TableHead className="text-slate-500 dark:text-slate-400">Bagages</TableHead>
-                <TableHead className="text-slate-500 dark:text-slate-400">Statut</TableHead>
-                <TableHead className="text-slate-500 dark:text-slate-400">Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {loading ? (
-                <TableRow>
-                  <TableCell colSpan={6} className="text-center text-slate-500 dark:text-slate-400 py-8">
-                    <div className="flex items-center justify-center gap-3">
-                      <div className="w-6 h-6 border-2 border-[#ff7f00]/30 border-t-[#ff7f00] rounded-full animate-spin" />
-                      <span>Chargement...</span>
-                    </div>
-                  </TableCell>
-                </TableRow>
-              ) : agencies.length === 0 ? (
-                <TableRow>
-                  <TableCell colSpan={6} className="text-center text-slate-500 dark:text-slate-400 py-8">
-                    Aucune agence
-                  </TableCell>
-                </TableRow>
-              ) : (
-                agencies.map((agency) => (
-                  <TableRow key={agency.id} className="border-slate-100 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700/50">
-                    <TableCell className="text-slate-800 dark:text-white font-medium">{agency.name}</TableCell>
-                    <TableCell className="text-slate-600 dark:text-slate-300 font-mono text-sm">{agency.slug}</TableCell>
-                    <TableCell className="text-slate-600 dark:text-slate-300 text-sm">
-                      <div>{agency.email || '-'}</div>
-                      <div className="text-slate-400 dark:text-slate-500">{agency.phone || ''}</div>
-                    </TableCell>
-                    <TableCell className="text-slate-800 dark:text-white">
-                      <Badge variant="outline" className="border-slate-200 dark:border-slate-600 text-slate-600 dark:text-slate-300">
-                        {agency._count?.baggages || 0} bagages
-                      </Badge>
-                    </TableCell>
-                    <TableCell>
-                      <Badge className={agency.active ? 'bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400' : 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400'}>
-                        {agency.active ? 'Actif' : 'Inactif'}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex gap-2">
-                        <Button size="sm" variant="ghost" className="text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-700 rounded-xl">
-                          <Edit className="w-4 h-4" />
-                        </Button>
-                        <Button 
-                          size="sm" 
-                          variant="ghost" 
-                          className="text-red-500 dark:text-red-400 hover:text-red-600 dark:hover:text-red-300 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-xl"
-                          onClick={() => handleDeleteAgency(agency.id)}
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </Button>
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ))
-              )}
-            </TableBody>
-          </Table>
-        </CardContent>
-      </Card>
+      {/* Agencies Grid */}
+      {loading ? (
+        <div className="flex items-center justify-center py-12">
+          <div className="w-8 h-8 border-2 border-[#16a34a]/30 border-t-[#16a34a] rounded-full animate-spin" />
+        </div>
+      ) : agencies.length === 0 ? (
+        <div className="text-center py-12 text-slate-500 dark:text-slate-400">Aucune agence</div>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+          {agencies.map((agency) => (
+            <div key={agency.id} className="bg-white dark:bg-slate-800 rounded-2xl p-5 border border-slate-200 dark:border-slate-700 hover:shadow-md transition-all">
+              {/* Header */}
+              <div className="flex items-start justify-between mb-4">
+                <div className="w-12 h-12 bg-emerald-100 dark:bg-emerald-900/30 rounded-xl flex items-center justify-center">
+                  <Building className="w-6 h-6 text-emerald-600 dark:text-emerald-400" />
+                </div>
+                <Badge className={agency.active ? 'bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400' : 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400'}>
+                  {agency.active ? 'Actif' : 'Inactif'}
+                </Badge>
+              </div>
+
+              {/* Name + Slug */}
+              <h3 className="font-semibold text-slate-800 dark:text-white text-lg">{agency.name}</h3>
+              <p className="text-sm text-slate-400 font-mono mb-4">@{agency.slug}</p>
+
+              {/* Contact */}
+              <div className="space-y-2 mb-4">
+                {agency.email && (
+                  <div className="flex items-center gap-2 text-sm text-slate-600 dark:text-slate-300">
+                    <Mail className="w-4 h-4 text-slate-400" />
+                    {agency.email}
+                  </div>
+                )}
+                {agency.phone && (
+                  <div className="flex items-center gap-2 text-sm text-slate-600 dark:text-slate-300">
+                    <Phone className="w-4 h-4 text-slate-400" />
+                    {agency.phone}
+                  </div>
+                )}
+              </div>
+
+              {/* Baggage count */}
+              <div className="flex items-center gap-2 text-sm text-slate-500 dark:text-slate-400 mb-4">
+                <Users className="w-4 h-4" />
+                {agency._count?.baggages || 0} baggages · {agency._count?.users || 0} utilisateur(s)
+              </div>
+
+              {/* Actions */}
+              <div className="flex gap-2 pt-4 border-t border-slate-100 dark:border-slate-700">
+                <Button size="sm" variant="ghost" className="text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-700 rounded-xl flex-1">
+                  <Edit className="w-4 h-4 mr-1" />
+                  Modifier
+                </Button>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  className="text-red-500 dark:text-red-400 hover:text-red-600 dark:hover:text-red-300 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-xl flex-1"
+                  onClick={() => handleDeleteAgency(agency.id)}
+                >
+                  <Trash2 className="w-4 h-4 mr-1" />
+                  Supprimer
+                </Button>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 }

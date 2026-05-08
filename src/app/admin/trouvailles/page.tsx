@@ -333,101 +333,88 @@ export default function TrouvaillesPage() {
           </CardContent>
         </Card>
       ) : (
-        <Card className="bg-white dark:bg-slate-800 border-slate-100 dark:border-slate-700 shadow-sm rounded-2xl overflow-hidden">
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead>
-                <tr className="border-b border-slate-100 dark:border-slate-700 bg-slate-50 dark:bg-slate-700/50">
-                  <th className="text-left px-4 py-3 text-slate-500 dark:text-slate-400 font-medium text-sm">Date</th>
-                  <th className="text-left px-4 py-3 text-slate-500 dark:text-slate-400 font-medium text-sm">Référence</th>
-                  <th className="text-left px-4 py-3 text-slate-500 dark:text-slate-400 font-medium text-sm hidden md:table-cell">Voyageur</th>
-                  <th className="text-left px-4 py-3 text-slate-500 dark:text-slate-400 font-medium text-sm hidden lg:table-cell">Trouveur</th>
-                  <th className="text-left px-4 py-3 text-slate-500 dark:text-slate-400 font-medium text-sm">Lieu</th>
-                  <th className="text-left px-4 py-3 text-slate-500 dark:text-slate-400 font-medium text-sm hidden md:table-cell">GPS</th>
-                  <th className="text-left px-4 py-3 text-slate-500 dark:text-slate-400 font-medium text-sm">Statut</th>
-                  <th className="text-left px-4 py-3 text-slate-500 dark:text-slate-400 font-medium text-sm">Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {scanLogs.map((log) => {
-                  const statusBadge = getStatusBadge(log.baggage?.status);
-                  const mapsUrl = getMapsUrl(log.latitude, log.longitude);
+        <>
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+            {scanLogs.map((log) => {
+              const statusBadge = getStatusBadge(log.baggage?.status);
+              const mapsUrl = getMapsUrl(log.latitude, log.longitude);
 
-                  return (
-                    <tr
-                      key={log.id}
-                      className="border-b border-slate-100 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors"
-                    >
-                      <td className="px-4 py-3">
-                        <span className="text-slate-500 dark:text-slate-400 text-sm">{formatDateTime(log.createdAt)}</span>
-                      </td>
-                      <td className="px-4 py-3">
-                        <span className="text-slate-800 dark:text-white font-mono text-sm">{log.baggage?.reference || '—'}</span>
-                      </td>
-                      <td className="px-4 py-3 hidden md:table-cell">
-                        <span className="text-slate-600 dark:text-slate-300">
-                          {log.baggage?.travelerFirstName || log.baggage?.travelerLastName 
-                            ? `${log.baggage?.travelerFirstName || ''} ${log.baggage?.travelerLastName || ''}`.trim() 
-                            : '—'}
-                        </span>
-                      </td>
-                      <td className="px-4 py-3 hidden lg:table-cell">
-                        <span className="text-slate-600 dark:text-slate-300">{log.finderName || 'Anonyme'}</span>
-                      </td>
-                      <td className="px-4 py-3">
-                        <div className="flex items-center gap-1 text-slate-600 dark:text-slate-300">
-                          <MapPin className="w-3 h-3" aria-hidden="true" />
-                          <span className="text-sm truncate max-w-[100px]">
-                            {log.location || log.city || '—'}
-                          </span>
-                        </div>
-                      </td>
-                      <td className="px-4 py-3 hidden md:table-cell">
-                        {mapsUrl ? (
-                          <a
-                            href={mapsUrl}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="text-[#ff7f00] text-sm hover:underline flex items-center gap-1"
-                          >
-                            {log.latitude?.toFixed(3)}, {log.longitude?.toFixed(3)}
-                            <ExternalLink className="w-3 h-3" aria-hidden="true" />
-                          </a>
-                        ) : (
-                          <span className="text-slate-400 dark:text-slate-500">—</span>
-                        )}
-                      </td>
-                      <td className="px-4 py-3">
-                        <span className={`px-2 py-1 rounded-full text-xs font-medium ${statusBadge.className}`}>
-                          {statusBadge.icon} {statusBadge.label}
-                        </span>
-                      </td>
-                      <td className="px-4 py-3">
-                        <button
-                          onClick={() => {
-                            setSelectedLog(log);
-                            setShowDetailModal(true);
-                          }}
-                          className="w-10 h-10 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-700 transition-all duration-200 group flex items-center justify-center"
-                          title="Voir détails"
+              return (
+                <div
+                  key={log.id}
+                  className="bg-white dark:bg-slate-800 rounded-2xl p-5 border border-slate-200 dark:border-slate-700 hover:shadow-md transition-all"
+                >
+                  {/* Card Header */}
+                  <div className="flex items-center justify-between mb-3">
+                    <span className="text-slate-800 dark:text-white font-mono font-semibold text-sm">{log.baggage?.reference || '—'}</span>
+                    <span className={`px-2 py-1 rounded-full text-xs font-medium ${statusBadge.className}`}>
+                      {statusBadge.icon} {statusBadge.label}
+                    </span>
+                  </div>
+
+                  {/* Date */}
+                  <p className="text-slate-500 dark:text-slate-400 text-xs mb-3">{formatDateTime(log.createdAt)}</p>
+
+                  {/* Info Grid */}
+                  <div className="space-y-2 text-sm">
+                    <div className="flex items-center gap-2 text-slate-600 dark:text-slate-300">
+                      <span className="text-slate-400 dark:text-slate-500 w-16 shrink-0 text-xs">Voyageur</span>
+                      <span className="truncate">
+                        {log.baggage?.travelerFirstName || log.baggage?.travelerLastName
+                          ? `${log.baggage?.travelerFirstName || ''} ${log.baggage?.travelerLastName || ''}`.trim()
+                          : '—'}
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-2 text-slate-600 dark:text-slate-300">
+                      <span className="text-slate-400 dark:text-slate-500 w-16 shrink-0 text-xs">Trouveur</span>
+                      <span className="truncate">{log.finderName || 'Anonyme'}</span>
+                    </div>
+                    <div className="flex items-center gap-2 text-slate-600 dark:text-slate-300">
+                      <MapPin className="w-3 h-3 text-slate-400 shrink-0" aria-hidden="true" />
+                      <span className="truncate">{log.location || log.city || '—'}</span>
+                    </div>
+                    {mapsUrl && (
+                      <div className="flex items-center gap-2">
+                        <span className="text-slate-400 dark:text-slate-500 w-16 shrink-0 text-xs">GPS</span>
+                        <a
+                          href={mapsUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-[#ff7f00] text-xs hover:underline flex items-center gap-1"
                         >
-                          <Eye className="w-5 h-5 text-slate-400 group-hover:text-[#ff7f00] transition-colors" aria-hidden="true" />
-                        </button>
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
+                          {log.latitude?.toFixed(3)}, {log.longitude?.toFixed(3)}
+                          <ExternalLink className="w-3 h-3" aria-hidden="true" />
+                        </a>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Action */}
+                  <div className="mt-4 pt-3 border-t border-slate-100 dark:border-slate-700 flex justify-end">
+                    <button
+                      onClick={() => {
+                        setSelectedLog(log);
+                        setShowDetailModal(true);
+                      }}
+                      className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-sm text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700 transition-all group"
+                      title="Voir détails"
+                    >
+                      <Eye className="w-4 h-4 group-hover:text-[#ff7f00] transition-colors" aria-hidden="true" />
+                      Détails
+                    </button>
+                  </div>
+                </div>
+              );
+            })}
           </div>
 
           {/* Footer */}
-          <div className="px-6 py-4 border-t border-slate-100 dark:border-slate-700 flex justify-between items-center bg-slate-50 dark:bg-slate-700/50">
+          <div className="mt-4 px-2 text-center">
             <span className="text-slate-500 dark:text-slate-400 text-sm">
               {scanLogs.length} scan(s) affiché(s)
             </span>
           </div>
-        </Card>
+        </>
       )}
 
       {/* Detail Modal */}

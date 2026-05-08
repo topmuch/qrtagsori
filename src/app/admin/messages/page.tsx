@@ -385,119 +385,98 @@ export default function MessagesPage() {
         </Button>
       </div>
 
-      {/* Messages Table */}
-      <Card className="bg-white dark:bg-slate-800 border-slate-100 dark:border-slate-700 shadow-sm rounded-2xl overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead>
-              <tr className="border-b border-slate-100 dark:border-slate-700 bg-slate-50 dark:bg-slate-700/50">
-                <th className="text-left px-6 py-4 text-slate-500 dark:text-slate-400 font-medium text-sm">Date</th>
-                <th className="text-left px-6 py-4 text-slate-500 dark:text-slate-400 font-medium text-sm">Expéditeur</th>
-                <th className="text-left px-6 py-4 text-slate-500 dark:text-slate-400 font-medium text-sm">Type</th>
-                <th className="text-left px-6 py-4 text-slate-500 dark:text-slate-400 font-medium text-sm">Contenu</th>
-                <th className="text-left px-6 py-4 text-slate-500 dark:text-slate-400 font-medium text-sm">Statut</th>
-                <th className="text-left px-6 py-4 text-slate-500 dark:text-slate-400 font-medium text-sm">Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {loading ? (
-                <tr>
-                  <td colSpan={6} className="text-center py-12">
-                    <div className="flex items-center justify-center gap-3">
-                      <div className="w-6 h-6 border-2 border-[#ff7f00]/30 border-t-[#ff7f00] rounded-full animate-spin" />
-                      <span className="text-slate-500 dark:text-slate-400">Chargement...</span>
+      {/* Messages Grid */}
+      {loading ? (
+        <div className="text-center py-12">
+          <div className="flex items-center justify-center gap-3">
+            <div className="w-6 h-6 border-2 border-[#ff7f00]/30 border-t-[#ff7f00] rounded-full animate-spin" />
+            <span className="text-slate-500 dark:text-slate-400">Chargement...</span>
+          </div>
+        </div>
+      ) : messages.length === 0 ? (
+        <div className="flex flex-col items-center py-12">
+          <div className="w-16 h-16 bg-slate-100 dark:bg-slate-700 rounded-full flex items-center justify-center mb-4">
+            <Mail className="w-8 h-8 text-slate-400" />
+          </div>
+          <p className="text-slate-500 dark:text-slate-400">Aucun message</p>
+        </div>
+      ) : (
+        <>
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+            {messages.map((message) => {
+              const typeConfig = TYPE_LABELS[message.type] || { label: message.type, icon: '📨', color: 'text-slate-600 dark:text-slate-400' };
+              const statusConfig = STATUS_CONFIG[message.status] || { label: message.status, className: 'bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300' };
+              
+              return (
+                <div
+                  key={message.id}
+                  className={`bg-white dark:bg-slate-800 rounded-2xl p-5 border border-slate-200 dark:border-slate-700 hover:shadow-md transition-all ${
+                    message.status === 'non_lu' ? 'ring-2 ring-red-200 dark:ring-red-800' : ''
+                  }`}
+                >
+                  {/* Header with date + status */}
+                  <div className="flex items-start justify-between mb-3">
+                    <div className="flex items-center gap-1.5 text-xs text-slate-400 dark:text-slate-500">
+                      <Clock className="w-3.5 h-3.5" aria-hidden="true" />
+                      {formatDate(message.createdAt)}
                     </div>
-                  </td>
-                </tr>
-              ) : messages.length === 0 ? (
-                <tr>
-                  <td colSpan={6} className="text-center py-12">
-                    <div className="flex flex-col items-center">
-                      <div className="w-16 h-16 bg-slate-100 dark:bg-slate-700 rounded-full flex items-center justify-center mb-4">
-                        <Mail className="w-8 h-8 text-slate-400" />
-                      </div>
-                      <p className="text-slate-500 dark:text-slate-400">Aucun message</p>
-                    </div>
-                  </td>
-                </tr>
-              ) : (
-                messages.map((message) => {
-                  const typeConfig = TYPE_LABELS[message.type] || { label: message.type, icon: '📨', color: 'text-slate-600 dark:text-slate-400' };
-                  const statusConfig = STATUS_CONFIG[message.status] || { label: message.status, className: 'bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300' };
-                  
-                  return (
-                    <tr
-                      key={message.id}
-                      className={`border-b border-slate-100 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors ${
-                        message.status === 'non_lu' ? 'bg-red-50/50 dark:bg-red-900/10' : ''
-                      }`}
+                    <span className={`px-2.5 py-1 rounded-full text-xs font-medium ${statusConfig.className}`}>
+                      {statusConfig.label}
+                    </span>
+                  </div>
+                  {/* Sender info */}
+                  <h3 className="font-semibold text-slate-800 dark:text-white mb-0.5">{message.senderName || 'Anonyme'}</h3>
+                  {message.senderEmail && <p className="text-sm text-slate-500 dark:text-slate-400 mb-2">{message.senderEmail}</p>}
+                  {/* Type badge */}
+                  <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 mb-3 ${typeConfig.color}`}>
+                    <span>{typeConfig.icon}</span>
+                    {typeConfig.label}
+                  </span>
+                  {/* Content preview */}
+                  <div className="text-sm text-slate-600 dark:text-slate-300 line-clamp-3 mb-4">
+                    <MessageSummaryCell content={message.content} messageType={message.type} />
+                  </div>
+                  {/* Actions */}
+                  <div className="flex gap-2 pt-3 border-t border-slate-100 dark:border-slate-700">
+                    <button
+                      onClick={() => openMessageDetails(message)}
+                      className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 hover:bg-[#ff7f00]/10 hover:text-[#ff7f00] dark:hover:bg-[#ff7f00]/20 dark:hover:text-[#ff7f00] transition-colors"
+                      title="Voir détails"
                     >
-                      <td className="px-6 py-4">
-                        <div className="flex items-center gap-2 text-slate-500 dark:text-slate-400 text-sm">
-                          <Clock className="w-4 h-4" aria-hidden="true" />
-                          {formatDate(message.createdAt)}
-                        </div>
-                      </td>
-                      <td className="px-6 py-4">
-                        <div className="text-slate-800 dark:text-white font-medium">{message.senderName || '—'}</div>
-                        <div className="text-slate-500 dark:text-slate-400 text-sm">{message.senderEmail || 'Non renseigné'}</div>
-                      </td>
-                      <td className="px-6 py-4">
-                        <span className={`flex items-center gap-1 ${typeConfig.color}`}>
-                          <span>{typeConfig.icon}</span>
-                          {typeConfig.label}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4">
-                        <MessageSummaryCell content={message.content} messageType={message.type} />
-                      </td>
-                      <td className="px-6 py-4">
-                        <span className={`px-3 py-1 rounded-full text-xs font-medium ${statusConfig.className}`}>
-                          {statusConfig.label}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4">
-                        <div className="flex items-center gap-2">
-                          <button
-                            onClick={() => openMessageDetails(message)}
-                            className="w-10 h-10 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-500 dark:text-slate-400 hover:text-[#ff7f00] dark:hover:text-[#ff7f00] transition-all duration-200 flex items-center justify-center"
-                            title="Voir détails"
-                          >
-                            <Eye className="w-5 h-5" aria-hidden="true" />
-                          </button>
-                          {message.status === 'non_lu' && (
-                            <button
-                              onClick={() => handleMarkAsRead(message.id)}
-                              className="w-10 h-10 rounded-xl hover:bg-emerald-50 dark:hover:bg-emerald-900/20 text-slate-500 dark:text-slate-400 hover:text-emerald-600 dark:hover:text-emerald-400 transition-all duration-200 flex items-center justify-center"
-                              title="Marquer comme lu"
-                            >
-                              <CheckCircle className="w-5 h-5" aria-hidden="true" />
-                            </button>
-                          )}
-                          <button
-                            onClick={() => handleDelete(message.id)}
-                            className="w-10 h-10 rounded-xl hover:bg-red-50 dark:hover:bg-red-900/20 text-slate-500 dark:text-slate-400 hover:text-red-600 dark:hover:text-red-400 transition-all duration-200 flex items-center justify-center"
-                            title="Supprimer"
-                          >
-                            <Trash2 className="w-5 h-5" aria-hidden="true" />
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  );
-                })
-              )}
-            </tbody>
-          </table>
-        </div>
+                      <Eye className="w-3.5 h-3.5" aria-hidden="true" />
+                      Détails
+                    </button>
+                    {message.status === 'non_lu' && (
+                      <button
+                        onClick={() => handleMarkAsRead(message.id)}
+                        className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 hover:bg-emerald-50 hover:text-emerald-600 dark:hover:bg-emerald-900/20 dark:hover:text-emerald-400 transition-colors"
+                        title="Marquer comme lu"
+                      >
+                        <CheckCircle className="w-3.5 h-3.5" aria-hidden="true" />
+                        Lu
+                      </button>
+                    )}
+                    <button
+                      onClick={() => handleDelete(message.id)}
+                      className="ml-auto flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium text-slate-400 hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-900/20 dark:hover:text-red-400 transition-colors"
+                      title="Supprimer"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" aria-hidden="true" />
+                    </button>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
 
-        {/* Footer */}
-        <div className="px-6 py-4 border-t border-slate-100 dark:border-slate-700 flex justify-between items-center bg-slate-50 dark:bg-slate-700/50">
-          <span className="text-slate-500 dark:text-slate-400 text-sm">
-            {messages.length} message(s)
-          </span>
-        </div>
-      </Card>
+          {/* Footer */}
+          <div className="mt-4 px-2 py-3 flex justify-between items-center">
+            <span className="text-slate-500 dark:text-slate-400 text-sm">
+              {messages.length} message(s)
+            </span>
+          </div>
+        </>
+      )}
 
       {/* Message Details Modal */}
       {showModal && selectedMessage && (

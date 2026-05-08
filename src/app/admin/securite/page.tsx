@@ -228,54 +228,42 @@ export default function SecurityAuditPage() {
               Aucune session active
             </p>
           ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead>
-                  <tr className="border-b border-slate-200 dark:border-slate-800">
-                    <th className="text-left py-3 px-4 text-sm font-medium text-slate-500 dark:text-slate-400">Utilisateur</th>
-                    <th className="text-left py-3 px-4 text-sm font-medium text-slate-500 dark:text-slate-400">Rôle</th>
-                    <th className="text-left py-3 px-4 text-sm font-medium text-slate-500 dark:text-slate-400">IP</th>
-                    <th className="text-left py-3 px-4 text-sm font-medium text-slate-500 dark:text-slate-400">Navigateur</th>
-                    <th className="text-left py-3 px-4 text-sm font-medium text-slate-500 dark:text-slate-400">Dernière activité</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {activeSessions.map((session) => {
-                    const { browser, os } = parseUserAgent(session.userAgent);
-                    return (
-                      <tr key={session.id} className="border-b border-slate-100 dark:border-slate-800/50">
-                        <td className="py-3 px-4">
-                          <div>
-                            <p className="font-medium text-slate-800 dark:text-white">{session.user.name || 'N/A'}</p>
-                            <p className="text-sm text-slate-500 dark:text-slate-400">{session.user.email}</p>
-                          </div>
-                        </td>
-                        <td className="py-3 px-4">
-                          <Badge variant={session.user.role === 'superadmin' ? 'default' : 'secondary'}>
-                            {session.user.role === 'superadmin' ? 'SuperAdmin' : 'Agence'}
-                          </Badge>
-                        </td>
-                        <td className="py-3 px-4">
-                          <code className="text-sm bg-slate-100 dark:bg-slate-800 px-2 py-1 rounded">
-                            {session.ipAddress || 'N/A'}
-                          </code>
-                        </td>
-                        <td className="py-3 px-4">
-                          <div className="flex items-center gap-2">
-                            <Monitor className="w-4 h-4 text-slate-400" />
-                            <span className="text-sm text-slate-600 dark:text-slate-400">
-                              {browser} / {os}
-                            </span>
-                          </div>
-                        </td>
-                        <td className="py-3 px-4 text-sm text-slate-500 dark:text-slate-400">
-                          {getTimeAgo(session.lastActivity)}
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
+            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+              {activeSessions.map((session) => {
+                const { browser, os } = parseUserAgent(session.userAgent);
+                return (
+                  <div
+                    key={session.id}
+                    className="bg-white dark:bg-slate-800 rounded-2xl p-5 border border-slate-200 dark:border-slate-700 hover:shadow-md transition-all"
+                  >
+                    <div className="flex items-center justify-between mb-3">
+                      <div>
+                        <p className="font-medium text-slate-800 dark:text-white">{session.user.name || 'N/A'}</p>
+                        <p className="text-xs text-slate-500 dark:text-slate-400">{session.user.email}</p>
+                      </div>
+                      <Badge variant={session.user.role === 'superadmin' ? 'default' : 'secondary'}>
+                        {session.user.role === 'superadmin' ? 'SuperAdmin' : 'Agence'}
+                      </Badge>
+                    </div>
+                    <div className="space-y-2 text-sm">
+                      <div className="flex items-center gap-2 text-slate-600 dark:text-slate-300">
+                        <span className="text-slate-400 dark:text-slate-500 w-20 shrink-0 text-xs">IP</span>
+                        <code className="text-xs bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded">
+                          {session.ipAddress || 'N/A'}
+                        </code>
+                      </div>
+                      <div className="flex items-center gap-2 text-slate-600 dark:text-slate-300">
+                        <Monitor className="w-3 h-3 text-slate-400 shrink-0" />
+                        <span className="text-xs">{browser} / {os}</span>
+                      </div>
+                      <div className="flex items-center gap-2 text-slate-500 dark:text-slate-400">
+                        <Clock className="w-3 h-3 shrink-0" />
+                        <span className="text-xs">{getTimeAgo(session.lastActivity)}</span>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
             </div>
           )}
         </CardContent>
@@ -299,70 +287,53 @@ export default function SecurityAuditPage() {
               Aucune connexion enregistrée
             </p>
           ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead>
-                  <tr className="border-b border-slate-200 dark:border-slate-800">
-                    <th className="text-left py-3 px-4 text-sm font-medium text-slate-500 dark:text-slate-400">Statut</th>
-                    <th className="text-left py-3 px-4 text-sm font-medium text-slate-500 dark:text-slate-400">Email</th>
-                    <th className="text-left py-3 px-4 text-sm font-medium text-slate-500 dark:text-slate-400">IP</th>
-                    <th className="text-left py-3 px-4 text-sm font-medium text-slate-500 dark:text-slate-400">Navigateur</th>
-                    <th className="text-left py-3 px-4 text-sm font-medium text-slate-500 dark:text-slate-400">Date</th>
-                    <th className="text-left py-3 px-4 text-sm font-medium text-slate-500 dark:text-slate-400">Détails</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {loginLogs.map((log) => {
-                    const { browser, os } = parseUserAgent(log.userAgent);
-                    return (
-                      <tr key={log.id} className="border-b border-slate-100 dark:border-slate-800/50">
-                        <td className="py-3 px-4">
-                          {log.success ? (
-                            <div className="flex items-center gap-2">
-                              <CheckCircle className="w-5 h-5 text-emerald-500" />
-                              <span className="text-emerald-600 dark:text-emerald-400 font-medium">Réussie</span>
-                            </div>
-                          ) : (
-                            <div className="flex items-center gap-2">
-                              <XCircle className="w-5 h-5 text-red-500" />
-                              <span className="text-red-600 dark:text-red-400 font-medium">Échouée</span>
-                            </div>
-                          )}
-                        </td>
-                        <td className="py-3 px-4">
-                          <span className="text-slate-800 dark:text-white">{log.email}</span>
-                        </td>
-                        <td className="py-3 px-4">
-                          <code className="text-sm bg-slate-100 dark:bg-slate-800 px-2 py-1 rounded">
-                            {log.ipAddress || 'N/A'}
-                          </code>
-                        </td>
-                        <td className="py-3 px-4">
-                          <div className="flex items-center gap-2">
-                            <Monitor className="w-4 h-4 text-slate-400" />
-                            <span className="text-sm text-slate-600 dark:text-slate-400">
-                              {browser} / {os}
-                            </span>
-                          </div>
-                        </td>
-                        <td className="py-3 px-4 text-sm text-slate-500 dark:text-slate-400">
-                          {formatDate(log.createdAt)}
-                        </td>
-                        <td className="py-3 px-4">
-                          {log.failureReason ? (
-                            <div className="flex items-center gap-2 text-amber-600 dark:text-amber-400">
-                              <AlertTriangle className="w-4 h-4" />
-                              <span className="text-sm">{log.failureReason}</span>
-                            </div>
-                          ) : (
-                            <span className="text-slate-400">-</span>
-                          )}
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
+            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+              {loginLogs.map((log) => {
+                const { browser, os } = parseUserAgent(log.userAgent);
+                return (
+                  <div
+                    key={log.id}
+                    className="bg-white dark:bg-slate-800 rounded-2xl p-5 border border-slate-200 dark:border-slate-700 hover:shadow-md transition-all"
+                  >
+                    <div className="flex items-center justify-between mb-3">
+                      {log.success ? (
+                        <div className="flex items-center gap-2">
+                          <CheckCircle className="w-4 h-4 text-emerald-500" />
+                          <span className="text-emerald-600 dark:text-emerald-400 font-medium text-sm">Réussie</span>
+                        </div>
+                      ) : (
+                        <div className="flex items-center gap-2">
+                          <XCircle className="w-4 h-4 text-red-500" />
+                          <span className="text-red-600 dark:text-red-400 font-medium text-sm">Échouée</span>
+                        </div>
+                      )}
+                      <span className="text-xs text-slate-400 dark:text-slate-500">{formatDate(log.createdAt)}</span>
+                    </div>
+                    <div className="space-y-2 text-sm">
+                      <div className="flex items-center gap-2 text-slate-800 dark:text-white">
+                        <span className="text-slate-400 dark:text-slate-500 w-16 shrink-0 text-xs">Email</span>
+                        <span className="truncate text-sm">{log.email}</span>
+                      </div>
+                      <div className="flex items-center gap-2 text-slate-600 dark:text-slate-300">
+                        <span className="text-slate-400 dark:text-slate-500 w-16 shrink-0 text-xs">IP</span>
+                        <code className="text-xs bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded">
+                          {log.ipAddress || 'N/A'}
+                        </code>
+                      </div>
+                      <div className="flex items-center gap-2 text-slate-600 dark:text-slate-300">
+                        <Monitor className="w-3 h-3 text-slate-400 shrink-0" />
+                        <span className="text-xs">{browser} / {os}</span>
+                      </div>
+                      {log.failureReason && (
+                        <div className="flex items-center gap-2 text-amber-600 dark:text-amber-400">
+                          <AlertTriangle className="w-3 h-3" />
+                          <span className="text-xs">{log.failureReason}</span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
             </div>
           )}
         </CardContent>

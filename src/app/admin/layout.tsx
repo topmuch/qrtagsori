@@ -108,6 +108,9 @@ function Sidebar({
     // Analysis Category
     { label: "ANALYSE", icon: null, isCategory: true },
 
+    // Marketing
+    { label: "Marketing", icon: <Megaphone className="w-5 h-5" />, href: "/admin/publicites", permission: PERMISSIONS.MANAGE_SETTINGS, roles: ['superadmin', 'admin'] },
+
     // Reports
     { label: "Rapports", icon: <BarChart3 className="w-5 h-5" />, href: "/admin/rapports", permission: PERMISSIONS.VIEW_REPORTS },
 
@@ -175,7 +178,7 @@ function Sidebar({
       {/* Sidebar - Orange Background */}
       <aside className={`
         fixed lg:static inset-y-0 left-0 z-50
-        w-[280px] bg-[#ff7f00]
+        w-[280px] bg-[#16a34a]
         transform transition-transform duration-300
         ${isOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
         flex flex-col shadow-2xl
@@ -397,7 +400,7 @@ export default function AdminRootLayout({
     return (
       <div className="min-h-screen bg-slate-50 dark:bg-slate-950 flex items-center justify-center">
         <div className="flex items-center gap-3">
-          <div className="w-6 h-6 border-2 border-[#ff7f00]/30 border-t-[#ff7f00] rounded-full animate-spin" />
+          <div className="w-6 h-6 border-2 border-[#16a34a]/30 border-t-[#16a34a] rounded-full animate-spin" />
           <span className="text-slate-500">Vérification...</span>
         </div>
       </div>

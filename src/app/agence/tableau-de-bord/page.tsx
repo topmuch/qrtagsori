@@ -304,6 +304,92 @@ function AISuggestions({ agencyId, stats }: { agencyId: string; stats: Stats }) 
   );
 }
 
+// Advertisement Banner Component
+function AdBanner() {
+  const [ads, setAds] = useState<Array<{
+    id: string;
+    title: string;
+    imageUrl: string;
+    linkUrl: string | null;
+    targetScope: string;
+  }>>([]);
+  const [currentIndex, setCurrentIndex] = useState(0);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchAds = async () => {
+      try {
+        const res = await fetch('/api/advertisements');
+        const data = await res.json();
+        if (data.advertisements && data.advertisements.length > 0) {
+          setAds(data.advertisements);
+        }
+      } catch (err) {
+        console.error('Error fetching ads:', err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchAds();
+  }, []);
+
+  useEffect(() => {
+    if (ads.length <= 1) return;
+    const timer = setInterval(() => {
+      setCurrentIndex(prev => (prev + 1) % ads.length);
+    }, 5000);
+    return () => clearInterval(timer);
+  }, [ads.length]);
+
+  if (loading || ads.length === 0) return null;
+
+  const ad = ads[currentIndex];
+
+  return (
+    <div className="relative rounded-2xl overflow-hidden border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900">
+      {ad.imageUrl ? (
+        <a
+          href={ad.linkUrl || '#'}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="block"
+        >
+          <img
+            src={ad.imageUrl}
+            alt={ad.title}
+            className="w-full h-40 object-cover"
+          />
+          {ad.title && (
+            <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/60 to-transparent p-4">
+              <p className="text-white text-sm font-medium">{ad.title}</p>
+            </div>
+          )}
+        </a>
+      ) : (
+        <a
+          href={ad.linkUrl || '#'}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="block p-6 bg-gradient-to-r from-amber-50 to-orange-50 dark:from-amber-500/10 dark:to-orange-500/10 text-center"
+        >
+          <p className="text-slate-800 dark:text-white font-semibold">{ad.title}</p>
+        </a>
+      )}
+      {ads.length > 1 && (
+        <div className="absolute bottom-2 right-2 flex gap-1">
+          {ads.map((_, i) => (
+            <button
+              key={i}
+              onClick={() => setCurrentIndex(i)}
+              className={`w-2 h-2 rounded-full transition-all ${i === currentIndex ? 'bg-white w-4' : 'bg-white/50'}`}
+            />
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function AgencyDashboardPage() {
   const { agencyId, agencyName } = useAgency();
   const [baggages, setBaggages] = useState<Baggage[]>([]);
@@ -543,6 +629,11 @@ export default function AgencyDashboardPage() {
       {/* Latest News Widget */}
       <div className="mb-8">
         <LatestNewsWidget />
+      </div>
+
+      {/* Advertisement Banner */}
+      <div className="mb-8">
+        <AdBanner />
       </div>
 
       {/* Search Bar */}
