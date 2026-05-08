@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
+import { sendEmail, getEmailSettings, getBaggageLostEmailTemplate } from '@/lib/email';
 
 // PUT - Declare baggage as lost
 export async function PUT(
@@ -54,6 +55,49 @@ export async function PUT(
         read: false,
       }
     });
+
+    // 📧 Send email notifications
+    try {
+      const emailSettings = await getEmailSettings();
+      if (emailSettings && emailSettings.provider === 'smtp') {
+        const template = getBaggageLostEmailTemplate({
+          reference: baggage.reference,
+          agencyName: baggage.agency?.name || undefined,
+          travelerName: baggage.travelerFirstName && baggage.travelerLastName
+            ? `${baggage.travelerFirstName} ${baggage.travelerLastName}`
+            : baggage.travelerFirstName || undefined,
+          baggageType: baggage.baggageType,
+          destination: baggage.destination || undefined,
+          flightNumber: baggage.flightNumber || undefined,
+        });
+
+        // Build recipients list
+        const recipients: string[] = [];
+        // Add admin recipient email
+        if (emailSettings.recipientEmail) {
+          recipients.push(emailSettings.recipientEmail);
+        }
+        // Add agency email
+        if (baggage.agency?.email && !recipients.includes(baggage.agency.email)) {
+          recipients.push(baggage.agency.email);
+        }
+
+        if (recipients.length > 0) {
+          await sendEmail({
+            to: recipients,
+            subject: `🚨 Bagage perdu — ${baggage.reference}`,
+            html: template.html,
+            text: template.text,
+            type: 'baggage_declared_lost',
+            agencyId: baggage.agencyId || undefined,
+            data: { reference: baggage.reference, agencyName: baggage.agency?.name, baggageId: baggage.id },
+          });
+          console.log(`📧 Lost baggage notification sent for ${baggage.reference} to ${recipients.join(', ')}`);
+        }
+      }
+    } catch (emailError) {
+      console.error('Failed to send lost baggage email notification:', emailError);
+    }
 
     return NextResponse.json({
       success: true,

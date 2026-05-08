@@ -27,6 +27,7 @@ export interface EmailData {
   type?: string;
   userId?: string;
   agencyId?: string;
+  baggageId?: string;
   data?: Record<string, unknown>;
 }
 
@@ -427,6 +428,114 @@ export async function verifyEmailToken(token: string, type: 'email_verification'
   });
   
   return { valid: true, email: emailToken.email };
+}
+
+export function getBaggageLostEmailTemplate(data: {
+  reference: string;
+  agencyName?: string;
+  travelerName?: string;
+  baggageType?: string;
+  destination?: string;
+  flightNumber?: string;
+}): { html: string; text: string } {
+  const now = new Date().toLocaleString('fr-FR');
+  const travelerDisplay = data.travelerName ? `${data.travelerName}` : 'Non renseigné';
+  return {
+    html: `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+        <div style="text-align: center; margin-bottom: 30px;">
+          <h1 style="color: #ff7f00; margin: 0;">QRBag</h1>
+        </div>
+        <div style="background: #fff3f3; border: 2px solid #e74c3c; border-radius: 10px; padding: 30px;">
+          <h2 style="color: #e74c3c; margin-top: 0;">🚨 Bagage déclaré comme perdu</h2>
+          <p style="color: #666;">Un bagage a été signalé comme perdu. Voici les détails :</p>
+          <table style="width: 100%; border-collapse: collapse; margin-top: 20px;">
+            <tr>
+              <td style="padding: 8px 0; color: #999; font-size: 14px; border-bottom: 1px solid #eee;">Référence</td>
+              <td style="padding: 8px 0; font-weight: bold; color: #333; border-bottom: 1px solid #eee;">${data.reference}</td>
+            </tr>
+            <tr>
+              <td style="padding: 8px 0; color: #999; font-size: 14px; border-bottom: 1px solid #eee;">Voyageur</td>
+              <td style="padding: 8px 0; font-weight: bold; color: #333; border-bottom: 1px solid #eee;">${travelerDisplay}</td>
+            </tr>
+            ${data.agencyName ? `
+            <tr>
+              <td style="padding: 8px 0; color: #999; font-size: 14px; border-bottom: 1px solid #eee;">Agence</td>
+              <td style="padding: 8px 0; font-weight: bold; color: #333; border-bottom: 1px solid #eee;">${data.agencyName}</td>
+            </tr>` : ''}
+            ${data.baggageType ? `
+            <tr>
+              <td style="padding: 8px 0; color: #999; font-size: 14px; border-bottom: 1px solid #eee;">Type de bagage</td>
+              <td style="padding: 8px 0; font-weight: bold; color: #333; border-bottom: 1px solid #eee;">${data.baggageType}</td>
+            </tr>` : ''}
+            ${data.flightNumber ? `
+            <tr>
+              <td style="padding: 8px 0; color: #999; font-size: 14px; border-bottom: 1px solid #eee;">Vol</td>
+              <td style="padding: 8px 0; font-weight: bold; color: #333; border-bottom: 1px solid #eee;">${data.flightNumber}</td>
+            </tr>` : ''}
+            ${data.destination ? `
+            <tr>
+              <td style="padding: 8px 0; color: #999; font-size: 14px;">Destination</td>
+              <td style="padding: 8px 0; font-weight: bold; color: #333;">${data.destination}</td>
+            </tr>` : ''}
+          </table>
+        </div>
+        <p style="color: #999; font-size: 12px; text-align: center; margin-top: 20px;">Notification automatique QRBag — ${now}</p>
+        <div style="text-align: center; color: #999; font-size: 12px;">
+          <p>© QRBag - Tous droits réservés</p>
+        </div>
+      </div>
+    `,
+    text: `🚨 QRBag - Bagage déclaré comme perdu\n\nRéférence: ${data.reference}\nVoyageur: ${travelerDisplay}\nAgence: ${data.agencyName || 'Non renseignée'}\nType: ${data.baggageType || 'Non renseigné'}\nVol: ${data.flightNumber || 'Non renseigné'}\nDestination: ${data.destination || 'Non renseignée'}\n\nNotification automatique QRBag — ${now}\n© QRBag`,
+  };
+}
+
+export function getBaggageFoundEmailTemplate(data: {
+  reference: string;
+  agencyName?: string;
+  travelerName?: string;
+  baggageType?: string;
+}): { html: string; text: string } {
+  const now = new Date().toLocaleString('fr-FR');
+  const travelerDisplay = data.travelerName ? `${data.travelerName}` : 'Non renseigné';
+  return {
+    html: `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+        <div style="text-align: center; margin-bottom: 30px;">
+          <h1 style="color: #ff7f00; margin: 0;">QRBag</h1>
+        </div>
+        <div style="background: #e8f5e9; border: 2px solid #27ae60; border-radius: 10px; padding: 30px;">
+          <h2 style="color: #27ae60; margin-top: 0;">✅ Bagage retrouvé !</h2>
+          <p style="color: #666;">Un bagage précédemment signalé comme perdu a été retrouvé. Voici les détails :</p>
+          <table style="width: 100%; border-collapse: collapse; margin-top: 20px;">
+            <tr>
+              <td style="padding: 8px 0; color: #999; font-size: 14px; border-bottom: 1px solid #eee;">Référence</td>
+              <td style="padding: 8px 0; font-weight: bold; color: #333; border-bottom: 1px solid #eee;">${data.reference}</td>
+            </tr>
+            <tr>
+              <td style="padding: 8px 0; color: #999; font-size: 14px; border-bottom: 1px solid #eee;">Voyageur</td>
+              <td style="padding: 8px 0; font-weight: bold; color: #333; border-bottom: 1px solid #eee;">${travelerDisplay}</td>
+            </tr>
+            ${data.agencyName ? `
+            <tr>
+              <td style="padding: 8px 0; color: #999; font-size: 14px; border-bottom: 1px solid #eee;">Agence</td>
+              <td style="padding: 8px 0; font-weight: bold; color: #333; border-bottom: 1px solid #eee;">${data.agencyName}</td>
+            </tr>` : ''}
+            ${data.baggageType ? `
+            <tr>
+              <td style="padding: 8px 0; color: #999; font-size: 14px;">Type de bagage</td>
+              <td style="padding: 8px 0; font-weight: bold; color: #333;">${data.baggageType}</td>
+            </tr>` : ''}
+          </table>
+        </div>
+        <p style="color: #999; font-size: 12px; text-align: center; margin-top: 20px;">Notification automatique QRBag — ${now}</p>
+        <div style="text-align: center; color: #999; font-size: 12px;">
+          <p>© QRBag - Tous droits réservés</p>
+        </div>
+      </div>
+    `,
+    text: `✅ QRBag - Bagage retrouvé !\n\nRéférence: ${data.reference}\nVoyageur: ${travelerDisplay}\nAgence: ${data.agencyName || 'Non renseignée'}\nType: ${data.baggageType || 'Non renseigné'}\n\nNotification automatique QRBag — ${now}\n© QRBag`,
+  };
 }
 
 export async function verifyEmailCode(code: string, email: string, type: 'email_verification' | 'password_reset'): Promise<{ valid: boolean; error?: string }> {

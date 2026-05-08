@@ -63,25 +63,31 @@ export async function POST(request: NextRequest) {
       },
     });
 
-    // Send email notification to admin
+    // Send email notification to admin (only if SMTP is configured)
+    let emailSent = false;
+    let emailError = '';
     try {
       const { sendEmail } = await import('@/lib/email');
-      
-      // Fetch email settings to get the configured recipient email
       const emailSettings = await getEmailSettings();
-      const recipientEmail = emailSettings?.recipientEmail || emailSettings?.fromEmail || 'admin@qrbag.com';
       
-      await sendEmail({
-        to: recipientEmail,
-        subject: `Nouveau message de ${senderName || 'Visiteur'} - ${type}`,
-        html: `<div style="font-family:Arial;max-width:600px;margin:0 auto;padding:20px"><h2 style="color:#ff7f00">Nouveau message QRBag</h2><p><strong>Type:</strong> ${type}</p>${senderName ? `<p><strong>De:</strong> ${senderName}</p>` : ''}${senderEmail ? `<p><strong>Email:</strong> ${senderEmail}</p>` : ''}${senderPhone ? `<p><strong>Téléphone:</strong> ${senderPhone}</p>` : ''}${subject ? `<p><strong>Sujet:</strong> ${subject}</p>` : ''}<div style="background:#f5f5f5;padding:15px;border-radius:8px;margin-top:15px"><p>${typeof content === 'string' ? content : JSON.stringify(content)}</p></div><hr style="margin-top:20px;border:none;border-top:1px solid #eee"><p style="color:#999;font-size:12px">© QRBag - Tous droits réservés</p></div>`,
-        type: 'new_message',
-      });
-    } catch (emailError) {
-      console.error('Failed to send email notification:', emailError);
+      if (emailSettings && emailSettings.provider === 'smtp') {
+        const recipientEmail = emailSettings.recipientEmail || emailSettings.fromEmail;
+        if (recipientEmail) {
+          await sendEmail({
+            to: recipientEmail,
+            subject: `Nouveau message de ${senderName || 'Visiteur'} - ${type}`,
+            html: `<div style="font-family:Arial;max-width:600px;margin:0 auto;padding:20px"><h2 style="color:#ff7f00">Nouveau message QRBag</h2><p><strong>Type:</strong> ${type}</p>${senderName ? `<p><strong>De:</strong> ${senderName}</p>` : ''}${senderEmail ? `<p><strong>Email:</strong> ${senderEmail}</p>` : ''}${senderPhone ? `<p><strong>Téléphone:</strong> ${senderPhone}</p>` : ''}${subject ? `<p><strong>Sujet:</strong> ${subject}</p>` : ''}<div style="background:#f5f5f5;padding:15px;border-radius:8px;margin-top:15px"><p>${typeof content === 'string' ? content : JSON.stringify(content)}</p></div><hr style="margin-top:20px;border:none;border-top:1px solid #eee"><p style="color:#999;font-size:12px">© QRBag - Tous droits réservés</p></div>`,
+            type: 'new_message',
+          });
+          emailSent = true;
+        }
+      }
+    } catch (emailErr) {
+      console.error('Failed to send email notification:', emailErr);
+      emailError = emailErr instanceof Error ? emailErr.message : 'Erreur email inconnue';
     }
 
-    return NextResponse.json({ success: true, message });
+    return NextResponse.json({ success: true, message, emailSent, emailError });
   } catch (error) {
     console.error('Error creating message:', error);
     return NextResponse.json(
