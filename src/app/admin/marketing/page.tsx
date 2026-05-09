@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -54,7 +54,7 @@ interface Traveler {
   email: string | null;
   registeredAt: string;
   expirationDate: string | null;
-  status: 'active' | 'expired';
+  status: 'active' | 'expired' | 'pending';
   baggages: TravelerBaggage[];
   totalBaggages: number;
 }
@@ -96,6 +96,18 @@ function buildRenewalMessage(name: string, reference: string, expiryDate: string
   return `Bonjour ${name}, votre bagage QRBag (${reference}) arrive à expiration le ${expiryDate}. Souhaitez-vous le renouveler pour 7€ ?`;
 }
 
+function statusBadgeClass(status: string): string {
+  if (status === 'active') return 'bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-400';
+  if (status === 'expired') return 'bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-400';
+  return 'bg-amber-100 dark:bg-amber-900/30 text-amber-800 dark:text-amber-400';
+}
+
+function statusBadgeLabel(status: string): string {
+  if (status === 'active') return 'Actif';
+  if (status === 'expired') return 'Expiré';
+  return 'En attente';
+}
+
 /* ══════════════════════════════════════════════
    Main Page Component
    ══════════════════════════════════════════════ */
@@ -105,7 +117,7 @@ export default function MarketingPage() {
   const [error, setError] = useState('');
 
   // Filters & Search
-  const [filter, setFilter] = useState<'all' | 'active' | 'expired'>('all');
+  const [filter, setFilter] = useState<'all' | 'active' | 'expired' | 'pending'>('all');
   const [search, setSearch] = useState('');
   const [searchInput, setSearchInput] = useState('');
   const [page, setPage] = useState(1);
@@ -127,7 +139,8 @@ export default function MarketingPage() {
       });
       const res = await fetch(`/api/admin/marketing?${params}`);
       if (!res.ok) {
-        throw new Error('Erreur serveur');
+        const errData = await res.json().catch(() => null);
+        throw new Error(errData?.error || `Erreur serveur (${res.status})`);
       }
       const json = await res.json();
       setData(json);
@@ -146,6 +159,9 @@ export default function MarketingPage() {
   useEffect(() => { setPage(1); }, [filter, search]);
 
   /* ─── Export CSV ─── */
+  const statusLabel = (status: string) =>
+    status === 'active' ? 'Actif' : status === 'expired' ? 'Expiré' : 'En attente';
+
   const exportCSV = useCallback(() => {
     if (!data) return;
     const rows = data.travelers.map((t) => [
@@ -153,7 +169,7 @@ export default function MarketingPage() {
       t.email || '',
       t.whatsapp || '',
       formatDate(t.registeredAt),
-      t.status === 'active' ? 'Actif' : 'Expiré',
+      statusLabel(t.status),
       t.expirationDate ? formatDate(t.expirationDate) : 'N/A',
       t.totalBaggages,
       t.baggages.map((b) => b.reference).join('; '),
@@ -301,7 +317,7 @@ export default function MarketingPage() {
           {/* Filter Tabs */}
           <div className="flex items-center gap-2">
             <Filter className="w-4 h-4 text-slate-400 hidden sm:block" />
-            {(['all', 'active', 'expired'] as const).map((f) => (
+            {(['all', 'active', 'expired', 'pending'] as const).map((f) => (
               <button
                 key={f}
                 onClick={() => setFilter(f)}
@@ -311,7 +327,7 @@ export default function MarketingPage() {
                     : 'bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-600'
                 }`}
               >
-                {f === 'all' ? 'Tous' : f === 'active' ? 'Actifs' : 'Expirés'}
+                {f === 'all' ? 'Tous' : f === 'active' ? 'Actifs' : f === 'expired' ? 'Expirés' : 'En attente'}
               </button>
             ))}
           </div>
@@ -491,11 +507,8 @@ function TravelerRow({ traveler, onView }: { traveler: Traveler; onView: () => v
         {formatDate(traveler.registeredAt)}
       </td>
       <td className="px-5 py-4">
-        <Badge className={traveler.status === 'active'
-          ? 'bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-400'
-          : 'bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-400'
-        }>
-          {traveler.status === 'active' ? 'Actif' : 'Expiré'}
+        <Badge className={statusBadgeClass(traveler.status)}>
+          {statusBadgeLabel(traveler.status)}
         </Badge>
       </td>
       <td className="px-5 py-4 text-sm text-slate-600 dark:text-slate-300">
@@ -563,11 +576,8 @@ function TravelerCard({ traveler, onView }: { traveler: Traveler; onView: () => 
           <p className="font-semibold text-slate-800 dark:text-white">{traveler.name}</p>
           <p className="text-xs text-slate-400 mt-0.5">{traveler.totalBaggages} bagage{traveler.totalBaggages > 1 ? 's' : ''}</p>
         </div>
-        <Badge className={traveler.status === 'active'
-          ? 'bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-400'
-          : 'bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-400'
-        }>
-          {traveler.status === 'active' ? 'Actif' : 'Expiré'}
+        <Badge className={statusBadgeClass(traveler.status)}>
+          {statusBadgeLabel(traveler.status)}
         </Badge>
       </div>
 
@@ -674,11 +684,8 @@ function DetailModalContent({ traveler }: { traveler: Traveler }) {
         </div>
         <div>
           <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">Statut</p>
-          <Badge className={traveler.status === 'active'
-            ? 'bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-400'
-            : 'bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-400'
-          }>
-            {traveler.status === 'active' ? 'Actif' : 'Expiré'}
+          <Badge className={statusBadgeClass(traveler.status)}>
+            {statusBadgeLabel(traveler.status)}
           </Badge>
         </div>
         <div>

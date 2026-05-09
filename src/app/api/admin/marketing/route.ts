@@ -46,10 +46,10 @@ interface TravelerBaggage {
 interface Traveler {
   name: string;
   whatsapp: string | null;
-  email: null;
+  email: string | null;
   registeredAt: Date;
   expirationDate: Date | null;
-  status: 'active' | 'expired';
+  status: 'active' | 'expired' | 'pending';
   baggages: TravelerBaggage[];
   totalBaggages: number;
 }
@@ -119,16 +119,29 @@ function groupBaggagesByTraveler(baggages: BaggageWithAgency[]): Traveler[] {
 
     const baggagesWithExpiry = groupBaggages.filter((b) => b.expiresAt);
 
-    // Status: active if ANY baggage is active (status != lost/found/blocked AND expiresAt > now)
+    // Status logic:
+    // - 'active': at least one baggage is active (not lost/found/blocked AND expiresAt > now)
+    // - 'expired': all baggages with expiresAt have expiresAt <= now (no active ones)
+    // - 'pending': NO baggage has expiresAt at all (never activated)
     const activeBaggageList = groupBaggages.filter((b) => isBaggageActive(b));
     const anyActive = activeBaggageList.length > 0;
+    const hasAnyExpiry = baggagesWithExpiry.length > 0;
+
+    let travelerStatus: 'active' | 'expired' | 'pending';
+    if (anyActive) {
+      travelerStatus = 'active';
+    } else if (hasAnyExpiry) {
+      travelerStatus = 'expired';
+    } else {
+      travelerStatus = 'pending';
+    }
 
     // Expiration date display: coherent with status
     let latestExpiry: Date | null = null;
     if (anyActive) {
       // If active: show the SOONEST expiry among active baggages (most relevant for renewal)
       latestExpiry = new Date(Math.min(...activeBaggageList.map((b) => new Date(b.expiresAt!).getTime())));
-    } else if (baggagesWithExpiry.length > 0) {
+    } else if (hasAnyExpiry) {
       // If expired: show the LATEST expiry among all baggages (most recent expiration)
       latestExpiry = new Date(Math.max(...baggagesWithExpiry.map((b) => new Date(b.expiresAt!).getTime())));
     }
@@ -148,10 +161,10 @@ function groupBaggagesByTraveler(baggages: BaggageWithAgency[]): Traveler[] {
     travelers.push({
       name,
       whatsapp,
-      email: null,
+      email: null, // Pas de champ email sur le modèle Baggage
       registeredAt: earliestCreated,
       expirationDate: latestExpiry ? latestExpiry.toISOString() : null,
-      status: anyActive ? 'active' : 'expired',
+      status: travelerStatus,
       baggages: baggageSummaries,
       totalBaggages: baggageSummaries.length,
     });
@@ -224,6 +237,8 @@ export async function GET(request: Request) {
       filteredTravelers = allTravelers.filter((t) => t.status === 'active');
     } else if (filter === 'expired') {
       filteredTravelers = allTravelers.filter((t) => t.status === 'expired');
+    } else if (filter === 'pending') {
+      filteredTravelers = allTravelers.filter((t) => t.status === 'pending');
     }
 
     // Step 4: Apply search
