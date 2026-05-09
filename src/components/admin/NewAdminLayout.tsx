@@ -86,7 +86,7 @@ export default function AdminLayout({ children, title, subtitle, unreadMessages 
     { label: "Trouvailles", icon: <Scan className="w-5 h-5" />, href: "/admin/trouvailles" },
     { label: "CONFIGURATION", icon: null, isCategory: true },
     { label: "Paramètres", icon: <Settings className="w-5 h-5" />, href: "/admin/parametres" },
-    { label: "Fonctionnalités", icon: <Globe className="w-5 h-5" />, href: "/admin/parametres/fonctionnalites" },
+    { label: "Clés et API", icon: <Globe className="w-5 h-5" />, href: "/admin/parametres/fonctionnalites" },
   ];
 
   return (

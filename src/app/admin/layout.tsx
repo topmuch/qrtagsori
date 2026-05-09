@@ -137,7 +137,7 @@ function Sidebar({
     { label: "Configuration Email", icon: <Mail className="w-5 h-5" />, href: "/admin/parametres?tab=email", permission: PERMISSIONS.MANAGE_SETTINGS, roles: ['superadmin', 'admin'] },
 
     // Features - superadmin and admin only
-    { label: "Fonctionnalités", icon: <Globe className="w-5 h-5" />, href: "/admin/parametres/fonctionnalites", permission: PERMISSIONS.MANAGE_FEATURES, roles: ['superadmin', 'admin'] },
+    { label: "Clés et API", icon: <Globe className="w-5 h-5" />, href: "/admin/parametres/fonctionnalites", permission: PERMISSIONS.MANAGE_FEATURES, roles: ['superadmin', 'admin'] },
   ], [unreadMessages]);
 
   // Filter menu items based on permissions

@@ -646,8 +646,8 @@ export default function FonctionnalitesPage() {
       {/* Page Header */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
         <div>
-          <h1 className="text-2xl font-bold text-slate-800 dark:text-white">APIs & Fonctionnalités</h1>
-          <p className="text-slate-500 dark:text-slate-400 mt-1">Activez ou désactivez les fonctionnalités du système</p>
+          <h1 className="text-2xl font-bold text-slate-800 dark:text-white">Clés et API</h1>
+          <p className="text-slate-500 dark:text-slate-400 mt-1">Configurez les clés API et activez les fonctionnalités</p>
         </div>
         <Button
           onClick={() => { fetchFeatures(); fetchConfigStatus(); }}
