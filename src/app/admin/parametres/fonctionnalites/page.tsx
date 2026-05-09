@@ -244,14 +244,14 @@ const CONFIG_FIELDS: Record<string, {
         key: 'groq_model_chat',
         label: 'Modèle Chat',
         type: 'text',
-        placeholder: 'llama3-8b-8192',
+        placeholder: 'llama-3.3-70b-versatile',
         help: 'Modèle utilisé pour les conversations et résumés'
       },
       {
         key: 'groq_model_analysis',
         label: 'Modèle Analyse',
         type: 'text',
-        placeholder: 'llama3-8b-8192',
+        placeholder: 'llama-3.1-8b-instant',
         help: 'Modèle utilisé pour l\'analyse de bagages et la détection de fraude'
       },
       {

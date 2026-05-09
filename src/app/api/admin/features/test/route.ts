@@ -176,7 +176,7 @@ async function testGroqAPI() {
           'Authorization': `Bearer ${apiKey}`,
         },
         body: JSON.stringify({
-          model: 'llama3-8b-8192',
+          model: 'llama-3.3-70b-versatile',
           messages: [{ role: 'user', content: 'Say "OK" in one word.' }],
           max_tokens: 5,
           temperature: 0,

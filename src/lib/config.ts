@@ -37,10 +37,10 @@ export const GROQ_BASE_URL = 'https://api.groq.com/openai/v1/chat/completions';
 export const GROQ_API_KEY = process.env.GROQ_API_KEY || '';
 
 export const GROQ_MODEL_CHAT =
-  process.env.GROQ_MODEL_CHAT || 'llama3-8b-8192';
+  process.env.GROQ_MODEL_CHAT || 'llama-3.3-70b-versatile';
 
 export const GROQ_MODEL_ANALYSIS =
-  process.env.GROQ_MODEL_ANALYSIS || 'llama3-8b-8192';
+  process.env.GROQ_MODEL_ANALYSIS || 'llama-3.1-8b-instant';
 
 export const GROQ_TIMEOUT_MS =
   parseInt(process.env.GROQ_TIMEOUT_MS || '30000', 10);
