@@ -92,6 +92,7 @@ export async function GET(
       status: isDeclaredLost ? 'lost' : 'active',
       theme,
       type: baggage.type,
+      // TRANSPORT-FEATURE: Include transportMode + conditional fields
       baggage: {
         reference: baggage.reference,
         type: baggage.type,
@@ -99,8 +100,15 @@ export async function GET(
         baggageIndex: baggage.baggageIndex,
         baggageType: baggage.baggageType,
         status: baggage.status,
+        transportMode: baggage.transportMode || 'flight',
         airlineName: baggage.airlineName,
         flightNumber: baggage.flightNumber,
+        trainCompany: baggage.trainCompany,
+        trainNumber: baggage.trainNumber,
+        shipName: baggage.shipName,
+        shipCabin: baggage.shipCabin,
+        busCompany: baggage.busCompany,
+        busLineNumber: baggage.busLineNumber,
         destination: baggage.destination,
         agency: baggage.agency?.name || null,
         whatsappOwner: baggage.whatsappOwner || null,

@@ -14,6 +14,14 @@ const activateSchema = z.object({
   destination: z.string().optional(),
   departureDate: z.string().date().optional(),
   departureTime: z.string().optional(),
+  // TRANSPORT-FEATURE: Multi-transport mode support
+  transportMode: z.enum(['flight', 'train', 'boat', 'bus']).optional(),
+  trainCompany: z.string().optional(),
+  trainNumber: z.string().optional(),
+  shipName: z.string().optional(),
+  shipCabin: z.string().optional(),
+  busCompany: z.string().optional(),
+  busLineNumber: z.string().optional(),
 });
 
 export async function POST(request: NextRequest) {
@@ -59,6 +67,14 @@ export async function POST(request: NextRequest) {
         destination: validatedData.destination || null,
         departureDate: validatedData.departureDate ? new Date(validatedData.departureDate + 'T00:00:00') : null,
         departureTime: validatedData.departureTime || null,
+        // TRANSPORT-FEATURE: Store transport mode + conditional fields
+        transportMode: validatedData.transportMode || 'flight',
+        trainCompany: validatedData.trainCompany || null,
+        trainNumber: validatedData.trainNumber || null,
+        shipName: validatedData.shipName || null,
+        shipCabin: validatedData.shipCabin || null,
+        busCompany: validatedData.busCompany || null,
+        busLineNumber: validatedData.busLineNumber || null,
         status: 'active',
         expiresAt,
         createdAt: new Date(),
@@ -91,6 +107,14 @@ export async function POST(request: NextRequest) {
               airlineName: validatedData.airlineName || null,
               flightNumber: validatedData.flightNumber || null,
               destination: validatedData.destination || null,
+              // TRANSPORT-FEATURE: Force flight for hajj group, null out non-flight fields
+              transportMode: 'flight',
+              trainCompany: null,
+              trainNumber: null,
+              shipName: null,
+              shipCabin: null,
+              busCompany: null,
+              busLineNumber: null,
               status: 'active',
               expiresAt,
               createdAt: new Date(),

@@ -22,6 +22,10 @@ import { useTranslation } from '@/hooks/useTranslation';
 import { Language, LANGUAGE_NAMES } from '@/lib/i18n';
 import dynamic from 'next/dynamic';
 
+// TRANSPORT-FEATURE: Multi-transport support
+import { safeTransportMode, getTransportIcon, getTransportBlockHeader } from '@/lib/transport';
+import type { TransportMode } from '@/lib/transport';
+
 // AI-FEATURE: Lazy-load ChatbotWidget (Feature #1) — doesn't block page render
 const ChatbotWidget = dynamic(() => import('@/components/finder/ChatbotWidget'), {
   ssr: false,
@@ -54,6 +58,14 @@ interface BaggageData {
     createdAt?: string | null;
     departureDate?: string | null;
     departureTime?: string | null;
+    // TRANSPORT-FEATURE: Transport mode + conditional fields
+    transportMode?: string;
+    trainCompany?: string | null;
+    trainNumber?: string | null;
+    shipName?: string | null;
+    shipCabin?: string | null;
+    busCompany?: string | null;
+    busLineNumber?: string | null;
   };
 }
 
@@ -565,7 +577,8 @@ export default function ScanPage() {
               ? 'bg-red-600 text-white shadow-red-500/30 animate-pulse'
               : 'bg-orange-500 text-white shadow-orange-500/30 hover:scale-105'
           }`}>
-            {isDeclaredLost ? `🚨 ${t('finder.lost_badge')}` : `${t('finder.success_badge')} ✈️`}
+            {/* TRANSPORT-FEATURE: Dynamic transport icon in badge */}
+            {isDeclaredLost ? `🚨 ${t('finder.lost_badge')}` : `${t('finder.success_badge')} ${getTransportIcon(safeTransportMode(baggage?.transportMode))}`}
           </span>
           <p className="mt-3 text-blue-900 text-base md:text-lg leading-relaxed max-w-md mx-auto">
             {isDeclaredLost
@@ -638,27 +651,32 @@ export default function ScanPage() {
           </div>
         )}
 
-        {/* ═══ 🟦 BLOC 2 : DÉTAILS DU VOYAGE ═══ */}
-        {baggage && (
+        {/* ═══ 🟦 BLOC 2 : DÉTAILS DU VOYAGE (TRANSPORT-FEATURE: conditional) ═══ */}
+        {baggage && (() => {
+          const mode = safeTransportMode(baggage.transportMode) as TransportMode;
+          const modeIcon = getTransportIcon(mode);
+          const blockHeader = getTransportBlockHeader(mode, lang);
+
+          return (
           <div className="w-full bg-[#0A192F] rounded-2xl p-5 md:p-6 mb-5 shadow-xl shadow-blue-900/20">
             <h2 className="text-xs uppercase tracking-widest text-white font-bold mb-4 flex items-center gap-2">
-              <span>✈️</span> {t('finder.travel_details')}
+              <span>{modeIcon}</span> {blockHeader}
             </h2>
 
-            {/* Flight Info Encart — Airline + Flight Number */}
-            {(baggage.airlineName || baggage.flightNumber) && (
+            {/* TRANSPORT-FEATURE: Flight info */}
+            {mode === 'flight' && (baggage.airlineName || baggage.flightNumber) && (
               <DashedEncart>
                 <div className="flex items-center justify-between">
                   <div className="flex-1">
                     {baggage.airlineName && (
                       <div className="mb-2">
-                        <p className="text-sm text-white/80 font-medium">{t('finder.airline')}</p>
+                        <p className="text-sm text-white/80 font-medium">{t('transport.airline')}</p>
                         <p className="text-lg font-bold text-white">{baggage.airlineName}</p>
                       </div>
                     )}
                     {baggage.flightNumber && (
                       <div>
-                        <p className="text-sm text-white/80 font-medium">{t('finder.flightNum')}</p>
+                        <p className="text-sm text-white/80 font-medium">{t('transport.flight_number')}</p>
                         <p className="text-2xl font-bold text-white font-mono tracking-widest">{baggage.flightNumber}</p>
                       </div>
                     )}
@@ -670,13 +688,88 @@ export default function ScanPage() {
               </DashedEncart>
             )}
 
+            {/* TRANSPORT-FEATURE: Train info */}
+            {mode === 'train' && (baggage.trainCompany || baggage.trainNumber) && (
+              <DashedEncart>
+                <div className="flex items-center justify-between">
+                  <div className="flex-1">
+                    {baggage.trainCompany && (
+                      <div className="mb-2">
+                        <p className="text-sm text-white/80 font-medium">{t('transport.train_company')}</p>
+                        <p className="text-lg font-bold text-white">{baggage.trainCompany}</p>
+                      </div>
+                    )}
+                    {baggage.trainNumber && (
+                      <div>
+                        <p className="text-sm text-white/80 font-medium">{t('transport.train_number')}</p>
+                        <p className="text-2xl font-bold text-white font-mono tracking-widest">{baggage.trainNumber}</p>
+                      </div>
+                    )}
+                  </div>
+                  <div className="h-12 w-12 rounded-full bg-white/10 flex items-center justify-center ml-4 flex-shrink-0">
+                    <span className="text-3xl">🚆</span>
+                  </div>
+                </div>
+              </DashedEncart>
+            )}
+
+            {/* TRANSPORT-FEATURE: Boat info */}
+            {mode === 'boat' && (baggage.shipName || baggage.shipCabin) && (
+              <DashedEncart>
+                <div className="flex items-center justify-between">
+                  <div className="flex-1">
+                    {baggage.shipName && (
+                      <div className="mb-2">
+                        <p className="text-sm text-white/80 font-medium">{t('transport.ship_name')}</p>
+                        <p className="text-lg font-bold text-white">{baggage.shipName}</p>
+                      </div>
+                    )}
+                    {baggage.shipCabin && (
+                      <div>
+                        <p className="text-sm text-white/80 font-medium">{t('transport.ship_cabin')}</p>
+                        <p className="text-lg font-bold text-white">{baggage.shipCabin}</p>
+                      </div>
+                    )}
+                  </div>
+                  <div className="h-12 w-12 rounded-full bg-white/10 flex items-center justify-center ml-4 flex-shrink-0">
+                    <span className="text-3xl">🚢</span>
+                  </div>
+                </div>
+              </DashedEncart>
+            )}
+
+            {/* TRANSPORT-FEATURE: Bus info */}
+            {mode === 'bus' && (baggage.busCompany || baggage.busLineNumber) && (
+              <DashedEncart>
+                <div className="flex items-center justify-between">
+                  <div className="flex-1">
+                    {baggage.busCompany && (
+                      <div className="mb-2">
+                        <p className="text-sm text-white/80 font-medium">{t('transport.bus_company')}</p>
+                        <p className="text-lg font-bold text-white">{baggage.busCompany}</p>
+                      </div>
+                    )}
+                    {baggage.busLineNumber && (
+                      <div>
+                        <p className="text-sm text-white/80 font-medium">{t('transport.bus_line')}</p>
+                        <p className="text-lg font-bold text-white">{baggage.busLineNumber}</p>
+                      </div>
+                    )}
+                  </div>
+                  <div className="h-12 w-12 rounded-full bg-white/10 flex items-center justify-center ml-4 flex-shrink-0">
+                    <span className="text-3xl">🚌</span>
+                  </div>
+                </div>
+              </DashedEncart>
+            )}
+
             {/* Destination */}
             {baggage.destination && (
               <DashedEncart>
                 <div className="flex items-center gap-3">
                   <span className="text-xl">📍</span>
                   <div>
-                    <p className="text-sm text-white/80 font-medium">{t('finder.destination')}</p>
+                    <p className="text-sm text-white/80 font-medium">{t('transport.common_destination')}</p>
                     <p className="text-lg font-bold text-white">{baggage.destination}</p>
                   </div>
                 </div>
@@ -689,7 +782,7 @@ export default function ScanPage() {
                 <div className="flex items-center gap-3">
                   <span className="text-xl">📅</span>
                   <div>
-                    <p className="text-sm text-white/80 font-medium">{baggage.departureDate ? t('finder.departureDate') : t('finder.activation_date')}</p>
+                    <p className="text-sm text-white/80 font-medium">{t('transport.common_departure_date')}</p>
                     <p className="text-lg font-bold text-white">
                       {formatDate(baggage.departureDate || baggage.createdAt)}{baggage.departureTime ? ` — ${baggage.departureTime}` : ''}
                     </p>
@@ -698,7 +791,8 @@ export default function ScanPage() {
               </DashedEncart>
             )}
           </div>
-        )}
+          );
+        })()}
 
         {/* ═══ 🟠 BOUTON ACTION — GPS ═══ */}
         {!showForm && (

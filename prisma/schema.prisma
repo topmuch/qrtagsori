@@ -84,8 +84,27 @@ model Baggage {
   baggageIndex      Int       @default(1) // 1, 2, 3 (order: 1 = cabine)
   baggageType       String    @default("cabine") // "cabine" or "soute"
   status            String    @default("pending_activation") // pending_activation, active, scanned, lost, found, blocked
+
+  // TRANSPORT-FEATURE: Multi-context transport mode (flight/train/boat/bus)
+  transportMode     String    @default("flight") // "flight" | "train" | "boat" | "bus"
+
+  // Flight-specific fields (transportMode = "flight")
   airlineName       String?   // ex: "Air France", "Royal Air Maroc"
   flightNumber      String?
+
+  // Train-specific fields (transportMode = "train")
+  trainCompany      String?   // ex: "SNCF", "Renfe", "ONCF"
+  trainNumber       String?   // ex: "TGV 6123"
+
+  // Boat-specific fields (transportMode = "boat")
+  shipName          String?   // ex: "MSC Fantasia"
+  shipCabin         String?   // ex: "Pont 4, Cabine 312"
+
+  // Bus-specific fields (transportMode = "bus")
+  busCompany        String?   // ex: "CTM", "Supratours"
+  busLineNumber     String?   // ex: "Ligne 45", "Casablanca → Marrakech"
+
+  // Universal fields (all modes)
   destination       String?
   departureDate     DateTime? // Date de départ saisie lors de l'activation
   departureTime     String?   // Heure de départ saisie lors de l'activation (ex: "08:30")

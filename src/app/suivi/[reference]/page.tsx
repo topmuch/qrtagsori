@@ -21,6 +21,9 @@ import { Language, LANGUAGE_NAMES } from '@/lib/i18n';
 import type { ScanContext } from '@/lib/scan-context';
 import { CONTEXT_ICONS, CONTEXT_COLORS } from '@/lib/scan-context';
 import { generatePreFilledMessage, buildWhatsAppUrl } from '@/lib/whatsapp-message';
+// TRANSPORT-FEATURE: Multi-transport support
+import { safeTransportMode, getTransportIcon, getTransportBlockHeader } from '@/lib/transport';
+import type { TransportMode } from '@/lib/transport';
 
 // ═══════════════════════════════════════════════════════
 //  TYPES
@@ -59,6 +62,14 @@ interface BaggageInfo {
   destination: string | null;
   departureDate: string | null;
   departureTime: string | null;
+  // TRANSPORT-FEATURE: Transport mode + conditional fields
+  transportMode: string;
+  trainCompany: string | null;
+  trainNumber: string | null;
+  shipName: string | null;
+  shipCabin: string | null;
+  busCompany: string | null;
+  busLineNumber: string | null;
   agency: string | null;
   createdAt: string | null;
   lastScanDate: string | null;
@@ -461,7 +472,7 @@ export default function SuiviPage() {
               ? `🚨 ${t('tracking.badge_lost')}`
               : isFound
               ? `✅ ${t('tracking.badge_found')}`
-              : `${t('tracking.badge_active')} ✈️`}
+              : `${t('tracking.badge_active')} ${getTransportIcon(safeTransportMode(baggage.transportMode))}`}
           </span>
           <p className="mt-3 text-blue-900 text-base md:text-lg leading-relaxed max-w-md mx-auto">
             {isDeclaredLost
@@ -513,30 +524,115 @@ export default function SuiviPage() {
             </div>
           </DashedEncart>
 
-          {/* Airline + Flight */}
-          {(baggage.airlineName || baggage.flightNumber) && (
-            <DashedEncart>
-              <div className="flex items-center justify-between">
-                <div className="flex-1">
-                  {baggage.airlineName && (
-                    <div className="mb-2">
-                      <p className="text-sm text-white/80 font-medium">{t('finder.airline')}</p>
-                      <p className="text-lg font-bold text-white">{baggage.airlineName}</p>
+          {/* TRANSPORT-FEATURE: Conditional transport info (flight/train/boat/bus) */}
+          {(() => {
+            const mode = safeTransportMode(baggage.transportMode);
+            // Flight info
+            if (mode === 'flight' && (baggage.airlineName || baggage.flightNumber)) {
+              return (
+                <DashedEncart>
+                  <div className="flex items-center justify-between">
+                    <div className="flex-1">
+                      {baggage.airlineName && (
+                        <div className="mb-2">
+                          <p className="text-sm text-white/80 font-medium">{t('transport.airline')}</p>
+                          <p className="text-lg font-bold text-white">{baggage.airlineName}</p>
+                        </div>
+                      )}
+                      {baggage.flightNumber && (
+                        <div>
+                          <p className="text-sm text-white/80 font-medium">{t('transport.flight_number')}</p>
+                          <p className="text-2xl font-bold text-white font-mono tracking-widest">{baggage.flightNumber}</p>
+                        </div>
+                      )}
                     </div>
-                  )}
-                  {baggage.flightNumber && (
-                    <div>
-                      <p className="text-sm text-white/80 font-medium">{t('finder.flightNum')}</p>
-                      <p className="text-2xl font-bold text-white font-mono tracking-widest">{baggage.flightNumber}</p>
+                    <div className="h-12 w-12 rounded-full bg-white/10 flex items-center justify-center ml-4 flex-shrink-0">
+                      <Plane className="w-7 h-7 text-orange-400" />
                     </div>
-                  )}
-                </div>
-                <div className="h-12 w-12 rounded-full bg-white/10 flex items-center justify-center ml-4 flex-shrink-0">
-                  <Plane className="w-7 h-7 text-orange-400" />
-                </div>
-              </div>
-            </DashedEncart>
-          )}
+                  </div>
+                </DashedEncart>
+              );
+            }
+            // Train info
+            if (mode === 'train' && (baggage.trainCompany || baggage.trainNumber)) {
+              return (
+                <DashedEncart>
+                  <div className="flex items-center justify-between">
+                    <div className="flex-1">
+                      {baggage.trainCompany && (
+                        <div className="mb-2">
+                          <p className="text-sm text-white/80 font-medium">{t('transport.train_company')}</p>
+                          <p className="text-lg font-bold text-white">{baggage.trainCompany}</p>
+                        </div>
+                      )}
+                      {baggage.trainNumber && (
+                        <div>
+                          <p className="text-sm text-white/80 font-medium">{t('transport.train_number')}</p>
+                          <p className="text-2xl font-bold text-white font-mono tracking-widest">{baggage.trainNumber}</p>
+                        </div>
+                      )}
+                    </div>
+                    <div className="h-12 w-12 rounded-full bg-white/10 flex items-center justify-center ml-4 flex-shrink-0">
+                      <span className="text-3xl">🚆</span>
+                    </div>
+                  </div>
+                </DashedEncart>
+              );
+            }
+            // Boat info
+            if (mode === 'boat' && (baggage.shipName || baggage.shipCabin)) {
+              return (
+                <DashedEncart>
+                  <div className="flex items-center justify-between">
+                    <div className="flex-1">
+                      {baggage.shipName && (
+                        <div className="mb-2">
+                          <p className="text-sm text-white/80 font-medium">{t('transport.ship_name')}</p>
+                          <p className="text-lg font-bold text-white">{baggage.shipName}</p>
+                        </div>
+                      )}
+                      {baggage.shipCabin && (
+                        <div>
+                          <p className="text-sm text-white/80 font-medium">{t('transport.ship_cabin')}</p>
+                          <p className="text-lg font-bold text-white">{baggage.shipCabin}</p>
+                        </div>
+                      )}
+                    </div>
+                    <div className="h-12 w-12 rounded-full bg-white/10 flex items-center justify-center ml-4 flex-shrink-0">
+                      <span className="text-3xl">🚢</span>
+                    </div>
+                  </div>
+                </DashedEncart>
+              );
+            }
+            // Bus info
+            if (mode === 'bus' && (baggage.busCompany || baggage.busLineNumber)) {
+              return (
+                <DashedEncart>
+                  <div className="flex items-center justify-between">
+                    <div className="flex-1">
+                      {baggage.busCompany && (
+                        <div className="mb-2">
+                          <p className="text-sm text-white/80 font-medium">{t('transport.bus_company')}</p>
+                          <p className="text-lg font-bold text-white">{baggage.busCompany}</p>
+                        </div>
+                      )}
+                      {baggage.busLineNumber && (
+                        <div>
+                          <p className="text-sm text-white/80 font-medium">{t('transport.bus_line')}</p>
+                          <p className="text-lg font-bold text-white">{baggage.busLineNumber}</p>
+                        </div>
+                      )}
+                    </div>
+                    <div className="h-12 w-12 rounded-full bg-white/10 flex items-center justify-center ml-4 flex-shrink-0">
+                      <span className="text-3xl">🚌</span>
+                    </div>
+                  </div>
+                </DashedEncart>
+              );
+            }
+            return null;
+          })()}
 
           {/* Destination */}
           {baggage.destination && (
@@ -544,7 +640,7 @@ export default function SuiviPage() {
               <div className="flex items-center gap-3">
                 <span className="text-xl">📍</span>
                 <div>
-                  <p className="text-sm text-white/80 font-medium">{t('finder.destination')}</p>
+                  <p className="text-sm text-white/80 font-medium">{t('transport.common_destination')}</p>
                   <p className="text-lg font-bold text-white">{baggage.destination}</p>
                 </div>
               </div>
@@ -557,7 +653,7 @@ export default function SuiviPage() {
               <div className="flex items-center gap-3">
                 <span className="text-xl">📅</span>
                 <div>
-                  <p className="text-sm text-white/80 font-medium">{t('finder.departureDate')}</p>
+                  <p className="text-sm text-white/80 font-medium">{t('transport.common_departure_date')}</p>
                   <p className="text-lg font-bold text-white">
                     {formatDate(baggage.departureDate || baggage.createdAt)}{baggage.departureTime ? ` — ${baggage.departureTime}` : ''}
                   </p>

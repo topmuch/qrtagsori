@@ -133,6 +133,7 @@ export async function GET(
 
     const response = {
       status: isExpired ? 'expired' : isDeclaredLost ? 'lost' : 'active',
+      // TRANSPORT-FEATURE: Include transportMode + conditional fields
       baggage: {
         reference: baggage.reference,
         type: baggage.type,
@@ -140,8 +141,15 @@ export async function GET(
         baggageIndex: baggage.baggageIndex,
         baggageType: baggage.baggageType,
         status: baggage.status,
+        transportMode: baggage.transportMode || 'flight',
         airlineName: baggage.airlineName || null,
         flightNumber: baggage.flightNumber || null,
+        trainCompany: baggage.trainCompany || null,
+        trainNumber: baggage.trainNumber || null,
+        shipName: baggage.shipName || null,
+        shipCabin: baggage.shipCabin || null,
+        busCompany: baggage.busCompany || null,
+        busLineNumber: baggage.busLineNumber || null,
         destination: baggage.destination || null,
         departureDate: baggage.departureDate?.toISOString() || null,
         departureTime: baggage.departureTime || null,

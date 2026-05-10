@@ -39,6 +39,19 @@ interface BaggageData {
   lastScanDate: string | null;
   lastLocation: string | null;
   createdAt: string;
+  // TRANSPORT-FEATURE: Transport mode + conditional fields
+  transportMode?: string;
+  airlineName?: string | null;
+  flightNumber?: string | null;
+  trainCompany?: string | null;
+  trainNumber?: string | null;
+  shipName?: string | null;
+  shipCabin?: string | null;
+  busCompany?: string | null;
+  busLineNumber?: string | null;
+  destination?: string | null;
+  departureDate?: string | null;
+  departureTime?: string | null;
 }
 
 export default function AdminBaggageDetailPage() {
@@ -250,6 +263,65 @@ export default function AdminBaggageDetailPage() {
               </div>
             </div>
           </div>
+
+          {/* TRANSPORT-FEATURE: Transport mode info */}
+          {baggage.transportMode && (
+            <div className="space-y-4">
+              <h3 className="text-lg font-semibold text-white flex items-center gap-2">
+                <MapPin className="w-5 h-5 text-[#b8860b]" />
+                Informations de transport
+              </h3>
+              <div className="grid md:grid-cols-3 gap-4">
+                <div className="bg-[#111827] rounded-lg p-4">
+                  <p className="text-[#a0a8b8] text-sm">Mode</p>
+                  <p className="text-white font-medium mt-1">
+                    {(() => {
+                      const icons: Record<string, string> = { flight: '✈️ Avion', train: '🚆 Train', boat: '🚢 Bateau', bus: '🚌 Bus' };
+                      return icons[baggage.transportMode || 'flight'] || '✈️ Avion';
+                    })()}
+                  </p>
+                </div>
+                {baggage.transportMode === 'flight' && (baggage.airlineName || baggage.flightNumber) && (
+                  <div className="bg-[#111827] rounded-lg p-4">
+                    <p className="text-[#a0a8b8] text-sm">Vol</p>
+                    <p className="text-white font-medium mt-1">
+                      {baggage.airlineName}{baggage.flightNumber ? ` — ${baggage.flightNumber}` : ''}
+                    </p>
+                  </div>
+                )}
+                {baggage.transportMode === 'train' && (baggage.trainCompany || baggage.trainNumber) && (
+                  <div className="bg-[#111827] rounded-lg p-4">
+                    <p className="text-[#a0a8b8] text-sm">Train</p>
+                    <p className="text-white font-medium mt-1">
+                      {baggage.trainCompany}{baggage.trainNumber ? ` — ${baggage.trainNumber}` : ''}
+                    </p>
+                  </div>
+                )}
+                {baggage.transportMode === 'boat' && (baggage.shipName || baggage.shipCabin) && (
+                  <div className="bg-[#111827] rounded-lg p-4">
+                    <p className="text-[#a0a8b8] text-sm">Navire</p>
+                    <p className="text-white font-medium mt-1">
+                      {baggage.shipName}{baggage.shipCabin ? ` — ${baggage.shipCabin}` : ''}
+                    </p>
+                  </div>
+                )}
+                {baggage.transportMode === 'bus' && (baggage.busCompany || baggage.busLineNumber) && (
+                  <div className="bg-[#111827] rounded-lg p-4">
+                    <p className="text-[#a0a8b8] text-sm">Bus</p>
+                    <p className="text-white font-medium mt-1">
+                      {baggage.busCompany}{baggage.busLineNumber ? ` — ${baggage.busLineNumber}` : ''}
+                    </p>
+                  </div>
+                )}
+                {baggage.destination && (
+                  <div className="bg-[#111827] rounded-lg p-4">
+                    <p className="text-[#a0a8b8] text-sm">Destination</p>
+                    <p className="text-white font-medium mt-1">{baggage.destination}</p>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
 
           {/* Location */}
           {baggage.lastLocation && (

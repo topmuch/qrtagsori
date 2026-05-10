@@ -18,6 +18,11 @@ interface ActivationData {
   type: string;
   activatedAt: string;
   expiresAt?: string;
+  // TRANSPORT-FEATURE: Transport mode + conditional fields
+  transportMode?: string;
+  trainNumber?: string;
+  shipName?: string;
+  busLineNumber?: string;
 }
 
 function SuccessContent() {
@@ -161,7 +166,15 @@ function SuccessContent() {
         ctx.textAlign = 'left';
         const details = [
           `📱 WhatsApp: ${activationData.whatsapp}`,
-          activationData.flightNumber ? `✈️ Vol: ${activationData.flightNumber}` : null,
+          // TRANSPORT-FEATURE: Dynamic transport detail in download proof
+          (() => {
+            const mode = activationData.transportMode || 'flight';
+            if (mode === 'flight' && activationData.flightNumber) return `✈️ Vol: ${activationData.flightNumber}`;
+            if (mode === 'train' && activationData.trainNumber) return `🚆 Train: ${activationData.trainNumber}`;
+            if (mode === 'boat' && activationData.shipName) return `🚢 Navire: ${activationData.shipName}`;
+            if (mode === 'bus' && activationData.busLineNumber) return `🚌 Bus: ${activationData.busLineNumber}`;
+            return null;
+          })(),
           activationData.destination ? `📍 Destination: ${activationData.destination}` : null,
           `📅 Activé le: ${formatDate(activationData.activatedAt)}`,
           `⏰ Expire le: ${formatExpiration(activationData.expiresAt)}`,
@@ -355,6 +368,7 @@ function SuccessContent() {
                 </div>
               </div>
 
+              {/* TRANSPORT-FEATURE: Destination info with dynamic transport context */}
               {activationData.destination && (
                 <div className="flex items-center gap-3">
                   <MapPin className="w-5 h-5 text-white flex-shrink-0" />
@@ -363,7 +377,12 @@ function SuccessContent() {
                       {activationData.destination}
                     </p>
                     <p className="text-white/60 text-sm">
-                      {activationData.flightNumber || 'Destination'}
+                      {(() => {
+                        const mode = activationData.transportMode || 'flight';
+                        const icons: Record<string, string> = { flight: '✈️', train: '🚆', boat: '🚢', bus: '🚌' };
+                        const labels: Record<string, string> = { flight: 'Avion', train: 'Train', boat: 'Bateau', bus: 'Bus' };
+                        return `${icons[mode] || '✈️'} ${labels[mode] || 'Avion'}`;
+                      })()}
                     </p>
                   </div>
                 </div>

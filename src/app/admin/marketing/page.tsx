@@ -43,7 +43,12 @@ interface TravelerBaggage {
   baggageType: string;
   status: string;
   expiresAt: string | null;
+  // TRANSPORT-FEATURE: Transport mode + conditional fields
+  transportMode?: string;
   flightNumber: string | null;
+  trainNumber?: string | null;
+  shipName?: string | null;
+  busLineNumber?: string | null;
   destination: string | null;
   agencyName: string | null;
 }
@@ -711,7 +716,20 @@ function DetailModalContent({ traveler }: { traveler: Traveler }) {
                 </Badge>
               </div>
               <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-slate-500 dark:text-slate-400">
-                {b.flightNumber && (
+                {/* TRANSPORT-FEATURE: Dynamic transport info */}
+                {b.transportMode === 'flight' && b.flightNumber && (
+                  <span className="flex items-center gap-1"><Plane className="w-3 h-3" />{b.flightNumber}</span>
+                )}
+                {b.transportMode === 'train' && b.trainNumber && (
+                  <span className="flex items-center gap-1">🚆 {b.trainNumber}</span>
+                )}
+                {b.transportMode === 'boat' && b.shipName && (
+                  <span className="flex items-center gap-1">🚢 {b.shipName}</span>
+                )}
+                {b.transportMode === 'bus' && b.busLineNumber && (
+                  <span className="flex items-center gap-1">🚌 {b.busLineNumber}</span>
+                )}
+                {!b.transportMode && b.flightNumber && (
                   <span className="flex items-center gap-1"><Plane className="w-3 h-3" />{b.flightNumber}</span>
                 )}
                 {b.destination && (
