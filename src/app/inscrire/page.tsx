@@ -30,6 +30,7 @@ function InscrireContent() {
     reference: '',
     firstName: '',
     lastName: '',
+    airlineName: '',
     flightNumber: '',
     destination: '',
     departureDate: '',
@@ -57,6 +58,7 @@ function InscrireContent() {
           travelerFirstName: formData.firstName,
           travelerLastName: formData.lastName,
           whatsappOwner: formData.whatsapp,
+          airlineName: formData.airlineName,
           flightNumber: formData.flightNumber,
           destination: formData.destination,
           departureDate: formData.departureDate || undefined,
@@ -72,6 +74,7 @@ function InscrireContent() {
           firstName: formData.firstName,
           lastName: formData.lastName,
           whatsapp: formData.whatsapp,
+          airlineName: formData.airlineName,
           flightNumber: formData.flightNumber,
           destination: formData.destination,
           type: 'voyageur',
@@ -240,6 +243,20 @@ function InscrireContent() {
                         required
                       />
                     </div>
+                  </div>
+
+                  {/* Airline Name - Full Width */}
+                  <div className="space-y-2">
+                    <Label htmlFor="airlineName" className="text-white text-sm md:text-base font-medium">
+                      Compagnie aérienne
+                    </Label>
+                    <Input
+                      id="airlineName"
+                      placeholder="Ex: Air France, Royal Air Maroc, Turkish Airlines"
+                      value={formData.airlineName}
+                      onChange={(e) => setFormData({ ...formData, airlineName: e.target.value })}
+                      className="bg-white/10 border border-white/20 text-white placeholder:text-white/50 focus:ring-2 focus:ring-orange-400 focus:border-transparent min-h-[48px] text-base md:text-lg"
+                    />
                   </div>
 
                   {/* Flight Info - Responsive Grid */}

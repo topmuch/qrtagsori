@@ -20,6 +20,7 @@ function HajjActivateContent() {
     reference: '',
     firstName: '',
     lastName: '',
+    airlineName: '',
     flightNumber: '',
     destination: '',
     departureDate: '',
@@ -47,6 +48,7 @@ function HajjActivateContent() {
           travelerFirstName: formData.firstName,
           travelerLastName: formData.lastName,
           whatsappOwner: formData.whatsapp,
+          airlineName: formData.airlineName,
           flightNumber: formData.flightNumber,
           destination: formData.destination,
           departureDate: formData.departureDate || undefined,
@@ -62,6 +64,9 @@ function HajjActivateContent() {
           firstName: formData.firstName,
           lastName: formData.lastName,
           whatsapp: formData.whatsapp,
+          airlineName: formData.airlineName,
+          flightNumber: formData.flightNumber,
+          destination: formData.destination,
           type: 'hajj',
           activatedAt: new Date().toISOString(),
           expiresAt: data.baggage?.expiresAt,
@@ -188,6 +193,20 @@ function HajjActivateContent() {
                     required
                   />
                 </div>
+              </div>
+
+              {/* Airline Name */}
+              <div className="space-y-2">
+                <Label htmlFor="airlineName" className="text-white">
+                  Compagnie aérienne
+                </Label>
+                <Input
+                  id="airlineName"
+                  placeholder="Ex: Saudi Airlines, Royal Air Maroc"
+                  value={formData.airlineName}
+                  onChange={(e) => setFormData({ ...formData, airlineName: e.target.value })}
+                  className="bg-white/10 border-white/20 text-white placeholder:text-white/40"
+                />
               </div>
 
               {/* Flight, Destination, Departure */}

@@ -98,6 +98,7 @@ export async function GET(
         baggageIndex: baggage.baggageIndex,
         baggageType: baggage.baggageType,
         status: baggage.status,
+        airlineName: baggage.airlineName,
         flightNumber: baggage.flightNumber,
         destination: baggage.destination,
         agency: baggage.agency?.name || null,

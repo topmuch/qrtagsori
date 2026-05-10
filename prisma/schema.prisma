@@ -84,6 +84,7 @@ model Baggage {
   baggageIndex      Int       @default(1) // 1, 2, 3 (order: 1 = cabine)
   baggageType       String    @default("cabine") // "cabine" or "soute"
   status            String    @default("pending_activation") // pending_activation, active, scanned, lost, found, blocked
+  airlineName       String?   // ex: "Air France", "Royal Air Maroc"
   flightNumber      String?
   destination       String?
   departureDate     DateTime? // Date de départ saisie lors de l'activation
