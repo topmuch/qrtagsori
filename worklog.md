@@ -429,3 +429,46 @@ Stage Summary:
 - 5 non-negotiable constraints all respected
 - Zero lint errors, zero new TypeScript errors
 - Chatbot KB Enhancement confirmed FULLY OPERATIONAL and production-ready
+
+---
+Task ID: 13
+Agent: Main Agent
+Task: Remove countdown timer + add TransportModeSelector in ActivationRedirect + pre-select mode via URL
+
+Work Log:
+- User reported: when scanning a QR code, a 3-second countdown auto-redirects to /inscrire without letting user choose transport mode
+- Phase 1 Analysis: Confirmed ActivationRedirect (L122-141) had countdown with setInterval → auto-redirect to /inscrire?qr=REF
+- Phase 1 Analysis: Confirmed /inscrire already has TransportModeSelector in step 1, but user skips it due to auto-redirect
+- Phase 2: Modified `src/app/scan/[reference]/page.tsx`:
+  - Added import: TransportModeSelector from @/components/inscrire/TransportModeSelector, TRANSPORT_ICONS from @/lib/transport
+  - Removed: countdown state (useState(3)), setInterval timer, auto-redirect logic, countdown text display
+  - Added: selectedMode state (TransportMode | ''), handleContinue function (builds URL with &mode= param)
+  - Replaced: Countdown screen with static screen featuring:
+    - TransportModeSelector grid (✈️🚆🚢🚌) for voyageur type
+    - Dynamic icon that changes based on selected mode
+    - Continue button disabled until mode is selected
+    - Hajj flow preserved: direct redirect to /hajj/activate (no transport selector)
+- Phase 2: Modified `src/app/inscrire/page.tsx`:
+  - Added: reads ?mode= from URL searchParams
+  - If mode is valid (flight/train/boat/bus): pre-selects transportMode + starts at step 2
+  - If mode is missing/invalid: falls back to step 1 (default behavior preserved)
+
+Validation:
+- ESLint: 0 errors
+- TypeScript: 0 new errors (pre-existing errors unchanged)
+- Dev server: clean compilation, no errors in logs
+- Design preserved: bg-[#0A192F], bg-white, border-dashed, bg-orange-500, text-white
+
+Self-Critique:
+- 0 bugs found
+- useEffect still needed (fetchBaggage on line 348) — no unused imports
+- Plane icon still used (flight info block line 710) — no unused imports
+- Hajj flow untouched — only voyageur gets transport selector
+- Back button "Retour étape 1" still available in /inscrire step 2 — user can change mode
+
+Stage Summary:
+- 2 files modified, 0 new files created
+- Countdown 3s removed → user now manually chooses transport mode
+- TransportModeSelector integrated in activation redirect screen
+- URL param ?mode= pre-selects mode in /inscrire (skips step 1)
+- Zero lint errors, zero new TypeScript errors

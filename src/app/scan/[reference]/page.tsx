@@ -23,8 +23,9 @@ import { Language, LANGUAGE_NAMES } from '@/lib/i18n';
 import dynamic from 'next/dynamic';
 
 // TRANSPORT-FEATURE: Multi-transport support
-import { safeTransportMode, getTransportIcon, getTransportBlockHeader } from '@/lib/transport';
+import { safeTransportMode, getTransportIcon, getTransportBlockHeader, TRANSPORT_ICONS } from '@/lib/transport';
 import type { TransportMode } from '@/lib/transport';
+import TransportModeSelector from '@/components/inscrire/TransportModeSelector';
 
 // AI-FEATURE: Lazy-load ChatbotWidget (Feature #1) — doesn't block page render
 const ChatbotWidget = dynamic(() => import('@/components/finder/ChatbotWidget'), {
@@ -112,6 +113,8 @@ function LanguageSelector({ lang, setLang }: { lang: Language; setLang: (l: Lang
 }
 
 // ─── Activation Redirect Component ───
+// ACTIVATION-FLOW: Supprimé le countdown 3s. L'utilisateur choisit le mode de transport
+// AVANT d'être redirigé vers /inscrire?qr=REF&mode=XXX.
 function ActivationRedirect({ type, reference, t, lang, setLang }: {
   type: string;
   reference: string;
@@ -120,27 +123,18 @@ function ActivationRedirect({ type, reference, t, lang, setLang }: {
   setLang: (l: Language) => void;
 }) {
   const router = useRouter();
-  const [countdown, setCountdown] = useState(3);
-
-  useEffect(() => {
-    const timer = setInterval(() => {
-      setCountdown((prev) => {
-        if (prev <= 1) {
-          clearInterval(timer);
-          const url = type === 'hajj'
-            ? `/hajj/activate?qr=${reference}`
-            : `/inscrire?qr=${reference}`;
-          router.push(url);
-          return 0;
-        }
-        return prev - 1;
-      });
-    }, 1000);
-
-    return () => clearInterval(timer);
-  }, [type, reference, router]);
+  // ACTIVATION-FLOW: Plus de countdown — mode de transport sélectionné par l'utilisateur
+  const [selectedMode, setSelectedMode] = useState<TransportMode | ''>('');
 
   const isHajj = type === 'hajj';
+
+  // ACTIVATION-FLOW: Redirige vers /inscrire avec le mode de transport choisi
+  const handleContinue = () => {
+    const url = isHajj
+      ? `/hajj/activate?qr=${reference}`
+      : `/inscrire?qr=${reference}${selectedMode ? `&mode=${selectedMode}` : ''}`;
+    router.push(url);
+  };
 
   return (
     <main className="min-h-screen bg-white flex items-center justify-center p-5 md:p-8">
@@ -149,49 +143,80 @@ function ActivationRedirect({ type, reference, t, lang, setLang }: {
           <LanguageSelector lang={lang} setLang={setLang} />
         </div>
 
-        <div className="relative inline-block mb-6">
-          <div className="w-20 h-20 bg-white/10 rounded-full flex items-center justify-center animate-pulse border border-white/20">
-            {isHajj ? (
-              <Plane className="w-10 h-10 text-white" />
+        {/* ─── Welcome Section ─── */}
+        <div className="relative inline-block mb-5">
+          <div className="w-16 h-16 bg-white/10 rounded-full flex items-center justify-center border border-white/20">
+            {selectedMode ? (
+              <span className="text-3xl">{TRANSPORT_ICONS[selectedMode]}</span>
             ) : (
-              <Luggage className="w-10 h-10 text-white" />
+              <Luggage className="w-8 h-8 text-white" />
             )}
           </div>
-          <div className="absolute -top-1 -right-1 w-8 h-8 bg-orange-500 rounded-full flex items-center justify-center">
-            <Sparkles className="w-4 h-4 text-white" />
+          <div className="absolute -top-1 -right-1 w-7 h-7 bg-orange-500 rounded-full flex items-center justify-center">
+            <Sparkles className="w-3.5 h-3.5 text-white" />
           </div>
         </div>
 
-        <h1 className="text-2xl md:text-3xl font-bold text-white mb-2">
+        <h1 className="text-2xl md:text-3xl font-bold text-white mb-1">
           {t('common.welcome')}
         </h1>
-        <p className="text-white text-base md:text-lg mb-4">
-          {t('common.activate_in')}
+        <p className="text-white/70 text-sm md:text-base mb-5">
+          {t('inscrire.subtitle')}
         </p>
 
-        <div className="border-2 border-dashed border-white/80 rounded-xl p-4 mb-6">
-          <p className="text-white/80 text-sm mb-2">{t('common.baggage_type')}</p>
-          <Badge className="bg-orange-500 text-white text-base md:text-lg px-5 py-1.5">
-            {isHajj ? t('common.hajj_label') : t('common.voyageur_label')}
-          </Badge>
-        </div>
+        {/* ─── Hajj: Redirection directe (pas de sélection transport) ─── */}
+        {isHajj && (
+          <>
+            <div className="border-2 border-dashed border-white/80 rounded-xl p-4 mb-5">
+              <p className="text-white/80 text-sm mb-2">{t('common.baggage_type')}</p>
+              <Badge className="bg-orange-500 text-white text-base md:text-lg px-5 py-1.5">
+                {t('common.hajj_label')}
+              </Badge>
+            </div>
+            <button
+              className="w-full py-4 px-6 bg-orange-500 hover:bg-orange-600 text-white rounded-xl font-bold text-lg transition-colors flex items-center justify-center gap-2 min-h-[56px] shadow-lg shadow-orange-500/30"
+              onClick={handleContinue}
+            >
+              {t('common.start_activation')}
+              <ArrowRight className="w-5 h-5" />
+            </button>
+          </>
+        )}
 
-        <p className="text-white/70 text-base mb-5">
-          {t('common.auto_redirect')} <span className="text-white font-bold text-lg">{countdown}s</span>
-        </p>
+        {/* ─── Voyageur: Sélection mode de transport + bouton continuer ─── */}
+        {!isHajj && (
+          <>
+            <div className="border-2 border-dashed border-white/80 rounded-xl p-4 mb-5">
+              <p className="text-white/80 text-sm mb-2">{t('common.baggage_type')}</p>
+              <Badge className="bg-orange-500 text-white text-base md:text-lg px-5 py-1.5">
+                {t('common.voyageur_label')}
+              </Badge>
+            </div>
 
-        <button
-          className="w-full py-4 px-6 bg-orange-500 hover:bg-orange-600 text-white rounded-xl font-bold text-lg transition-colors flex items-center justify-center gap-2 min-h-[56px] shadow-lg shadow-orange-500/30"
-          onClick={() => {
-            const url = isHajj
-              ? `/hajj/activate?qr=${reference}`
-              : `/inscrire?qr=${reference}`;
-            router.push(url);
-          }}
-        >
-          {t('common.start_activation')}
-          <ArrowRight className="w-5 h-5" />
-        </button>
+            {/* ACTIVATION-FLOW: Sélecteur de mode de transport */}
+            <div className="text-left mb-5">
+              <p className="text-white font-semibold text-sm mb-3 text-center">
+                {t('transport.select_mode')}
+              </p>
+              <TransportModeSelector
+                selectedMode={selectedMode}
+                onSelect={setSelectedMode}
+                t={t}
+                lang={lang}
+              />
+            </div>
+
+            {/* ACTIVATION-FLOW: Bouton Continuer — disabled tant qu'aucun mode n'est choisi */}
+            <button
+              className="w-full py-4 px-6 bg-orange-500 hover:bg-orange-600 disabled:bg-white/10 disabled:text-white/40 disabled:cursor-not-allowed text-white rounded-xl font-bold text-lg transition-colors flex items-center justify-center gap-2 min-h-[56px] shadow-lg shadow-orange-500/30"
+              onClick={handleContinue}
+              disabled={!selectedMode}
+            >
+              {t('common.start_activation')}
+              <ArrowRight className="w-5 h-5" />
+            </button>
+          </>
+        )}
       </div>
     </main>
   );

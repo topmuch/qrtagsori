@@ -32,8 +32,13 @@ function InscrireContent() {
   
   // TRANSPORT-FEATURE: Translation hook + transport mode + step state
   const { t, lang } = useTranslation();
-  const [transportMode, setTransportMode] = useState<TransportMode | ''>('');
-  const [step, setStep] = useState(1);
+  // ACTIVATION-FLOW: Lire ?mode= depuis l'URL pour pré-sélectionner le mode de transport
+  const modeFromUrl = searchParams.get('mode') || '';
+  const isModeFromUrl = ['flight', 'train', 'boat', 'bus'].includes(modeFromUrl);
+  const [transportMode, setTransportMode] = useState<TransportMode | ''>(
+    isModeFromUrl ? (modeFromUrl as TransportMode) : ''
+  );
+  const [step, setStep] = useState(isModeFromUrl ? 2 : 1);
 
   const [loading, setLoading] = useState(false);
   // TRANSPORT-FEATURE: Extended formData with all transport fields
