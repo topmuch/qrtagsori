@@ -87,19 +87,7 @@
     "found_by": "👤 *Found by*:",
     "contact": "📱 *Contact*:",
     "pickup_message": "👉 Please pick it up quickly.",
-    "signature": "*QRBag – Protect your luggage with peace of mind.*",
-    "title_departure_urgent": "URGENT — Baggage at {place} !",
-    "title_arrival": "Baggage located at destination",
-    "title_in_transit": "Baggage in transit",
-    "title_static": "Baggage found in safe location",
-    "cta_departure_urgent": "⏰ Call NOW!",
-    "cta_arrival": "👉 Contact quickly to arrange pickup!",
-    "cta_in_transit": "👉 Arrange a meeting point quickly!",
-    "cta_static": "👉 The bag is safe, arrange pickup.",
-    "bag_type_cabine": "Cabin",
-    "bag_type_soute": "Hold",
-    "see_bagage": "👉 See located bag:",
-    "truncated": "…"
+    "signature": "*QRBag – Protect your luggage with peace of mind.*"
   },
   "chatbot": {
     "title": "QRBag Assistant",

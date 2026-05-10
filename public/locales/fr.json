@@ -87,19 +87,7 @@
     "found_by": "👤 *Trouvé par* :",
     "contact": "📱 *Contact* :",
     "pickup_message": "👉 Merci de le récupérer rapidement.",
-    "signature": "*QRBag – Protégez vos bagages, en toute sérénité.*",
-    "title_departure_urgent": "URGENT — Bagage à {place} !",
-    "title_arrival": "Bagage localisé à destination",
-    "title_in_transit": "Bagage dans un transport",
-    "title_static": "Bagage trouvé en lieu sûr",
-    "cta_departure_urgent": "⏰ Appelez MAINTENANT !",
-    "cta_arrival": "👉 Contactez-le vite pour organiser la récupération !",
-    "cta_in_transit": "👉 Convenez d'un point de rencontre rapidement !",
-    "cta_static": "👉 Le bagage est en sécurité, organisez la récupération.",
-    "bag_type_cabine": "Cabine",
-    "bag_type_soute": "Soute",
-    "see_bagage": "👉 Voir le bagage localisé :",
-    "truncated": "…"
+    "signature": "*QRBag – Protégez vos bagages, en toute sérénité.*"
   },
   "chatbot": {
     "title": "Assistant QRBag",

@@ -263,7 +263,7 @@ function smartTruncate(message: string, maxChars: number, locale: WhatsAppLocale
 
   // Retirer signature (dernière ligne si commence par "QRBag")
   for (let i = lines.length - 1; i >= 0; i--) {
-    if (lines[i].startsWith('QRBag')) {
+    if (lines[i].startsWith('QRBag') || lines[i].startsWith('*QRBag')) {
       lines.splice(i, 1);
       truncated = true;
       break;
@@ -378,11 +378,11 @@ export function generatePreFilledMessage(params: PreFilledMessageParams): string
 
   const lines: string[] = [];
 
-  // Line 1: Context title (TOUJOURS)
-  lines.push(`${contextEmoji} ${sanitize(title)}`);
+  // Line 1: Context title — *gras* WhatsApp (TOUJOURS)
+  lines.push(`${contextEmoji} *${sanitize(title)}*`);
 
-  // Line 2: Reference + bag type (TOUJOURS)
-  lines.push(`🧳 ${sanitizedRef} • ${sanitize(bagTypeLabel)}`);
+  // Line 2: Reference en `monospace` + bag type (TOUJOURS)
+  lines.push(`🧳 \`${sanitizedRef}\` • ${sanitize(bagTypeLabel)}`);
 
   // Line 3: Transport info (si CARRIER ou VEHICLE présent)
   if (transportLine) {
@@ -404,12 +404,12 @@ export function generatePreFilledMessage(params: PreFilledMessageParams): string
     lines.push(`📱 ${finderWhatsapp}`);
   }
 
-  // Line 7: CTA context (TOUJOURS dans le template)
+  // Line 7: CTA context — *gras* WhatsApp (TOUJOURS dans le template)
   const cta: string = CTAS[context]?.[locale] || CTAS.static.fr;
-  lines.push(cta);
+  lines.push(`*${cta}*`);
 
-  // Line 8: Signature (TOUJOURS dans le template)
-  lines.push(SIGNATURES[locale]);
+  // Line 8: Signature — *gras* WhatsApp (TOUJOURS dans le template)
+  lines.push(`*${SIGNATURES[locale]}*`);
 
   // ─── Step 6: Join and truncate ───
   let message = lines.join('\n');

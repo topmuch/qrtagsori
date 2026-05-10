@@ -690,3 +690,64 @@ Stage Summary:
   🚌 Bus: "la gare routière" / "URGENT — Bagage à la gare routière !"
 - Template unique: 8-line structured format for all modes × all contexts
 - Smart truncation ≤ 400 chars with graceful degradation
+
+---
+Task ID: 17
+Agent: Main Agent (Self-Critique Audit — WhatsApp Harmonized)
+Task: Fix 3 problems identified in self-critique: missing WhatsApp formatting, dead i18n keys, no validation script
+
+Work Log:
+- Auto-critique identified 3 problems after reading dev logs + all source files
+- Problem 1 (HIGH): No WhatsApp formatting (*gras*, `monospace`) in generatePreFilledMessage()
+  - Fixed: Added `*...*` bold around title, CTA, and signature
+  - Fixed: Added `` `...` `` monospace around reference
+  - Fixed: Updated smartTruncate signature check to match `*QRBag`
+- Problem 2 (MEDIUM): 12 dead i18n keys in locale files (duplicated in whatsapp-message.ts internal constants)
+  - Fixed: Removed all 12 dead keys from fr.json, en.json, ar.json
+  - Keys removed: title_×4, cta_×4, bag_type_×2, see_bagage, truncated
+  - whatsapp-message.ts has its own internal TITLES/CTAS/BAG_TYPE_LABELS constants
+- Problem 3 (MEDIUM): No validation script to test the 48 combinations (4 modes × 4 contexts × 3 locales)
+  - Created: scripts/validate-whatsapp.ts (comprehensive test suite)
+  - Tests: 48 combinations, each checking 10 criteria:
+    1. No crash
+    2. Length ≤ 400 chars
+    3. *bold* formatting present
+    4. `monospace` formatting present
+    5. Tracking link qrbags.com/suivi/[REF] present
+    6. Transport icon (✈️🚆🚢🚌) present
+    7. Context emoji (🚨✅🚕📍) present
+    8. QRBag signature present
+    9. buildWhatsAppUrl produces valid URL
+    10. Carrier info present (Air France/SNCF/MSC Fantasia/CTM)
+  - Result: ALL 48 TESTS PASSED
+  - Sample output verified: bold title, monospace ref, proper formatting
+
+Files Modified:
+- src/lib/whatsapp-message.ts — 5 targeted edits (bold + monospace formatting + smartTruncate fix)
+- public/locales/fr.json — removed 12 dead i18n keys
+- public/locales/en.json — removed 12 dead i18n keys
+- public/locales/ar.json — removed 12 dead i18n keys
+
+Files Created:
+- scripts/validate-whatsapp.ts — validation script (48 tests × 10 checks)
+
+Validation:
+- bun run lint → 0 errors ✅
+- bun run scripts/validate-whatsapp.ts → 48/48 passed ✅
+- dev server → clean compilation ✅
+
+Stage Summary:
+- 3 problems identified, 3 problems fixed
+- WhatsApp formatting now uses *bold* and `monospace` per spec
+- Dead code removed from 3 locale files (36 keys total)
+- Validation script provides permanent regression testing
+- Example message (flight/departure_urgent/fr):
+  🚨 *URGENT — Bagage à l'aéroport de départ !*
+  🧳 `VOL26-TEST99` • Soute
+  ✈️ Air France AF1234 • Paris
+  👉 Voir le bagage localisé : https://qrbags.com/suivi/VOL26-TEST99
+  👤 Ousmane Diallo
+  📱 +221784858226
+  *⏰ Appelez MAINTENANT !*
+  *QRBag – Protégez vos bagages, en toute sérénité.*
+  (278 chars, all formatting correct)

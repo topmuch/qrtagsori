@@ -87,19 +87,7 @@
     "found_by": "👤 *عثر عليها* :",
     "contact": "📱 *الاتصال* :",
     "pickup_message": "👉 شكراً لاسترجاعها بسرعة.",
-    "signature": "*QRBag – احمِ أمتعتك براحة بال.*",
-    "title_departure_urgent": "عاجل — أمتعة في {place} !",
-    "title_arrival": "تم تحديد موقع الأمتعة في الوجهة",
-    "title_in_transit": "أمتعة في طريق",
-    "title_static": "تم العثور على الأمتعة في مكان آمن",
-    "cta_departure_urgent": "⏰ اتصل الآن!",
-    "cta_arrival": "👉 اتصل به بسرعة لترتيب الاستلام!",
-    "cta_in_transit": "👉 حدد نقطة لقاء بسرعة!",
-    "cta_static": "👉 الأمتعة في أمان، رتب الاستلام.",
-    "bag_type_cabine": "مقصورة",
-    "bag_type_soute": "شحن",
-    "see_bagage": "👉 رؤية الأمتعة المحددة:",
-    "truncated": "…"
+    "signature": "*QRBag – احمِ أمتعتك براحة بال.*"
   },
   "chatbot": {
     "title": "مساعد QRBag",
