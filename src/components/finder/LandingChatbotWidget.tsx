@@ -1,7 +1,15 @@
 'use client';
-import { useState, useEffect, useRef, useCallback } from 'react';
-import { Bot, X, Send, User } from 'lucide-react';
+import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
+import { Bot, X, Send, User, MessageCircle } from 'lucide-react';
 import { useTranslation } from '@/hooks/useTranslation';
+
+/** QRBag WhatsApp SAV */
+const QRBAGS_WHATSAPP_URL = 'https://wa.me/221784858226';
+const QRBAGS_WHATSAPP_URL_2 = 'https://wa.me/33745349339';
+
+/** Regex to detect all URLs in messages */
+const ALL_URLS_REGEX = /https?:\/\/[^\s)\]}>]+/gi;
+const WHATSAPP_URL_REGEX = /https?:\/\/wa\.me\/\d+/gi;
 
 interface ChatMessage {
   role: 'user' | 'assistant';
@@ -104,6 +112,95 @@ export default function LandingChatbotWidget() {
     sendMessage(input);
   }, [input, sendMessage]);
 
+  /** Render assistant message with ALL URLs as clickable links/buttons */
+  const renderAssistantMessage = useCallback((content: string, index: number) => {
+    // Detect all URLs in the message
+    const urls = content.match(ALL_URLS_REGEX);
+    if (!urls || urls.length === 0) {
+      // No URLs — render plain text
+      return <p className="text-sm leading-relaxed whitespace-pre-wrap">{content}</p>;
+    }
+
+    const uniqueUrls = [...new Set(urls)];
+    const isWhatsAppMessage = uniqueUrls.some(u => WHATSAPP_URL_REGEX.test(u));
+
+    if (isWhatsAppMessage) {
+      // WhatsApp message: render text + green WhatsApp buttons
+      const waUrls = uniqueUrls.filter(u => WHATSAPP_URL_REGEX.test(u));
+      const otherUrls = uniqueUrls.filter(u => !WHATSAPP_URL_REGEX.test(u));
+      let textContent = content;
+
+      // Remove wa.me URLs from text
+      waUrls.forEach(link => {
+        textContent = textContent
+          .replace(new RegExp(`→?\\s*${link.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}`, 'gi'), '')
+          .replace(new RegExp(`${link.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}`, 'gi'), '');
+      });
+
+      // Remove other URLs from text (they'll be rendered as buttons)
+      otherUrls.forEach(link => {
+        textContent = textContent.replace(link, '');
+      });
+
+      textContent = textContent.replace(/\s{2,}/g, ' ').replace(/[\s→|:,-]+$/, '').trim();
+
+      return (
+        <div key={index} className="space-y-2">
+          {textContent && <p className="text-sm leading-relaxed whitespace-pre-wrap">{textContent}</p>}
+          {waUrls.map((link, i) => (
+            <a
+              key={`wa-${i}`}
+              href={link}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-2 px-4 py-2.5 bg-[#25D366] hover:bg-[#1fb855] active:bg-[#1a9e49] text-white rounded-xl text-sm font-semibold shadow-lg shadow-green-500/30 transition-all duration-200 hover:scale-[1.02] no-underline"
+            >
+              <MessageCircle className="w-4 h-4" />
+              <span>{lang === 'fr' ? 'Contacter par WhatsApp' : lang === 'en' ? 'Contact via WhatsApp' : 'تواصل عبر واتساب'}</span>
+            </a>
+          ))}
+          {otherUrls.map((link, i) => (
+            <a
+              key={`url-${i}`}
+              href={link}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-2 px-4 py-2.5 bg-orange-500/20 hover:bg-orange-500/30 text-orange-300 hover:text-orange-200 rounded-xl text-sm font-medium border border-orange-500/30 transition-all duration-200 hover:scale-[1.02] no-underline"
+            >
+              <span>{link.replace(/^https?:\/\//, '')}</span>
+              <span className="text-orange-400">↗</span>
+            </a>
+          ))}
+        </div>
+      );
+    }
+
+    // Standard URLs (qrbags.com, etc.) — render text + clickable link buttons
+    let textContent = content;
+    uniqueUrls.forEach(link => {
+      textContent = textContent.replace(link, '');
+    });
+    textContent = textContent.replace(/\s{2,}/g, ' ').replace(/[\s→|:,-]+$/, '').trim();
+
+    return (
+      <div key={index} className="space-y-2">
+        {textContent && <p className="text-sm leading-relaxed whitespace-pre-wrap">{textContent}</p>}
+        {uniqueUrls.map((link, i) => (
+          <a
+            key={`url-${i}`}
+            href={link}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-2 px-4 py-2.5 bg-orange-500/20 hover:bg-orange-500/30 text-orange-300 hover:text-orange-200 rounded-xl text-sm font-medium border border-orange-500/30 transition-all duration-200 hover:scale-[1.02] no-underline"
+          >
+            <span>{link.replace(/^https?:\/\//, '')}</span>
+            <span className="text-orange-400">↗</span>
+          </a>
+        ))}
+      </div>
+    );
+  }, [lang]);
+
   if (!isLoaded) return null;
 
   return (
@@ -154,7 +251,10 @@ export default function LandingChatbotWidget() {
                   {msg.role === 'user' ? <User className="w-3.5 h-3.5 text-white" /> : <Bot className="w-3.5 h-3.5 text-orange-300" />}
                 </div>
                 <div className={`max-w-[80%] px-3 py-2 rounded-2xl text-sm leading-relaxed ${msg.role === 'user' ? 'bg-orange-500 text-white rounded-tr-md' : 'bg-white/10 text-white rounded-tl-md'}`}>
-                  {msg.content}
+                  {msg.role === 'assistant'
+                    ? renderAssistantMessage(msg.content, i)
+                    : msg.content
+                  }
                 </div>
               </div>
             ))}

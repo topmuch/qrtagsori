@@ -207,6 +207,13 @@
   "activation": {
     "success": "Activation successful! ✓"
   },
+  "home": {
+    "tracking_label": "Track a baggage",
+    "tracking_placeholder": "e.g. VOL26-VABJZS",
+    "tracking_button": "Track",
+    "tracking_error": "Invalid format. Check your QR reference.",
+    "tracking_empty": "Please enter a reference."
+  },
   "transport": {
     "select_mode": "Choose your transport mode",
     "select_mode_desc": "Select how you're traveling to customize the form",

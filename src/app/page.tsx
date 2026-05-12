@@ -11,6 +11,7 @@ const LandingChatbotWidget = dynamic(
   () => import('@/components/finder/LandingChatbotWidget'),
   { ssr: false, loading: () => null }
 );
+import TrackingWidget from '@/components/home/TrackingWidget';
 import {
   Plane,
   Luggage,
@@ -930,6 +931,16 @@ export default function Home() {
     <main className="min-h-screen bg-[#0f0c29] flex flex-col">
       <Navigation />
       <HeroSection />
+
+      {/* ══════════════════════════════════════════════
+         TRACKING WIDGET
+         ══════════════════════════════════════════════ */}
+      <section className="relative py-12 lg:py-16 bg-[#0f0c29]">
+        <FadeIn>
+          <TrackingWidget />
+        </FadeIn>
+      </section>
+
       <WhyQRBagSection />
       <SolutionsSection />
       <StatsSection />

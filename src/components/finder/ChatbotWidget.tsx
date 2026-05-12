@@ -13,7 +13,76 @@
  */
 
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { MessageCircle, X, Send, Bot, User } from 'lucide-react';
+import { MessageCircle, X, Send, Bot, User, ExternalLink } from 'lucide-react';
+
+// ═══════════════════════════════════════════════════════
+//  URL LINK DETECTION
+// ═══════════════════════════════════════════════════════
+
+const ALL_URLS_REGEX = /https?:\/\/[^\s)\]}>]+/gi;
+const WHATSAPP_URL_REGEX = /https?:\/\/wa\.me\/\d+/gi;
+
+/** Render any text with URLs converted to clickable buttons */
+function renderContentWithLinks(content: string, locale: string) {
+  const urls = content.match(ALL_URLS_REGEX);
+  if (!urls || urls.length === 0) {
+    return <span className="whitespace-pre-wrap">{content}</span>;
+  }
+
+  const uniqueUrls = [...new Set(urls)];
+  const isWhatsApp = uniqueUrls.some(u => WHATSAPP_URL_REGEX.test(u));
+  let textContent = content;
+
+  if (isWhatsApp) {
+    const waUrls = uniqueUrls.filter(u => WHATSAPP_URL_REGEX.test(u));
+    const otherUrls = uniqueUrls.filter(u => !WHATSAPP_URL_REGEX.test(u));
+
+    waUrls.forEach(link => {
+      textContent = textContent
+        .replace(new RegExp(`→?\\s*${link.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}`, 'gi'), '')
+        .replace(new RegExp(`${link.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}`, 'gi'), '');
+    });
+    otherUrls.forEach(link => { textContent = textContent.replace(link, ''); });
+    textContent = textContent.replace(/\s{2,}/g, ' ').replace(/[\s→|:,-]+$/, '').trim();
+
+    return (
+      <div className="space-y-2">
+        {textContent && <span className="whitespace-pre-wrap">{textContent}</span>}
+        {waUrls.map((link, i) => (
+          <a key={`wa-${i}`} href={link} target="_blank" rel="noopener noreferrer"
+            className="inline-flex items-center gap-2 px-4 py-2.5 bg-[#25D366] hover:bg-[#1fb855] text-white rounded-xl text-sm font-semibold shadow-lg shadow-green-500/30 transition-all duration-200 hover:scale-[1.02] no-underline">
+            <MessageCircle className="w-4 h-4" />
+            <span>{locale === 'fr' ? 'Contacter par WhatsApp' : locale === 'en' ? 'Contact via WhatsApp' : 'تواصل عبر واتساب'}</span>
+          </a>
+        ))}
+        {otherUrls.map((link, i) => (
+          <a key={`url-${i}`} href={link} target="_blank" rel="noopener noreferrer"
+            className="inline-flex items-center gap-2 px-4 py-2.5 bg-orange-500/20 hover:bg-orange-500/30 text-orange-300 rounded-xl text-sm font-medium border border-orange-500/30 transition-all duration-200 hover:scale-[1.02] no-underline">
+            <span>{link.replace(/^https?:\/\//, '')}</span>
+            <ExternalLink className="w-3 h-3 text-orange-400" />
+          </a>
+        ))}
+      </div>
+    );
+  }
+
+  // Standard URLs
+  uniqueUrls.forEach(link => { textContent = textContent.replace(link, ''); });
+  textContent = textContent.replace(/\s{2,}/g, ' ').replace(/[\s→|:,-]+$/, '').trim();
+
+  return (
+    <div className="space-y-2">
+      {textContent && <span className="whitespace-pre-wrap">{textContent}</span>}
+      {uniqueUrls.map((link, i) => (
+        <a key={`url-${i}`} href={link} target="_blank" rel="noopener noreferrer"
+          className="inline-flex items-center gap-2 px-4 py-2.5 bg-orange-500/20 hover:bg-orange-500/30 text-orange-300 rounded-xl text-sm font-medium border border-orange-500/30 transition-all duration-200 hover:scale-[1.02] no-underline">
+          <span>{link.replace(/^https?:\/\//, '')}</span>
+          <ExternalLink className="w-3 h-3 text-orange-400" />
+        </a>
+      ))}
+    </div>
+  );
+}
 
 // ═══════════════════════════════════════════════════════
 //  TYPES
@@ -228,7 +297,10 @@ export default function ChatbotWidget({
                   role="log"
                   aria-label={t('chatbot.aria_message')}
                 >
-                  {msg.content}
+                  {msg.role === 'assistant'
+                    ? renderContentWithLinks(msg.content, locale)
+                    : msg.content
+                  }
                 </div>
               </div>
             ))}

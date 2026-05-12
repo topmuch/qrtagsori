@@ -207,6 +207,13 @@
   "activation": {
     "success": "Activation réussie ! ✓"
   },
+  "home": {
+    "tracking_label": "Suivre un bagage",
+    "tracking_placeholder": "Ex: VOL26-VABJZS",
+    "tracking_button": "Suivre",
+    "tracking_error": "Format invalide. Vérifiez votre référence QR.",
+    "tracking_empty": "Veuillez entrer une référence."
+  },
   "transport": {
     "select_mode": "Choisissez votre mode de transport",
     "select_mode_desc": "Sélectionnez comment vous voyagez pour adapter le formulaire",

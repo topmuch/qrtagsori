@@ -207,6 +207,13 @@
   "activation": {
     "success": "تم التفعيل بنجاح! ✓"
   },
+  "home": {
+    "tracking_label": "تتبع حقيبة",
+    "tracking_placeholder": "مثال: VOL26-VABJZS",
+    "tracking_button": "تتبع",
+    "tracking_error": "صيغة غير صالحة. تحقق من مرجع QR الخاص بك.",
+    "tracking_empty": "يرجى إدخال مرجع."
+  },
   "transport": {
     "select_mode": "اختر وضع النقل الخاص بك",
     "select_mode_desc": "حدد كيف تسافر لتخصيص النموذج",
