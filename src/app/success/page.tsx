@@ -7,6 +7,8 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { CheckCircle, QrCode, Download, Home, Luggage, Plane, Share2, Calendar, Phone, MapPin } from "lucide-react";
 import { QRCodeSVG } from 'qrcode.react';
+import SuccessOverlay from '@/components/ui/SuccessOverlay';
+import { useTranslation } from '@/hooks/useTranslation';
 
 interface ActivationData {
   reference: string;
@@ -33,6 +35,8 @@ function SuccessContent() {
 
   const [activationData, setActivationData] = useState<ActivationData | null>(null);
   const [isDownloading, setIsDownloading] = useState(false);
+  const [activationConfirmed, setActivationConfirmed] = useState(false);
+  const { t } = useTranslation();
 
   const isHajj = type === 'hajj';
   const bgColor = isHajj ? 'from-[#0d5e34] to-[#0a4a2a]' : 'from-[#d35400] to-[#b34700]';
@@ -49,6 +53,13 @@ function SuccessContent() {
       }
     }
   }, []);
+
+  // Trigger SuccessOverlay once activation data is loaded
+  useEffect(() => {
+    if (activationData) {
+      setActivationConfirmed(true);
+    }
+  }, [activationData]);
 
   // Generate QR URL
   const qrUrl = activationData?.reference
@@ -280,6 +291,9 @@ function SuccessContent() {
 
   return (
     <main className={`min-h-screen bg-gradient-to-b ${bgColor} flex items-center justify-center p-4`}>
+      {/* SuccessOverlay — Premium activation confirmation */}
+      <SuccessOverlay show={activationConfirmed} messageKey="activation.success" t={t} />
+
       <div className="max-w-md w-full">
         <Card className="bg-white/10 backdrop-blur-sm border-white/20 overflow-hidden">
           <CardContent className="pt-8 pb-8">

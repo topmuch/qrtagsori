@@ -188,6 +188,12 @@
     "context_static": "مكان ثابت",
     "whatsapp_message_sent": "تم إرسال الرسالة عبر واتساب!"
   },
+  "scan": {
+    "success": "تم المسح بنجاح! ✓"
+  },
+  "activation": {
+    "success": "تم التفعيل بنجاح! ✓"
+  },
   "transport": {
     "select_mode": "اختر وضع النقل الخاص بك",
     "select_mode_desc": "حدد كيف تسافر لتخصيص النموذج",

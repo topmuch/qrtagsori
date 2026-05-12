@@ -208,9 +208,14 @@ export default function TrouvaillesPage() {
                       </div>
                     </td>
                     <td className="px-6 py-4">
-                      <span className="text-slate-800 dark:text-white font-medium">
-                        {baggage.travelerFirstName} {baggage.travelerLastName}
-                      </span>
+                      {/* AGENCY-FIX: Fallback "Non assigné" when both names are null */}
+                      {baggage.travelerFirstName || baggage.travelerLastName ? (
+                        <span className="text-slate-800 dark:text-white font-medium">
+                          {baggage.travelerFirstName} {baggage.travelerLastName}
+                        </span>
+                      ) : (
+                        <span className="text-slate-400 dark:text-slate-500 text-sm italic">Non assigné</span>
+                      )}
                     </td>
                     <td className="px-6 py-4 hidden md:table-cell">
                       <div className="flex items-center gap-2 text-slate-600 dark:text-slate-300">

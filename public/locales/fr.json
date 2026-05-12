@@ -188,6 +188,12 @@
     "context_static": "Lieu fixe",
     "whatsapp_message_sent": "Message envoyé via WhatsApp !"
   },
+  "scan": {
+    "success": "Scan réussi ! ✓"
+  },
+  "activation": {
+    "success": "Activation réussie ! ✓"
+  },
   "transport": {
     "select_mode": "Choisissez votre mode de transport",
     "select_mode_desc": "Sélectionnez comment vous voyagez pour adapter le formulaire",

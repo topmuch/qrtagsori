@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useRef } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { Badge } from "@/components/ui/badge";
 import {
@@ -21,6 +21,7 @@ import {
 import { useTranslation } from '@/hooks/useTranslation';
 import { Language, LANGUAGE_NAMES } from '@/lib/i18n';
 import dynamic from 'next/dynamic';
+import SuccessOverlay from '@/components/ui/SuccessOverlay';
 
 // TRANSPORT-FEATURE: Multi-transport support
 import { safeTransportMode, getTransportIcon, getTransportBlockHeader, TRANSPORT_ICONS } from '@/lib/transport';
@@ -329,6 +330,13 @@ export default function ScanPage() {
   const [baggageData, setBaggageData] = useState<BaggageData | null>(null);
   const [loading, setLoading] = useState(true);
 
+  // UI State
+  const [showForm, setShowForm] = useState(false);
+  const [showSuccess, setShowSuccess] = useState(false);
+  const [locationText, setLocationText] = useState('');
+  const [geoError, setGeoError] = useState<string | null>(null);
+  const [showManualLocation, setShowManualLocation] = useState(false);
+
   // Finder form state
   const [finderName, setFinderName] = useState('');
   const [finderPhone, setFinderPhone] = useState('');
@@ -338,12 +346,9 @@ export default function ScanPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [selectedContext, setSelectedContext] = useState('');
 
-  // UI State
-  const [showForm, setShowForm] = useState(false);
-  const [showSuccess, setShowSuccess] = useState(false);
-  const [locationText, setLocationText] = useState('');
-  const [geoError, setGeoError] = useState<string | null>(null);
-  const [showManualLocation, setShowManualLocation] = useState(false);
+  // SuccessOverlay state
+  const [scanConfirmed, setScanConfirmed] = useState(false);
+  const hasConfirmedRef = useRef(false);
 
   useEffect(() => {
     const fetchBaggage = async () => {
@@ -361,6 +366,14 @@ export default function ScanPage() {
 
     fetchBaggage();
   }, [reference]);
+
+  // Trigger SuccessOverlay once when baggage loads successfully
+  useEffect(() => {
+    if (baggageData?.baggage?.reference && !hasConfirmedRef.current) {
+      hasConfirmedRef.current = true;
+      setScanConfirmed(true);
+    }
+  }, [baggageData?.baggage?.reference]);
 
   // GPS Location Handler - iOS Optimized
   const handleShareLocation = useCallback(async () => {
@@ -588,6 +601,9 @@ export default function ScanPage() {
       <header className="sticky top-0 z-40 flex items-center justify-end pt-[env(safe-area-inset-top,0px)] px-0 py-2 sm:py-3 md:py-4 bg-white">
         <LanguageSelector lang={lang} setLang={setLang} />
       </header>
+
+      {/* SuccessOverlay — Premium scan confirmation */}
+      <SuccessOverlay show={scanConfirmed} messageKey="scan.success" t={t} />
 
       {/* Success Toast */}
       <SuccessToast show={showSuccess} message={t('finder.message_sent')} successTitle={t('finder.success_title')} />

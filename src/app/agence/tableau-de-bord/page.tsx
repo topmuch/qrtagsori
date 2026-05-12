@@ -26,6 +26,7 @@ import {
   Plus
 } from "lucide-react";
 import { useAgency } from '../layout';
+import { isActive, isPending, isLost } from '@/lib/status';
 import LatestNewsWidget from '@/components/LatestNewsWidget';
 
 interface Baggage {
@@ -473,6 +474,19 @@ export default function AgencyDashboardPage() {
     setFilteredBaggages(filtered);
   };
 
+  // AGENCY-FIX: Split filtered baggages into activated and pending sections
+  // TEST: pending_activation baggages appear in "En attente" section
+  // TEST: activated baggages appear in "Activés" section
+  // TEST: Search filters across both sections simultaneously
+  // FIX: Include lost/found/blocked in activated so NO baggage vanishes from UI
+  const activatedBaggages = filteredBaggages.filter(b =>
+    isActive(b.status) || b.travelerFirstName !== null || b.status === 'lost' || b.status === 'found' || b.status === 'blocked'
+  );
+  // FIX: Check BOTH travelerFirstName AND travelerLastName for null
+  const pendingBaggages = filteredBaggages.filter(b =>
+    isPending(b.status) && b.travelerFirstName === null && b.travelerLastName === null
+  );
+
   const handleDeleteBaggage = async () => {
     if (!baggageToDelete) return;
 
@@ -676,208 +690,329 @@ export default function AgencyDashboardPage() {
         ))}
       </div>
 
-      {/* Table */}
-      <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead>
-              <tr className="border-b border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/50">
-                <th className="text-left px-6 py-4 text-slate-500 dark:text-slate-400 font-medium text-sm">Référence</th>
-                <th className="text-left px-6 py-4 text-slate-500 dark:text-slate-400 font-medium text-sm">Pèlerin</th>
-                <th className="text-left px-6 py-4 text-slate-500 dark:text-slate-400 font-medium text-sm hidden md:table-cell">Dernier scan</th>
-                <th className="text-left px-6 py-4 text-slate-500 dark:text-slate-400 font-medium text-sm hidden lg:table-cell">Trouveur</th>
-                <th className="text-left px-6 py-4 text-slate-500 dark:text-slate-400 font-medium text-sm">Statut</th>
-                <th className="text-left px-6 py-4 text-slate-500 dark:text-slate-400 font-medium text-sm">Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {loading ? (
-                <tr>
-                  <td colSpan={6} className="text-center py-12">
-                    <div className="flex items-center justify-center gap-3">
-                      <div className="w-6 h-6 border-2 border-amber-500/30 border-t-amber-500 rounded-full animate-spin" />
-                      <span className="text-slate-500">Chargement...</span>
-                    </div>
-                  </td>
-                </tr>
-              ) : filteredBaggages.length === 0 ? (
-                <tr>
-                  <td colSpan={6} className="text-center py-12">
-                    <div className="flex flex-col items-center">
-                      <div className="w-16 h-16 bg-slate-100 dark:bg-slate-800 rounded-full flex items-center justify-center mb-4">
-                        <Clock className="w-8 h-8 text-slate-400" />
-                      </div>
-                      <p className="text-slate-500 dark:text-slate-400">Aucun bagage trouvé</p>
-                      <p className="text-sm text-slate-400 dark:text-slate-500 mt-2">
-                        {search || statusFilter !== 'all'
-                          ? 'Essayez de modifier vos filtres.'
-                          : 'Vos bagages apparaîtront ici une fois générés.'
-                        }
-                      </p>
-                    </div>
-                  </td>
-                </tr>
-              ) : (
-                filteredBaggages.map((baggage) => (
-                  <tr
-                    key={baggage.id}
-                    className={`border-b border-slate-100 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors ${
-                      baggage.status === 'lost' ? 'bg-rose-50/50 dark:bg-rose-500/5' : ''
-                    }`}
-                  >
-                    <td className="px-6 py-4">
-                      <div className="flex items-center gap-2">
-                        <div className="w-8 h-8 rounded-lg bg-amber-100 dark:bg-amber-500/10 flex items-center justify-center">
-                          <QrCode className="w-4 h-4 text-amber-500" />
-                        </div>
-                        <span className="text-slate-800 dark:text-white font-mono font-medium">
-                          {baggage.reference}
-                        </span>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4">
-                      <div>
-                        {baggage.travelerFirstName || baggage.travelerLastName ? (
-                          <>
-                            <span className="text-slate-800 dark:text-white font-medium">
-                              {baggage.travelerFirstName} {baggage.travelerLastName}
-                            </span>
-                            {baggage.whatsappOwner && (
-                              <p className="text-slate-500 dark:text-slate-400 text-sm">{baggage.whatsappOwner}</p>
-                            )}
-                          </>
-                        ) : (
+      {/* AGENCY-FIX: Loading state */}
+      {loading ? (
+        <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 overflow-hidden">
+          <div className="text-center py-12">
+            <div className="flex items-center justify-center gap-3">
+              <div className="w-6 h-6 border-2 border-amber-500/30 border-t-amber-500 rounded-full animate-spin" />
+              <span className="text-slate-500">Chargement...</span>
+            </div>
+          </div>
+        </div>
+      ) : filteredBaggages.length === 0 ? (
+        <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 overflow-hidden">
+          <div className="text-center py-12">
+            <div className="flex flex-col items-center">
+              <div className="w-16 h-16 bg-slate-100 dark:bg-slate-800 rounded-full flex items-center justify-center mb-4">
+                <Clock className="w-8 h-8 text-slate-400" />
+              </div>
+              <p className="text-slate-500 dark:text-slate-400">Aucun bagage trouvé</p>
+              <p className="text-sm text-slate-400 dark:text-slate-500 mt-2">
+                {search || statusFilter !== 'all'
+                  ? 'Essayez de modifier vos filtres.'
+                  : 'Vos bagages apparaîtront ici une fois générés.'
+                }
+              </p>
+            </div>
+          </div>
+        </div>
+      ) : (
+        <>
+          {/* AGENCY-FIX: Section 1 — Bagages activés */}
+          {activatedBaggages.length > 0 && (
+            <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 overflow-hidden mb-6">
+              <div className="px-6 py-4 border-b border-slate-200 dark:border-slate-800 bg-emerald-50/50 dark:bg-emerald-500/5">
+                <div className="flex items-center gap-2">
+                  <div className="w-3 h-3 rounded-full bg-emerald-500" />
+                  <h2 className="text-sm font-semibold text-slate-800 dark:text-white">
+                    Bagages activés ({activatedBaggages.length})
+                  </h2>
+                </div>
+              </div>
+              <div className="overflow-x-auto">
+                <table className="w-full">
+                  <thead>
+                    <tr className="border-b border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/50">
+                      <th className="text-left px-6 py-4 text-slate-500 dark:text-slate-400 font-medium text-sm">Référence</th>
+                      <th className="text-left px-6 py-4 text-slate-500 dark:text-slate-400 font-medium text-sm">Pèlerin</th>
+                      <th className="text-left px-6 py-4 text-slate-500 dark:text-slate-400 font-medium text-sm hidden md:table-cell">Dernier scan</th>
+                      <th className="text-left px-6 py-4 text-slate-500 dark:text-slate-400 font-medium text-sm hidden lg:table-cell">Trouveur</th>
+                      <th className="text-left px-6 py-4 text-slate-500 dark:text-slate-400 font-medium text-sm">Statut</th>
+                      <th className="text-left px-6 py-4 text-slate-500 dark:text-slate-400 font-medium text-sm">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {activatedBaggages.map((baggage) => (
+                      <tr
+                        key={baggage.id}
+                        className={`border-b border-slate-100 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors ${
+                          baggage.status === 'lost' || isLost(b.status) ? 'bg-rose-50/50 dark:bg-rose-500/5' : ''
+                        }`}
+                      >
+                        <td className="px-6 py-4">
                           <div className="flex items-center gap-2">
-                            <span className="px-2 py-1 bg-amber-100 dark:bg-amber-500/20 text-amber-600 dark:text-amber-400 rounded-full text-xs font-medium">
-                              À attribuer
+                            <div className="w-8 h-8 rounded-lg bg-emerald-100 dark:bg-emerald-500/10 flex items-center justify-center">
+                              <QrCode className="w-4 h-4 text-emerald-500" />
+                            </div>
+                            <span className="text-slate-800 dark:text-white font-mono font-medium">
+                              {baggage.reference}
                             </span>
+                          </div>
+                        </td>
+                        <td className="px-6 py-4">
+                          <div>
+                            {/* AGENCY-FIX: Fallback "Non assigné" when both names are null */}
+                            {/* TEST: Nom null → affichage "Non assigné" without crash */}
+                            {baggage.travelerFirstName || baggage.travelerLastName ? (
+                              <>
+                                <span className="text-slate-800 dark:text-white font-medium">
+                                  {baggage.travelerFirstName} {baggage.travelerLastName}
+                                </span>
+                                {baggage.whatsappOwner && (
+                                  <p className="text-slate-500 dark:text-slate-400 text-sm">{baggage.whatsappOwner}</p>
+                                )}
+                              </>
+                            ) : (
+                              <div className="flex items-center gap-2">
+                                <span className="px-2 py-1 bg-amber-100 dark:bg-amber-500/20 text-amber-600 dark:text-amber-400 rounded-full text-xs font-medium">
+                                  Non assigné
+                                </span>
+                                <button
+                                  onClick={() => {
+                                    setSelectedBaggage(baggage);
+                                    setShowDetailModal(true);
+                                  }}
+                                  className="text-xs text-[#ff7f00] hover:text-[#ff9f00]"
+                                >
+                                  Attribuer
+                                </button>
+                              </div>
+                            )}
+                          </div>
+                        </td>
+                        <td className="px-6 py-4 hidden md:table-cell">
+                          {baggage.lastScanDate ? (
+                            <div>
+                              <span className="text-slate-600 dark:text-slate-300">{formatDateTime(baggage.lastScanDate)}</span>
+                              {baggage.lastLocation && (
+                                <p className="text-slate-400 dark:text-slate-500 text-xs flex items-center gap-1 mt-1">
+                                  <MapPin className="w-3 h-3" aria-hidden="true" />
+                                  {baggage.lastLocation}
+                                </p>
+                              )}
+                            </div>
+                          ) : (
+                            <span className="text-slate-400 dark:text-slate-500">Jamais</span>
+                          )}
+                        </td>
+                        <td className="px-6 py-4 hidden lg:table-cell">
+                          {baggage.founderName ? (
+                            <div>
+                              <p className="text-slate-800 dark:text-white font-medium text-sm">{baggage.founderName}</p>
+                              {baggage.founderPhone && (
+                                <a 
+                                  href={`https://wa.me/${baggage.founderPhone.replace(/\D/g, '')}`}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="text-emerald-500 hover:text-emerald-600 text-xs flex items-center gap-1 mt-0.5"
+                                >
+                                  <svg className="w-3 h-3" viewBox="0 0 24 24" fill="currentColor">
+                                    <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/>
+                                  </svg>
+                                  {baggage.founderPhone}
+                                </a>
+                              )}
+                            </div>
+                          ) : (
+                            <span className="text-slate-400 dark:text-slate-500 text-sm">-</span>
+                          )}
+                        </td>
+                        <td className="px-6 py-4">
+                          {getStatusBadge(baggage.status)}
+                        </td>
+                        <td className="px-6 py-4">
+                          <div className="flex items-center gap-2">
+                            {/* AGENCY-FIX: Use isActive() to handle both EN/FR statuses */}
+                            {isActive(baggage.status) && (
+                              <button
+                                onClick={async () => {
+                                  if (confirm('Déclarer ce bagage comme perdu ?')) {
+                                    try {
+                                      const res = await fetch(`/api/baggage/${baggage.id}/declare-lost`, { method: 'PUT' });
+                                      if (res.ok) fetchBaggages();
+                                    } catch (error) {
+                                      console.error('Error declaring lost:', error);
+                                    }
+                                  }
+                                }}
+                                className="p-2 rounded-lg hover:bg-rose-50 dark:hover:bg-rose-500/10 transition-colors group"
+                                title="Déclarer perdu"
+                              >
+                                <AlertTriangle className="w-4 h-4 text-slate-400 group-hover:text-rose-500" />
+                              </button>
+                            )}
+                            {/* AGENCY-FIX: Use isLost()/isFound() for French DB compat */}
+                            {isLost(baggage.status) && (
+                              <button
+                                onClick={async () => {
+                                  if (confirm('Marquer ce bagage comme retrouvé ?')) {
+                                    try {
+                                      const res = await fetch(`/api/baggage/${baggage.id}/mark-found`, { method: 'PUT' });
+                                      if (res.ok) fetchBaggages();
+                                    } catch (error) {
+                                      console.error('Error marking found:', error);
+                                  }
+                                }}
+                                className="p-2 rounded-lg hover:bg-emerald-50 dark:hover:bg-emerald-500/10 transition-colors group"
+                                title="Marquer comme retrouvé"
+                              >
+                                <CheckCircle className="w-4 h-4 text-slate-400 group-hover:text-emerald-500" />
+                              </button>
+                            )}
                             <button
                               onClick={() => {
                                 setSelectedBaggage(baggage);
                                 setShowDetailModal(true);
                               }}
-                              className="text-xs text-[#ff7f00] hover:text-[#ff9f00]"
+                              className="p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors group"
+                              title="Voir détails"
+                            >
+                              <Eye className="w-4 h-4 text-slate-400 group-hover:text-amber-500" />
+                            </button>
+                            <button
+                              onClick={() => {
+                                setBaggageToDelete(baggage);
+                                setShowDeleteModal(true);
+                              }}
+                              className="p-2 rounded-lg hover:bg-rose-50 dark:hover:bg-rose-500/10 transition-colors group"
+                              title="Supprimer"
+                            >
+                              <Trash2 className="w-4 h-4 text-slate-400 group-hover:text-rose-500" />
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+              <div className="px-6 py-4 border-t border-slate-200 dark:border-slate-800 flex justify-between items-center bg-slate-50 dark:bg-slate-800/50">
+                <span className="text-slate-500 dark:text-slate-400 text-sm">
+                  {activatedBaggages.length} bagage(s) activé(s)
+                </span>
+              </div>
+            </div>
+          )}
+
+          {/* AGENCY-FIX: Section 2 — QR en attente d'activation */}
+          {pendingBaggages.length > 0 && (
+            <div className="bg-white dark:bg-slate-900 rounded-2xl border border-amber-200 dark:border-amber-800 overflow-hidden">
+              <div className="px-6 py-4 border-b border-amber-200 dark:border-amber-800 bg-amber-50/50 dark:bg-amber-500/5">
+                <div className="flex items-center gap-2">
+                  <div className="w-3 h-3 rounded-full bg-amber-500" />
+                  <h2 className="text-sm font-semibold text-slate-800 dark:text-white">
+                    QR en attente d'activation ({pendingBaggages.length})
+                  </h2>
+                </div>
+              </div>
+              <div className="overflow-x-auto">
+                <table className="w-full">
+                  <thead>
+                    <tr className="border-b border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/50">
+                      <th className="text-left px-6 py-4 text-slate-500 dark:text-slate-400 font-medium text-sm">Référence</th>
+                      <th className="text-left px-6 py-4 text-slate-500 dark:text-slate-400 font-medium text-sm">Pèlerin</th>
+                      <th className="text-left px-6 py-4 text-slate-500 dark:text-slate-400 font-medium text-sm hidden md:table-cell">Type</th>
+                      <th className="text-left px-6 py-4 text-slate-500 dark:text-slate-400 font-medium text-sm hidden md:table-cell">Créé le</th>
+                      <th className="text-left px-6 py-4 text-slate-500 dark:text-slate-400 font-medium text-sm">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {pendingBaggages.map((baggage) => (
+                      <tr
+                        key={baggage.id}
+                        className="border-b border-slate-100 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors"
+                      >
+                        <td className="px-6 py-4">
+                          <div className="flex items-center gap-2">
+                            <div className="w-8 h-8 rounded-lg bg-amber-100 dark:bg-amber-500/10 flex items-center justify-center">
+                              <QrCode className="w-4 h-4 text-amber-500" />
+                            </div>
+                            <span className="text-slate-800 dark:text-white font-mono font-medium">
+                              {baggage.reference}
+                            </span>
+                          </div>
+                        </td>
+                        <td className="px-6 py-4">
+                          <span className="px-2 py-1 bg-amber-100 dark:bg-amber-500/20 text-amber-600 dark:text-amber-400 rounded-full text-xs font-medium">
+                            Non assigné
+                          </span>
+                        </td>
+                        <td className="px-6 py-4 hidden md:table-cell">
+                          <span className="text-slate-600 dark:text-slate-300 text-sm capitalize">
+                            {baggage.baggageType === 'cabine' ? 'Cabine' : 'Soute'}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4 hidden md:table-cell">
+                          <span className="text-slate-400 dark:text-slate-500 text-sm">
+                            {formatDate(baggage.createdAt)}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4">
+                          <div className="flex items-center gap-2">
+                            <button
+                              onClick={() => {
+                                setSelectedBaggage(baggage);
+                                setShowDetailModal(true);
+                              }}
+                              className="px-3 py-1.5 bg-[#ff7f00] hover:bg-[#ff9f00] text-white rounded-lg text-xs font-medium transition-colors"
+                              title="Attribuer à un pèlerin"
                             >
                               Attribuer
                             </button>
-                          </div>
-                        )}
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 hidden md:table-cell">
-                      {baggage.lastScanDate ? (
-                        <div>
-                          <span className="text-slate-600 dark:text-slate-300">{formatDateTime(baggage.lastScanDate)}</span>
-                          {baggage.lastLocation && (
-                            <p className="text-slate-400 dark:text-slate-500 text-xs flex items-center gap-1 mt-1">
-                              <MapPin className="w-3 h-3" aria-hidden="true" />
-                              {baggage.lastLocation}
-                            </p>
-                          )}
-                        </div>
-                      ) : (
-                        <span className="text-slate-400 dark:text-slate-500">Jamais</span>
-                      )}
-                    </td>
-                    <td className="px-6 py-4 hidden lg:table-cell">
-                      {baggage.founderName ? (
-                        <div>
-                          <p className="text-slate-800 dark:text-white font-medium text-sm">{baggage.founderName}</p>
-                          {baggage.founderPhone && (
-                            <a 
-                              href={`https://wa.me/${baggage.founderPhone.replace(/\D/g, '')}`}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="text-emerald-500 hover:text-emerald-600 text-xs flex items-center gap-1 mt-0.5"
+                            <button
+                              onClick={() => {
+                                setSelectedBaggage(baggage);
+                                setShowDetailModal(true);
+                              }}
+                              className="p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors group"
+                              title="Voir détails"
                             >
-                              <svg className="w-3 h-3" viewBox="0 0 24 24" fill="currentColor">
-                                <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/>
-                              </svg>
-                              {baggage.founderPhone}
-                            </a>
-                          )}
-                        </div>
-                      ) : (
-                        <span className="text-slate-400 dark:text-slate-500 text-sm">-</span>
-                      )}
-                    </td>
-                    <td className="px-6 py-4">
-                      {getStatusBadge(baggage.status)}
-                    </td>
-                    <td className="px-6 py-4">
-                      <div className="flex items-center gap-2">
-                        {(baggage.status === 'active' || baggage.status === 'scanned') && (
-                          <button
-                            onClick={async () => {
-                              if (confirm('Déclarer ce bagage comme perdu ?')) {
-                                try {
-                                  const res = await fetch(`/api/baggage/${baggage.id}/declare-lost`, { method: 'PUT' });
-                                  if (res.ok) fetchBaggages();
-                                } catch (error) {
-                                  console.error('Error declaring lost:', error);
-                                }
-                              }
-                            }}
-                            className="p-2 rounded-lg hover:bg-rose-50 dark:hover:bg-rose-500/10 transition-colors group"
-                            title="Déclarer perdu"
-                          >
-                            <AlertTriangle className="w-4 h-4 text-slate-400 group-hover:text-rose-500" />
-                          </button>
-                        )}
-                        {baggage.status === 'lost' && (
-                          <button
-                            onClick={async () => {
-                              if (confirm('Marquer ce bagage comme retrouvé ?')) {
-                                try {
-                                  const res = await fetch(`/api/baggage/${baggage.id}/mark-found`, { method: 'PUT' });
-                                  if (res.ok) fetchBaggages();
-                                } catch (error) {
-                                  console.error('Error marking found:', error);
-                                }
-                              }
-                            }}
-                            className="p-2 rounded-lg hover:bg-emerald-50 dark:hover:bg-emerald-500/10 transition-colors group"
-                            title="Marquer comme retrouvé"
-                          >
-                            <CheckCircle className="w-4 h-4 text-slate-400 group-hover:text-emerald-500" />
-                          </button>
-                        )}
-                        <button
-                          onClick={() => {
-                            setSelectedBaggage(baggage);
-                            setShowDetailModal(true);
-                          }}
-                          className="p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors group"
-                          title="Voir détails"
-                        >
-                          <Eye className="w-4 h-4 text-slate-400 group-hover:text-amber-500" />
-                        </button>
-                        <button
-                          onClick={() => {
-                            setBaggageToDelete(baggage);
-                            setShowDeleteModal(true);
-                          }}
-                          className="p-2 rounded-lg hover:bg-rose-50 dark:hover:bg-rose-500/10 transition-colors group"
-                          title="Supprimer"
-                        >
-                          <Trash2 className="w-4 h-4 text-slate-400 group-hover:text-rose-500" />
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
+                              <Eye className="w-4 h-4 text-slate-400 group-hover:text-amber-500" />
+                            </button>
+                            <button
+                              onClick={() => {
+                                setBaggageToDelete(baggage);
+                                setShowDeleteModal(true);
+                              }}
+                              className="p-2 rounded-lg hover:bg-rose-50 dark:hover:bg-rose-500/10 transition-colors group"
+                              title="Supprimer"
+                            >
+                              <Trash2 className="w-4 h-4 text-slate-400 group-hover:text-rose-500" />
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+              <div className="px-6 py-4 border-t border-slate-200 dark:border-slate-800 flex justify-between items-center bg-slate-50 dark:bg-slate-800/50">
+                <span className="text-slate-500 dark:text-slate-400 text-sm">
+                  {pendingBaggages.length} QR en attente d'activation
+                </span>
+              </div>
+            </div>
+          )}
 
-        {/* Footer */}
-        <div className="px-6 py-4 border-t border-slate-200 dark:border-slate-800 flex justify-between items-center bg-slate-50 dark:bg-slate-800/50">
-          <span className="text-slate-500 dark:text-slate-400 text-sm">
-            {filteredBaggages.length} bagage(s) affiché(s) sur {baggages.length}
-          </span>
-        </div>
-      </div>
+          {/* Footer global */}
+          <div className="text-center">
+            <span className="text-slate-400 dark:text-slate-500 text-xs">
+              {filteredBaggages.length} bagage(s) affiché(s) sur {baggages.length}
+            </span>
+          </div>
+        </>
+      )}
 
       {/* Command Modal */}
       {showCommandModal && (

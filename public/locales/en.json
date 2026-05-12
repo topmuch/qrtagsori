@@ -188,6 +188,12 @@
     "context_static": "Static Location",
     "whatsapp_message_sent": "Message sent via WhatsApp!"
   },
+  "scan": {
+    "success": "Scan successful! ✓"
+  },
+  "activation": {
+    "success": "Activation successful! ✓"
+  },
   "transport": {
     "select_mode": "Choose your transport mode",
     "select_mode_desc": "Select how you're traveling to customize the form",

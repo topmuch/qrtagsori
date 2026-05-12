@@ -189,9 +189,14 @@ export default function PerdusPage() {
                     </td>
                     <td className="px-6 py-4">
                       <div>
-                        <span className="text-slate-800 dark:text-white font-medium">
-                          {baggage.travelerFirstName} {baggage.travelerLastName}
-                        </span>
+                        {/* AGENCY-FIX: Fallback "Non assigné" when both names are null */}
+                        {baggage.travelerFirstName || baggage.travelerLastName ? (
+                          <span className="text-slate-800 dark:text-white font-medium">
+                            {baggage.travelerFirstName} {baggage.travelerLastName}
+                          </span>
+                        ) : (
+                          <span className="text-slate-400 dark:text-slate-500 text-sm italic">Non assigné</span>
+                        )}
                         {baggage.whatsappOwner && (
                           <p className="text-slate-500 dark:text-slate-400 text-sm flex items-center gap-1 mt-1">
                             <Phone className="w-3 h-3" />
