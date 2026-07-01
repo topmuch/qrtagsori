@@ -341,7 +341,7 @@ export default function AdminBaggageDetailPage() {
             <button
               onClick={handleMarkFound}
               disabled={actionLoading}
-              className="flex-1 py-3 bg-emerald-500 text-white rounded-lg font-medium hover:bg-emerald-600 transition-colors flex items-center justify-center gap-2 disabled:opacity-50"
+              className="flex-1 py-3 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-colors flex items-center justify-center gap-2 disabled:opacity-50"
             >
               {actionLoading ? (
                 <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
@@ -355,7 +355,7 @@ export default function AdminBaggageDetailPage() {
           )}
           <Link
             href={`/scan/${baggage.reference}`}
-            className="flex-1 py-3 bg-[#b8860b] text-white rounded-lg font-medium hover:bg-[#d4af37] transition-colors flex items-center justify-center gap-2"
+            className="flex-1 py-3 bg-[#b8860b] text-white rounded-lg font-medium hover:bg-[#3b82f6] transition-colors flex items-center justify-center gap-2"
           >
             <QrCode className="w-5 h-5" />
             Voir la page de scan

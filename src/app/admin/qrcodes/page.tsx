@@ -163,7 +163,7 @@ export default function QRCodesPage() {
             ctx.drawImage(img, x + 20, y + 20, qrSize - 40, qrSize - 40);
             
             // Draw reference text
-            ctx.fillStyle = set.type === 'hajj' ? '#0d5e34' : '#d35400';
+            ctx.fillStyle = set.type === 'hajj' ? '#0d5e34' : '#1D4ED8';
             ctx.font = 'bold 14px Arial';
             ctx.textAlign = 'center';
             ctx.fillText(set.references[i], x + qrSize / 2, y + qrSize - 15);
@@ -202,7 +202,7 @@ export default function QRCodesPage() {
 
   // Simple QR code SVG generator (fallback)
   const generateQRCodeSVG = (url: string, type: string) => {
-    const color = type === 'hajj' ? '#0d5e34' : '#d35400';
+    const color = type === 'hajj' ? '#0d5e34' : '#1D4ED8';
     return `<rect width="200" height="200" fill="white"/>
       <text x="100" y="100" text-anchor="middle" fill="${color}" font-size="10">${url.slice(-20)}</text>`;
   };
@@ -246,7 +246,7 @@ export default function QRCodesPage() {
     { title: 'Total Sets', value: stats.totalSets, icon: QrCode, color: 'text-[#b8860b]' },
     { title: 'Total QR', value: stats.totalQr, icon: Luggage, color: 'text-white' },
     { title: 'Hajj', value: stats.hajjSets, icon: Plane, color: 'text-green-400' },
-    { title: 'Voyageur', value: stats.voyageurSets, icon: Luggage, color: 'text-orange-400' },
+    { title: 'Voyageur', value: stats.voyageurSets, icon: Luggage, color: 'text-blue-600' },
   ];
 
   return (
@@ -268,7 +268,7 @@ export default function QRCodesPage() {
           </div>
           <Link
             href="/admin"
-            className="inline-flex items-center gap-2 px-4 py-2 bg-[#b8860b] text-white rounded-lg hover:bg-[#d4af37] transition-colors"
+            className="inline-flex items-center gap-2 px-4 py-2 bg-[#b8860b] text-white rounded-lg hover:bg-[#3b82f6] transition-colors"
           >
             <Plus className="w-4 h-4" />
             Générer nouveau
@@ -393,7 +393,7 @@ export default function QRCodesPage() {
                   <button
                     onClick={() => handleDownloadSet(set)}
                     disabled={isDownloading && selectedSet?.id === set.id}
-                    className="w-10 h-10 rounded-lg bg-[#b8860b] flex items-center justify-center text-white hover:bg-[#d4af37] transition-colors disabled:opacity-50"
+                    className="w-10 h-10 rounded-lg bg-[#b8860b] flex items-center justify-center text-white hover:bg-[#3b82f6] transition-colors disabled:opacity-50"
                     title="Télécharger"
                   >
                     {isDownloading && selectedSet?.id === set.id ? (
@@ -481,7 +481,7 @@ export default function QRCodesPage() {
                       level="H"
                       includeMargin={true}
                       bgColor="#ffffff"
-                      fgColor={selectedSet.type === 'hajj' ? '#0d5e34' : '#d35400'}
+                      fgColor={selectedSet.type === 'hajj' ? '#0d5e34' : '#1D4ED8'}
                     />
                     <p className="text-gray-800 font-mono font-bold mt-2 text-sm">
                       {ref}
@@ -509,7 +509,7 @@ export default function QRCodesPage() {
               <div className="mt-6 flex gap-3">
                 <button
                   onClick={() => handleDownloadSet(selectedSet)}
-                  className="flex-1 py-3 bg-[#b8860b] text-white rounded-lg hover:bg-[#d4af37] transition-colors flex items-center justify-center gap-2"
+                  className="flex-1 py-3 bg-[#b8860b] text-white rounded-lg hover:bg-[#3b82f6] transition-colors flex items-center justify-center gap-2"
                 >
                   <Download className="w-4 h-4" />
                   Télécharger tout

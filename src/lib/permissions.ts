@@ -14,7 +14,7 @@ export const ROLE_COLORS: Record<Role, string> = {
   superadmin: 'bg-purple-500',
   admin: 'bg-blue-500',
   agent: 'bg-green-500',
-  agency: 'bg-orange-500'
+  agency: 'bg-blue-500'
 };
 
 // Permission definitions

@@ -92,7 +92,7 @@ function Sidebar({ isOpen, setIsOpen, unreadMessages, onLogout, userName, agency
       {/* Sidebar - Orange Background */}
       <aside className={`
         fixed lg:static inset-y-0 left-0 z-50
-        w-[280px] bg-[#ff7f00]
+        w-[280px] bg-[#2563EB]
         transform transition-transform duration-300
         ${isOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
         flex flex-col shadow-2xl
@@ -285,7 +285,7 @@ function Header({ unreadMessages, onMenuClick, userName, agencySlug }: { unreadM
             </Link>
             <Link
               href="/agence/trouvailles"
-              className="flex items-center gap-2 px-3 py-1.5 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 rounded-xl text-sm font-medium transition-colors border border-emerald-200 dark:border-emerald-800"
+              className="flex items-center gap-2 px-3 py-1.5 bg-blue-600/10 hover:bg-blue-600/20 text-blue-700 dark:text-blue-500 rounded-xl text-sm font-medium transition-colors border border-emerald-200 dark:border-emerald-800"
             >
               <CheckCircle className="w-4 h-4" />
               <span className="hidden xl:inline">Trouvailles</span>
@@ -293,12 +293,12 @@ function Header({ unreadMessages, onMenuClick, userName, agencySlug }: { unreadM
           </div>
           
           {/* Public Page Button */}
-          <div className="hidden lg:flex items-center gap-2 bg-gradient-to-r from-[#ff7f00]/10 to-[#ff9f00]/10 dark:from-[#ff7f00]/20 dark:to-[#ff9f00]/20 border border-[#ff7f00]/30 rounded-xl px-3 py-1.5">
-            <Globe className="w-4 h-4 text-[#ff7f00]" />
+          <div className="hidden lg:flex items-center gap-2 bg-gradient-to-r from-[#2563EB]/10 to-[#ff9f00]/10 dark:from-[#2563EB]/20 dark:to-[#ff9f00]/20 border border-[#2563EB]/30 rounded-xl px-3 py-1.5">
+            <Globe className="w-4 h-4 text-[#2563EB]" />
             <span className="text-sm text-slate-600 dark:text-slate-300">Page publique</span>
             <button
               onClick={handleCopy}
-              className={`p-1 rounded-lg transition-colors ${copied ? 'text-emerald-500' : 'hover:bg-[#ff7f00]/20 text-[#ff7f00]'}`}
+              className={`p-1 rounded-lg transition-colors ${copied ? 'text-blue-600' : 'hover:bg-[#2563EB]/20 text-[#2563EB]'}`}
               title="Copier le lien"
             >
               {copied ? <CheckCircle className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
@@ -306,7 +306,7 @@ function Header({ unreadMessages, onMenuClick, userName, agencySlug }: { unreadM
             <Link
               href={`/agency/${agencySlug}`}
               target="_blank"
-              className="p-1 rounded-lg hover:bg-[#ff7f00]/20 text-[#ff7f00] transition-colors"
+              className="p-1 rounded-lg hover:bg-[#2563EB]/20 text-[#2563EB] transition-colors"
               title="Voir la page"
             >
               <ExternalLink className="w-4 h-4" />
@@ -320,7 +320,7 @@ function Header({ unreadMessages, onMenuClick, userName, agencySlug }: { unreadM
             title={theme === 'dark' ? 'Mode clair' : 'Mode sombre'}
           >
             {theme === 'dark' ? (
-              <Sun className="w-5 h-5 text-amber-500" />
+              <Sun className="w-5 h-5 text-blue-600" />
             ) : (
               <Moon className="w-5 h-5 text-slate-600" />
             )}
@@ -341,7 +341,7 @@ function Header({ unreadMessages, onMenuClick, userName, agencySlug }: { unreadM
           
           {/* User */}
           <div className="flex items-center gap-3 pl-3 border-l border-slate-200 dark:border-slate-700">
-            <div className="w-9 h-9 rounded-full bg-[#ff7f00] flex items-center justify-center">
+            <div className="w-9 h-9 rounded-full bg-[#2563EB] flex items-center justify-center">
               <span className="text-white font-semibold text-sm">{userName ? userName.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2) : 'AG'}</span>
             </div>
             <div className="hidden sm:block">
@@ -435,7 +435,7 @@ export default function AgencyRootLayout({
     return (
       <div className="min-h-screen bg-slate-50 dark:bg-slate-950 flex items-center justify-center">
         <div className="flex items-center gap-3">
-          <div className="w-6 h-6 border-2 border-[#ff7f00]/30 border-t-[#ff7f00] rounded-full animate-spin" />
+          <div className="w-6 h-6 border-2 border-[#2563EB]/30 border-t-[#2563EB] rounded-full animate-spin" />
           <span className="text-slate-500">Vérification...</span>
         </div>
       </div>

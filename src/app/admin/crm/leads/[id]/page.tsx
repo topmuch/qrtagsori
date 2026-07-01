@@ -83,7 +83,7 @@ interface DailyReport {
 const STATUS_CONFIG: Record<LeadStatus, { label: string; className: string }> = {
   new: { label: 'Nouveau', className: 'bg-blue-100 text-blue-700 dark:bg-blue-500/20 dark:text-blue-300' },
   contacted: { label: 'Contacté', className: 'bg-yellow-100 text-yellow-700 dark:bg-yellow-500/20 dark:text-yellow-300' },
-  in_discussion: { label: 'En discussion', className: 'bg-orange-100 text-orange-700 dark:bg-orange-500/20 dark:text-orange-300' },
+  in_discussion: { label: 'En discussion', className: 'bg-blue-100 text-blue-800 dark:bg-blue-500/20 dark:text-blue-300' },
   qualified: { label: 'Qualifié', className: 'bg-purple-100 text-purple-700 dark:bg-purple-500/20 dark:text-purple-300' },
   converted: { label: 'Converti', className: 'bg-green-100 text-green-700 dark:bg-green-500/20 dark:text-green-300' },
   lost: { label: 'Perdu', className: 'bg-red-100 text-red-700 dark:bg-red-500/20 dark:text-red-300' },
@@ -95,7 +95,7 @@ const OBSERVATION_TYPE_CONFIG: Record<string, { label: string; icon: React.React
   appel: { label: 'Appel', icon: <PhoneCall className="w-4 h-4" />, className: 'bg-green-500' },
   rdv: { label: 'Rendez-vous', icon: <Calendar className="w-4 h-4" />, className: 'bg-blue-500' },
   email: { label: 'Email', icon: <Mail className="w-4 h-4" />, className: 'bg-purple-500' },
-  whatsapp: { label: 'WhatsApp', icon: <MessageCircle className="w-4 h-4" />, className: 'bg-emerald-500' },
+  whatsapp: { label: 'WhatsApp', icon: <MessageCircle className="w-4 h-4" />, className: 'bg-blue-600' },
 };
 
 export default function LeadDetailPage() {
@@ -233,7 +233,7 @@ export default function LeadDetailPage() {
     return (
       <div className="max-w-4xl mx-auto">
         <div className="flex items-center justify-center py-20">
-          <div className="animate-spin w-8 h-8 border-4 border-slate-300 border-t-[#ff7f00] rounded-full" />
+          <div className="animate-spin w-8 h-8 border-4 border-slate-300 border-t-[#2563EB] rounded-full" />
         </div>
       </div>
     );
@@ -268,7 +268,7 @@ export default function LeadDetailPage() {
         <CardContent className="p-6">
           <div className="flex flex-col md:flex-row md:items-start justify-between gap-4">
             <div className="flex items-start gap-4">
-              <div className="w-14 h-14 bg-gradient-to-br from-green-500 to-emerald-600 rounded-xl flex items-center justify-center text-white font-bold text-xl">
+              <div className="w-14 h-14 bg-gradient-to-br from-green-500 to-blue-700 rounded-xl flex items-center justify-center text-white font-bold text-xl">
                 {lead.name.charAt(0).toUpperCase()}
               </div>
               <div>
@@ -443,7 +443,7 @@ export default function LeadDetailPage() {
             <Button
               onClick={handleSaveDailyReport}
               disabled={savingReport || !dailyReportContent.trim()}
-              className="bg-amber-500 hover:bg-amber-600 text-white ml-auto disabled:opacity-50"
+              className="bg-blue-600 hover:bg-amber-600 text-white ml-auto disabled:opacity-50"
             >
               {savingReport ? (
                 <RefreshCw className="w-4 h-4 mr-2 animate-spin" />

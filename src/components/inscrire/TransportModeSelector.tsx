@@ -54,10 +54,10 @@ export default function TransportModeSelector({
               relative flex flex-col items-center justify-center
               rounded-xl p-4 sm:p-5 min-h-[80px] sm:min-h-[90px]
               border-2 transition-all duration-200
-              focus:outline-none focus:ring-2 focus:ring-orange-400 focus:ring-offset-2
+              focus:outline-none focus:ring-2 focus:ring-blue-600 focus:ring-offset-2
               ${
                 isSelected
-                  ? 'bg-orange-500/20 border-orange-500 shadow-lg shadow-orange-500/20 scale-[1.02]'
+                  ? 'bg-blue-500/20 border-blue-500 shadow-lg shadow-blue-500/20 scale-[1.02]'
                   : 'bg-white/10 border-white/20 hover:bg-white/15 hover:border-white/40'
               }
             `}
@@ -68,7 +68,7 @@ export default function TransportModeSelector({
             </span>
 
             {/* Label */}
-            <span className={`text-sm sm:text-base font-bold ${isSelected ? 'text-orange-400' : 'text-white'} transition-colors`}>
+            <span className={`text-sm sm:text-base font-bold ${isSelected ? 'text-blue-600' : 'text-white'} transition-colors`}>
               {label}
             </span>
 
@@ -79,7 +79,7 @@ export default function TransportModeSelector({
 
             {/* Selected indicator */}
             {isSelected && (
-              <div className="absolute top-2 right-2 w-5 h-5 bg-orange-500 rounded-full flex items-center justify-center">
+              <div className="absolute top-2 right-2 w-5 h-5 bg-blue-500 rounded-full flex items-center justify-center">
                 <svg className="w-3 h-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
                 </svg>

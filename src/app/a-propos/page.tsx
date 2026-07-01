@@ -22,7 +22,7 @@ function AProposContent() {
       <section className="max-w-4xl mx-auto py-16 px-4">
         <div className="text-center mb-12">
           <h2 className="text-3xl font-bold text-white mb-4">Notre mission</h2>
-          <div className="w-24 h-1 bg-[#ff2a6d] mx-auto mb-6"></div>
+          <div className="w-24 h-1 bg-[#1E40AF] mx-auto mb-6"></div>
           <p className="text-[#e0e6f0] text-lg max-w-3xl mx-auto">
             Créer une protection intelligente, universelle et sans friction pour tous les bagages —
             que vous soyez pèlerin, voyageur d&apos;affaires ou touriste. Notre objectif est de transformer
@@ -70,7 +70,7 @@ function AProposContent() {
           <div className="space-y-8">
             {/* Valeur 1 */}
             <div className="flex items-start gap-6">
-              <div className="mt-1 w-10 h-10 rounded-full bg-[#ff2a6d] flex items-center justify-center text-white font-bold shrink-0">
+              <div className="mt-1 w-10 h-10 rounded-full bg-[#1E40AF] flex items-center justify-center text-white font-bold shrink-0">
                 1
               </div>
               <div>
@@ -83,7 +83,7 @@ function AProposContent() {
 
             {/* Valeur 2 */}
             <div className="flex items-start gap-6">
-              <div className="mt-1 w-10 h-10 rounded-full bg-[#ff2a6d] flex items-center justify-center text-white font-bold shrink-0">
+              <div className="mt-1 w-10 h-10 rounded-full bg-[#1E40AF] flex items-center justify-center text-white font-bold shrink-0">
                 2
               </div>
               <div>
@@ -96,7 +96,7 @@ function AProposContent() {
 
             {/* Valeur 3 */}
             <div className="flex items-start gap-6">
-              <div className="mt-1 w-10 h-10 rounded-full bg-[#ff2a6d] flex items-center justify-center text-white font-bold shrink-0">
+              <div className="mt-1 w-10 h-10 rounded-full bg-[#1E40AF] flex items-center justify-center text-white font-bold shrink-0">
                 3
               </div>
               <div>
@@ -109,7 +109,7 @@ function AProposContent() {
 
             {/* Valeur 4 */}
             <div className="flex items-start gap-6">
-              <div className="mt-1 w-10 h-10 rounded-full bg-[#ff2a6d] flex items-center justify-center text-white font-bold shrink-0">
+              <div className="mt-1 w-10 h-10 rounded-full bg-[#1E40AF] flex items-center justify-center text-white font-bold shrink-0">
                 4
               </div>
               <div>
@@ -141,13 +141,13 @@ function AProposContent() {
             </div>
             <div className="flex items-center justify-center gap-2">
               <span className="text-xl">📞</span>
-              <a href="tel:+33745349339" className="hover:text-[#ff2a6d] transition-colors">
+              <a href="tel:+33745349339" className="hover:text-[#1E40AF] transition-colors">
                 +33 7 45 34 93 39
               </a>
             </div>
             <div className="flex items-center justify-center gap-2">
               <span className="text-xl">✉️</span>
-              <a href="mailto:contact@qrbag.com" className="hover:text-[#ff2a6d] transition-colors">
+              <a href="mailto:contact@qrbag.com" className="hover:text-[#1E40AF] transition-colors">
                 contact@qrbag.com
               </a>
             </div>
@@ -167,7 +167,7 @@ function AProposContent() {
               { number: '24/7', label: 'Support disponible' },
             ].map((stat, i) => (
               <div key={i} className="text-center">
-                <div className="text-3xl md:text-4xl font-bold text-[#ff2a6d] mb-2">{stat.number}</div>
+                <div className="text-3xl md:text-4xl font-bold text-[#1E40AF] mb-2">{stat.number}</div>
                 <div className="text-[#a0a8b8] text-sm">{stat.label}</div>
               </div>
             ))}

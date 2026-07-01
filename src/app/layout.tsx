@@ -35,7 +35,7 @@ export const metadata: Metadata = {
       { url: "/icons/icon-192x192.png", sizes: "192x192", type: "image/png" },
     ],
     other: [
-      { rel: "mask-icon", url: "/icons/maskable-icon-512x512.png", color: "#ff7f00" },
+      { rel: "mask-icon", url: "/icons/maskable-icon-512x512.png", color: "#2563EB" },
     ],
   },
 
@@ -141,7 +141,7 @@ export default function RootLayout({
         <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
         <meta name="apple-mobile-web-app-title" content="QRBag" />
         <meta name="application-name" content="QRBag" />
-        <meta name="msapplication-TileColor" content="#ff7f00" />
+        <meta name="msapplication-TileColor" content="#2563EB" />
         <meta name="msapplication-config" content="/browserconfig.xml" />
 
         {/* Preconnect for performance */}

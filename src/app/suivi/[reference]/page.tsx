@@ -119,7 +119,7 @@ function LanguageSelector({ lang, setLang }: { lang: Language; setLang: (l: Lang
               }}
               className={`w-full px-4 py-2.5 sm:px-5 sm:py-3 text-left text-xs sm:text-sm md:text-base font-medium transition-colors ${
                 lang === l
-                  ? 'bg-orange-500 text-white'
+                  ? 'bg-blue-500 text-white'
                   : 'text-blue-900 hover:bg-blue-50'
               }`}
             >
@@ -152,7 +152,7 @@ function LoadingScreen({ t }: { t: (key: string) => string }) {
   return (
     <main className="min-h-screen bg-white flex items-center justify-center">
       <div className="text-center">
-        <div className="animate-spin w-12 h-12 border-4 border-blue-900/20 border-t-orange-500 rounded-full mx-auto mb-4"></div>
+        <div className="animate-spin w-12 h-12 border-4 border-blue-900/20 border-t-blue-500 rounded-full mx-auto mb-4"></div>
         <p className="text-lg text-blue-900">{t('common.loading')}</p>
       </div>
     </main>
@@ -191,7 +191,7 @@ function ErrorScreen({
       message: t('tracking.baggage_expired_desc'),
     },
     pending_activation: {
-      icon: <AlertCircle className="w-12 h-12 text-orange-500" />,
+      icon: <AlertCircle className="w-12 h-12 text-blue-500" />,
       title: t('tracking.baggage_not_found'),
       message: t('tracking.baggage_pending_desc'),
     },
@@ -448,7 +448,7 @@ export default function SuiviPage() {
       <header className="sticky top-0 z-40 flex items-center justify-between pt-[env(safe-area-inset-top,0px)] px-0 py-2 sm:py-3 md:py-4 bg-white">
         <button
           onClick={() => window.history.back()}
-          className="flex items-center gap-1 text-blue-900 hover:text-orange-500 transition-colors text-sm font-medium min-h-[44px] px-2"
+          className="flex items-center gap-1 text-blue-900 hover:text-blue-500 transition-colors text-sm font-medium min-h-[44px] px-2"
           aria-label={t('tracking.back_to_scan')}
         >
           <ArrowRight className="w-4 h-4 rtl:rotate-180" />
@@ -486,7 +486,7 @@ export default function SuiviPage() {
               ? 'bg-red-600 text-white shadow-red-500/30 animate-pulse'
               : isFound
               ? 'bg-green-600 text-white shadow-green-500/30'
-              : 'bg-orange-500 text-white shadow-orange-500/30 hover:scale-105'
+              : 'bg-blue-500 text-white shadow-blue-500/30 hover:scale-105'
           }`}>
             {isDeclaredLost
               ? `🚨 ${t('tracking.badge_lost')}`
@@ -567,7 +567,7 @@ export default function SuiviPage() {
                       )}
                     </div>
                     <div className="h-12 w-12 rounded-full bg-white/10 flex items-center justify-center ml-4 flex-shrink-0">
-                      <Plane className="w-7 h-7 text-orange-400" />
+                      <Plane className="w-7 h-7 text-blue-600" />
                     </div>
                   </div>
                 </DashedEncart>
@@ -762,7 +762,7 @@ export default function SuiviPage() {
                   {/* Phone Button */}
                   <button
                     onClick={handlePhoneCall}
-                    className="py-4 px-5 bg-orange-500 hover:bg-orange-600 text-white rounded-xl font-bold transition-colors flex items-center justify-center gap-2 text-lg min-h-[56px] shadow-lg"
+                    className="py-4 px-5 bg-blue-500 hover:bg-blue-700 text-white rounded-xl font-bold transition-colors flex items-center justify-center gap-2 text-lg min-h-[56px] shadow-lg"
                   >
                     <Phone className="w-5 h-5" />
                     {t('tracking.by_phone')}

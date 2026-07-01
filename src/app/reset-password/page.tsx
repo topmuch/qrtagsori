@@ -67,7 +67,7 @@ function ResetPasswordContent() {
         {/* Logo */}
         <div className="text-center mb-8">
           <Link href="/" className="inline-block">
-            <h1 className="text-3xl font-bold text-[#ff7f00]">QRBag</h1>
+            <h1 className="text-3xl font-bold text-[#2563EB]">QRBag</h1>
           </Link>
           <p className="text-slate-500 mt-2">Nouveau mot de passe</p>
         </div>
@@ -77,7 +77,7 @@ function ResetPasswordContent() {
           {!success ? (
             <>
               <div className="text-center mb-6">
-                <Lock className="w-12 h-12 text-[#ff7f00] mx-auto mb-4" />
+                <Lock className="w-12 h-12 text-[#2563EB] mx-auto mb-4" />
                 <h2 className="text-xl font-semibold text-slate-800 mb-2">Définir un nouveau mot de passe</h2>
                 <p className="text-slate-500 text-sm">
                   Entrez votre nouveau mot de passe ci-dessous.
@@ -94,7 +94,7 @@ function ResetPasswordContent() {
                       onChange={(e) => setPassword(e.target.value)}
                       placeholder="••••••••"
                       required
-                      className="w-full px-4 py-3 pr-12 border border-slate-200 rounded-xl focus:outline-none focus:border-[#ff7f00]"
+                      className="w-full px-4 py-3 pr-12 border border-slate-200 rounded-xl focus:outline-none focus:border-[#2563EB]"
                     />
                     <button
                       type="button"
@@ -114,7 +114,7 @@ function ResetPasswordContent() {
                     onChange={(e) => setConfirmPassword(e.target.value)}
                     placeholder="••••••••"
                     required
-                    className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:border-[#ff7f00]"
+                    className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:border-[#2563EB]"
                   />
                 </div>
 
@@ -125,7 +125,7 @@ function ResetPasswordContent() {
                 <button
                   type="submit"
                   disabled={loading || !password || !confirmPassword}
-                  className="w-full py-3 bg-[#ff7f00] text-white rounded-xl font-medium hover:bg-[#ff6600] transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
+                  className="w-full py-3 bg-[#2563EB] text-white rounded-xl font-medium hover:bg-[#ff6600] transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
                 >
                   {loading ? (
                     <>
@@ -140,7 +140,7 @@ function ResetPasswordContent() {
             </>
           ) : (
             <div className="text-center py-4">
-              <CheckCircle className="w-16 h-16 text-emerald-500 mx-auto mb-4" />
+              <CheckCircle className="w-16 h-16 text-blue-600 mx-auto mb-4" />
               <h2 className="text-xl font-semibold text-slate-800 mb-2">Mot de passe réinitialisé !</h2>
               <p className="text-slate-600 mb-4">
                 Votre mot de passe a été modifié avec succès. Vous allez être redirigé vers la page de connexion.
@@ -165,7 +165,7 @@ export default function ResetPasswordPage() {
   return (
     <Suspense fallback={
       <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 flex items-center justify-center">
-        <RefreshCw className="w-8 h-8 text-[#ff7f00] animate-spin" />
+        <RefreshCw className="w-8 h-8 text-[#2563EB] animate-spin" />
       </div>
     }>
       <ResetPasswordContent />

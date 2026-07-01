@@ -26,29 +26,27 @@ function Navigation() {
         <div className="flex items-center justify-between h-16">
           {/* Logo */}
           <Link href="/" className="flex items-center gap-2">
-            <div className="w-10 h-10 bg-gradient-to-br from-[#ff2a6d] to-[#d35400] rounded-lg flex items-center justify-center shadow-lg shadow-[#ff2a6d]/20">
-              <QrCode className="w-6 h-6 text-white" />
-            </div>
-            <span className="text-xl font-bold text-[#ff2a6d]">QRBag</span>
+            <img src="/logo.png" alt="QRBag" className="w-10 h-10 rounded-lg object-contain" />
+            <span className="text-xl font-bold text-[#1E40AF]">QRBag</span>
           </Link>
 
           {/* Desktop Nav */}
           <div className="hidden md:flex items-center gap-8">
-            <a href="#procedure" className="text-[#e0e6f0] hover:text-[#d35400] transition-colors">Procédure</a>
-            <a href="#avantages" className="text-[#e0e6f0] hover:text-[#d35400] transition-colors">Avantages</a>
-            <a href="#tarifs" className="text-[#e0e6f0] hover:text-[#d35400] transition-colors">Tarifs</a>
+            <a href="#procedure" className="text-[#e0e6f0] hover:text-[#1D4ED8] transition-colors">Procédure</a>
+            <a href="#avantages" className="text-[#e0e6f0] hover:text-[#1D4ED8] transition-colors">Avantages</a>
+            <a href="#tarifs" className="text-[#e0e6f0] hover:text-[#1D4ED8] transition-colors">Tarifs</a>
           </div>
 
           {/* CTA Buttons */}
           <div className="hidden md:flex items-center gap-3">
             <Link href="/demo">
-              <Button variant="ghost" className="text-[#e0e6f0] hover:text-[#d35400]">
+              <Button variant="ghost" className="text-[#e0e6f0] hover:text-[#1D4ED8]">
                 <Play className="w-4 h-4 mr-1" />
                 Démo
               </Button>
             </Link>
             <Link href="/#contact">
-              <Button className="bg-[#d35400] hover:bg-[#c04800] text-white font-medium shadow-lg shadow-[#d35400]/20">
+              <Button className="bg-[#1D4ED8] hover:bg-[#c04800] text-white font-medium shadow-lg shadow-[#1D4ED8]/20">
                 Commander
               </Button>
             </Link>
@@ -67,7 +65,7 @@ function Navigation() {
 // Hero Section
 function HeroSection() {
   return (
-    <section className="pt-16 bg-gradient-to-br from-[#d35400] to-[#e67e22] relative overflow-hidden">
+    <section className="pt-16 bg-gradient-to-br from-[#1D4ED8] to-[#e67e22] relative overflow-hidden">
       {/* Background Pattern */}
       <div className="absolute inset-0 opacity-10">
         <div className="absolute top-10 right-10 text-8xl">✈️</div>
@@ -170,7 +168,7 @@ function ProcedureSection() {
         {/* Title */}
         <div className="text-center mb-16">
           <h2 className="text-3xl md:text-4xl font-bold text-white mb-4">
-            Comment ça <span className="text-[#d35400]">marche ?</span>
+            Comment ça <span className="text-[#1D4ED8]">marche ?</span>
           </h2>
           <p className="text-[#a0a8b8] text-lg">
             Une protection en 4 étapes simples, sans intermédiaire
@@ -182,10 +180,10 @@ function ProcedureSection() {
           {steps.map((item, index) => (
             <div
               key={index}
-              className="relative bg-[#0d1220] rounded-xl p-6 border border-[#1a2238] hover:border-[#d35400]/50 transition-all group"
+              className="relative bg-[#0d1220] rounded-xl p-6 border border-[#1a2238] hover:border-[#1D4ED8]/50 transition-all group"
             >
               {/* Step Number */}
-              <div className="absolute -top-3 -left-3 w-10 h-10 bg-gradient-to-r from-[#d35400] to-[#e67e22] rounded-full flex items-center justify-center text-white font-bold text-sm shadow-lg shadow-[#d35400]/30">
+              <div className="absolute -top-3 -left-3 w-10 h-10 bg-gradient-to-r from-[#1D4ED8] to-[#e67e22] rounded-full flex items-center justify-center text-white font-bold text-sm shadow-lg shadow-[#1D4ED8]/30">
                 {item.step}
               </div>
 
@@ -222,7 +220,7 @@ function AdvantagesSection() {
         {/* Title */}
         <div className="text-center mb-12">
           <h2 className="text-3xl md:text-4xl font-bold text-white mb-4">
-            Pourquoi choisir <span className="text-[#d35400]">QRBag Voyageurs ?</span>
+            Pourquoi choisir <span className="text-[#1D4ED8]">QRBag Voyageurs ?</span>
           </h2>
         </div>
 
@@ -231,7 +229,7 @@ function AdvantagesSection() {
           {advantages.map((item, index) => (
             <div
               key={index}
-              className="flex items-center gap-3 bg-[#0a0f2c] rounded-xl p-4 border border-[#1a2238] hover:border-[#d35400]/30 transition-all"
+              className="flex items-center gap-3 bg-[#0a0f2c] rounded-xl p-4 border border-[#1a2238] hover:border-[#1D4ED8]/30 transition-all"
             >
               <span className="text-xl">{item.icon}</span>
               <span className="text-[#e0e6f0]">{item.text}</span>
@@ -240,9 +238,9 @@ function AdvantagesSection() {
         </div>
 
         {/* Security Box */}
-        <div className="bg-gradient-to-r from-[#d35400]/20 to-[#e67e22]/20 rounded-xl p-6 border border-[#d35400]/30">
+        <div className="bg-gradient-to-r from-[#1D4ED8]/20 to-[#e67e22]/20 rounded-xl p-6 border border-[#1D4ED8]/30">
           <div className="flex items-start gap-4">
-            <div className="w-12 h-12 bg-[#d35400] rounded-lg flex items-center justify-center shrink-0">
+            <div className="w-12 h-12 bg-[#1D4ED8] rounded-lg flex items-center justify-center shrink-0">
               <Shield className="w-6 h-6 text-white" />
             </div>
             <div>
@@ -272,7 +270,7 @@ function PricingSection() {
         "Notification email",
         "Activation instantanée"
       ],
-      color: "#d35400",
+      color: "#1D4ED8",
       popular: false
     },
     {
@@ -286,7 +284,7 @@ function PricingSection() {
         "Renouvellement facile",
         "Statistiques de scans"
       ],
-      color: "#ff2a6d",
+      color: "#1E40AF",
       popular: true
     }
   ];
@@ -297,7 +295,7 @@ function PricingSection() {
         {/* Title */}
         <div className="text-center mb-12">
           <h2 className="text-3xl md:text-4xl font-bold text-white mb-4">
-            Tarifs <span className="text-[#d35400]">simples</span>
+            Tarifs <span className="text-[#1D4ED8]">simples</span>
           </h2>
           <p className="text-[#a0a8b8] text-lg">
             Choisissez la formule adaptée à vos besoins
@@ -310,11 +308,11 @@ function PricingSection() {
             <div
               key={index}
               className={`relative bg-[#0d1220] rounded-xl p-6 border ${
-                plan.popular ? 'border-[#ff2a6d] shadow-lg shadow-[#ff2a6d]/20' : 'border-[#1a2238]'
+                plan.popular ? 'border-[#1E40AF] shadow-lg shadow-[#1E40AF]/20' : 'border-[#1a2238]'
               }`}
             >
               {plan.popular && (
-                <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-[#ff2a6d] text-white text-xs font-bold px-4 py-1 rounded-full">
+                <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-[#1E40AF] text-white text-xs font-bold px-4 py-1 rounded-full">
                   POPULAIRE
                 </div>
               )}
@@ -323,7 +321,7 @@ function PricingSection() {
               <p className="text-[#a0a8b8] text-sm mb-4">{plan.subtitle}</p>
 
               <div className="flex items-baseline gap-1 mb-1">
-                <span className="text-4xl font-bold text-[#d35400]">{plan.price}</span>
+                <span className="text-4xl font-bold text-[#1D4ED8]">{plan.price}</span>
               </div>
 
               <p className="text-[#a0a8b8] text-sm mb-6">{plan.duration}</p>
@@ -331,7 +329,7 @@ function PricingSection() {
               <div className="space-y-3 mb-6">
                 {plan.features.map((feature, i) => (
                   <div key={i} className="flex items-center gap-2 text-[#e0e6f0]">
-                    <span className="text-[#d35400]">✓</span>
+                    <span className="text-[#1D4ED8]">✓</span>
                     <span className="text-sm">{feature}</span>
                   </div>
                 ))}
@@ -375,7 +373,7 @@ function TestimonialsSection() {
       <div className="max-w-4xl mx-auto">
         <div className="text-center mb-12">
           <h2 className="text-3xl md:text-4xl font-bold text-white mb-4">
-            Ils nous font <span className="text-[#d35400]">confiance</span>
+            Ils nous font <span className="text-[#1D4ED8]">confiance</span>
           </h2>
         </div>
 
@@ -383,18 +381,18 @@ function TestimonialsSection() {
           {testimonials.map((t, i) => (
             <div
               key={i}
-              className="bg-[#0a0f2c] rounded-xl p-6 border border-[#1a2238] hover:border-[#d35400]/30 transition-colors"
+              className="bg-[#0a0f2c] rounded-xl p-6 border border-[#1a2238] hover:border-[#1D4ED8]/30 transition-colors"
             >
               <div className="flex gap-1 mb-4">
                 {[...Array(5)].map((_, i) => (
-                  <Star key={i} className="w-5 h-5 text-[#d35400] fill-[#d35400]" />
+                  <Star key={i} className="w-5 h-5 text-[#1D4ED8] fill-[#1D4ED8]" />
                 ))}
               </div>
               <p className="text-[#e0e6f0] mb-6 leading-relaxed italic">
                 &ldquo;{t.content}&rdquo;
               </p>
               <div className="flex items-center gap-3">
-                <div className="w-12 h-12 bg-[#d35400]/30 rounded-full flex items-center justify-center text-2xl">
+                <div className="w-12 h-12 bg-[#1D4ED8]/30 rounded-full flex items-center justify-center text-2xl">
                   {t.avatar}
                 </div>
                 <div>
@@ -413,7 +411,7 @@ function TestimonialsSection() {
 // CTA Section
 function CTASection() {
   return (
-    <section className="py-20 px-4 bg-gradient-to-r from-[#d35400] to-[#e67e22]">
+    <section className="py-20 px-4 bg-gradient-to-r from-[#1D4ED8] to-[#e67e22]">
       <div className="max-w-4xl mx-auto text-center">
         <h2 className="text-3xl md:text-4xl font-bold text-white mb-4">
           Prêt à protéger<br />vos bagages ?
@@ -424,7 +422,7 @@ function CTASection() {
 
         <div className="flex flex-col sm:flex-row gap-4 justify-center">
           <Link href="/#contact">
-            <Button className="bg-white text-[#d35400] px-8 py-6 rounded-lg font-bold text-lg hover:bg-gray-100 transition-all shadow-xl">
+            <Button className="bg-white text-[#1D4ED8] px-8 py-6 rounded-lg font-bold text-lg hover:bg-gray-100 transition-all shadow-xl">
               🎟️ Commander maintenant
             </Button>
           </Link>
@@ -456,10 +454,8 @@ function Footer() {
           {/* Logo */}
           <div>
             <div className="flex items-center gap-2 mb-4">
-              <div className="w-10 h-10 bg-gradient-to-br from-[#ff2a6d] to-[#d35400] rounded-lg flex items-center justify-center">
-                <QrCode className="w-6 h-6 text-white" />
-              </div>
-              <span className="text-xl font-bold bg-gradient-to-r from-[#ff2a6d] to-[#d35400] bg-clip-text text-transparent">QRBag</span>
+              <img src="/logo.png" alt="QRBag" className="w-10 h-10 rounded-lg object-contain" />
+              <span className="text-xl font-bold bg-gradient-to-r from-[#1E40AF] to-[#1D4ED8] bg-clip-text text-transparent">QRBag</span>
             </div>
             <p className="text-[#a0a8b8] text-sm">
               Protection intelligente des bagages pour voyageurs et pèlerins.
@@ -470,9 +466,9 @@ function Footer() {
           <div>
             <h4 className="font-semibold mb-4 text-white">Produit</h4>
             <ul className="space-y-2 text-[#a0a8b8] text-sm">
-              <li><Link href="/hajj-omra" className="hover:text-[#d35400] transition-colors">Hajj & Omra</Link></li>
-              <li><Link href="/voyageurs-standard" className="hover:text-[#d35400] transition-colors">Voyageurs Standard</Link></li>
-              <li><Link href="/demo" className="hover:text-[#d35400] transition-colors">Démo</Link></li>
+              <li><Link href="/hajj-omra" className="hover:text-[#1D4ED8] transition-colors">Hajj & Omra</Link></li>
+              <li><Link href="/voyageurs-standard" className="hover:text-[#1D4ED8] transition-colors">Voyageurs Standard</Link></li>
+              <li><Link href="/demo" className="hover:text-[#1D4ED8] transition-colors">Démo</Link></li>
             </ul>
           </div>
 
@@ -480,8 +476,8 @@ function Footer() {
           <div>
             <h4 className="font-semibold mb-4 text-white">Entreprise</h4>
             <ul className="space-y-2 text-[#a0a8b8] text-sm">
-              <li><Link href="/devenir-partenaire" className="hover:text-[#d35400] transition-colors">Devenir Partenaire</Link></li>
-              <li><a href="/#contact" className="hover:text-[#d35400] transition-colors">Contact</a></li>
+              <li><Link href="/devenir-partenaire" className="hover:text-[#1D4ED8] transition-colors">Devenir Partenaire</Link></li>
+              <li><a href="/#contact" className="hover:text-[#1D4ED8] transition-colors">Contact</a></li>
             </ul>
           </div>
 
@@ -490,15 +486,15 @@ function Footer() {
             <h4 className="font-semibold mb-4 text-white">Contact</h4>
             <ul className="space-y-2 text-[#a0a8b8] text-sm">
               <li className="flex items-center gap-2">
-                <Phone className="w-4 h-4 text-[#d35400]" />
+                <Phone className="w-4 h-4 text-[#1D4ED8]" />
                 +33 7 45 34 93 39
               </li>
               <li className="flex items-center gap-2">
-                <Mail className="w-4 h-4 text-[#d35400]" />
+                <Mail className="w-4 h-4 text-[#1D4ED8]" />
                 contact@qrbag.com
               </li>
               <li className="flex items-center gap-2">
-                <MapPinned className="w-4 h-4 text-[#d35400]" />
+                <MapPinned className="w-4 h-4 text-[#1D4ED8]" />
                 Poissy, France
               </li>
             </ul>
@@ -512,13 +508,13 @@ function Footer() {
           </p>
 
           <div className="flex items-center gap-4">
-            <a href="https://facebook.com/qrbag" target="_blank" rel="noopener noreferrer" className="text-[#a0a8b8] hover:text-[#d35400] transition-colors" aria-label="Facebook">
+            <a href="https://facebook.com/qrbag" target="_blank" rel="noopener noreferrer" className="text-[#a0a8b8] hover:text-[#1D4ED8] transition-colors" aria-label="Facebook">
               <Facebook className="w-5 h-5" aria-hidden="true" />
             </a>
-            <a href="https://instagram.com/qrbag" target="_blank" rel="noopener noreferrer" className="text-[#a0a8b8] hover:text-[#d35400] transition-colors" aria-label="Instagram">
+            <a href="https://instagram.com/qrbag" target="_blank" rel="noopener noreferrer" className="text-[#a0a8b8] hover:text-[#1D4ED8] transition-colors" aria-label="Instagram">
               <Instagram className="w-5 h-5" aria-hidden="true" />
             </a>
-            <a href="https://twitter.com/qrbag" target="_blank" rel="noopener noreferrer" className="text-[#a0a8b8] hover:text-[#d35400] transition-colors" aria-label="Twitter">
+            <a href="https://twitter.com/qrbag" target="_blank" rel="noopener noreferrer" className="text-[#a0a8b8] hover:text-[#1D4ED8] transition-colors" aria-label="Twitter">
               <Twitter className="w-5 h-5" aria-hidden="true" />
             </a>
           </div>

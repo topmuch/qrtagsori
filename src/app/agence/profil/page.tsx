@@ -49,9 +49,9 @@ export default function ProfilPage() {
       </div>
 
       {success && (
-        <div className="mb-6 p-4 bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-200 dark:border-emerald-800 rounded-xl flex items-center gap-3">
-          <CheckCircle className="w-5 h-5 text-emerald-500" />
-          <span className="text-emerald-700 dark:text-emerald-400">Modifications enregistrées avec succès !</span>
+        <div className="mb-6 p-4 bg-emerald-50 dark:bg-blue-600/10 border border-emerald-200 dark:border-emerald-800 rounded-xl flex items-center gap-3">
+          <CheckCircle className="w-5 h-5 text-blue-600" />
+          <span className="text-emerald-700 dark:text-blue-500">Modifications enregistrées avec succès !</span>
         </div>
       )}
 
@@ -59,8 +59,8 @@ export default function ProfilPage() {
         {/* Agency Info */}
         <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-6">
           <div className="flex items-center gap-3 mb-6">
-            <div className="w-10 h-10 rounded-xl bg-amber-100 dark:bg-amber-500/10 flex items-center justify-center">
-              <Building className="w-5 h-5 text-amber-500" />
+            <div className="w-10 h-10 rounded-xl bg-amber-100 dark:bg-blue-600/10 flex items-center justify-center">
+              <Building className="w-5 h-5 text-blue-600" />
             </div>
             <div>
               <h2 className="text-lg font-semibold text-slate-800 dark:text-white">Informations de l'agence</h2>
@@ -79,7 +79,7 @@ export default function ProfilPage() {
                   type="text"
                   value={form.name}
                   onChange={(e) => setForm({ ...form, name: e.target.value })}
-                  className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl py-3 px-4 text-slate-700 dark:text-slate-200 focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 transition-all"
+                  className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl py-3 px-4 text-slate-700 dark:text-slate-200 focus:ring-2 focus:ring-blue-600/20 focus:border-blue-600 transition-all"
                 />
               </div>
 
@@ -92,7 +92,7 @@ export default function ProfilPage() {
                   type="email"
                   value={form.email}
                   onChange={(e) => setForm({ ...form, email: e.target.value })}
-                  className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl py-3 px-4 text-slate-700 dark:text-slate-200 focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 transition-all"
+                  className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl py-3 px-4 text-slate-700 dark:text-slate-200 focus:ring-2 focus:ring-blue-600/20 focus:border-blue-600 transition-all"
                 />
               </div>
 
@@ -105,7 +105,7 @@ export default function ProfilPage() {
                   type="tel"
                   value={form.phone}
                   onChange={(e) => setForm({ ...form, phone: e.target.value })}
-                  className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl py-3 px-4 text-slate-700 dark:text-slate-200 focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 transition-all"
+                  className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl py-3 px-4 text-slate-700 dark:text-slate-200 focus:ring-2 focus:ring-blue-600/20 focus:border-blue-600 transition-all"
                 />
               </div>
 
@@ -118,7 +118,7 @@ export default function ProfilPage() {
                   type="text"
                   value={form.address}
                   onChange={(e) => setForm({ ...form, address: e.target.value })}
-                  className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl py-3 px-4 text-slate-700 dark:text-slate-200 focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 transition-all"
+                  className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl py-3 px-4 text-slate-700 dark:text-slate-200 focus:ring-2 focus:ring-blue-600/20 focus:border-blue-600 transition-all"
                 />
               </div>
             </div>
@@ -126,7 +126,7 @@ export default function ProfilPage() {
             <button
               type="submit"
               disabled={saving}
-              className="bg-amber-500 text-white py-3 px-6 rounded-xl font-medium hover:bg-amber-600 transition-colors flex items-center gap-2 disabled:opacity-50"
+              className="bg-blue-600 text-white py-3 px-6 rounded-xl font-medium hover:bg-amber-600 transition-colors flex items-center gap-2 disabled:opacity-50"
             >
               {saving ? (
                 <>
@@ -163,7 +163,7 @@ export default function ProfilPage() {
                 value={form.currentPassword}
                 onChange={(e) => setForm({ ...form, currentPassword: e.target.value })}
                 placeholder="••••••••"
-                className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl py-3 px-4 text-slate-700 dark:text-slate-200 focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 transition-all"
+                className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl py-3 px-4 text-slate-700 dark:text-slate-200 focus:ring-2 focus:ring-blue-600/20 focus:border-blue-600 transition-all"
               />
             </div>
 
@@ -175,7 +175,7 @@ export default function ProfilPage() {
                   value={form.newPassword}
                   onChange={(e) => setForm({ ...form, newPassword: e.target.value })}
                   placeholder="••••••••"
-                  className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl py-3 px-4 text-slate-700 dark:text-slate-200 focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 transition-all"
+                  className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl py-3 px-4 text-slate-700 dark:text-slate-200 focus:ring-2 focus:ring-blue-600/20 focus:border-blue-600 transition-all"
                 />
               </div>
 
@@ -186,7 +186,7 @@ export default function ProfilPage() {
                   value={form.confirmPassword}
                   onChange={(e) => setForm({ ...form, confirmPassword: e.target.value })}
                   placeholder="••••••••"
-                  className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl py-3 px-4 text-slate-700 dark:text-slate-200 focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 transition-all"
+                  className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl py-3 px-4 text-slate-700 dark:text-slate-200 focus:ring-2 focus:ring-blue-600/20 focus:border-blue-600 transition-all"
                 />
               </div>
             </div>

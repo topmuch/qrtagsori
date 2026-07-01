@@ -71,8 +71,8 @@ function ContactContent() {
               <div className="space-y-6">
                 {/* Adresse */}
                 <div className="flex items-start gap-4 p-4 bg-[#0a0f2c] rounded-xl border border-[#1a1a3a]">
-                  <div className="w-12 h-12 rounded-lg bg-[#ff2a6d]/20 flex items-center justify-center border border-[#ff2a6d]/30 shrink-0">
-                    <MapPinned className="w-6 h-6 text-[#ff2a6d]" />
+                  <div className="w-12 h-12 rounded-lg bg-[#1E40AF]/20 flex items-center justify-center border border-[#1E40AF]/30 shrink-0">
+                    <MapPinned className="w-6 h-6 text-[#1E40AF]" />
                   </div>
                   <div>
                     <h3 className="font-semibold text-lg mb-1 text-white">Adresse</h3>
@@ -83,12 +83,12 @@ function ContactContent() {
 
                 {/* Téléphone */}
                 <div className="flex items-start gap-4 p-4 bg-[#0a0f2c] rounded-xl border border-[#1a1a3a]">
-                  <div className="w-12 h-12 rounded-lg bg-[#ff2a6d]/20 flex items-center justify-center border border-[#ff2a6d]/30 shrink-0">
-                    <Phone className="w-6 h-6 text-[#ff2a6d]" />
+                  <div className="w-12 h-12 rounded-lg bg-[#1E40AF]/20 flex items-center justify-center border border-[#1E40AF]/30 shrink-0">
+                    <Phone className="w-6 h-6 text-[#1E40AF]" />
                   </div>
                   <div>
                     <h3 className="font-semibold text-lg mb-1 text-white">Téléphone</h3>
-                    <a href="tel:+33745349339" className="text-[#a0a8b8] hover:text-[#ff2a6d] transition-colors">
+                    <a href="tel:+33745349339" className="text-[#a0a8b8] hover:text-[#1E40AF] transition-colors">
                       +33 7 45 34 93 39
                     </a>
                   </div>
@@ -96,12 +96,12 @@ function ContactContent() {
 
                 {/* Email */}
                 <div className="flex items-start gap-4 p-4 bg-[#0a0f2c] rounded-xl border border-[#1a1a3a]">
-                  <div className="w-12 h-12 rounded-lg bg-[#ff2a6d]/20 flex items-center justify-center border border-[#ff2a6d]/30 shrink-0">
-                    <Mail className="w-6 h-6 text-[#ff2a6d]" />
+                  <div className="w-12 h-12 rounded-lg bg-[#1E40AF]/20 flex items-center justify-center border border-[#1E40AF]/30 shrink-0">
+                    <Mail className="w-6 h-6 text-[#1E40AF]" />
                   </div>
                   <div>
                     <h3 className="font-semibold text-lg mb-1 text-white">Email</h3>
-                    <a href="mailto:contact@qrbag.com" className="text-[#a0a8b8] hover:text-[#ff2a6d] transition-colors">
+                    <a href="mailto:contact@qrbag.com" className="text-[#a0a8b8] hover:text-[#1E40AF] transition-colors">
                       contact@qrbag.com
                     </a>
                   </div>
@@ -109,8 +109,8 @@ function ContactContent() {
 
                 {/* Horaires */}
                 <div className="flex items-start gap-4 p-4 bg-[#0a0f2c] rounded-xl border border-[#1a1a3a]">
-                  <div className="w-12 h-12 rounded-lg bg-[#ff2a6d]/20 flex items-center justify-center border border-[#ff2a6d]/30 shrink-0">
-                    <Clock className="w-6 h-6 text-[#ff2a6d]" />
+                  <div className="w-12 h-12 rounded-lg bg-[#1E40AF]/20 flex items-center justify-center border border-[#1E40AF]/30 shrink-0">
+                    <Clock className="w-6 h-6 text-[#1E40AF]" />
                   </div>
                   <div>
                     <h3 className="font-semibold text-lg mb-1 text-white">Horaires</h3>
@@ -147,7 +147,7 @@ function ContactContent() {
               <div className="bg-[#0a0f2c] rounded-xl p-6 border border-[#1a1a3a]">
                 {submitted ? (
                   <div className="text-center py-12">
-                    <CheckCircle className="w-20 h-20 text-[#ff2a6d] mx-auto mb-6" />
+                    <CheckCircle className="w-20 h-20 text-[#1E40AF] mx-auto mb-6" />
                     <h3 className="text-2xl font-semibold mb-3 text-white">Message envoyé !</h3>
                     <p className="text-[#a0a8b8] mb-6">
                       Nous avons bien reçu votre message et vous répondrons dans les plus brefs délais.
@@ -157,7 +157,7 @@ function ContactContent() {
                         setSubmitted(false);
                         setFormData({ name: '', email: '', subject: '', message: '' });
                       }}
-                      className="bg-[#ff2a6d] hover:bg-[#e01e5a] text-white"
+                      className="bg-[#1E40AF] hover:bg-[#e01e5a] text-white"
                     >
                       Envoyer un autre message
                     </Button>
@@ -172,7 +172,7 @@ function ContactContent() {
                           placeholder="Votre nom"
                           value={formData.name}
                           onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                          className="w-full px-4 py-3 rounded-lg bg-[#080c1a] border border-[#1a1a3a] text-white placeholder-[#a0a8b8] focus:outline-none focus:border-[#ff2a6d]"
+                          className="w-full px-4 py-3 rounded-lg bg-[#080c1a] border border-[#1a1a3a] text-white placeholder-[#a0a8b8] focus:outline-none focus:border-[#1E40AF]"
                           required
                         />
                       </div>
@@ -183,7 +183,7 @@ function ContactContent() {
                           placeholder="votre@email.com"
                           value={formData.email}
                           onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                          className="w-full px-4 py-3 rounded-lg bg-[#080c1a] border border-[#1a1a3a] text-white placeholder-[#a0a8b8] focus:outline-none focus:border-[#ff2a6d]"
+                          className="w-full px-4 py-3 rounded-lg bg-[#080c1a] border border-[#1a1a3a] text-white placeholder-[#a0a8b8] focus:outline-none focus:border-[#1E40AF]"
                           required
                         />
                       </div>
@@ -196,7 +196,7 @@ function ContactContent() {
                         placeholder="Objet de votre message"
                         value={formData.subject}
                         onChange={(e) => setFormData({ ...formData, subject: e.target.value })}
-                        className="w-full px-4 py-3 rounded-lg bg-[#080c1a] border border-[#1a1a3a] text-white placeholder-[#a0a8b8] focus:outline-none focus:border-[#ff2a6d]"
+                        className="w-full px-4 py-3 rounded-lg bg-[#080c1a] border border-[#1a1a3a] text-white placeholder-[#a0a8b8] focus:outline-none focus:border-[#1E40AF]"
                       />
                     </div>
 
@@ -206,7 +206,7 @@ function ContactContent() {
                         placeholder="Décrivez votre demande..."
                         value={formData.message}
                         onChange={(e) => setFormData({ ...formData, message: e.target.value })}
-                        className="w-full px-4 py-3 rounded-lg bg-[#080c1a] border border-[#1a1a3a] text-white placeholder-[#a0a8b8] focus:outline-none focus:border-[#ff2a6d] min-h-[160px]"
+                        className="w-full px-4 py-3 rounded-lg bg-[#080c1a] border border-[#1a1a3a] text-white placeholder-[#a0a8b8] focus:outline-none focus:border-[#1E40AF] min-h-[160px]"
                         required
                       />
                     </div>
@@ -214,7 +214,7 @@ function ContactContent() {
                     <Button
                       type="submit"
                       disabled={submitting}
-                      className="w-full bg-[#ff2a6d] hover:bg-[#e01e5a] text-white py-4 font-bold text-lg disabled:opacity-50"
+                      className="w-full bg-[#1E40AF] hover:bg-[#e01e5a] text-white py-4 font-bold text-lg disabled:opacity-50"
                     >
                       {submitting ? 'Envoi en cours...' : 'Envoyer le message'}
                     </Button>
@@ -239,7 +239,7 @@ function ContactContent() {
             href="https://maps.google.com/?q=43+Rue+Maryse+Bastié+78300+Poissy+France"
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-flex items-center gap-2 bg-[#ff2a6d] text-white px-6 py-3 rounded-lg font-medium hover:bg-[#e01e5a] transition-colors"
+            className="inline-flex items-center gap-2 bg-[#1E40AF] text-white px-6 py-3 rounded-lg font-medium hover:bg-[#e01e5a] transition-colors"
           >
             <MapPinned className="w-5 h-5" />
             Voir sur Google Maps

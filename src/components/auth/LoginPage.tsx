@@ -54,9 +54,9 @@ const CONFIGS: Record<LoginVariant, LoginConfig> = {
     role: 'agency',
     redirectPath: '/agence/tableau-de-bord',
     bgImage: '/images/login-bg.png',
-    accentClass: 'text-orange-500',
-    accentHoverClass: 'hover:text-orange-600',
-    accentFocusRing: 'focus:ring-orange-500',
+    accentClass: 'text-blue-500',
+    accentHoverClass: 'hover:text-blue-700',
+    accentFocusRing: 'focus:ring-blue-500',
     badgeText: 'Agence',
     leftTitle: 'QRBag pour les professionnels du voyage',
     leftSubtitle: 'Gérez vos bagages, vos clients, vos QR — depuis un seul tableau de bord.',
@@ -80,9 +80,9 @@ const CONFIGS: Record<LoginVariant, LoginConfig> = {
     role: 'superadmin',
     redirectPath: '/admin/tableau-de-bord',
     bgImage: '/images/login-bg.png',
-    accentClass: 'text-purple-600',
-    accentHoverClass: 'hover:text-purple-700',
-    accentFocusRing: 'focus:ring-purple-500',
+    accentClass: 'text-blue-700',
+    accentHoverClass: 'hover:text-blue-800',
+    accentFocusRing: 'focus:ring-blue-600',
     badgeText: 'Admin',
     leftTitle: 'QRBag — Contrôle centralisé',
     leftSubtitle: 'Gérez agences, QR codes, utilisateurs et API — tout depuis un seul tableau de bord.',
@@ -178,9 +178,7 @@ export default function LoginPage({ variant }: { variant: LoginVariant }) {
           {/* Logo */}
           <div className="absolute top-8 left-8 xl:top-10 xl:left-10">
             <Link href="/" className="flex items-center gap-2.5">
-              <div className="w-10 h-10 bg-white/15 backdrop-blur-md rounded-xl flex items-center justify-center border border-white/20">
-                <QrCode className="w-5 h-5 text-white" />
-              </div>
+              <img src="/logo.png" alt="QRBag" className="w-10 h-10 rounded-xl object-contain bg-white/15 backdrop-blur-md p-1 border border-white/20" />
               <span className="text-xl font-bold text-white tracking-tight">QRBag</span>
             </Link>
           </div>
@@ -189,8 +187,8 @@ export default function LoginPage({ variant }: { variant: LoginVariant }) {
           <div className="mb-8">
             <span className={`inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-semibold tracking-wide uppercase backdrop-blur-md border ${
               isAgence
-                ? 'bg-orange-500/20 border-orange-400/30 text-orange-300'
-                : 'bg-purple-500/20 border-purple-400/30 text-purple-300'
+                ? 'bg-blue-500/20 border-blue-600/30 text-blue-300'
+                : 'bg-blue-700/20 border-blue-800/30 text-blue-200'
             }`}>
               {isAgence ? <Building2 className="w-3.5 h-3.5" /> : <Shield className="w-3.5 h-3.5" />}
               {config.badgeText}
@@ -224,11 +222,7 @@ export default function LoginPage({ variant }: { variant: LoginVariant }) {
 
           {/* Mobile Logo */}
           <div className="lg:hidden flex items-center justify-center gap-2.5 mb-10">
-            <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${
-              isAgence ? 'bg-orange-500' : 'bg-purple-700'
-            }`}>
-              <QrCode className="w-5 h-5 text-white" />
-            </div>
+            <img src="/logo.png" alt="QRBag" className="w-10 h-10 rounded-xl object-contain" />
             <span className="text-xl font-bold text-slate-800 tracking-tight">QRBag</span>
           </div>
 
@@ -236,8 +230,8 @@ export default function LoginPage({ variant }: { variant: LoginVariant }) {
           <div className="lg:hidden flex justify-center mb-8">
             <span className={`inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-semibold tracking-wide uppercase ${
               isAgence
-                ? 'bg-orange-50 text-orange-600 border border-orange-200'
-                : 'bg-purple-50 text-purple-600 border border-purple-200'
+                ? 'bg-blue-50 text-blue-700 border border-blue-200'
+                : 'text-blue-800 text-blue-700 border border-blue-300'
             }`}>
               {isAgence ? <Building2 className="w-3.5 h-3.5" /> : <Shield className="w-3.5 h-3.5" />}
               {config.badgeText}
@@ -272,7 +266,7 @@ export default function LoginPage({ variant }: { variant: LoginVariant }) {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 className="w-full px-4 py-3 rounded-lg border border-slate-200 bg-white text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:border-transparent transition text-sm"
-                style={{ '--tw-ring-color': isAgence ? '#f97316' : '#7e22ce' } as React.CSSProperties}
+                style={{ '--tw-ring-color': isAgence ? '#2563EB' : '#1D4ED8' } as React.CSSProperties}
                 placeholder={variant === 'agence' ? 'vous@agence.com' : 'admin@qrbag.com'}
                 required
               />
@@ -289,7 +283,7 @@ export default function LoginPage({ variant }: { variant: LoginVariant }) {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   className="w-full px-4 py-3 rounded-lg border border-slate-200 bg-white text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:border-transparent transition pr-11 text-sm"
-                  style={{ '--tw-ring-color': isAgence ? '#f97316' : '#7e22ce' } as React.CSSProperties}
+                  style={{ '--tw-ring-color': isAgence ? '#2563EB' : '#1D4ED8' } as React.CSSProperties}
                   placeholder="••••••••"
                   required
                 />
@@ -312,7 +306,7 @@ export default function LoginPage({ variant }: { variant: LoginVariant }) {
                   checked={rememberMe}
                   onChange={(e) => setRememberMe(e.target.checked)}
                   className="h-4 w-4 rounded border-slate-300"
-                  style={{ accentColor: isAgence ? '#f97316' : '#7e22ce' }}
+                  style={{ accentColor: isAgence ? '#2563EB' : '#1D4ED8' }}
                 />
                 <span className="text-sm text-slate-500">Se souvenir de moi</span>
               </label>
@@ -330,8 +324,8 @@ export default function LoginPage({ variant }: { variant: LoginVariant }) {
               disabled={loading}
               className={`w-full text-white font-semibold py-3 px-4 rounded-lg transition-all duration-200 shadow-md disabled:opacity-70 disabled:cursor-not-allowed flex items-center justify-center gap-2 text-sm hover:shadow-lg ${
                 isAgence
-                  ? 'bg-orange-500 hover:bg-orange-600 shadow-orange-500/25'
-                  : 'bg-purple-700 hover:bg-purple-800 shadow-purple-700/25'
+                  ? 'bg-blue-500 hover:bg-blue-700 shadow-blue-500/25'
+                  : 'bg-blue-800 hover:bg-blue-900 shadow-blue-800/25'
               }`}
             >
               {loading ? (
@@ -365,8 +359,8 @@ export default function LoginPage({ variant }: { variant: LoginVariant }) {
             <div className="flex flex-col sm:flex-row gap-2 sm:items-center">
               <span className={`inline-flex self-start items-center px-2.5 py-1 rounded-md text-xs font-semibold ${
                 isAgence
-                  ? 'bg-orange-50 text-orange-600'
-                  : 'bg-purple-50 text-purple-600'
+                  ? 'bg-blue-50 text-blue-700'
+                  : 'text-blue-800 text-blue-700'
               }`}>
                 {config.demoLabel}
               </span>

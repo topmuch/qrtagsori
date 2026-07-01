@@ -73,7 +73,7 @@ function ExpiredContent() {
         
         <p className="text-[#a0a8b8] mb-8">
           Le bagage associé à{' '}
-          <span className="font-mono bg-slate-800 px-2 py-1 rounded text-amber-400">
+          <span className="font-mono bg-slate-800 px-2 py-1 rounded text-blue-500">
             {reference || 'ce code'}
           </span>
           {expiredAt && (
@@ -85,9 +85,9 @@ function ExpiredContent() {
         </p>
 
         {/* Warning Box */}
-        <div className="bg-amber-500/10 border border-amber-500/30 rounded-xl p-4 mb-6 text-left">
+        <div className="bg-blue-600/10 border border-blue-600/30 rounded-xl p-4 mb-6 text-left">
           <div className="flex items-start gap-3">
-            <AlertTriangle className="w-5 h-5 text-amber-400 shrink-0 mt-0.5" />
+            <AlertTriangle className="w-5 h-5 text-blue-500 shrink-0 mt-0.5" />
             <div>
               <p className="text-amber-300 font-medium text-sm">Que faire ?</p>
               <p className="text-amber-200/70 text-sm mt-1">
@@ -151,7 +151,7 @@ export default function ExpiredQRPage() {
   return (
     <Suspense fallback={
       <div className="min-h-screen bg-gradient-to-b from-[#080c1a] to-[#0d1220] flex items-center justify-center">
-        <div className="animate-spin w-8 h-8 border-2 border-amber-500/30 border-t-amber-500 rounded-full"></div>
+        <div className="animate-spin w-8 h-8 border-2 border-blue-600/30 border-t-blue-600 rounded-full"></div>
       </div>
     }>
       <ExpiredContent />

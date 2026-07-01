@@ -37,7 +37,7 @@ export default function ForgotPasswordPage() {
         {/* Logo */}
         <div className="text-center mb-8">
           <Link href="/" className="inline-block">
-            <h1 className="text-3xl font-bold text-[#ff7f00]">QRBag</h1>
+            <h1 className="text-3xl font-bold text-[#2563EB]">QRBag</h1>
           </Link>
           <p className="text-slate-500 mt-2">Réinitialisation du mot de passe</p>
         </div>
@@ -47,7 +47,7 @@ export default function ForgotPasswordPage() {
           {!sent ? (
             <>
               <div className="text-center mb-6">
-                <Mail className="w-12 h-12 text-[#ff7f00] mx-auto mb-4" />
+                <Mail className="w-12 h-12 text-[#2563EB] mx-auto mb-4" />
                 <h2 className="text-xl font-semibold text-slate-800 mb-2">Mot de passe oublié ?</h2>
                 <p className="text-slate-500 text-sm">
                   Entrez votre email et nous vous enverrons un lien pour réinitialiser votre mot de passe.
@@ -63,14 +63,14 @@ export default function ForgotPasswordPage() {
                     onChange={(e) => setEmail(e.target.value)}
                     placeholder="votre@email.com"
                     required
-                    className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:border-[#ff7f00]"
+                    className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:border-[#2563EB]"
                   />
                 </div>
 
                 <button
                   type="submit"
                   disabled={loading || !email}
-                  className="w-full py-3 bg-[#ff7f00] text-white rounded-xl font-medium hover:bg-[#ff6600] transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
+                  className="w-full py-3 bg-[#2563EB] text-white rounded-xl font-medium hover:bg-[#ff6600] transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
                 >
                   {loading ? (
                     <>
@@ -88,14 +88,14 @@ export default function ForgotPasswordPage() {
             </>
           ) : (
             <div className="text-center py-4">
-              <CheckCircle className="w-16 h-16 text-emerald-500 mx-auto mb-4" />
+              <CheckCircle className="w-16 h-16 text-blue-600 mx-auto mb-4" />
               <h2 className="text-xl font-semibold text-slate-800 mb-2">Email envoyé !</h2>
               <p className="text-slate-600 mb-6">
                 Si un compte existe avec l&apos;adresse <strong>{email}</strong>, vous recevrez un email avec les instructions pour réinitialiser votre mot de passe.
               </p>
               <button
                 onClick={() => setSent(false)}
-                className="text-[#ff7f00] font-medium hover:underline"
+                className="text-[#2563EB] font-medium hover:underline"
               >
                 Renvoyer un autre email
               </button>

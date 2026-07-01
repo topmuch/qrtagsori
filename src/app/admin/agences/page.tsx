@@ -178,7 +178,7 @@ export default function AgencesPage() {
           </Button>
           <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
             <DialogTrigger asChild>
-              <Button className="bg-emerald-500 hover:bg-emerald-600 text-white rounded-xl">
+              <Button className="bg-blue-600 hover:bg-blue-700 text-white rounded-xl">
                 <Plus className="w-4 h-4 mr-2" />
                 Nouvelle agence
               </Button>
@@ -262,7 +262,7 @@ export default function AgencesPage() {
                   </div>
                 </div>
                 <Button
-                  className="w-full bg-emerald-500 hover:bg-emerald-600 text-white rounded-xl"
+                  className="w-full bg-blue-600 hover:bg-blue-700 text-white rounded-xl"
                   onClick={handleCreateAgency}
                   disabled={agencyCreating}
                 >
@@ -276,7 +276,7 @@ export default function AgencesPage() {
 
       {/* Success Message */}
       {successMessage && (
-        <div className="mb-6 bg-emerald-50 dark:bg-emerald-900/30 border border-emerald-200 dark:border-emerald-800 text-emerald-700 dark:text-emerald-400 px-4 py-3 rounded-xl flex items-center gap-2">
+        <div className="mb-6 bg-emerald-50 dark:bg-emerald-900/30 border border-emerald-200 dark:border-emerald-800 text-emerald-700 dark:text-blue-500 px-4 py-3 rounded-xl flex items-center gap-2">
           <CheckCircle className="w-5 h-5" />
           {successMessage}
         </div>
@@ -291,8 +291,8 @@ export default function AgencesPage() {
                 <p className="text-slate-500 dark:text-slate-400 text-sm">Total agences</p>
                 <p className="text-3xl font-bold text-slate-800 dark:text-white">{agencies.length}</p>
               </div>
-              <div className="w-12 h-12 bg-[#ff7f00]/10 dark:bg-[#ff7f00]/20 rounded-xl flex items-center justify-center">
-                <Building className="w-6 h-6 text-[#ff7f00]" />
+              <div className="w-12 h-12 bg-[#2563EB]/10 dark:bg-[#2563EB]/20 rounded-xl flex items-center justify-center">
+                <Building className="w-6 h-6 text-[#2563EB]" />
               </div>
             </div>
           </CardContent>
@@ -306,7 +306,7 @@ export default function AgencesPage() {
                 <p className="text-3xl font-bold text-slate-800 dark:text-white">{agencies.filter(a => a.active).length}</p>
               </div>
               <div className="w-12 h-12 bg-emerald-100 dark:bg-emerald-900/30 rounded-xl flex items-center justify-center">
-                <CheckCircle className="w-6 h-6 text-emerald-600 dark:text-emerald-400" />
+                <CheckCircle className="w-6 h-6 text-blue-700 dark:text-blue-500" />
               </div>
             </div>
           </CardContent>
@@ -316,7 +316,7 @@ export default function AgencesPage() {
       {/* Agencies Grid */}
       {loading ? (
         <div className="flex items-center justify-center py-12">
-          <div className="w-8 h-8 border-2 border-[#16a34a]/30 border-t-[#16a34a] rounded-full animate-spin" />
+          <div className="w-8 h-8 border-2 border-[#2563EB]/30 border-t-[#2563EB] rounded-full animate-spin" />
         </div>
       ) : agencies.length === 0 ? (
         <div className="text-center py-12 text-slate-500 dark:text-slate-400">Aucune agence</div>
@@ -327,9 +327,9 @@ export default function AgencesPage() {
               {/* Header */}
               <div className="flex items-start justify-between mb-4">
                 <div className="w-12 h-12 bg-emerald-100 dark:bg-emerald-900/30 rounded-xl flex items-center justify-center">
-                  <Building className="w-6 h-6 text-emerald-600 dark:text-emerald-400" />
+                  <Building className="w-6 h-6 text-blue-700 dark:text-blue-500" />
                 </div>
-                <Badge className={agency.active ? 'bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400' : 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400'}>
+                <Badge className={agency.active ? 'bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-blue-500' : 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400'}>
                   {agency.active ? 'Actif' : 'Inactif'}
                 </Badge>
               </div>

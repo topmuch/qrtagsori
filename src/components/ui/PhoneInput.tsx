@@ -122,7 +122,7 @@ export default function PhoneInput({
   const bgColor = dark ? 'bg-white/10' : 'bg-white';
   const borderColor = dark ? 'border-white/20' : 'border-blue-200';
   const placeholderColor = dark ? 'placeholder:text-white/40' : 'placeholder:text-blue-900/40';
-  const focusRing = 'focus:outline-none focus:ring-2 focus:ring-orange-400 focus:border-transparent';
+  const focusRing = 'focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-transparent';
 
   return (
     <div className={`w-full ${className}`}>
@@ -175,7 +175,7 @@ export default function PhoneInput({
                       onClick={() => handleCountrySelect(c)}
                       className={`w-full flex items-center gap-3 px-4 py-2.5 text-left transition-colors ${
                         c.code === selected.code
-                          ? (dark ? 'bg-orange-500/20 text-orange-400' : 'bg-orange-50 text-orange-600')
+                          ? (dark ? 'bg-blue-500/20 text-blue-600' : 'bg-blue-50 text-blue-700')
                           : (dark ? 'text-white/80 hover:bg-white/10' : 'text-blue-900 hover:bg-blue-50')
                       }`}
                     >

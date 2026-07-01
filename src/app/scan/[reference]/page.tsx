@@ -101,7 +101,7 @@ function LanguageSelector({ lang, setLang }: { lang: Language; setLang: (l: Lang
               }}
               className={`w-full px-4 py-2.5 sm:px-5 sm:py-3 text-left text-xs sm:text-sm md:text-base font-medium transition-colors ${
                 lang === l
-                  ? 'bg-orange-500 text-white'
+                  ? 'bg-blue-500 text-white'
                   : 'text-blue-900 hover:bg-blue-50'
               }`}
             >
@@ -154,7 +154,7 @@ function ActivationRedirect({ type, reference, t, lang, setLang }: {
               <Luggage className="w-8 h-8 text-white" />
             )}
           </div>
-          <div className="absolute -top-1 -right-1 w-7 h-7 bg-orange-500 rounded-full flex items-center justify-center">
+          <div className="absolute -top-1 -right-1 w-7 h-7 bg-blue-500 rounded-full flex items-center justify-center">
             <Sparkles className="w-3.5 h-3.5 text-white" />
           </div>
         </div>
@@ -171,12 +171,12 @@ function ActivationRedirect({ type, reference, t, lang, setLang }: {
           <>
             <div className="border-2 border-dashed border-white/80 rounded-xl p-4 mb-5">
               <p className="text-white/80 text-sm mb-2">{t('common.baggage_type')}</p>
-              <Badge className="bg-orange-500 text-white text-base md:text-lg px-5 py-1.5">
+              <Badge className="bg-blue-500 text-white text-base md:text-lg px-5 py-1.5">
                 {t('common.hajj_label')}
               </Badge>
             </div>
             <button
-              className="w-full py-4 px-6 bg-orange-500 hover:bg-orange-600 text-white rounded-xl font-bold text-lg transition-colors flex items-center justify-center gap-2 min-h-[56px] shadow-lg shadow-orange-500/30"
+              className="w-full py-4 px-6 bg-blue-500 hover:bg-blue-700 text-white rounded-xl font-bold text-lg transition-colors flex items-center justify-center gap-2 min-h-[56px] shadow-lg shadow-blue-500/30"
               onClick={handleContinue}
             >
               {t('common.start_activation')}
@@ -190,7 +190,7 @@ function ActivationRedirect({ type, reference, t, lang, setLang }: {
           <>
             <div className="border-2 border-dashed border-white/80 rounded-xl p-4 mb-5">
               <p className="text-white/80 text-sm mb-2">{t('common.baggage_type')}</p>
-              <Badge className="bg-orange-500 text-white text-base md:text-lg px-5 py-1.5">
+              <Badge className="bg-blue-500 text-white text-base md:text-lg px-5 py-1.5">
                 {t('common.voyageur_label')}
               </Badge>
             </div>
@@ -210,7 +210,7 @@ function ActivationRedirect({ type, reference, t, lang, setLang }: {
 
             {/* ACTIVATION-FLOW: Bouton Continuer — disabled tant qu'aucun mode n'est choisi */}
             <button
-              className="w-full py-4 px-6 bg-orange-500 hover:bg-orange-600 disabled:bg-white/10 disabled:text-white/40 disabled:cursor-not-allowed text-white rounded-xl font-bold text-lg transition-colors flex items-center justify-center gap-2 min-h-[56px] shadow-lg shadow-orange-500/30"
+              className="w-full py-4 px-6 bg-blue-500 hover:bg-blue-700 disabled:bg-white/10 disabled:text-white/40 disabled:cursor-not-allowed text-white rounded-xl font-bold text-lg transition-colors flex items-center justify-center gap-2 min-h-[56px] shadow-lg shadow-blue-500/30"
               onClick={handleContinue}
               disabled={!selectedMode}
             >
@@ -229,7 +229,7 @@ function LoadingScreen({ t }: { t: (key: string) => string }) {
   return (
     <main className="min-h-screen bg-white flex items-center justify-center">
       <div className="text-center">
-        <div className="animate-spin w-12 h-12 border-4 border-blue-900/20 border-t-orange-500 rounded-full mx-auto mb-4"></div>
+        <div className="animate-spin w-12 h-12 border-4 border-blue-900/20 border-t-blue-500 rounded-full mx-auto mb-4"></div>
         <p className="text-lg text-blue-900">{t('common.loading')}</p>
       </div>
     </main>
@@ -298,7 +298,7 @@ function SuccessToast({ show, message, successTitle }: { show: boolean; message:
   if (!show) return null;
 
   return (
-    <div className="fixed top-[calc(3.5rem+env(safe-area-inset-top,0px))] sm:top-[calc(4rem+env(safe-area-inset-top,0px))] right-3 sm:right-5 bg-orange-500 text-white px-4 sm:px-6 py-3 sm:py-4 rounded-xl shadow-lg z-50 animate-in slide-in-from-right duration-300 max-w-[calc(100vw-2rem)] sm:max-w-sm">
+    <div className="fixed top-[calc(3.5rem+env(safe-area-inset-top,0px))] sm:top-[calc(4rem+env(safe-area-inset-top,0px))] right-3 sm:right-5 bg-blue-500 text-white px-4 sm:px-6 py-3 sm:py-4 rounded-xl shadow-lg z-50 animate-in slide-in-from-right duration-300 max-w-[calc(100vw-2rem)] sm:max-w-sm">
       <div className="flex items-center gap-3">
         <CheckCircle className="w-6 h-6" />
         <div>
@@ -620,7 +620,7 @@ export default function ScanPage() {
           <span className={`inline-flex items-center justify-center px-6 py-3 rounded-full font-bold text-lg shadow-lg transform transition-transform duration-300 ${
             isDeclaredLost
               ? 'bg-red-600 text-white shadow-red-500/30 animate-pulse'
-              : 'bg-orange-500 text-white shadow-orange-500/30 hover:scale-105'
+              : 'bg-blue-500 text-white shadow-blue-500/30 hover:scale-105'
           }`}>
             {/* TRANSPORT-FEATURE: Dynamic transport icon in badge */}
             {isDeclaredLost ? `🚨 ${t('finder.lost_badge')}` : `${t('finder.success_badge')} ${getTransportIcon(safeTransportMode(baggage?.transportMode))}`}
@@ -727,7 +727,7 @@ export default function ScanPage() {
                     )}
                   </div>
                   <div className="h-12 w-12 rounded-full bg-white/10 flex items-center justify-center ml-4 flex-shrink-0">
-                    <Plane className="w-7 h-7 text-orange-400" />
+                    <Plane className="w-7 h-7 text-blue-600" />
                   </div>
                 </div>
               </DashedEncart>
@@ -848,7 +848,7 @@ export default function ScanPage() {
                 handleShareLocation();
               }}
               disabled={isLoadingLocation}
-              className="w-full py-4 px-6 bg-orange-500 hover:bg-orange-600 active:bg-orange-700 disabled:bg-gray-400 disabled:cursor-not-allowed text-white font-bold text-lg rounded-xl shadow-lg shadow-orange-500/30 transition-all duration-200 transform hover:-translate-y-1 min-h-[56px] focus:ring-2 focus:ring-orange-400 focus:ring-offset-2"
+              className="w-full py-4 px-6 bg-blue-500 hover:bg-blue-700 active:bg-blue-800 disabled:bg-gray-400 disabled:cursor-not-allowed text-white font-bold text-lg rounded-xl shadow-lg shadow-blue-500/30 transition-all duration-200 transform hover:-translate-y-1 min-h-[56px] focus:ring-2 focus:ring-blue-600 focus:ring-offset-2"
             >
               {isLoadingLocation ? (
                 <>
@@ -889,9 +889,9 @@ export default function ScanPage() {
 
             {/* GPS Error */}
             {geoError && (
-              <div className="p-4 bg-orange-50 border border-orange-200 rounded-xl">
+              <div className="p-4 bg-blue-50 border border-blue-200 rounded-xl">
                 <div className="flex items-start gap-3">
-                  <AlertTriangle className="w-6 h-6 text-orange-500 flex-shrink-0 mt-0.5" />
+                  <AlertTriangle className="w-6 h-6 text-blue-500 flex-shrink-0 mt-0.5" />
                   <div>
                     <p className="text-orange-900 text-base font-medium">{t('finder.gps_unavailable')}</p>
                     <p className="text-orange-800 text-base mt-1">{geoError}</p>
@@ -910,7 +910,7 @@ export default function ScanPage() {
                 placeholder={sharedPosition ? t('finder.location_optional_placeholder') : t('finder.location_placeholder')}
                 value={otherLocation}
                 onChange={(e) => setOtherLocation(e.target.value)}
-                className="w-full px-4 py-3.5 bg-white border-2 border-blue-200 rounded-xl text-blue-900 text-base md:text-lg placeholder:text-blue-900/40 focus:outline-none focus:ring-2 focus:ring-orange-400 focus:border-transparent transition-all min-h-[52px]"
+                className="w-full px-4 py-3.5 bg-white border-2 border-blue-200 rounded-xl text-blue-900 text-base md:text-lg placeholder:text-blue-900/40 focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-transparent transition-all min-h-[52px]"
               />
             </div>
 
@@ -920,7 +920,7 @@ export default function ScanPage() {
               placeholder={t('finder.first_name')}
               value={finderName}
               onChange={(e) => setFinderName(e.target.value)}
-              className="w-full px-4 py-3.5 bg-white border-2 border-blue-200 rounded-xl text-blue-900 text-base md:text-lg placeholder:text-blue-900/40 focus:outline-none focus:ring-2 focus:ring-orange-400 focus:border-transparent transition-all min-h-[52px]"
+              className="w-full px-4 py-3.5 bg-white border-2 border-blue-200 rounded-xl text-blue-900 text-base md:text-lg placeholder:text-blue-900/40 focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-transparent transition-all min-h-[52px]"
             />
 
             {/* WhatsApp Input */}
@@ -942,7 +942,7 @@ export default function ScanPage() {
               <select
                 value={selectedContext}
                 onChange={(e) => setSelectedContext(e.target.value)}
-                className="w-full px-4 py-3.5 bg-white border-2 border-blue-200 rounded-xl text-blue-900 text-base md:text-lg focus:outline-none focus:ring-2 focus:ring-orange-400 focus:border-transparent transition-all min-h-[52px] appearance-none cursor-pointer"
+                className="w-full px-4 py-3.5 bg-white border-2 border-blue-200 rounded-xl text-blue-900 text-base md:text-lg focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-transparent transition-all min-h-[52px] appearance-none cursor-pointer"
               >
                 <option value="">{t('finder.context_placeholder')}</option>
                 <option value="departure_airport_urgent">{t('finder.context_airport_departure')}</option>
@@ -977,7 +977,7 @@ export default function ScanPage() {
                     handlePhoneCall();
                   }}
                   disabled={isSubmitting}
-                  className="py-4 px-5 bg-orange-500 hover:bg-orange-600 text-white rounded-xl font-bold transition-colors flex items-center justify-center gap-2 text-lg min-h-[56px] disabled:opacity-70 shadow-lg"
+                  className="py-4 px-5 bg-blue-500 hover:bg-blue-700 text-white rounded-xl font-bold transition-colors flex items-center justify-center gap-2 text-lg min-h-[56px] disabled:opacity-70 shadow-lg"
                 >
                   <Phone className="w-5 h-5" />
                   {t('finder.by_phone')}
@@ -990,7 +990,7 @@ export default function ScanPage() {
               <button
                 onClick={handleShareLocation}
                 disabled={isLoadingLocation}
-                className="w-full py-3 text-base text-blue-900 hover:text-orange-500 flex items-center justify-center gap-2 transition-colors min-h-[48px]"
+                className="w-full py-3 text-base text-blue-900 hover:text-blue-500 flex items-center justify-center gap-2 transition-colors min-h-[48px]"
               >
                 <Navigation className="w-5 h-5" />
                 {isLoadingLocation ? t('finder.locating') : t('finder.retry_gps')}

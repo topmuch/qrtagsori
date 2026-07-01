@@ -140,7 +140,7 @@ export function getBaggageStatusInfo(status: string) {
     },
     found: {
       label: 'Retrouvé',
-      color: 'text-emerald-600',
+      color: 'text-blue-700',
       bgColor: 'bg-emerald-100'
     },
     blocked: {

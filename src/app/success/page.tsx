@@ -40,8 +40,8 @@ function SuccessContent() {
   const { t } = useTranslation();
 
   const isHajj = type === 'hajj';
-  const bgColor = isHajj ? 'from-[#0d5e34] to-[#0a4a2a]' : 'from-[#d35400] to-[#b34700]';
-  const accentColor = isHajj ? '#0d5e34' : '#d35400';
+  const bgColor = isHajj ? 'from-[#0d5e34] to-[#0a4a2a]' : 'from-[#1D4ED8] to-[#b34700]';
+  const accentColor = isHajj ? '#0d5e34' : '#1D4ED8';
 
   useEffect(() => {
     // Load activation data from sessionStorage
@@ -110,7 +110,7 @@ function SuccessContent() {
         gradient.addColorStop(0, '#0d5e34');
         gradient.addColorStop(1, '#0a4a2a');
       } else {
-        gradient.addColorStop(0, '#d35400');
+        gradient.addColorStop(0, '#1D4ED8');
         gradient.addColorStop(1, '#b34700');
       }
       ctx.fillStyle = gradient;
@@ -444,7 +444,7 @@ function SuccessContent() {
                 href={`/suivi/${activationData.reference}`}
                 className="flex items-center gap-2 bg-white/10 px-3 py-2 rounded-lg border border-white/10 hover:bg-white/20 transition-colors group mb-2"
               >
-                <span className="flex-1 text-sm text-orange-300 truncate font-mono">
+                <span className="flex-1 text-sm text-blue-300 truncate font-mono">
                   {typeof window !== 'undefined' ? `${window.location.origin}/suivi/${activationData.reference}` : `/suivi/${activationData.reference}`}
                 </span>
                 <span className="text-xs text-white/50 group-hover:text-white transition-colors flex-shrink-0">
@@ -519,7 +519,7 @@ function SuccessContent() {
 export default function SuccessPage() {
   return (
     <Suspense fallback={
-      <main className="min-h-screen bg-gradient-to-b from-[#d35400] to-[#b34700] flex items-center justify-center">
+      <main className="min-h-screen bg-gradient-to-b from-[#1D4ED8] to-[#b34700] flex items-center justify-center">
         <div className="text-center text-white">
           <div className="animate-spin w-12 h-12 border-4 border-white/30 border-t-white rounded-full mx-auto mb-4"></div>
           <p>Chargement...</p>

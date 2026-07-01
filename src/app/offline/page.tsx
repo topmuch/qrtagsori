@@ -5,7 +5,7 @@ export default function OfflinePage() {
     <main className="min-h-screen bg-[#080c1a] flex items-center justify-center p-4">
       <div className="max-w-md w-full text-center">
         {/* Logo */}
-        <div className="w-20 h-20 bg-gradient-to-br from-[#b8860b] to-[#d4af37] rounded-2xl flex items-center justify-center mx-auto mb-8">
+        <div className="w-20 h-20 bg-gradient-to-br from-[#b8860b] to-[#3b82f6] rounded-2xl flex items-center justify-center mx-auto mb-8">
           <svg
             className="w-10 h-10 text-[#080c1a]"
             viewBox="0 0 24 24"
@@ -32,7 +32,7 @@ export default function OfflinePage() {
         {/* Retry Button */}
         <button
           onClick={() => window.location.reload()}
-          className="px-6 py-3 bg-[#b8860b] text-white font-semibold rounded-lg hover:bg-[#d4af37] transition-colors"
+          className="px-6 py-3 bg-[#b8860b] text-white font-semibold rounded-lg hover:bg-[#3b82f6] transition-colors"
         >
           Réessayer
         </button>

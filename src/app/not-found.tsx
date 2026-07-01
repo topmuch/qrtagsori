@@ -9,14 +9,14 @@ export default function NotFound() {
       <div className="text-center text-white max-w-md">
         {/* Logo */}
         <div className="flex items-center justify-center gap-2 mb-8">
-          <div className="w-12 h-12 bg-gradient-to-br from-[#ff2a6d] to-[#d35400] rounded-lg flex items-center justify-center shadow-lg shadow-[#ff2a6d]/20">
+          <div className="w-12 h-12 bg-gradient-to-br from-[#1E40AF] to-[#1D4ED8] rounded-lg flex items-center justify-center shadow-lg shadow-[#1E40AF]/20">
             <QrCode className="w-7 h-7 text-white" />
           </div>
-          <span className="text-2xl font-bold text-[#ff2a6d]">QRBag</span>
+          <span className="text-2xl font-bold text-[#1E40AF]">QRBag</span>
         </div>
 
         {/* 404 */}
-        <h1 className="text-8xl font-bold bg-gradient-to-r from-[#ff2a6d] to-[#d35400] bg-clip-text text-transparent mb-4">
+        <h1 className="text-8xl font-bold bg-gradient-to-r from-[#1E40AF] to-[#1D4ED8] bg-clip-text text-transparent mb-4">
           404
         </h1>
 
@@ -33,7 +33,7 @@ export default function NotFound() {
         <div className="flex flex-col sm:flex-row gap-4 justify-center">
           <Link
             href="/"
-            className="flex items-center justify-center gap-2 bg-[#ff2a6d] hover:bg-[#e01e5a] text-white px-6 py-3 rounded-lg font-bold transition-all hover:scale-105 shadow-lg shadow-[#ff2a6d]/30"
+            className="flex items-center justify-center gap-2 bg-[#1E40AF] hover:bg-[#e01e5a] text-white px-6 py-3 rounded-lg font-bold transition-all hover:scale-105 shadow-lg shadow-[#1E40AF]/30"
           >
             <Home className="w-5 h-5" />
             Retour à l&apos;accueil
@@ -50,7 +50,7 @@ export default function NotFound() {
         {/* Help text */}
         <p className="text-[#a0a8b8] text-sm mt-8">
           Besoin d&apos;aide ?{' '}
-          <Link href="/contact" className="text-[#ff2a6d] hover:underline">
+          <Link href="/contact" className="text-[#1E40AF] hover:underline">
             Contactez-nous
           </Link>
         </p>

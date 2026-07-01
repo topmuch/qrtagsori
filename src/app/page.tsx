@@ -134,10 +134,10 @@ function StickySearchBar() {
                 placeholder="Suivre un bagage — ex: AB12-CDEF"
                 className={`w-full pl-11 pr-4 py-3 rounded-xl border text-sm font-medium transition-all duration-300 bg-slate-50 focus:bg-white focus:outline-none focus:ring-2 ${
                   isValid
-                    ? 'border-emerald-400 focus:ring-emerald-500/20 text-slate-900'
+                    ? 'border-blue-500 focus:ring-blue-600/20 text-slate-900'
                     : error
                     ? 'border-red-300 focus:ring-red-500/20 text-slate-900'
-                    : 'border-slate-200 focus:ring-orange-500/20 text-slate-900 placeholder:text-slate-400'
+                    : 'border-slate-200 focus:ring-blue-500/20 text-slate-900 placeholder:text-slate-400'
                 }`}
                 maxLength={13}
               />
@@ -150,7 +150,7 @@ function StickySearchBar() {
               disabled={!isValid}
               className={`rounded-xl px-5 py-3 font-semibold text-sm transition-all gap-2 ${
                 isValid
-                  ? 'bg-orange-500 hover:bg-orange-600 text-white shadow-md shadow-orange-500/20 hover:shadow-lg hover:shadow-orange-500/30'
+                  ? 'bg-blue-500 hover:bg-blue-700 text-white shadow-md shadow-blue-500/20 hover:shadow-lg hover:shadow-blue-500/30'
                   : 'bg-slate-100 text-slate-400 cursor-not-allowed'
               }`}
             >
@@ -189,15 +189,13 @@ function Navigation() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16 lg:h-20">
           <Link href="/" className="flex items-center gap-2.5 group">
-            <div className="w-9 h-9 bg-gradient-to-br from-[#FF6B35] to-[#D4AF37] rounded-xl flex items-center justify-center shadow-lg shadow-orange-500/20 group-hover:shadow-orange-500/40 transition-shadow">
-              <QrCode className="w-5 h-5 text-white" />
-            </div>
+            <img src="/logo.png" alt="QRBag" className="w-9 h-9 rounded-xl object-contain" />
             <span className="text-xl font-bold text-slate-900 tracking-tight">QRBag</span>
           </Link>
 
           <div className="hidden md:flex items-center gap-8">
             {navLinks.map(link => (
-              <a key={link.href} href={link.href} className="text-sm font-medium text-slate-600 hover:text-slate-900 transition-colors duration-300 relative after:absolute after:bottom-[-4px] after:left-0 after:w-0 after:h-[2px] after:bg-[#D4AF37] after:transition-all after:duration-300 hover:after:w-full">
+              <a key={link.href} href={link.href} className="text-sm font-medium text-slate-600 hover:text-slate-900 transition-colors duration-300 relative after:absolute after:bottom-[-4px] after:left-0 after:w-0 after:h-[2px] after:bg-[#3B82F6] after:transition-all after:duration-300 hover:after:w-full">
                 {link.label}
               </a>
             ))}
@@ -216,7 +214,7 @@ function Navigation() {
               </Button>
             </Link>
             <Link href="/devenir-partenaire">
-              <Button className="bg-gradient-to-r from-[#D4AF37] to-[#FF6B35] hover:from-[#c4a030] hover:to-[#e65a28] text-white font-medium text-sm rounded-full px-5 shadow-lg shadow-orange-500/20 hover:shadow-orange-500/40 transition-all hover:scale-[1.02]">
+              <Button className="bg-gradient-to-r from-[#3B82F6] to-[#1D4ED8] hover:from-[#c4a030] hover:to-[#e65a28] text-white font-medium text-sm rounded-full px-5 shadow-lg shadow-blue-500/20 hover:shadow-blue-500/40 transition-all hover:scale-[1.02]">
                 Devenir Partenaire
               </Button>
             </Link>
@@ -254,7 +252,7 @@ function Navigation() {
                 <Button variant="ghost" className="w-full text-slate-500 border border-slate-200 justify-start">Espace Agence</Button>
               </Link>
               <Link href="/devenir-partenaire" onClick={() => setIsOpen(false)}>
-                <Button className="w-full bg-gradient-to-r from-[#D4AF37] to-[#FF6B35] text-white font-medium rounded-full">
+                <Button className="w-full bg-gradient-to-r from-[#3B82F6] to-[#1D4ED8] text-white font-medium rounded-full">
                   Devenir Partenaire
                 </Button>
               </Link>
@@ -290,7 +288,7 @@ function HeroSection() {
         {[...Array(6)].map((_, i) => (
           <motion.div
             key={i}
-            className="absolute w-1.5 h-1.5 bg-[#D4AF37]/30 rounded-full"
+            className="absolute w-1.5 h-1.5 bg-[#3B82F6]/30 rounded-full"
             style={{
               left: `${15 + i * 15}%`,
               top: `${20 + (i % 3) * 25}%`,
@@ -313,7 +311,7 @@ function HeroSection() {
       <div className="relative z-10 max-w-5xl mx-auto px-4 sm:px-6 text-center pt-24 pb-20">
         <FadeIn>
           <div className="inline-flex items-center gap-2 mb-8 px-5 py-2.5 bg-black/40 border border-white/20 rounded-full backdrop-blur-md shadow-lg">
-            <span className="w-2 h-2 bg-[#D4AF37] rounded-full animate-pulse" />
+            <span className="w-2 h-2 bg-[#3B82F6] rounded-full animate-pulse" />
             <span className="text-sm font-medium text-white tracking-wide">La protection intelligente pour vos bagages</span>
           </div>
         </FadeIn>
@@ -322,7 +320,7 @@ function HeroSection() {
           <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold text-white mb-6 leading-[1.08] tracking-tight drop-shadow-[0_2px_8px_rgba(0,0,0,0.5)]">
             Un bagage perdu n&apos;est pas{' '}
             <br className="hidden sm:block" />
-            <span className="bg-gradient-to-r from-[#D4AF37] to-[#FF6B35] bg-clip-text text-transparent">
+            <span className="bg-gradient-to-r from-[#3B82F6] to-[#1D4ED8] bg-clip-text text-transparent">
               une fatalité.
             </span>
           </h1>
@@ -337,13 +335,13 @@ function HeroSection() {
         <FadeIn delay={0.45}>
           <div className="flex flex-col sm:flex-row gap-4 justify-center mt-10">
             <Link href="/demo">
-              <Button className="bg-[#D4AF37] hover:bg-[#c4a030] text-slate-900 px-8 py-4 rounded-full font-semibold text-base shadow-lg shadow-amber-500/25 hover:shadow-xl hover:shadow-amber-500/40 hover:scale-[1.02] transition-all duration-300 gap-2.5">
+              <Button className="bg-[#3B82F6] hover:bg-[#c4a030] text-slate-900 px-8 py-4 rounded-full font-semibold text-base shadow-lg shadow-blue-600/25 hover:shadow-xl hover:shadow-blue-600/40 hover:scale-[1.02] transition-all duration-300 gap-2.5">
                 <Play className="w-4 h-4" />
                 Découvrir la démo immersive
               </Button>
             </Link>
             <Link href="/contact">
-              <Button className="bg-[#FF6B35] hover:bg-[#e65a28] text-white px-8 py-4 rounded-full font-semibold text-base shadow-lg shadow-orange-500/25 hover:shadow-xl hover:shadow-orange-500/40 hover:scale-[1.02] transition-all duration-300 gap-2.5 relative overflow-hidden">
+              <Button className="bg-[#1D4ED8] hover:bg-[#e65a28] text-white px-8 py-4 rounded-full font-semibold text-base shadow-lg shadow-blue-500/25 hover:shadow-xl hover:shadow-blue-500/40 hover:scale-[1.02] transition-all duration-300 gap-2.5 relative overflow-hidden">
                 <motion.span
                   className="absolute inset-0 bg-white/20"
                   animate={{ opacity: [0, 0.3, 0] }}
@@ -371,7 +369,7 @@ function HeroSection() {
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.7 + idx * 0.1, duration: 0.5 }}
               >
-                <item.icon className="w-4 h-4 text-[#D4AF37]" />
+                <item.icon className="w-4 h-4 text-[#3B82F6]" />
                 <span className="text-xs font-medium text-white">{item.text}</span>
               </motion.div>
             ))}
@@ -403,7 +401,7 @@ function QRBagEnActionSection() {
           {/* Left - QR Code Image */}
           <FadeIn direction="right">
             <div className="relative">
-              <div className="absolute -inset-4 bg-gradient-to-br from-[#D4AF37]/20 to-[#FF6B35]/20 rounded-3xl blur-2xl" />
+              <div className="absolute -inset-4 bg-gradient-to-br from-[#3B82F6]/20 to-[#1D4ED8]/20 rounded-3xl blur-2xl" />
               <div className="relative rounded-2xl overflow-hidden shadow-2xl shadow-slate-200/80 border border-slate-200">
                 <Image
                   src="/images/landing-v2/qrcode-reel.jpg"
@@ -415,7 +413,7 @@ function QRBagEnActionSection() {
               </div>
               {/* Floating badge */}
               <motion.div
-                className="absolute -bottom-4 -right-4 bg-orange-500 text-white px-5 py-3 rounded-2xl shadow-lg shadow-orange-500/30 font-bold text-sm"
+                className="absolute -bottom-4 -right-4 bg-blue-500 text-white px-5 py-3 rounded-2xl shadow-lg shadow-blue-500/30 font-bold text-sm"
                 animate={{ y: [0, -6, 0] }}
                 transition={{ duration: 3, repeat: Infinity, ease: 'easeInOut' }}
               >
@@ -427,7 +425,7 @@ function QRBagEnActionSection() {
           {/* Right - Content */}
           <FadeIn direction="left" delay={0.2}>
             <div>
-              <span className="text-sm font-semibold tracking-[0.2em] uppercase text-orange-500 mb-4 block">QRBag en action</span>
+              <span className="text-sm font-semibold tracking-[0.2em] uppercase text-blue-500 mb-4 block">QRBag en action</span>
               <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-slate-900 mb-6 tracking-tight leading-tight">
                 QRBag en action <span className="inline-block">🎯</span>
               </h2>
@@ -446,7 +444,7 @@ function QRBagEnActionSection() {
                     transition={{ delay: 0.3 + i * 0.1, duration: 0.5 }}
                   >
                     <div className="w-6 h-6 rounded-full bg-emerald-100 flex items-center justify-center flex-shrink-0">
-                      <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+                      <CheckCircle2 className="w-4 h-4 text-blue-700" />
                     </div>
                     <span className="text-slate-700 font-medium">{feature}</span>
                   </motion.div>
@@ -455,7 +453,7 @@ function QRBagEnActionSection() {
 
               <div className="mt-8">
                 <Link href="/demo">
-                  <Button className="bg-[#D4AF37] hover:bg-[#c4a030] text-slate-900 px-7 py-3.5 rounded-full font-semibold text-sm shadow-lg shadow-amber-500/20 hover:shadow-xl hover:shadow-amber-500/40 transition-all hover:scale-[1.02] gap-2">
+                  <Button className="bg-[#3B82F6] hover:bg-[#c4a030] text-slate-900 px-7 py-3.5 rounded-full font-semibold text-sm shadow-lg shadow-blue-600/20 hover:shadow-xl hover:shadow-blue-600/40 transition-all hover:scale-[1.02] gap-2">
                     <Play className="w-4 h-4" />
                     Voir la démo interactive
                   </Button>
@@ -508,7 +506,7 @@ function TransportModesSection() {
     <section className="py-24 lg:py-32 px-4 bg-slate-50">
       <div className="max-w-6xl mx-auto">
         <FadeIn className="text-center mb-16">
-          <span className="text-sm font-semibold tracking-[0.2em] uppercase text-orange-500 mb-4 block">Tous les modes de transport</span>
+          <span className="text-sm font-semibold tracking-[0.2em] uppercase text-blue-500 mb-4 block">Tous les modes de transport</span>
           <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-slate-900 mb-5 tracking-tight">
             Une protection pour tous vos voyages
           </h2>
@@ -531,10 +529,10 @@ function TransportModesSection() {
                   />
                   {/* Icon overlay */}
                   <div className="absolute top-3 left-3 w-10 h-10 bg-white/90 backdrop-blur-sm rounded-xl flex items-center justify-center shadow-sm">
-                    <mode.icon className="w-5 h-5 text-orange-500" />
+                    <mode.icon className="w-5 h-5 text-blue-500" />
                   </div>
                   {/* Stat badge */}
-                  <div className="absolute bottom-3 right-3 bg-orange-500 text-white text-xs font-bold px-3 py-1.5 rounded-full shadow-md">
+                  <div className="absolute bottom-3 right-3 bg-blue-500 text-white text-xs font-bold px-3 py-1.5 rounded-full shadow-md">
                     {mode.stat}
                   </div>
                 </div>
@@ -579,7 +577,7 @@ function WhyQRBagSection() {
     <section className="relative py-24 lg:py-32 px-4 bg-white">
       <div className="max-w-6xl mx-auto relative z-10">
         <FadeIn className="text-center mb-16">
-          <span className="text-sm font-semibold tracking-[0.2em] uppercase text-[#D4AF37] mb-4 block">Pourquoi QRBag</span>
+          <span className="text-sm font-semibold tracking-[0.2em] uppercase text-[#3B82F6] mb-4 block">Pourquoi QRBag</span>
           <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-slate-900 mb-5 tracking-tight leading-tight">
             La confiance, au-delà<br className="hidden sm:block" /> des frontières
           </h2>
@@ -594,12 +592,12 @@ function WhyQRBagSection() {
               <div className="group relative h-full bg-white border border-slate-200 rounded-2xl p-7 lg:p-8 shadow-sm hover:shadow-xl hover:shadow-slate-200/60 transition-all duration-500 hover:-translate-y-1">
                 {/* Gold corner accent */}
                 <div className="absolute top-0 right-0 w-16 h-16 overflow-hidden rounded-tr-2xl">
-                  <div className="absolute top-0 right-0 w-[1px] h-8 bg-gradient-to-b from-[#D4AF37]/50 to-transparent" />
-                  <div className="absolute top-0 right-0 h-[1px] w-8 bg-gradient-to-l from-[#D4AF37]/50 to-transparent" />
+                  <div className="absolute top-0 right-0 w-[1px] h-8 bg-gradient-to-b from-[#3B82F6]/50 to-transparent" />
+                  <div className="absolute top-0 right-0 h-[1px] w-8 bg-gradient-to-l from-[#3B82F6]/50 to-transparent" />
                 </div>
 
-                <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-[#D4AF37]/10 to-[#FF6B35]/10 border border-[#D4AF37]/20 flex items-center justify-center mb-6 group-hover:from-[#D4AF37]/20 group-hover:to-[#FF6B35]/20 transition-all duration-500">
-                  <card.icon className="w-7 h-7 text-[#D4AF37]" />
+                <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-[#3B82F6]/10 to-[#1D4ED8]/10 border border-[#3B82F6]/20 flex items-center justify-center mb-6 group-hover:from-[#3B82F6]/20 group-hover:to-[#1D4ED8]/20 transition-all duration-500">
+                  <card.icon className="w-7 h-7 text-[#3B82F6]" />
                 </div>
 
                 <h3 className="text-lg lg:text-xl font-bold text-slate-900 mb-3 leading-snug">
@@ -654,7 +652,7 @@ function SolutionsSection() {
     <section id="solutions" className="relative py-24 lg:py-32 px-4 bg-slate-50">
       <div className="max-w-6xl mx-auto relative z-10">
         <FadeIn className="text-center mb-16">
-          <span className="text-sm font-semibold tracking-[0.2em] uppercase text-[#FF6B35] mb-4 block">Solutions</span>
+          <span className="text-sm font-semibold tracking-[0.2em] uppercase text-[#1D4ED8] mb-4 block">Solutions</span>
           <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-slate-900 mb-5 tracking-tight">
             Deux solutions, une protection
           </h2>
@@ -669,11 +667,11 @@ function SolutionsSection() {
               <div className="group relative h-full bg-white border border-slate-200 rounded-2xl p-7 lg:p-8 shadow-sm hover:shadow-xl hover:shadow-slate-200/60 transition-all duration-500 hover:-translate-y-1 flex flex-col">
                 {/* Orange corner accent */}
                 <div className="absolute top-0 right-0 w-16 h-16 overflow-hidden rounded-tr-2xl">
-                  <div className="absolute top-0 right-0 w-[1px] h-8 bg-gradient-to-b from-[#FF6B35]/40 to-transparent" />
-                  <div className="absolute top-0 right-0 h-[1px] w-8 bg-gradient-to-l from-[#FF6B35]/40 to-transparent" />
+                  <div className="absolute top-0 right-0 w-[1px] h-8 bg-gradient-to-b from-[#1D4ED8]/40 to-transparent" />
+                  <div className="absolute top-0 right-0 h-[1px] w-8 bg-gradient-to-l from-[#1D4ED8]/40 to-transparent" />
                 </div>
 
-                <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-[#FF6B35]/10 to-[#D4AF37]/10 border border-[#FF6B35]/20 flex items-center justify-center mb-6 text-[#FF6B35] group-hover:from-[#FF6B35]/20 group-hover:to-[#D4AF37]/20 transition-all duration-500">
+                <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-[#1D4ED8]/10 to-[#3B82F6]/10 border border-[#1D4ED8]/20 flex items-center justify-center mb-6 text-[#1D4ED8] group-hover:from-[#1D4ED8]/20 group-hover:to-[#3B82F6]/20 transition-all duration-500">
                   {sol.icon}
                 </div>
 
@@ -686,7 +684,7 @@ function SolutionsSection() {
                 </p>
 
                 <Link href={sol.href} className="mt-6">
-                  <Button variant="ghost" className="text-[#D4AF37] hover:text-[#D4AF37] hover:bg-[#D4AF37]/10 font-medium text-sm rounded-full border border-[#D4AF37]/20 hover:border-[#D4AF37]/40 transition-all gap-2 w-full group/btn">
+                  <Button variant="ghost" className="text-[#3B82F6] hover:text-[#3B82F6] hover:bg-[#3B82F6]/10 font-medium text-sm rounded-full border border-[#3B82F6]/20 hover:border-[#3B82F6]/40 transition-all gap-2 w-full group/btn">
                     En savoir plus
                     <ChevronRight className="w-4 h-4 group-hover/btn:translate-x-0.5 transition-transform" />
                   </Button>
@@ -735,7 +733,7 @@ function HowItWorksSection() {
     <section id="comment" className="relative py-24 lg:py-32 px-4 bg-white">
       <div className="max-w-6xl mx-auto relative z-10">
         <FadeIn className="text-center mb-16">
-          <span className="text-sm font-semibold tracking-[0.2em] uppercase text-[#D4AF37] mb-4 block">Comment ça marche</span>
+          <span className="text-sm font-semibold tracking-[0.2em] uppercase text-[#3B82F6] mb-4 block">Comment ça marche</span>
           <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-slate-900 mb-5 tracking-tight">
             La protection en 4 étapes
           </h2>
@@ -746,17 +744,17 @@ function HowItWorksSection() {
 
         <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-5 relative">
           {/* Connecting line (desktop) */}
-          <div className="hidden lg:block absolute top-[3.5rem] left-[12.5%] right-[12.5%] h-px bg-gradient-to-r from-[#D4AF37]/20 via-[#D4AF37]/40 to-[#D4AF37]/20" />
+          <div className="hidden lg:block absolute top-[3.5rem] left-[12.5%] right-[12.5%] h-px bg-gradient-to-r from-[#3B82F6]/20 via-[#3B82F6]/40 to-[#3B82F6]/20" />
 
           {steps.map((step, i) => (
             <FadeIn key={step.number} delay={i * 0.12}>
-              <div className="relative group bg-white border border-slate-200 rounded-2xl p-7 text-center shadow-sm hover:border-[#D4AF37]/30 hover:shadow-lg hover:shadow-slate-200/60 transition-all duration-500 hover:-translate-y-1">
-                <div className="w-14 h-14 bg-gradient-to-br from-[#FF6B35] to-[#D4AF37] rounded-full flex items-center justify-center mx-auto mb-5 shadow-lg shadow-orange-500/20 relative z-10 group-hover:shadow-orange-500/40 transition-shadow">
+              <div className="relative group bg-white border border-slate-200 rounded-2xl p-7 text-center shadow-sm hover:border-[#3B82F6]/30 hover:shadow-lg hover:shadow-slate-200/60 transition-all duration-500 hover:-translate-y-1">
+                <div className="w-14 h-14 bg-gradient-to-br from-[#1D4ED8] to-[#3B82F6] rounded-full flex items-center justify-center mx-auto mb-5 shadow-lg shadow-blue-500/20 relative z-10 group-hover:shadow-blue-500/40 transition-shadow">
                   <span className="text-white font-bold text-lg">{step.number}</span>
                 </div>
 
                 <div className="w-10 h-10 bg-slate-50 border border-slate-200 rounded-xl flex items-center justify-center mx-auto mb-4">
-                  <step.icon className="w-5 h-5 text-[#D4AF37]" />
+                  <step.icon className="w-5 h-5 text-[#3B82F6]" />
                 </div>
 
                 <h3 className="font-bold text-slate-900 mb-2">{step.title}</h3>
@@ -768,7 +766,7 @@ function HowItWorksSection() {
 
         <FadeIn delay={0.4} className="mt-14 text-center">
           <Link href="/demo">
-            <Button className="bg-[#D4AF37] hover:bg-[#c4a030] text-slate-900 px-7 py-3.5 rounded-full font-semibold text-sm shadow-lg shadow-amber-500/20 hover:shadow-xl hover:shadow-amber-500/40 transition-all hover:scale-[1.02] gap-2">
+            <Button className="bg-[#3B82F6] hover:bg-[#c4a030] text-slate-900 px-7 py-3.5 rounded-full font-semibold text-sm shadow-lg shadow-blue-600/20 hover:shadow-xl hover:shadow-blue-600/40 transition-all hover:scale-[1.02] gap-2">
               <Play className="w-4 h-4" />
               Voir la démo interactive
             </Button>
@@ -796,9 +794,9 @@ function StatsSection() {
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-6">
           {stats.map((stat, i) => (
             <FadeIn key={stat.label} delay={i * 0.08}>
-              <div className="relative group bg-white border border-slate-200 rounded-2xl p-6 lg:p-8 text-center shadow-sm hover:border-[#D4AF37]/30 hover:shadow-lg hover:shadow-slate-200/60 transition-all duration-500">
-                <div className="w-11 h-11 bg-gradient-to-br from-[#D4AF37]/10 to-transparent border border-[#D4AF37]/10 rounded-xl flex items-center justify-center mx-auto mb-4 group-hover:border-[#D4AF37]/30 transition-colors">
-                  <stat.icon className="w-5 h-5 text-[#D4AF37]" />
+              <div className="relative group bg-white border border-slate-200 rounded-2xl p-6 lg:p-8 text-center shadow-sm hover:border-[#3B82F6]/30 hover:shadow-lg hover:shadow-slate-200/60 transition-all duration-500">
+                <div className="w-11 h-11 bg-gradient-to-br from-[#3B82F6]/10 to-transparent border border-[#3B82F6]/10 rounded-xl flex items-center justify-center mx-auto mb-4 group-hover:border-[#3B82F6]/30 transition-colors">
+                  <stat.icon className="w-5 h-5 text-[#3B82F6]" />
                 </div>
                 <p className="text-3xl lg:text-4xl font-bold text-slate-900 tracking-tight">{stat.value}</p>
                 <p className="text-sm text-slate-600 mt-1">{stat.label}</p>
@@ -836,7 +834,7 @@ function TestimonialsSection() {
     <section className="relative py-24 lg:py-32 px-4 bg-white">
       <div className="max-w-6xl mx-auto relative z-10">
         <FadeIn className="text-center mb-16">
-          <span className="text-sm font-semibold tracking-[0.2em] uppercase text-[#D4AF37] mb-4 block">Témoignages</span>
+          <span className="text-sm font-semibold tracking-[0.2em] uppercase text-[#3B82F6] mb-4 block">Témoignages</span>
           <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-slate-900 mb-5 tracking-tight">
             Ils nous font confiance
           </h2>
@@ -861,7 +859,7 @@ function TestimonialsSection() {
                   {/* Stars overlay */}
                   <div className="absolute top-4 right-4 flex gap-0.5">
                     {[...Array(5)].map((_, j) => (
-                      <Star key={j} className="w-4 h-4 text-[#D4AF37] fill-[#D4AF37]" />
+                      <Star key={j} className="w-4 h-4 text-[#3B82F6] fill-[#3B82F6]" />
                     ))}
                   </div>
                 </div>
@@ -872,11 +870,11 @@ function TestimonialsSection() {
                     &ldquo;{t.content}&rdquo;
                   </p>
                   <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 bg-gradient-to-br from-[#D4AF37] to-[#FF6B35] rounded-full flex items-center justify-center text-white text-sm font-bold shadow-lg shadow-amber-900/30">
+                    <div className="w-10 h-10 bg-gradient-to-br from-[#3B82F6] to-[#1D4ED8] rounded-full flex items-center justify-center text-white text-sm font-bold shadow-lg shadow-blue-900/30">
                       {t.initials}
                     </div>
                     <div>
-                      <p className="font-bold text-[#D4AF37] text-sm">{t.name}</p>
+                      <p className="font-bold text-[#3B82F6] text-sm">{t.name}</p>
                       <p className="text-xs text-slate-500">{t.role}</p>
                     </div>
                   </div>
@@ -908,7 +906,7 @@ function PricingSection() {
         'Géolocalisation en temps réel',
       ],
       bgClass: 'bg-white border-slate-200',
-      btnClass: 'bg-[#D4AF37] hover:bg-[#c4a030] text-slate-900 shadow-lg shadow-amber-500/15',
+      btnClass: 'bg-[#3B82F6] hover:bg-[#c4a030] text-slate-900 shadow-lg shadow-blue-600/15',
       popular: false,
     },
     {
@@ -924,8 +922,8 @@ function PricingSection() {
         'Protection multi-voyages',
         'Notifications avancées',
       ],
-      bgClass: 'bg-white border-[#D4AF37]/40',
-      btnClass: 'bg-gradient-to-r from-[#D4AF37] to-[#FF6B35] hover:from-[#c4a030] hover:to-[#e65a28] text-white shadow-lg shadow-orange-500/20',
+      bgClass: 'bg-white border-[#3B82F6]/40',
+      btnClass: 'bg-gradient-to-r from-[#3B82F6] to-[#1D4ED8] hover:from-[#c4a030] hover:to-[#e65a28] text-white shadow-lg shadow-blue-500/20',
       popular: true,
     },
   ];
@@ -934,7 +932,7 @@ function PricingSection() {
     <section id="tarifs" className="relative py-24 lg:py-32 px-4 bg-slate-50">
       <div className="max-w-4xl mx-auto relative z-10">
         <FadeIn className="text-center mb-16">
-          <span className="text-sm font-semibold tracking-[0.2em] uppercase text-[#D4AF37] mb-4 block">Formules d&apos;élite</span>
+          <span className="text-sm font-semibold tracking-[0.2em] uppercase text-[#3B82F6] mb-4 block">Formules d&apos;élite</span>
           <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-slate-900 mb-5 tracking-tight">
             Investissez dans la sérénité
           </h2>
@@ -950,7 +948,7 @@ function PricingSection() {
                 {/* Badge */}
                 <div className="flex items-center justify-between mb-6">
                   <h3 className="font-bold text-slate-900 text-lg">{plan.title}</h3>
-                  <span className={`text-xs font-bold tracking-wider uppercase px-3 py-1 rounded-full border ${plan.popular ? 'bg-[#D4AF37]/10 text-[#D4AF37] border-[#D4AF37]/30' : 'bg-slate-50 text-slate-500 border-slate-200'}`}>
+                  <span className={`text-xs font-bold tracking-wider uppercase px-3 py-1 rounded-full border ${plan.popular ? 'bg-[#3B82F6]/10 text-[#3B82F6] border-[#3B82F6]/30' : 'bg-slate-50 text-slate-500 border-slate-200'}`}>
                     {plan.badge}
                   </span>
                 </div>
@@ -959,7 +957,7 @@ function PricingSection() {
 
                 {/* Price with gold styling */}
                 <div className="flex items-baseline gap-1 mb-8">
-                  <span className="text-4xl lg:text-5xl font-bold bg-gradient-to-r from-[#FF6B35] to-[#D4AF37] bg-clip-text text-transparent tracking-tight">
+                  <span className="text-4xl lg:text-5xl font-bold bg-gradient-to-r from-[#1D4ED8] to-[#3B82F6] bg-clip-text text-transparent tracking-tight">
                     {plan.price}
                   </span>
                 </div>
@@ -967,8 +965,8 @@ function PricingSection() {
                 <div className="space-y-3.5 mb-8">
                   {plan.features.map((f, j) => (
                     <div key={j} className="flex items-center gap-3 text-sm text-slate-700">
-                      <div className="w-5 h-5 rounded-full border border-[#D4AF37]/30 flex items-center justify-center flex-shrink-0 bg-[#D4AF37]/5">
-                        <div className="w-1.5 h-1.5 rounded-full bg-[#D4AF37]" />
+                      <div className="w-5 h-5 rounded-full border border-[#3B82F6]/30 flex items-center justify-center flex-shrink-0 bg-[#3B82F6]/5">
+                        <div className="w-1.5 h-1.5 rounded-full bg-[#3B82F6]" />
                       </div>
                       <span>{f}</span>
                     </div>
@@ -984,7 +982,7 @@ function PricingSection() {
 
                 {/* Recommended glow effect */}
                 {plan.popular && (
-                  <div className="absolute -inset-px rounded-2xl bg-gradient-to-b from-[#D4AF37]/20 via-transparent to-[#FF6B35]/20 -z-10 blur-sm" />
+                  <div className="absolute -inset-px rounded-2xl bg-gradient-to-b from-[#3B82F6]/20 via-transparent to-[#1D4ED8]/20 -z-10 blur-sm" />
                 )}
               </div>
             </FadeIn>
@@ -1002,8 +1000,8 @@ function FinalCTASection() {
   return (
     <section className="relative py-24 lg:py-32 px-4 overflow-hidden bg-gradient-to-br from-[#FFF7ED] via-[#FEF3C7] to-[#FFEDD5]">
       {/* Decorative elements */}
-      <div className="absolute top-10 left-10 w-64 h-64 bg-[#D4AF37]/10 rounded-full blur-3xl" />
-      <div className="absolute bottom-10 right-10 w-96 h-96 bg-[#FF6B35]/10 rounded-full blur-3xl" />
+      <div className="absolute top-10 left-10 w-64 h-64 bg-[#3B82F6]/10 rounded-full blur-3xl" />
+      <div className="absolute bottom-10 right-10 w-96 h-96 bg-[#1D4ED8]/10 rounded-full blur-3xl" />
 
       <div className="max-w-4xl mx-auto relative z-10 text-center">
         <FadeIn>
@@ -1015,7 +1013,7 @@ function FinalCTASection() {
           </p>
 
           <Link href="/contact">
-            <Button className="bg-gradient-to-r from-amber-400 to-orange-500 hover:from-amber-300 hover:to-orange-400 text-slate-900 font-bold py-5 px-8 rounded-full text-lg shadow-xl shadow-orange-500/25 hover:shadow-2xl hover:shadow-orange-500/40 hover:scale-[1.03] transition-all duration-300 gap-2.5">
+            <Button className="bg-gradient-to-r from-blue-500 to-blue-500 hover:from-amber-300 hover:to-blue-600 text-slate-900 font-bold py-5 px-8 rounded-full text-lg shadow-xl shadow-blue-500/25 hover:shadow-2xl hover:shadow-blue-500/40 hover:scale-[1.03] transition-all duration-300 gap-2.5">
               <Zap className="w-5 h-5" />
               Activer votre protection en 30 secondes
               <ArrowRight className="w-5 h-5" />
@@ -1043,13 +1041,13 @@ function ContactCTASection() {
           </p>
           <div className="flex flex-col sm:flex-row gap-3 justify-center">
             <Link href="/contact">
-              <Button variant="ghost" className="text-slate-700 border border-slate-200 hover:border-[#D4AF37]/30 hover:text-[#D4AF37] px-7 py-3.5 rounded-full font-semibold text-sm gap-2 hover:bg-slate-50 transition-all">
+              <Button variant="ghost" className="text-slate-700 border border-slate-200 hover:border-[#3B82F6]/30 hover:text-[#3B82F6] px-7 py-3.5 rounded-full font-semibold text-sm gap-2 hover:bg-slate-50 transition-all">
                 <Mail className="w-4 h-4" />
                 Nous contacter
               </Button>
             </Link>
             <a href="https://wa.me/33745349339" target="_blank" rel="noopener noreferrer">
-              <Button className="bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-400 hover:to-emerald-500 text-white px-7 py-3.5 rounded-full font-semibold text-sm shadow-lg shadow-emerald-500/20 hover:shadow-emerald-500/40 transition-all hover:scale-[1.02] gap-2">
+              <Button className="bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-500 hover:to-blue-600 text-white px-7 py-3.5 rounded-full font-semibold text-sm shadow-lg shadow-blue-600/20 hover:shadow-blue-600/40 transition-all hover:scale-[1.02] gap-2">
                 <MessageCircle className="w-4 h-4" />
                 WhatsApp
               </Button>
@@ -1106,9 +1104,7 @@ function Footer() {
           {/* Brand */}
           <div className="lg:col-span-2">
             <div className="flex items-center gap-2.5 mb-4">
-              <div className="w-9 h-9 bg-gradient-to-br from-[#FF6B35] to-[#D4AF37] rounded-xl flex items-center justify-center shadow-lg shadow-orange-500/15">
-                <QrCode className="w-5 h-5 text-white" />
-              </div>
+              <img src="/logo.png" alt="QRBag" className="w-9 h-9 rounded-xl object-contain" />
               <span className="text-xl font-bold text-white tracking-tight">QRBag</span>
             </div>
             <p className="text-sm leading-relaxed max-w-xs text-slate-400 mb-6">
@@ -1116,14 +1112,14 @@ function Footer() {
             </p>
             {/* Social */}
             <div className="flex items-center gap-3">
-              <a href="https://facebook.com/qrbag" target="_blank" rel="noopener noreferrer" className="w-9 h-9 bg-slate-800 border border-slate-700 rounded-full flex items-center justify-center hover:bg-[#D4AF37]/10 hover:border-[#D4AF37]/30 transition-all duration-300" aria-label="Facebook">
-                <Facebook className="w-4 h-4 text-slate-400 hover:text-[#D4AF37]" />
+              <a href="https://facebook.com/qrbag" target="_blank" rel="noopener noreferrer" className="w-9 h-9 bg-slate-800 border border-slate-700 rounded-full flex items-center justify-center hover:bg-[#3B82F6]/10 hover:border-[#3B82F6]/30 transition-all duration-300" aria-label="Facebook">
+                <Facebook className="w-4 h-4 text-slate-400 hover:text-[#3B82F6]" />
               </a>
-              <a href="https://instagram.com/qrbag" target="_blank" rel="noopener noreferrer" className="w-9 h-9 bg-slate-800 border border-slate-700 rounded-full flex items-center justify-center hover:bg-[#D4AF37]/10 hover:border-[#D4AF37]/30 transition-all duration-300" aria-label="Instagram">
-                <Instagram className="w-4 h-4 text-slate-400 hover:text-[#D4AF37]" />
+              <a href="https://instagram.com/qrbag" target="_blank" rel="noopener noreferrer" className="w-9 h-9 bg-slate-800 border border-slate-700 rounded-full flex items-center justify-center hover:bg-[#3B82F6]/10 hover:border-[#3B82F6]/30 transition-all duration-300" aria-label="Instagram">
+                <Instagram className="w-4 h-4 text-slate-400 hover:text-[#3B82F6]" />
               </a>
-              <a href="https://twitter.com/qrbag" target="_blank" rel="noopener noreferrer" className="w-9 h-9 bg-slate-800 border border-slate-700 rounded-full flex items-center justify-center hover:bg-[#D4AF37]/10 hover:border-[#D4AF37]/30 transition-all duration-300" aria-label="Twitter">
-                <Twitter className="w-4 h-4 text-slate-400 hover:text-[#D4AF37]" />
+              <a href="https://twitter.com/qrbag" target="_blank" rel="noopener noreferrer" className="w-9 h-9 bg-slate-800 border border-slate-700 rounded-full flex items-center justify-center hover:bg-[#3B82F6]/10 hover:border-[#3B82F6]/30 transition-all duration-300" aria-label="Twitter">
+                <Twitter className="w-4 h-4 text-slate-400 hover:text-[#3B82F6]" />
               </a>
             </div>
           </div>
@@ -1131,7 +1127,7 @@ function Footer() {
           {/* Link Columns */}
           {columns.map(col => (
             <div key={col.title}>
-              <h4 className="font-semibold text-[#D4AF37] text-sm mb-4 tracking-wide">{col.title}</h4>
+              <h4 className="font-semibold text-[#3B82F6] text-sm mb-4 tracking-wide">{col.title}</h4>
               <ul className="space-y-2.5">
                 {col.links.map(link => (
                   <li key={link.label}>

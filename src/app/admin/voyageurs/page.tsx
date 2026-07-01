@@ -51,8 +51,8 @@ interface AgencyWithBaggages {
 // Status Badge Component
 function StatusBadge({ status }: { status: string }) {
   const config: Record<string, { label: string; className: string }> = {
-    pending_activation: { label: 'En attente', className: 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400' },
-    active: { label: 'Actif', className: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400' },
+    pending_activation: { label: 'En attente', className: 'bg-amber-100 text-amber-700 dark:bg-blue-900/30 dark:text-blue-500' },
+    active: { label: 'Actif', className: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-blue-500' },
     scanned: { label: 'Scanné', className: 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400' },
     lost: { label: 'Perdu', className: 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400' },
     found: { label: 'Retrouvé', className: 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400' },
@@ -90,8 +90,8 @@ function AgencyCard({
         className="w-full p-4 flex items-center justify-between hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors text-left"
       >
         <div className="flex items-center gap-4">
-          <div className="w-12 h-12 rounded-xl bg-[#ff7f00]/10 dark:bg-[#ff7f00]/20 flex items-center justify-center">
-            <Building className="w-6 h-6 text-[#ff7f00]" />
+          <div className="w-12 h-12 rounded-xl bg-[#2563EB]/10 dark:bg-[#2563EB]/20 flex items-center justify-center">
+            <Building className="w-6 h-6 text-[#2563EB]" />
           </div>
           <div>
             <h3 className="text-lg font-semibold text-slate-800 dark:text-white">{agency.name}</h3>
@@ -105,7 +105,7 @@ function AgencyCard({
           {/* Quick Stats */}
           <div className="hidden sm:flex items-center gap-2">
             {activeCount > 0 && (
-              <Badge variant="outline" className="border-emerald-200 dark:border-emerald-800 text-emerald-700 dark:text-emerald-400">
+              <Badge variant="outline" className="border-emerald-200 dark:border-emerald-800 text-emerald-700 dark:text-blue-500">
                 {activeCount} actif{activeCount > 1 ? 's' : ''}
               </Badge>
             )}
@@ -115,7 +115,7 @@ function AgencyCard({
               </Badge>
             )}
             {pendingCount > 0 && (
-              <Badge variant="outline" className="border-amber-200 dark:border-amber-800 text-amber-700 dark:text-amber-400">
+              <Badge variant="outline" className="border-amber-200 dark:border-amber-800 text-amber-700 dark:text-blue-500">
                 {pendingCount} en attente
               </Badge>
             )}
@@ -153,8 +153,8 @@ function AgencyCard({
                   >
                     <TableCell>
                       <div className="flex items-center gap-2">
-                        <div className="w-8 h-8 rounded-lg bg-[#ff7f00]/10 dark:bg-[#ff7f00]/20 flex items-center justify-center">
-                          <QrCode className="w-4 h-4 text-[#ff7f00]" />
+                        <div className="w-8 h-8 rounded-lg bg-[#2563EB]/10 dark:bg-[#2563EB]/20 flex items-center justify-center">
+                          <QrCode className="w-4 h-4 text-[#2563EB]" />
                         </div>
                         <span className="text-slate-800 dark:text-white font-mono font-medium text-sm">
                           {baggage.reference}
@@ -324,8 +324,8 @@ export default function VoyageursAdminPage() {
                 <p className="text-slate-500 dark:text-slate-400 text-sm">Total agences</p>
                 <p className="text-3xl font-bold text-slate-800 dark:text-white">{agencies.length}</p>
               </div>
-              <div className="w-12 h-12 bg-[#ff7f00]/10 dark:bg-[#ff7f00]/20 rounded-xl flex items-center justify-center">
-                <Building className="w-6 h-6 text-[#ff7f00]" />
+              <div className="w-12 h-12 bg-[#2563EB]/10 dark:bg-[#2563EB]/20 rounded-xl flex items-center justify-center">
+                <Building className="w-6 h-6 text-[#2563EB]" />
               </div>
             </div>
           </CardContent>
@@ -353,7 +353,7 @@ export default function VoyageursAdminPage() {
                 <p className="text-3xl font-bold text-slate-800 dark:text-white">{totalActive}</p>
               </div>
               <div className="w-12 h-12 bg-emerald-100 dark:bg-emerald-900/30 rounded-xl flex items-center justify-center">
-                <CheckCircle className="w-6 h-6 text-emerald-600 dark:text-emerald-400" />
+                <CheckCircle className="w-6 h-6 text-blue-700 dark:text-blue-500" />
               </div>
             </div>
           </CardContent>
@@ -382,13 +382,13 @@ export default function VoyageursAdminPage() {
             placeholder="Rechercher par agence, voyageur ou référence..."
             value={searchFilter}
             onChange={(e) => setSearchFilter(e.target.value)}
-            className="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl py-3 px-4 text-slate-700 dark:text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-[#ff7f00]/20 focus:border-[#ff7f00] transition-all"
+            className="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl py-3 px-4 text-slate-700 dark:text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-[#2563EB]/20 focus:border-[#2563EB] transition-all"
           />
         </div>
         <div className="flex gap-2">
           <Button
             onClick={expandAll}
-            className="bg-emerald-500 hover:bg-emerald-600 text-white rounded-xl"
+            className="bg-blue-600 hover:bg-blue-700 text-white rounded-xl"
           >
             Tout ouvrir
           </Button>
@@ -405,7 +405,7 @@ export default function VoyageursAdminPage() {
       {/* Agencies List */}
       {loading ? (
         <div className="flex items-center justify-center py-12">
-          <div className="w-8 h-8 border-2 border-[#ff7f00]/30 border-t-[#ff7f00] rounded-full animate-spin" />
+          <div className="w-8 h-8 border-2 border-[#2563EB]/30 border-t-[#2563EB] rounded-full animate-spin" />
         </div>
       ) : filteredAgencies.length === 0 ? (
         <Card className="bg-white dark:bg-slate-800 border-slate-100 dark:border-slate-700 shadow-sm rounded-2xl">

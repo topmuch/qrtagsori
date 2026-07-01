@@ -115,7 +115,7 @@ function HajjActivateContent() {
             <p className="text-white/70">
               Activez ce bagage en 30 secondes pour protéger vos effets personnels
             </p>
-            <Badge className="mt-3 bg-[#1e3a2e]/50 text-[#34d399]">
+            <Badge className="mt-3 bg-[#1e3a2e]/50 text-[#3B82F6]">
               ✈️ Hajj 2025
             </Badge>
           </div>

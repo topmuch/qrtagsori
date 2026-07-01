@@ -15,21 +15,21 @@
   --card-bg: #ffffff;
   
   /* Primary Brand Colors */
-  --primary: #10b981;
-  --primary-light: #34d399;
-  --primary-dark: #059669;
+  --primary: #2563EB;
+  --primary-light: #3B82F6;
+  --primary-dark: #1D4ED8;
   
   /* Sidebar Colors - White Modern */
   --sidebar-bg: #ffffff;
   --sidebar-text: #475569;
-  --sidebar-text-active: #10b981;
+  --sidebar-text-active: #2563EB;
   --sidebar-border: #e2e8f0;
   --sidebar-hover: #f8fafc;
-  --sidebar-active-bg: rgba(16, 185, 129, 0.1);
+  --sidebar-active-bg: rgba(37, 99, 235, 0.1);
   
   /* KPI Card Colors - Modern Gradient */
-  --kpi-green: #10b981;
-  --kpi-green-gradient: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  --kpi-green: #2563EB;
+  --kpi-green-gradient: linear-gradient(135deg, #2563EB 0%, #1D4ED8 100%);
   --kpi-blue: #3b82f6;
   --kpi-blue-gradient: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
   --kpi-purple: #8b5cf6;
@@ -52,7 +52,7 @@
   --card-foreground: 222.2 84% 4.9%;
   --popover: 0 0% 100%;
   --popover-foreground: 222.2 84% 4.9%;
-  --primary: 160 84% 39%;
+  --primary: 217 91% 60%;
   --primary-foreground: 0 0% 100%;
   --secondary: 210 40% 96.1%;
   --secondary-foreground: 222.2 47.4% 11.2%;
@@ -64,7 +64,7 @@
   --destructive-foreground: 210 40% 98%;
   --border: 214.3 31.8% 91.4%;
   --input: 214.3 31.8% 91.4%;
-  --ring: 160 84% 39%;
+  --ring: 217 91% 60%;
   --radius: 0.75rem;
 }
 
@@ -82,10 +82,10 @@
   /* Sidebar Colors - Dark Modern */
   --sidebar-bg: #1e293b;
   --sidebar-text: #94a3b8;
-  --sidebar-text-active: #10b981;
+  --sidebar-text-active: #2563EB;
   --sidebar-border: #334155;
   --sidebar-hover: #334155;
-  --sidebar-active-bg: rgba(16, 185, 129, 0.15);
+  --sidebar-active-bg: rgba(37, 99, 235, 0.15);
   
   /* Theme variables for shadcn */
   --background: 222.2 84% 4.9%;
@@ -94,7 +94,7 @@
   --card-foreground: 210 40% 98%;
   --popover: 222.2 84% 4.9%;
   --popover-foreground: 210 40% 98%;
-  --primary: 160 84% 39%;
+  --primary: 217 91% 60%;
   --primary-foreground: 0 0% 100%;
   --secondary: 217.2 32.6% 17.5%;
   --secondary-foreground: 210 40% 98%;
@@ -106,7 +106,7 @@
   --destructive-foreground: 210 40% 98%;
   --border: 217.2 32.6% 17.5%;
   --input: 217.2 32.6% 17.5%;
-  --ring: 160 84% 39%;
+  --ring: 217 91% 60%;
 }
 
 @theme inline {
@@ -171,7 +171,7 @@
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #10b981;
+  background: #2563EB;
 }
 
 /* ============================================
@@ -205,12 +205,12 @@
 
 /* KPI Card Color Variants */
 .kpi-card-green {
-  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
-  box-shadow: 0 4px 20px rgba(16, 185, 129, 0.25);
+  background: linear-gradient(135deg, #2563EB 0%, #1D4ED8 100%);
+  box-shadow: 0 4px 20px rgba(37, 99, 235, 0.25);
 }
 
 .kpi-card-green:hover {
-  box-shadow: 0 8px 30px rgba(16, 185, 129, 0.35);
+  box-shadow: 0 8px 30px rgba(37, 99, 235, 0.35);
 }
 
 .kpi-card-blue {
@@ -307,7 +307,7 @@
 
 /* Trend Indicators */
 .trend-up {
-  color: #34d399;
+  color: #3B82F6;
 }
 
 .trend-down {
@@ -523,7 +523,7 @@
 .btn-primary:hover {
   background: var(--primary-dark);
   transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
 }
 
 .btn-secondary {
@@ -545,7 +545,7 @@
 input:focus, textarea:focus, select:focus {
   outline: none;
   border-color: var(--primary) !important;
-  box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.15) !important;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15) !important;
 }
 
 /* ============================================
@@ -622,8 +622,8 @@ body * {
 }
 
 .badge-success {
-  background: rgba(16, 185, 129, 0.1);
-  color: #059669;
+  background: rgba(37, 99, 235, 0.1);
+  color: #1D4ED8;
 }
 
 .badge-warning {

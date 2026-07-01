@@ -81,7 +81,7 @@ function StatCard({
           {icon}
         </div>
         {trend && (
-          <div className={`flex items-center gap-1 text-sm font-medium ${trend.isUp ? 'text-emerald-500' : 'text-rose-500'}`}>
+          <div className={`flex items-center gap-1 text-sm font-medium ${trend.isUp ? 'text-blue-600' : 'text-rose-500'}`}>
             {trend.isUp ? <TrendingUp className="w-4 h-4" aria-hidden="true" /> : <TrendingUp className="w-4 h-4 rotate-180" aria-hidden="true" />}
             {Math.abs(trend.value)}%
           </div>
@@ -198,7 +198,7 @@ function AISuggestions({ agencyId, stats }: { agencyId: string; stats: Stats }) 
         icon: '⏳',
         title: 'Activation en attente',
         text: `${stats.pending} bagages sont en attente d'activation. Envoyez un rappel aux voyageurs.`,
-        color: 'bg-amber-50 dark:bg-amber-500/10 border-amber-200 dark:border-amber-800 text-amber-700 dark:text-amber-400'
+        color: 'bg-amber-50 dark:bg-blue-600/10 border-amber-200 dark:border-amber-800 text-amber-700 dark:text-blue-500'
       });
     }
 
@@ -216,7 +216,7 @@ function AISuggestions({ agencyId, stats }: { agencyId: string; stats: Stats }) 
         icon: '✅',
         title: 'Excellent !',
         text: 'Tous vos bagages sont actifs et bien suivis. Continuez comme ça !',
-        color: 'bg-emerald-50 dark:bg-emerald-500/10 border-emerald-200 dark:border-emerald-800 text-emerald-700 dark:text-emerald-400'
+        color: 'bg-emerald-50 dark:bg-blue-600/10 border-emerald-200 dark:border-emerald-800 text-emerald-700 dark:text-blue-500'
       });
     }
 
@@ -229,7 +229,7 @@ function AISuggestions({ agencyId, stats }: { agencyId: string; stats: Stats }) 
     <div className="bg-white dark:bg-slate-900 rounded-2xl p-6 border border-slate-200 dark:border-slate-800">
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-amber-400 to-amber-600 flex items-center justify-center">
+          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-500 to-amber-600 flex items-center justify-center">
             <Sparkles className="w-5 h-5 text-white" />
           </div>
           <div>
@@ -278,16 +278,16 @@ function AISuggestions({ agencyId, stats }: { agencyId: string; stats: Stats }) 
       {loading && (
         <div className="p-4 bg-slate-50 dark:bg-slate-800 rounded-xl animate-pulse">
           <div className="flex items-center gap-2">
-            <Sparkles className="w-4 h-4 text-amber-500 animate-pulse" />
+            <Sparkles className="w-4 h-4 text-blue-600 animate-pulse" />
             <span className="text-slate-500 dark:text-slate-400 text-sm">Analyse en cours...</span>
           </div>
         </div>
       )}
 
       {suggestion && !loading && (
-        <div className="p-4 bg-gradient-to-r from-amber-50 to-orange-50 dark:from-amber-500/10 dark:to-orange-500/10 border border-amber-200 dark:border-amber-800 rounded-xl">
+        <div className="p-4 bg-gradient-to-r from-amber-50 to-blue-50 dark:from-blue-600/10 dark:to-blue-500/10 border border-amber-200 dark:border-amber-800 rounded-xl">
           <div className="flex items-start gap-3">
-            <Lightbulb className="w-5 h-5 text-amber-500 shrink-0 mt-0.5" />
+            <Lightbulb className="w-5 h-5 text-blue-600 shrink-0 mt-0.5" />
             <div>
               <p className="text-sm text-slate-700 dark:text-slate-300 font-medium mb-1">Conseil IA</p>
               <p className="text-sm text-slate-600 dark:text-slate-400">{suggestion}</p>
@@ -371,7 +371,7 @@ function AdBanner() {
           href={ad.linkUrl || '#'}
           target="_blank"
           rel="noopener noreferrer"
-          className="block p-6 bg-gradient-to-r from-amber-50 to-orange-50 dark:from-amber-500/10 dark:to-orange-500/10 text-center"
+          className="block p-6 bg-gradient-to-r from-amber-50 to-blue-50 dark:from-blue-600/10 dark:to-blue-500/10 text-center"
         >
           <p className="text-slate-800 dark:text-white font-semibold">{ad.title}</p>
         </a>
@@ -560,15 +560,15 @@ export default function AgencyDashboardPage() {
   const getStatusBadge = (status: string) => {
     const statusConfig: Record<string, { label: string; className: string }> = {
       // English statuses (standard)
-      pending_activation: { label: 'En attente', className: 'bg-amber-100 dark:bg-amber-500/10 text-amber-700 dark:text-amber-400' },
-      active: { label: 'Actif', className: 'bg-emerald-100 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-400' },
+      pending_activation: { label: 'En attente', className: 'bg-amber-100 dark:bg-blue-600/10 text-amber-700 dark:text-blue-500' },
+      active: { label: 'Actif', className: 'bg-emerald-100 dark:bg-blue-600/10 text-emerald-700 dark:text-blue-500' },
       scanned: { label: 'Scanné', className: 'bg-blue-100 dark:bg-blue-500/10 text-blue-700 dark:text-blue-400' },
       lost: { label: 'Perdu', className: 'bg-rose-100 dark:bg-rose-500/10 text-rose-700 dark:text-rose-400' },
       found: { label: 'Retrouvé', className: 'bg-green-100 dark:bg-green-500/10 text-green-700 dark:text-green-400' },
       blocked: { label: 'Bloqué', className: 'bg-slate-100 dark:bg-slate-500/10 text-slate-600 dark:text-slate-400' },
       // French statuses (legacy DB compatibility)
-      EN_ATTENTE: { label: 'En attente', className: 'bg-amber-100 dark:bg-amber-500/10 text-amber-700 dark:text-amber-400' },
-      ACTIF: { label: 'Actif', className: 'bg-emerald-100 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-400' },
+      EN_ATTENTE: { label: 'En attente', className: 'bg-amber-100 dark:bg-blue-600/10 text-amber-700 dark:text-blue-500' },
+      ACTIF: { label: 'Actif', className: 'bg-emerald-100 dark:bg-blue-600/10 text-emerald-700 dark:text-blue-500' },
       SCANNÉ: { label: 'Scanné', className: 'bg-blue-100 dark:bg-blue-500/10 text-blue-700 dark:text-blue-400' },
       PERDU: { label: 'Perdu', className: 'bg-rose-100 dark:bg-rose-500/10 text-rose-700 dark:text-rose-400' },
       TROUVÉ: { label: 'Retrouvé', className: 'bg-green-100 dark:bg-green-500/10 text-green-700 dark:text-green-400' },
@@ -630,7 +630,7 @@ export default function AgencyDashboardPage() {
       {/* Header */}
       <div className="mb-8">
         <h1 className="text-2xl font-bold text-slate-800 dark:text-white">
-          Bienvenue, <span className="text-amber-500">{agencyName}</span>
+          Bienvenue, <span className="text-blue-600">{agencyName}</span>
         </h1>
         <p className="text-slate-500 dark:text-slate-400 mt-1">Suivi en temps réel de vos bagages Hajj 2026</p>
       </div>
@@ -668,7 +668,7 @@ export default function AgencyDashboardPage() {
             placeholder="Rechercher par nom ou référence..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl py-3 pl-12 pr-4 text-slate-700 dark:text-slate-200 placeholder-slate-400 focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 transition-all"
+            className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl py-3 pl-12 pr-4 text-slate-700 dark:text-slate-200 placeholder-slate-400 focus:ring-2 focus:ring-blue-600/20 focus:border-blue-600 transition-all"
           />
         </div>
       </div>
@@ -695,7 +695,7 @@ export default function AgencyDashboardPage() {
         <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 overflow-hidden">
           <div className="text-center py-12">
             <div className="flex items-center justify-center gap-3">
-              <div className="w-6 h-6 border-2 border-amber-500/30 border-t-amber-500 rounded-full animate-spin" />
+              <div className="w-6 h-6 border-2 border-blue-600/30 border-t-blue-600 rounded-full animate-spin" />
               <span className="text-slate-500">Chargement...</span>
             </div>
           </div>
@@ -722,9 +722,9 @@ export default function AgencyDashboardPage() {
           {/* AGENCY-FIX: Section 1 — Bagages activés */}
           {activatedBaggages.length > 0 && (
             <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 overflow-hidden mb-6">
-              <div className="px-6 py-4 border-b border-slate-200 dark:border-slate-800 bg-emerald-50/50 dark:bg-emerald-500/5">
+              <div className="px-6 py-4 border-b border-slate-200 dark:border-slate-800 bg-emerald-50/50 dark:bg-blue-600/5">
                 <div className="flex items-center gap-2">
-                  <div className="w-3 h-3 rounded-full bg-emerald-500" />
+                  <div className="w-3 h-3 rounded-full bg-blue-600" />
                   <h2 className="text-sm font-semibold text-slate-800 dark:text-white">
                     Bagages activés ({activatedBaggages.length})
                   </h2>
@@ -752,8 +752,8 @@ export default function AgencyDashboardPage() {
                       >
                         <td className="px-6 py-4">
                           <div className="flex items-center gap-2">
-                            <div className="w-8 h-8 rounded-lg bg-emerald-100 dark:bg-emerald-500/10 flex items-center justify-center">
-                              <QrCode className="w-4 h-4 text-emerald-500" />
+                            <div className="w-8 h-8 rounded-lg bg-emerald-100 dark:bg-blue-600/10 flex items-center justify-center">
+                              <QrCode className="w-4 h-4 text-blue-600" />
                             </div>
                             <span className="text-slate-800 dark:text-white font-mono font-medium">
                               {baggage.reference}
@@ -775,7 +775,7 @@ export default function AgencyDashboardPage() {
                               </>
                             ) : (
                               <div className="flex items-center gap-2">
-                                <span className="px-2 py-1 bg-amber-100 dark:bg-amber-500/20 text-amber-600 dark:text-amber-400 rounded-full text-xs font-medium">
+                                <span className="px-2 py-1 bg-amber-100 dark:bg-blue-600/20 text-amber-600 dark:text-blue-500 rounded-full text-xs font-medium">
                                   Non assigné
                                 </span>
                                 <button
@@ -783,7 +783,7 @@ export default function AgencyDashboardPage() {
                                     setSelectedBaggage(baggage);
                                     setShowDetailModal(true);
                                   }}
-                                  className="text-xs text-[#ff7f00] hover:text-[#ff9f00]"
+                                  className="text-xs text-[#2563EB] hover:text-[#ff9f00]"
                                 >
                                   Attribuer
                                 </button>
@@ -815,7 +815,7 @@ export default function AgencyDashboardPage() {
                                   href={`https://wa.me/${baggage.founderPhone.replace(/\D/g, '')}`}
                                   target="_blank"
                                   rel="noopener noreferrer"
-                                  className="text-emerald-500 hover:text-emerald-600 text-xs flex items-center gap-1 mt-0.5"
+                                  className="text-blue-600 hover:text-blue-700 text-xs flex items-center gap-1 mt-0.5"
                                 >
                                   <svg className="w-3 h-3" viewBox="0 0 24 24" fill="currentColor">
                                     <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/>
@@ -865,10 +865,10 @@ export default function AgencyDashboardPage() {
                                     }
                                   }
                                 }}
-                                className="p-2 rounded-lg hover:bg-emerald-50 dark:hover:bg-emerald-500/10 transition-colors group"
+                                className="p-2 rounded-lg hover:bg-emerald-50 dark:hover:bg-blue-600/10 transition-colors group"
                                 title="Marquer comme retrouvé"
                               >
-                                <CheckCircle className="w-4 h-4 text-slate-400 group-hover:text-emerald-500" />
+                                <CheckCircle className="w-4 h-4 text-slate-400 group-hover:text-blue-600" />
                               </button>
                             )}
                             <button
@@ -879,7 +879,7 @@ export default function AgencyDashboardPage() {
                               className="p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors group"
                               title="Voir détails"
                             >
-                              <Eye className="w-4 h-4 text-slate-400 group-hover:text-amber-500" />
+                              <Eye className="w-4 h-4 text-slate-400 group-hover:text-blue-600" />
                             </button>
                             <button
                               onClick={() => {
@@ -909,9 +909,9 @@ export default function AgencyDashboardPage() {
           {/* AGENCY-FIX: Section 2 — QR en attente d'activation */}
           {pendingBaggages.length > 0 && (
             <div className="bg-white dark:bg-slate-900 rounded-2xl border border-amber-200 dark:border-amber-800 overflow-hidden">
-              <div className="px-6 py-4 border-b border-amber-200 dark:border-amber-800 bg-amber-50/50 dark:bg-amber-500/5">
+              <div className="px-6 py-4 border-b border-amber-200 dark:border-amber-800 bg-amber-50/50 dark:bg-blue-600/5">
                 <div className="flex items-center gap-2">
-                  <div className="w-3 h-3 rounded-full bg-amber-500" />
+                  <div className="w-3 h-3 rounded-full bg-blue-600" />
                   <h2 className="text-sm font-semibold text-slate-800 dark:text-white">
                     QR en attente d'activation ({pendingBaggages.length})
                   </h2>
@@ -936,8 +936,8 @@ export default function AgencyDashboardPage() {
                       >
                         <td className="px-6 py-4">
                           <div className="flex items-center gap-2">
-                            <div className="w-8 h-8 rounded-lg bg-amber-100 dark:bg-amber-500/10 flex items-center justify-center">
-                              <QrCode className="w-4 h-4 text-amber-500" />
+                            <div className="w-8 h-8 rounded-lg bg-amber-100 dark:bg-blue-600/10 flex items-center justify-center">
+                              <QrCode className="w-4 h-4 text-blue-600" />
                             </div>
                             <span className="text-slate-800 dark:text-white font-mono font-medium">
                               {baggage.reference}
@@ -945,7 +945,7 @@ export default function AgencyDashboardPage() {
                           </div>
                         </td>
                         <td className="px-6 py-4">
-                          <span className="px-2 py-1 bg-amber-100 dark:bg-amber-500/20 text-amber-600 dark:text-amber-400 rounded-full text-xs font-medium">
+                          <span className="px-2 py-1 bg-amber-100 dark:bg-blue-600/20 text-amber-600 dark:text-blue-500 rounded-full text-xs font-medium">
                             Non assigné
                           </span>
                         </td>
@@ -966,7 +966,7 @@ export default function AgencyDashboardPage() {
                                 setSelectedBaggage(baggage);
                                 setShowDetailModal(true);
                               }}
-                              className="px-3 py-1.5 bg-[#ff7f00] hover:bg-[#ff9f00] text-white rounded-lg text-xs font-medium transition-colors"
+                              className="px-3 py-1.5 bg-[#2563EB] hover:bg-[#ff9f00] text-white rounded-lg text-xs font-medium transition-colors"
                               title="Attribuer à un pèlerin"
                             >
                               Attribuer
@@ -979,7 +979,7 @@ export default function AgencyDashboardPage() {
                               className="p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors group"
                               title="Voir détails"
                             >
-                              <Eye className="w-4 h-4 text-slate-400 group-hover:text-amber-500" />
+                              <Eye className="w-4 h-4 text-slate-400 group-hover:text-blue-600" />
                             </button>
                             <button
                               onClick={() => {
@@ -1021,8 +1021,8 @@ export default function AgencyDashboardPage() {
           <div className="bg-white dark:bg-slate-900 rounded-2xl max-w-md w-full shadow-xl border border-slate-200 dark:border-slate-800">
             <div className="flex items-center justify-between p-6 border-b border-slate-200 dark:border-slate-800">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-amber-100 dark:bg-amber-500/10 flex items-center justify-center">
-                  <ShoppingCart className="w-5 h-5 text-amber-500" />
+                <div className="w-10 h-10 rounded-xl bg-amber-100 dark:bg-blue-600/10 flex items-center justify-center">
+                  <ShoppingCart className="w-5 h-5 text-blue-600" />
                 </div>
                 <h3 className="text-lg font-bold text-slate-800 dark:text-white">Commander vos QR codes</h3>
               </div>
@@ -1039,8 +1039,8 @@ export default function AgencyDashboardPage() {
             
             {commandSuccess ? (
               <div className="p-8 text-center">
-                <div className="w-16 h-16 rounded-full bg-emerald-100 dark:bg-emerald-500/10 flex items-center justify-center mx-auto mb-4">
-                  <CheckCircle className="w-8 h-8 text-emerald-500" />
+                <div className="w-16 h-16 rounded-full bg-emerald-100 dark:bg-blue-600/10 flex items-center justify-center mx-auto mb-4">
+                  <CheckCircle className="w-8 h-8 text-blue-600" />
                 </div>
                 <h4 className="text-xl font-bold text-slate-800 dark:text-white mb-2">Demande envoyée !</h4>
                 <p className="text-slate-500 dark:text-slate-400">Notre équipe vous contactera sous 24h.</p>
@@ -1052,7 +1052,7 @@ export default function AgencyDashboardPage() {
                   <select
                     value={commandForm.type}
                     onChange={(e) => setCommandForm({ ...commandForm, type: e.target.value })}
-                    className="w-full p-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-700 dark:text-slate-200 focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500"
+                    className="w-full p-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-700 dark:text-slate-200 focus:ring-2 focus:ring-blue-600/20 focus:border-blue-600"
                   >
                     <option value="hajj">Hajj 2026 (3 QR/pèlerin)</option>
                     <option value="voyageur">Voyageurs Standard (1 ou 3 QR)</option>
@@ -1069,7 +1069,7 @@ export default function AgencyDashboardPage() {
                     max="1000"
                     value={commandForm.count}
                     onChange={(e) => setCommandForm({ ...commandForm, count: parseInt(e.target.value) || 1 })}
-                    className="w-full p-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-700 dark:text-slate-200 focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500"
+                    className="w-full p-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-700 dark:text-slate-200 focus:ring-2 focus:ring-blue-600/20 focus:border-blue-600"
                     placeholder="Ex: 50"
                   />
                 </div>
@@ -1080,7 +1080,7 @@ export default function AgencyDashboardPage() {
                     rows={3}
                     value={commandForm.notes}
                     onChange={(e) => setCommandForm({ ...commandForm, notes: e.target.value })}
-                    className="w-full p-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-700 dark:text-slate-200 placeholder-slate-400 focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 resize-none"
+                    className="w-full p-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-700 dark:text-slate-200 placeholder-slate-400 focus:ring-2 focus:ring-blue-600/20 focus:border-blue-600 resize-none"
                     placeholder="Ex: livraison urgente, dates de départ..."
                   />
                 </div>
@@ -1136,8 +1136,8 @@ export default function AgencyDashboardPage() {
             </div>
             <div className="p-6 space-y-4">
               <div className="flex items-center gap-3">
-                <div className="w-12 h-12 bg-amber-100 dark:bg-amber-500/10 rounded-xl flex items-center justify-center">
-                  <QrCode className="w-6 h-6 text-amber-500" />
+                <div className="w-12 h-12 bg-amber-100 dark:bg-blue-600/10 rounded-xl flex items-center justify-center">
+                  <QrCode className="w-6 h-6 text-blue-600" />
                 </div>
                 <div>
                   <p className="text-slate-800 dark:text-white font-mono font-bold">{selectedBaggage.reference}</p>
@@ -1151,7 +1151,7 @@ export default function AgencyDashboardPage() {
                   {selectedBaggage.travelerFirstName || selectedBaggage.travelerLastName ? (
                     <p className="text-slate-800 dark:text-white font-medium">{selectedBaggage.travelerFirstName} {selectedBaggage.travelerLastName}</p>
                   ) : (
-                    <span className="px-2 py-1 bg-amber-100 dark:bg-amber-500/20 text-amber-600 dark:text-amber-400 rounded-full text-xs font-medium">
+                    <span className="px-2 py-1 bg-amber-100 dark:bg-blue-600/20 text-amber-600 dark:text-blue-500 rounded-full text-xs font-medium">
                       À attribuer
                     </span>
                   )}
@@ -1167,14 +1167,14 @@ export default function AgencyDashboardPage() {
                 {selectedBaggage.whatsappOwner ? (
                   <p className="text-slate-800 dark:text-white">{selectedBaggage.whatsappOwner}</p>
                 ) : (
-                  <span className="text-amber-600 dark:text-amber-400 text-sm">Non renseigné</span>
+                  <span className="text-amber-600 dark:text-blue-500 text-sm">Non renseigné</span>
                 )}
               </div>
 
               {/* Edit Form for unassigned baggages */}
               {(!selectedBaggage.travelerFirstName && !selectedBaggage.travelerLastName) && (
-                <div className="p-4 bg-amber-50 dark:bg-amber-500/10 border border-amber-200 dark:border-amber-800 rounded-xl">
-                  <h4 className="text-amber-700 dark:text-amber-400 font-medium mb-3">Attribuer ce bagage</h4>
+                <div className="p-4 bg-amber-50 dark:bg-blue-600/10 border border-amber-200 dark:border-amber-800 rounded-xl">
+                  <h4 className="text-amber-700 dark:text-blue-500 font-medium mb-3">Attribuer ce bagage</h4>
                   <div className="space-y-3">
                     <div className="grid grid-cols-2 gap-3">
                       <input
@@ -1217,7 +1217,7 @@ export default function AgencyDashboardPage() {
                           console.error('Error updating baggage:', error);
                         }
                       }}
-                      className="w-full py-2 bg-[#ff7f00] hover:bg-[#ff9f00] text-white rounded-lg text-sm font-medium transition-colors"
+                      className="w-full py-2 bg-[#2563EB] hover:bg-[#ff9f00] text-white rounded-lg text-sm font-medium transition-colors"
                     >
                       Enregistrer
                     </button>
@@ -1249,10 +1249,10 @@ export default function AgencyDashboardPage() {
 
               {/* Founder Information */}
               {selectedBaggage.founderName && (
-                <div className="p-4 bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-200 dark:border-emerald-800 rounded-xl">
+                <div className="p-4 bg-emerald-50 dark:bg-blue-600/10 border border-emerald-200 dark:border-emerald-800 rounded-xl">
                   <div className="flex items-center gap-2 mb-3">
-                    <CheckCircle className="w-5 h-5 text-emerald-500" />
-                    <p className="text-emerald-700 dark:text-emerald-400 font-medium">Trouvé par</p>
+                    <CheckCircle className="w-5 h-5 text-blue-600" />
+                    <p className="text-emerald-700 dark:text-blue-500 font-medium">Trouvé par</p>
                   </div>
                   <div className="space-y-2">
                     <div className="flex items-center gap-2">

@@ -99,7 +99,7 @@ export default function DemoPage() {
   // Timer display for header
   const headerExtra = currentStep !== 'intro' && currentStep !== 'success' ? (
     <div className="flex items-center gap-2 bg-[#0d1220] px-4 py-2 rounded-full border border-[#1a2238]">
-      <Clock className="w-4 h-4 text-[#ff2a6d]" />
+      <Clock className="w-4 h-4 text-[#1E40AF]" />
       <span className="text-white font-mono">{formatTime(elapsedTime)}</span>
     </div>
   ) : null;
@@ -115,9 +115,9 @@ export default function DemoPage() {
 
       <div className="relative overflow-hidden">
         {/* Background Effects */}
-        <div className="absolute inset-0 bg-gradient-to-br from-[#ff2a6d]/10 via-transparent to-[#d35400]/10 pointer-events-none" />
-        <div className="absolute top-1/4 left-1/4 w-64 h-64 bg-[#ff2a6d]/20 rounded-full blur-3xl animate-pulse" />
-        <div className="absolute bottom-1/4 right-1/4 w-64 h-64 bg-[#d35400]/20 rounded-full blur-3xl animate-pulse" />
+        <div className="absolute inset-0 bg-gradient-to-br from-[#1E40AF]/10 via-transparent to-[#1D4ED8]/10 pointer-events-none" />
+        <div className="absolute top-1/4 left-1/4 w-64 h-64 bg-[#1E40AF]/20 rounded-full blur-3xl animate-pulse" />
+        <div className="absolute bottom-1/4 right-1/4 w-64 h-64 bg-[#1D4ED8]/20 rounded-full blur-3xl animate-pulse" />
 
         <div className="max-w-4xl mx-auto px-4 py-8">
 
@@ -125,13 +125,13 @@ export default function DemoPage() {
           {currentStep === 'intro' && (
             <div className="text-center py-16 animate-fade-in">
               <div className="inline-flex items-center gap-2 mb-6">
-                <span className="px-4 py-2 bg-[#ff2a6d]/20 border border-[#ff2a6d]/50 text-[#ff2a6d] text-sm rounded-full font-medium animate-pulse">
+                <span className="px-4 py-2 bg-[#1E40AF]/20 border border-[#1E40AF]/50 text-[#1E40AF] text-sm rounded-full font-medium animate-pulse">
                   ✨ Découverte interactive
                 </span>
               </div>
 
               <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold mb-6">
-                <span className="bg-gradient-to-r from-[#ff2a6d] to-[#d35400] bg-clip-text text-transparent">
+                <span className="bg-gradient-to-r from-[#1E40AF] to-[#1D4ED8] bg-clip-text text-transparent">
                   Essayez QRBag
                 </span>
                 <br />
@@ -146,22 +146,22 @@ export default function DemoPage() {
               {/* Features Pills */}
               <div className="flex flex-wrap justify-center gap-4 mb-12">
                 <div className="flex items-center gap-2 bg-[#0d1220] px-4 py-2 rounded-full border border-[#1a2238]">
-                  <Smartphone className="w-4 h-4 text-[#ff2a6d]" />
+                  <Smartphone className="w-4 h-4 text-[#1E40AF]" />
                   <span className="text-[#a0a8b8] text-sm">Sans application</span>
                 </div>
                 <div className="flex items-center gap-2 bg-[#0d1220] px-4 py-2 rounded-full border border-[#1a2238]">
-                  <Battery className="w-4 h-4 text-[#d35400]" />
+                  <Battery className="w-4 h-4 text-[#1D4ED8]" />
                   <span className="text-[#a0a8b8] text-sm">Sans batterie</span>
                 </div>
                 <div className="flex items-center gap-2 bg-[#0d1220] px-4 py-2 rounded-full border border-[#1a2238]">
-                  <Zap className="w-4 h-4 text-[#ff2a6d]" />
+                  <Zap className="w-4 h-4 text-[#1E40AF]" />
                   <span className="text-[#a0a8b8] text-sm">30 secondes</span>
                 </div>
               </div>
 
               <button
                 onClick={() => setCurrentStep('scan')}
-                className="bg-[#ff2a6d] text-white px-10 py-5 rounded-xl font-bold text-xl hover:bg-[#e01e5a] transition-all transform hover:scale-105 shadow-lg shadow-[#ff2a6d]/30 inline-flex items-center gap-3"
+                className="bg-[#1E40AF] text-white px-10 py-5 rounded-xl font-bold text-xl hover:bg-[#e01e5a] transition-all transform hover:scale-105 shadow-lg shadow-[#1E40AF]/30 inline-flex items-center gap-3"
               >
                 <span className="text-2xl">▶️</span>
                 Démarrer la démo
@@ -182,7 +182,7 @@ export default function DemoPage() {
                   <div
                     key={step}
                     className={`w-3 h-3 rounded-full transition-all ${
-                      step === 1 ? 'bg-[#ff2a6d] w-8' : 'bg-[#1a2238]'
+                      step === 1 ? 'bg-[#1E40AF] w-8' : 'bg-[#1a2238]'
                     }`}
                   />
                 ))}
@@ -199,17 +199,17 @@ export default function DemoPage() {
               <div className="flex justify-center mb-8">
                 <div className={`relative ${isAnimating ? 'animate-pulse' : ''}`}>
                   {/* Glow */}
-                  <div className="absolute inset-0 bg-[#ff2a6d]/30 blur-3xl rounded-full" />
+                  <div className="absolute inset-0 bg-[#1E40AF]/30 blur-3xl rounded-full" />
 
                   {/* QR Card */}
                   <div className={`relative bg-[#0d1220] rounded-3xl p-8 border-2 transition-all duration-500 ${
-                    scanComplete ? 'border-[#1e3a2e] bg-[#1e3a2e]/20' : 'border-[#ff2a6d]/50'
+                    scanComplete ? 'border-[#1e3a2e] bg-[#1e3a2e]/20' : 'border-[#1E40AF]/50'
                   }`}>
                     <div className="w-56 h-56 bg-white rounded-2xl flex flex-col items-center justify-center relative overflow-hidden">
                       {/* Scan Animation */}
                       {isAnimating && (
-                        <div className="absolute inset-0 bg-[#ff2a6d]/20 flex items-center justify-center">
-                          <div className="w-full h-1 bg-[#ff2a6d] animate-scan" />
+                        <div className="absolute inset-0 bg-[#1E40AF]/20 flex items-center justify-center">
+                          <div className="w-full h-1 bg-[#1E40AF] animate-scan" />
                         </div>
                       )}
 
@@ -244,7 +244,7 @@ export default function DemoPage() {
                 <Button
                   onClick={handleScan}
                   disabled={isAnimating}
-                  className="bg-[#ff2a6d] text-white px-8 py-4 rounded-xl font-bold text-lg hover:bg-[#e01e5a] transition-all transform hover:scale-105 shadow-lg shadow-[#ff2a6d]/30 inline-flex items-center gap-2 disabled:opacity-50"
+                  className="bg-[#1E40AF] text-white px-8 py-4 rounded-xl font-bold text-lg hover:bg-[#e01e5a] transition-all transform hover:scale-105 shadow-lg shadow-[#1E40AF]/30 inline-flex items-center gap-2 disabled:opacity-50"
                 >
                   {isAnimating ? (
                     <>
@@ -263,7 +263,7 @@ export default function DemoPage() {
               {scanComplete && (
                 <div className="animate-fade-in">
                   <p className="text-[#a0a8b8] mb-4">Préparation de la localisation...</p>
-                  <ArrowRight className="w-6 h-6 text-[#ff2a6d] animate-bounce mx-auto" />
+                  <ArrowRight className="w-6 h-6 text-[#1E40AF] animate-bounce mx-auto" />
                 </div>
               )}
             </div>
@@ -278,7 +278,7 @@ export default function DemoPage() {
                   <div
                     key={step}
                     className={`w-3 h-3 rounded-full transition-all ${
-                      step === 2 ? 'bg-[#d35400] w-8' : step < 2 ? 'bg-[#ff2a6d]' : 'bg-[#1a2238]'
+                      step === 2 ? 'bg-[#1D4ED8] w-8' : step < 2 ? 'bg-[#1E40AF]' : 'bg-[#1a2238]'
                     }`}
                   />
                 ))}
@@ -317,10 +317,10 @@ export default function DemoPage() {
                       {locationShared && (
                         <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 animate-bounce">
                           <div className="relative">
-                            <div className="w-8 h-8 bg-[#ff2a6d] rounded-full flex items-center justify-center shadow-lg shadow-[#ff2a6d]/50">
+                            <div className="w-8 h-8 bg-[#1E40AF] rounded-full flex items-center justify-center shadow-lg shadow-[#1E40AF]/50">
                               <MapPin className="w-5 h-5 text-white" />
                             </div>
-                            <div className="absolute -bottom-1 left-1/2 transform -translate-x-1/2 w-4 h-4 bg-[#ff2a6d]/30 rounded-full animate-ping" />
+                            <div className="absolute -bottom-1 left-1/2 transform -translate-x-1/2 w-4 h-4 bg-[#1E40AF]/30 rounded-full animate-ping" />
                           </div>
                         </div>
                       )}
@@ -328,7 +328,7 @@ export default function DemoPage() {
                       {/* Center Point */}
                       <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2">
                         {!locationShared && (
-                          <div className="w-4 h-4 bg-[#d35400] rounded-full animate-pulse" />
+                          <div className="w-4 h-4 bg-[#1D4ED8] rounded-full animate-pulse" />
                         )}
                       </div>
 
@@ -348,7 +348,7 @@ export default function DemoPage() {
                 <Button
                   onClick={handleLocation}
                   disabled={isAnimating}
-                  className="bg-[#d35400] text-white px-8 py-4 rounded-xl font-bold text-lg hover:bg-[#c04800] transition-all transform hover:scale-105 shadow-lg shadow-[#d35400]/30 inline-flex items-center gap-2 disabled:opacity-50"
+                  className="bg-[#1D4ED8] text-white px-8 py-4 rounded-xl font-bold text-lg hover:bg-[#c04800] transition-all transform hover:scale-105 shadow-lg shadow-[#1D4ED8]/30 inline-flex items-center gap-2 disabled:opacity-50"
                 >
                   {isAnimating ? (
                     <>
@@ -370,7 +370,7 @@ export default function DemoPage() {
                     <CheckCircle className="w-5 h-5" />
                     <span className="font-medium">Position enregistrée avec succès !</span>
                   </div>
-                  <ArrowRight className="w-6 h-6 text-[#d35400] animate-bounce mx-auto" />
+                  <ArrowRight className="w-6 h-6 text-[#1D4ED8] animate-bounce mx-auto" />
                 </div>
               )}
             </div>
@@ -385,7 +385,7 @@ export default function DemoPage() {
                   <div
                     key={step}
                     className={`w-3 h-3 rounded-full transition-all ${
-                      step === 3 ? 'bg-[#25D366] w-8' : 'bg-[#ff2a6d]'
+                      step === 3 ? 'bg-[#25D366] w-8' : 'bg-[#1E40AF]'
                     }`}
                   />
                 ))}
@@ -474,7 +474,7 @@ export default function DemoPage() {
           {/* SUCCESS STEP */}
           {currentStep === 'success' && (
             <div className="py-8 animate-fade-in">
-              <div className="text-center bg-gradient-to-r from-[#ff2a6d] to-[#d35400] rounded-3xl p-12 relative overflow-hidden">
+              <div className="text-center bg-gradient-to-r from-[#1E40AF] to-[#1D4ED8] rounded-3xl p-12 relative overflow-hidden">
                 {/* Confetti Effect */}
                 <div className="absolute inset-0 pointer-events-none overflow-hidden">
                   {[...Array(20)].map((_, i) => (
@@ -528,7 +528,7 @@ export default function DemoPage() {
                 <div className="flex flex-col sm:flex-row gap-4 justify-center">
                   <Button
                     onClick={resetDemo}
-                    className="bg-white text-[#ff2a6d] px-8 py-4 rounded-xl font-bold text-lg hover:bg-gray-100 transition-all inline-flex items-center justify-center gap-2"
+                    className="bg-white text-[#1E40AF] px-8 py-4 rounded-xl font-bold text-lg hover:bg-gray-100 transition-all inline-flex items-center justify-center gap-2"
                   >
                     <RefreshCw className="w-5 h-5" />
                     Recommencer
@@ -545,10 +545,10 @@ export default function DemoPage() {
               {/* Features Recap */}
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-8">
                 {[
-                  { icon: Smartphone, label: "Sans application", color: "#ff2a6d" },
-                  { icon: Battery, label: "Sans batterie", color: "#d35400" },
+                  { icon: Smartphone, label: "Sans application", color: "#1E40AF" },
+                  { icon: Battery, label: "Sans batterie", color: "#1D4ED8" },
                   { icon: MapPin, label: "Sans GPS", color: "#1e3a2e" },
-                  { icon: Zap, label: "30 secondes", color: "#ff2a6d" },
+                  { icon: Zap, label: "30 secondes", color: "#1E40AF" },
                 ].map((item, index) => (
                   <div
                     key={index}

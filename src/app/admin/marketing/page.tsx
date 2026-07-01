@@ -104,7 +104,7 @@ function buildRenewalMessage(name: string, reference: string, expiryDate: string
 function statusBadgeClass(status: string): string {
   if (status === 'active') return 'bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-400';
   if (status === 'expired') return 'bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-400';
-  return 'bg-amber-100 dark:bg-amber-900/30 text-amber-800 dark:text-amber-400';
+  return 'bg-amber-100 dark:bg-blue-900/30 text-amber-800 dark:text-blue-500';
 }
 
 function statusBadgeLabel(status: string): string {
@@ -207,7 +207,7 @@ export default function MarketingPage() {
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
         <div>
           <h1 className="text-2xl font-bold text-slate-800 dark:text-white flex items-center gap-2">
-            <TrendingUp className="w-6 h-6 text-emerald-500" />
+            <TrendingUp className="w-6 h-6 text-blue-600" />
             Marketing &amp; Relances
           </h1>
           <p className="text-slate-500 dark:text-slate-400 mt-1">
@@ -265,12 +265,12 @@ export default function MarketingPage() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-slate-500 dark:text-slate-400 text-sm">Bagages actifs</p>
-                <p className="text-2xl lg:text-3xl font-bold text-emerald-600 dark:text-emerald-400 mt-1">
+                <p className="text-2xl lg:text-3xl font-bold text-blue-700 dark:text-blue-500 mt-1">
                   {data?.stats.activeBaggages ?? '—'}
                 </p>
               </div>
               <div className="w-12 h-12 bg-emerald-50 dark:bg-emerald-900/30 rounded-xl flex items-center justify-center">
-                <ShieldCheck className="w-6 h-6 text-emerald-500" />
+                <ShieldCheck className="w-6 h-6 text-blue-600" />
               </div>
             </div>
           </CardContent>
@@ -308,8 +308,8 @@ export default function MarketingPage() {
                   {data?.stats.renewalRate ?? '—'}%
                 </p>
               </div>
-              <div className="w-12 h-12 bg-amber-50 dark:bg-amber-900/30 rounded-xl flex items-center justify-center">
-                <TrendingUp className="w-6 h-6 text-amber-500" />
+              <div className="w-12 h-12 bg-amber-50 dark:bg-blue-900/30 rounded-xl flex items-center justify-center">
+                <TrendingUp className="w-6 h-6 text-blue-600" />
               </div>
             </div>
           </CardContent>
@@ -358,7 +358,7 @@ export default function MarketingPage() {
       {/* ─── Loading ─── */}
       {loading && (
         <div className="flex items-center justify-center py-16">
-          <div className="w-8 h-8 border-2 border-emerald-500/30 border-t-emerald-500 rounded-full animate-spin" />
+          <div className="w-8 h-8 border-2 border-blue-600/30 border-t-blue-600 rounded-full animate-spin" />
         </div>
       )}
 

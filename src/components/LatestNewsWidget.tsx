@@ -28,8 +28,8 @@ const CATEGORY_ICONS: Record<string, string> = {
 
 const CATEGORY_COLORS: Record<string, string> = {
   actualites: 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400',
-  conseils: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400',
-  hajj: 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400',
+  conseils: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-blue-500',
+  hajj: 'bg-amber-100 text-amber-700 dark:bg-blue-900/30 dark:text-blue-500',
   mises_a_jour: 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400'
 };
 
@@ -65,7 +65,7 @@ export default function LatestNewsWidget() {
       <Card className="bg-white dark:bg-slate-800 border-slate-100 dark:border-slate-700 shadow-sm rounded-2xl">
         <CardContent className="p-5">
           <div className="flex items-center justify-center py-8">
-            <div className="w-6 h-6 border-2 border-[#ff7f00]/30 border-t-[#ff7f00] rounded-full animate-spin" />
+            <div className="w-6 h-6 border-2 border-[#2563EB]/30 border-t-[#2563EB] rounded-full animate-spin" />
           </div>
         </CardContent>
       </Card>
@@ -87,7 +87,7 @@ export default function LatestNewsWidget() {
           </div>
           <Link
             href="/agence/blog"
-            className="text-sm text-[#ff7f00] hover:underline flex items-center gap-1"
+            className="text-sm text-[#2563EB] hover:underline flex items-center gap-1"
           >
             Voir tout
             <ArrowRight className="w-3 h-3" />

@@ -52,7 +52,7 @@ function LanguageSelector({ lang, setLang }: { lang: Language; setLang: (l: Lang
               }}
               className={`w-full px-4 py-2.5 sm:px-5 sm:py-3 text-left text-xs sm:text-sm md:text-base font-medium transition-colors ${
                 lang === l
-                  ? 'bg-orange-500 text-white'
+                  ? 'bg-blue-500 text-white'
                   : 'text-blue-900 hover:bg-blue-50'
               }`}
             >
@@ -215,14 +215,12 @@ function InscrireContent() {
     >
       {/* ─── Header ─── */}
       <header className="sticky top-0 z-40 flex items-center justify-between pt-[env(safe-area-inset-top,0px)] px-0 py-2 sm:py-3 md:py-4 bg-white">
-        <Link href="/" className="flex items-center gap-2 text-blue-900 hover:text-orange-500 transition-colors min-h-[44px]">
+        <Link href="/" className="flex items-center gap-2 text-blue-900 hover:text-blue-500 transition-colors min-h-[44px]">
           <ArrowLeft className="w-5 h-5" />
           <span className="text-sm md:text-base font-medium">{t('inscrire.back')}</span>
         </Link>
         <div className="flex items-center gap-2">
-          <div className="w-8 h-8 bg-[#0A192F] rounded-lg flex items-center justify-center">
-            <QrCode className="w-5 h-5 text-orange-400" />
-          </div>
+          <img src="/logo.png" alt="QRBag" className="w-8 h-8 rounded-lg object-contain" />
           <span className="font-bold text-blue-900 text-sm">QRBag</span>
         </div>
         <LanguageSelector lang={lang} setLang={setLang} />
@@ -234,11 +232,11 @@ function InscrireContent() {
         {/* ═══ 🔺 BADGE DE STATUT — Welcome ═══ */}
         <div className="mt-2 sm:mt-4 md:mt-6 mb-4 sm:mb-6 text-center">
           {qrFromUrl ? (
-            <span className="inline-flex items-center justify-center px-6 py-3 rounded-full font-bold text-lg shadow-lg bg-orange-500 text-white shadow-orange-500/30">
+            <span className="inline-flex items-center justify-center px-6 py-3 rounded-full font-bold text-lg shadow-lg bg-blue-500 text-white shadow-blue-500/30">
               ✨ {t('inscrire.voyageur_badge')}
             </span>
           ) : (
-            <span className="inline-flex items-center justify-center px-6 py-3 rounded-full font-bold text-lg shadow-lg bg-orange-500 text-white shadow-orange-500/30">
+            <span className="inline-flex items-center justify-center px-6 py-3 rounded-full font-bold text-lg shadow-lg bg-blue-500 text-white shadow-blue-500/30">
               🧳 {t('inscrire.title')}
             </span>
           )}
@@ -271,7 +269,7 @@ function InscrireContent() {
                   onClick={() => setActiveTab('manual')}
                   className={`flex-1 flex items-center justify-center gap-2 py-3 px-4 rounded-xl text-sm font-semibold transition-all min-h-[44px] ${
                     activeTab === 'manual'
-                      ? 'bg-orange-500 text-white shadow-lg shadow-orange-500/30'
+                      ? 'bg-blue-500 text-white shadow-lg shadow-blue-500/30'
                       : 'bg-white/10 text-white/70 hover:bg-white/20'
                   }`}
                 >
@@ -282,7 +280,7 @@ function InscrireContent() {
                   onClick={() => setActiveTab('scan')}
                   className={`flex-1 flex items-center justify-center gap-2 py-3 px-4 rounded-xl text-sm font-semibold transition-all min-h-[44px] ${
                     activeTab === 'scan'
-                      ? 'bg-orange-500 text-white shadow-lg shadow-orange-500/30'
+                      ? 'bg-blue-500 text-white shadow-lg shadow-blue-500/30'
                       : 'bg-white/10 text-white/70 hover:bg-white/20'
                   }`}
                 >
@@ -303,7 +301,7 @@ function InscrireContent() {
                     {t('inscrire.scan_desc')}
                   </p>
                   <button
-                    className="w-full py-4 px-6 bg-orange-500 hover:bg-orange-600 text-white rounded-xl font-bold text-lg transition-colors flex items-center justify-center gap-2 min-h-[56px] shadow-lg shadow-orange-500/30"
+                    className="w-full py-4 px-6 bg-blue-500 hover:bg-blue-700 text-white rounded-xl font-bold text-lg transition-colors flex items-center justify-center gap-2 min-h-[56px] shadow-lg shadow-blue-500/30"
                   >
                     <Camera className="w-5 h-5" />
                     {t('inscrire.scan_button')}
@@ -321,7 +319,7 @@ function InscrireContent() {
                     type="button"
                     disabled={!transportMode}
                     onClick={() => transportMode && setStep(2)}
-                    className="w-full mt-5 py-4 px-6 bg-orange-500 hover:bg-orange-600 disabled:bg-white/10 disabled:text-white/40 disabled:cursor-not-allowed text-white rounded-xl font-bold text-lg transition-colors flex items-center justify-center gap-2 min-h-[56px] shadow-lg shadow-orange-500/30"
+                    className="w-full mt-5 py-4 px-6 bg-blue-500 hover:bg-blue-700 disabled:bg-white/10 disabled:text-white/40 disabled:cursor-not-allowed text-white rounded-xl font-bold text-lg transition-colors flex items-center justify-center gap-2 min-h-[56px] shadow-lg shadow-blue-500/30"
                   >
                     {t('inscrire.next_step')}
                     <ArrowRight className="w-5 h-5" />
@@ -375,14 +373,14 @@ function InscrireContent() {
                         placeholder={t('inscrire.reference_placeholder')}
                         value={formData.reference}
                         onChange={(e) => setFormData({ ...formData, reference: e.target.value.toUpperCase() })}
-                        className="w-full bg-transparent border-b border-white/30 text-white placeholder:text-white/40 focus:outline-none focus:border-orange-400 text-base font-mono py-1 min-h-[36px]"
+                        className="w-full bg-transparent border-b border-white/30 text-white placeholder:text-white/40 focus:outline-none focus:border-blue-600 text-base font-mono py-1 min-h-[36px]"
                         required
                       />
                     )}
                   </div>
                 </div>
                 {qrFromUrl && (
-                  <p className="text-xs text-orange-400 mt-2 flex items-center gap-1">
+                  <p className="text-xs text-blue-600 mt-2 flex items-center gap-1">
                     <CheckCircle className="w-3 h-3" />
                     {t('inscrire.reference_detected')}
                   </p>
@@ -399,7 +397,7 @@ function InscrireContent() {
                       placeholder={t('inscrire.first_name_placeholder')}
                       value={formData.firstName}
                       onChange={(e) => setFormData({ ...formData, firstName: e.target.value })}
-                      className="w-full bg-white/10 border border-white/20 text-white placeholder:text-white/40 focus:outline-none focus:ring-2 focus:ring-orange-400 focus:border-transparent rounded-lg px-3 py-2.5 text-base min-h-[48px]"
+                      className="w-full bg-white/10 border border-white/20 text-white placeholder:text-white/40 focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-transparent rounded-lg px-3 py-2.5 text-base min-h-[48px]"
                       required
                     />
                   </div>
@@ -410,7 +408,7 @@ function InscrireContent() {
                       placeholder={t('inscrire.last_name_placeholder')}
                       value={formData.lastName}
                       onChange={(e) => setFormData({ ...formData, lastName: e.target.value })}
-                      className="w-full bg-white/10 border border-white/20 text-white placeholder:text-white/40 focus:outline-none focus:ring-2 focus:ring-orange-400 focus:border-transparent rounded-lg px-3 py-2.5 text-base min-h-[48px]"
+                      className="w-full bg-white/10 border border-white/20 text-white placeholder:text-white/40 focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-transparent rounded-lg px-3 py-2.5 text-base min-h-[48px]"
                       required
                     />
                   </div>
@@ -429,7 +427,7 @@ function InscrireContent() {
                           placeholder={t(field.placeholderKey)}
                           value={(formData as Record<string, string>)[field.key] || ''}
                           onChange={(e) => setFormData({ ...formData, [field.key]: e.target.value })}
-                          className="w-full bg-white/10 border border-white/20 text-white placeholder:text-white/40 focus:outline-none focus:ring-2 focus:ring-orange-400 focus:border-transparent rounded-lg px-3 py-2.5 text-base min-h-[48px]"
+                          className="w-full bg-white/10 border border-white/20 text-white placeholder:text-white/40 focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-transparent rounded-lg px-3 py-2.5 text-base min-h-[48px]"
                         />
                       </div>
                     ))}
@@ -448,7 +446,7 @@ function InscrireContent() {
                       placeholder={t('inscrire.destination_placeholder')}
                       value={formData.destination}
                       onChange={(e) => setFormData({ ...formData, destination: e.target.value })}
-                      className="w-full bg-white/10 border border-white/20 text-white placeholder:text-white/40 focus:outline-none focus:ring-2 focus:ring-orange-400 focus:border-transparent rounded-lg px-3 py-2.5 text-base mt-1 min-h-[48px]"
+                      className="w-full bg-white/10 border border-white/20 text-white placeholder:text-white/40 focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-transparent rounded-lg px-3 py-2.5 text-base mt-1 min-h-[48px]"
                     />
                   </div>
                 </div>
@@ -465,13 +463,13 @@ function InscrireContent() {
                     type="date"
                     value={formData.departureDate}
                     onChange={(e) => setFormData({ ...formData, departureDate: e.target.value })}
-                    className="w-full bg-white/10 border border-white/20 text-white focus:outline-none focus:ring-2 focus:ring-orange-400 focus:border-transparent rounded-lg px-3 py-2.5 text-base min-h-[48px] [color-scheme:dark]"
+                    className="w-full bg-white/10 border border-white/20 text-white focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-transparent rounded-lg px-3 py-2.5 text-base min-h-[48px] [color-scheme:dark]"
                   />
                   <input
                     type="time"
                     value={formData.departureTime}
                     onChange={(e) => setFormData({ ...formData, departureTime: e.target.value })}
-                    className="w-full bg-white/10 border border-white/20 text-white focus:outline-none focus:ring-2 focus:ring-orange-400 focus:border-transparent rounded-lg px-3 py-2.5 text-base min-h-[48px] [color-scheme:dark]"
+                    className="w-full bg-white/10 border border-white/20 text-white focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-transparent rounded-lg px-3 py-2.5 text-base min-h-[48px] [color-scheme:dark]"
                   />
                 </div>
               </DashedEncart>
@@ -506,7 +504,7 @@ function InscrireContent() {
           </h2>
           <DashedEncart className="mb-0">
             <div className="flex items-start gap-3">
-              <Shield className="w-6 h-6 text-orange-400 flex-shrink-0 mt-0.5" />
+              <Shield className="w-6 h-6 text-blue-600 flex-shrink-0 mt-0.5" />
               <p className="text-white/70 text-sm md:text-base leading-relaxed">
                 {t('inscrire.protection_desc')}
               </p>
@@ -520,7 +518,7 @@ function InscrireContent() {
             <button
               onClick={doSubmit}
               disabled={loading || !transportMode}
-              className="w-full py-4 px-6 bg-orange-500 hover:bg-orange-600 active:bg-orange-700 disabled:bg-gray-400 disabled:cursor-not-allowed text-white font-bold text-lg rounded-xl shadow-lg shadow-orange-500/30 transition-all duration-200 transform hover:-translate-y-1 min-h-[56px] focus:ring-2 focus:ring-orange-400 focus:ring-offset-2"
+              className="w-full py-4 px-6 bg-blue-500 hover:bg-blue-700 active:bg-blue-800 disabled:bg-gray-400 disabled:cursor-not-allowed text-white font-bold text-lg rounded-xl shadow-lg shadow-blue-500/30 transition-all duration-200 transform hover:-translate-y-1 min-h-[56px] focus:ring-2 focus:ring-blue-600 focus:ring-offset-2"
             >
               {loading ? (
                 <span className="flex items-center justify-center gap-2">
@@ -541,7 +539,7 @@ function InscrireContent() {
         <div className="text-center pb-6">
           <p className="text-blue-900/50 text-sm">
             {t('inscrire.no_qr')}{' '}
-            <Link href="/#pricing" className="text-orange-500 hover:text-orange-600 underline font-medium">
+            <Link href="/#pricing" className="text-blue-500 hover:text-blue-700 underline font-medium">
               {t('inscrire.order_sticker')}
             </Link>
           </p>
@@ -558,7 +556,7 @@ export default function InscrirePage() {
     <Suspense fallback={
       <main className="min-h-screen bg-white flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin w-12 h-12 border-4 border-blue-900/20 border-t-orange-500 rounded-full mx-auto mb-4"></div>
+          <div className="animate-spin w-12 h-12 border-4 border-blue-900/20 border-t-blue-500 rounded-full mx-auto mb-4"></div>
           <p className="text-lg text-blue-900">{t('common.loading')}</p>
         </div>
       </main>

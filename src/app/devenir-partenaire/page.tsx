@@ -26,10 +26,8 @@ function Navigation() {
         <div className="flex items-center justify-between h-16">
           {/* Logo */}
           <Link href="/" className="flex items-center gap-2">
-            <div className="w-10 h-10 bg-gradient-to-br from-[#ff2a6d] to-[#d35400] rounded-lg flex items-center justify-center shadow-lg shadow-[#ff2a6d]/20">
-              <QrCode className="w-6 h-6 text-white" />
-            </div>
-            <span className="text-xl font-bold bg-gradient-to-r from-[#ff2a6d] to-[#d35400] bg-clip-text text-transparent">QRBag</span>
+            <img src="/logo.png" alt="QRBag" className="w-10 h-10 rounded-lg object-contain" />
+            <span className="text-xl font-bold bg-gradient-to-r from-[#1E40AF] to-[#1D4ED8] bg-clip-text text-transparent">QRBag</span>
           </Link>
 
           {/* Desktop Nav */}
@@ -38,7 +36,7 @@ function Navigation() {
               <a
                 key={item}
                 href={`#${item.toLowerCase().replace(/ /g, '-')}`}
-                className="text-[#a0a8b8] hover:text-[#ff2a6d] transition-colors text-sm"
+                className="text-[#a0a8b8] hover:text-[#1E40AF] transition-colors text-sm"
               >
                 {item}
               </a>
@@ -53,7 +51,7 @@ function Navigation() {
               </button>
             </Link>
             <a href="#formulaire">
-              <button className="bg-[#ff2a6d] text-white px-5 py-2 rounded-lg font-medium hover:bg-[#e01e5a] transition text-sm">
+              <button className="bg-[#1E40AF] text-white px-5 py-2 rounded-lg font-medium hover:bg-[#e01e5a] transition text-sm">
                 Devenir Partenaire
               </button>
             </a>
@@ -76,14 +74,14 @@ function Navigation() {
                 <a
                   key={item}
                   href={`#${item.toLowerCase().replace(/ /g, '-')}`}
-                  className="text-[#a0a8b8] hover:text-[#ff2a6d]"
+                  className="text-[#a0a8b8] hover:text-[#1E40AF]"
                   onClick={() => setIsOpen(false)}
                 >
                   {item}
                 </a>
               ))}
               <a href="#formulaire" onClick={() => setIsOpen(false)}>
-                <button className="w-full bg-[#ff2a6d] text-white px-5 py-2 rounded-lg font-medium hover:bg-[#e01e5a] transition">
+                <button className="w-full bg-[#1E40AF] text-white px-5 py-2 rounded-lg font-medium hover:bg-[#e01e5a] transition">
                   Devenir Partenaire
                 </button>
               </a>
@@ -100,18 +98,18 @@ function HeroSection() {
   return (
     <section className="pt-24 pb-20 px-4 bg-gradient-to-br from-[#080c1a] via-[#0d1220] to-[#1e3a2e]/30 relative overflow-hidden">
       {/* Background Effects */}
-      <div className="absolute top-1/4 left-1/4 w-64 h-64 bg-[#ff2a6d]/10 rounded-full blur-3xl pointer-events-none" />
-      <div className="absolute bottom-1/4 right-1/4 w-64 h-64 bg-[#d35400]/10 rounded-full blur-3xl pointer-events-none" />
+      <div className="absolute top-1/4 left-1/4 w-64 h-64 bg-[#1E40AF]/10 rounded-full blur-3xl pointer-events-none" />
+      <div className="absolute bottom-1/4 right-1/4 w-64 h-64 bg-[#1D4ED8]/10 rounded-full blur-3xl pointer-events-none" />
       
       <div className="max-w-4xl mx-auto text-center relative z-10">
         <div className="inline-flex items-center gap-2 mb-6">
-          <span className="px-4 py-2 bg-[#ff2a6d]/20 border border-[#ff2a6d]/50 text-[#ff2a6d] text-sm rounded-full font-medium">
+          <span className="px-4 py-2 bg-[#1E40AF]/20 border border-[#1E40AF]/50 text-[#1E40AF] text-sm rounded-full font-medium">
             🤝 Programme Partenaire
           </span>
         </div>
         
         <h1 className="text-4xl md:text-5xl font-bold text-white mb-6">
-          Devenez partenaire <span className="bg-gradient-to-r from-[#ff2a6d] to-[#d35400] bg-clip-text text-transparent">QRBag</span>
+          Devenez partenaire <span className="bg-gradient-to-r from-[#1E40AF] to-[#1D4ED8] bg-clip-text text-transparent">QRBag</span>
         </h1>
         
         <p className="text-[#a0a8b8] max-w-2xl mx-auto mb-8 text-lg">
@@ -120,12 +118,12 @@ function HeroSection() {
         
         <div className="flex flex-col sm:flex-row gap-4 justify-center">
           <a href="#formulaire">
-            <button className="bg-[#ff2a6d] text-white px-8 py-4 rounded-lg font-bold text-lg hover:bg-[#e01e5a] shadow-lg shadow-[#ff2a6d]/30 transition-all hover:scale-105 inline-flex items-center gap-2">
+            <button className="bg-[#1E40AF] text-white px-8 py-4 rounded-lg font-bold text-lg hover:bg-[#e01e5a] shadow-lg shadow-[#1E40AF]/30 transition-all hover:scale-105 inline-flex items-center gap-2">
               📩 Demander un devis
             </button>
           </a>
           <a href="#avantages">
-            <button className="border-2 border-[#ff2a6d] text-white px-8 py-4 rounded-lg font-bold text-lg hover:bg-[#ff2a6d]/10 transition-all inline-flex items-center gap-2">
+            <button className="border-2 border-[#1E40AF] text-white px-8 py-4 rounded-lg font-bold text-lg hover:bg-[#1E40AF]/10 transition-all inline-flex items-center gap-2">
               📊 Voir les avantages
             </button>
           </a>
@@ -159,7 +157,7 @@ function WhyPartnerSection() {
     <section id="avantages" className="py-20 px-4 bg-[#0d1220]">
       <div className="max-w-6xl mx-auto">
         <div className="text-center mb-12">
-          <h2 className="text-3xl md:text-4xl font-bold bg-gradient-to-r from-[#ff2a6d] to-[#d35400] bg-clip-text text-transparent mb-4">
+          <h2 className="text-3xl md:text-4xl font-bold bg-gradient-to-r from-[#1E40AF] to-[#1D4ED8] bg-clip-text text-transparent mb-4">
             Pourquoi collaborer avec nous ?
           </h2>
           <p className="text-[#a0a8b8] text-lg">
@@ -171,7 +169,7 @@ function WhyPartnerSection() {
           {cards.map((card, i) => (
             <div
               key={i}
-              className="bg-[#0a0f2c] p-6 rounded-xl border border-[#1a1a3a] hover:border-[#ff2a6d]/50 transition-all hover:scale-105 group"
+              className="bg-[#0a0f2c] p-6 rounded-xl border border-[#1a1a3a] hover:border-[#1E40AF]/50 transition-all hover:scale-105 group"
             >
               <div className="text-4xl mb-4 group-hover:scale-110 transition-transform">{card.icon}</div>
               <h3 className="text-xl font-bold text-white mb-2">{card.title}</h3>
@@ -198,7 +196,7 @@ function WhoCanPartnerSection() {
     <section className="py-20 px-4 bg-[#080c1a]">
       <div className="max-w-4xl mx-auto">
         <div className="text-center mb-12">
-          <h2 className="text-3xl md:text-4xl font-bold bg-gradient-to-r from-[#ff2a6d] to-[#d35400] bg-clip-text text-transparent mb-4">
+          <h2 className="text-3xl md:text-4xl font-bold bg-gradient-to-r from-[#1E40AF] to-[#1D4ED8] bg-clip-text text-transparent mb-4">
             Qui peut devenir partenaire ?
           </h2>
         </div>
@@ -207,7 +205,7 @@ function WhoCanPartnerSection() {
           {partners.map((partner, i) => (
             <div
               key={i}
-              className="flex items-center gap-4 bg-[#0d1220] p-4 rounded-xl border border-[#1a2238] hover:border-[#ff2a6d]/30 transition-all"
+              className="flex items-center gap-4 bg-[#0d1220] p-4 rounded-xl border border-[#1a2238] hover:border-[#1E40AF]/30 transition-all"
             >
               <span className="text-3xl">{partner.icon}</span>
               <span className="text-white font-medium">{partner.label}</span>
@@ -239,7 +237,7 @@ function TestimonialsSection() {
   return (
     <section className="py-20 px-4 bg-[#0d1220]">
       <div className="max-w-4xl mx-auto">
-        <h2 className="text-3xl font-bold text-center bg-gradient-to-r from-[#ff2a6d] to-[#d35400] bg-clip-text text-transparent mb-12">
+        <h2 className="text-3xl font-bold text-center bg-gradient-to-r from-[#1E40AF] to-[#1D4ED8] bg-clip-text text-transparent mb-12">
           Ce que disent nos partenaires
         </h2>
         
@@ -247,10 +245,10 @@ function TestimonialsSection() {
           {testimonials.map((t, i) => (
             <div
               key={i}
-              className="bg-[#0a0f2c] p-6 rounded-xl border border-[#1a1a3a] hover:border-[#ff2a6d]/30 transition-all"
+              className="bg-[#0a0f2c] p-6 rounded-xl border border-[#1a1a3a] hover:border-[#1E40AF]/30 transition-all"
             >
               <div className="flex items-center gap-4 mb-4">
-                <div className="w-12 h-12 rounded-full bg-gradient-to-br from-[#ff2a6d] to-[#d35400] flex items-center justify-center text-white font-bold">
+                <div className="w-12 h-12 rounded-full bg-gradient-to-br from-[#1E40AF] to-[#1D4ED8] flex items-center justify-center text-white font-bold">
                   {t.avatar}
                 </div>
                 <div>
@@ -261,7 +259,7 @@ function TestimonialsSection() {
               <p className="text-[#e0e6f0] italic">&ldquo;{t.text}&rdquo;</p>
               <div className="flex gap-1 mt-4">
                 {[...Array(5)].map((_, i) => (
-                  <span key={i} className="text-[#ff2a6d]">★</span>
+                  <span key={i} className="text-[#1E40AF]">★</span>
                 ))}
               </div>
             </div>
@@ -320,7 +318,7 @@ function ContactFormSection() {
 
           {submitted ? (
             <div className="text-center py-8">
-              <CheckCircle className="w-16 h-16 text-[#ff2a6d] mx-auto mb-4" />
+              <CheckCircle className="w-16 h-16 text-[#1E40AF] mx-auto mb-4" />
               <h4 className="text-xl font-semibold text-white mb-2">Demande envoyée !</h4>
               <p className="text-[#a0a8b8]">Nous vous contacterons sous 24h avec votre devis personnalisé.</p>
             </div>
@@ -331,7 +329,7 @@ function ContactFormSection() {
                 placeholder="Votre nom"
                 value={formData.name}
                 onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                className="w-full p-4 bg-[#0d152a] border border-[#1a1a3a] rounded-xl text-white placeholder-[#a0a8b8] focus:outline-none focus:border-[#ff2a6d] transition-colors"
+                className="w-full p-4 bg-[#0d152a] border border-[#1a1a3a] rounded-xl text-white placeholder-[#a0a8b8] focus:outline-none focus:border-[#1E40AF] transition-colors"
                 required
               />
               <input
@@ -339,7 +337,7 @@ function ContactFormSection() {
                 placeholder="Votre email"
                 value={formData.email}
                 onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                className="w-full p-4 bg-[#0d152a] border border-[#1a1a3a] rounded-xl text-white placeholder-[#a0a8b8] focus:outline-none focus:border-[#ff2a6d] transition-colors"
+                className="w-full p-4 bg-[#0d152a] border border-[#1a1a3a] rounded-xl text-white placeholder-[#a0a8b8] focus:outline-none focus:border-[#1E40AF] transition-colors"
                 required
               />
               <input
@@ -347,7 +345,7 @@ function ContactFormSection() {
                 placeholder="Votre agence / entreprise"
                 value={formData.company}
                 onChange={(e) => setFormData({ ...formData, company: e.target.value })}
-                className="w-full p-4 bg-[#0d152a] border border-[#1a1a3a] rounded-xl text-white placeholder-[#a0a8b8] focus:outline-none focus:border-[#ff2a6d] transition-colors"
+                className="w-full p-4 bg-[#0d152a] border border-[#1a1a3a] rounded-xl text-white placeholder-[#a0a8b8] focus:outline-none focus:border-[#1E40AF] transition-colors"
                 required
               />
               <textarea
@@ -355,12 +353,12 @@ function ContactFormSection() {
                 rows={4}
                 value={formData.message}
                 onChange={(e) => setFormData({ ...formData, message: e.target.value })}
-                className="w-full p-4 bg-[#0d152a] border border-[#1a1a3a] rounded-xl text-white placeholder-[#a0a8b8] focus:outline-none focus:border-[#ff2a6d] transition-colors resize-none"
+                className="w-full p-4 bg-[#0d152a] border border-[#1a1a3a] rounded-xl text-white placeholder-[#a0a8b8] focus:outline-none focus:border-[#1E40AF] transition-colors resize-none"
                 required
               />
               <button
                 type="submit"
-                className="w-full bg-[#ff2a6d] text-white py-4 rounded-xl font-bold hover:bg-[#e01e5a] transition-all hover:scale-[1.02] shadow-lg shadow-[#ff2a6d]/30 inline-flex items-center justify-center gap-2"
+                className="w-full bg-[#1E40AF] text-white py-4 rounded-xl font-bold hover:bg-[#e01e5a] transition-all hover:scale-[1.02] shadow-lg shadow-[#1E40AF]/30 inline-flex items-center justify-center gap-2"
               >
                 <Send className="w-5 h-5" />
                 Envoyer ma demande
@@ -382,10 +380,8 @@ function Footer() {
           {/* Logo */}
           <div>
             <div className="flex items-center gap-2 mb-4">
-              <div className="w-10 h-10 bg-gradient-to-br from-[#ff2a6d] to-[#d35400] rounded-lg flex items-center justify-center">
-                <QrCode className="w-6 h-6 text-white" />
-              </div>
-              <span className="text-xl font-bold bg-gradient-to-r from-[#ff2a6d] to-[#d35400] bg-clip-text text-transparent">QRBag</span>
+              <img src="/logo.png" alt="QRBag" className="w-10 h-10 rounded-lg object-contain" />
+              <span className="text-xl font-bold bg-gradient-to-r from-[#1E40AF] to-[#1D4ED8] bg-clip-text text-transparent">QRBag</span>
             </div>
             <p className="text-[#a0a8b8] text-sm">
               Protection intelligente des bagages pour voyageurs et pèlerins.
@@ -396,10 +392,10 @@ function Footer() {
           <div>
             <h4 className="font-semibold mb-4 text-white">Produit</h4>
             <ul className="space-y-2 text-[#a0a8b8] text-sm">
-              <li><a href="/#solutions" className="hover:text-[#ff2a6d] transition-colors">Solutions</a></li>
-              <li><a href="/#comment" className="hover:text-[#ff2a6d] transition-colors">Comment ça marche</a></li>
-              <li><a href="/#tarifs" className="hover:text-[#ff2a6d] transition-colors">Tarifs</a></li>
-              <li><Link href="/demo" className="hover:text-[#ff2a6d] transition-colors">Démo</Link></li>
+              <li><a href="/#solutions" className="hover:text-[#1E40AF] transition-colors">Solutions</a></li>
+              <li><a href="/#comment" className="hover:text-[#1E40AF] transition-colors">Comment ça marche</a></li>
+              <li><a href="/#tarifs" className="hover:text-[#1E40AF] transition-colors">Tarifs</a></li>
+              <li><Link href="/demo" className="hover:text-[#1E40AF] transition-colors">Démo</Link></li>
             </ul>
           </div>
 
@@ -407,9 +403,9 @@ function Footer() {
           <div>
             <h4 className="font-semibold mb-4 text-white">Entreprise</h4>
             <ul className="space-y-2 text-[#a0a8b8] text-sm">
-              <li><Link href="/contact" className="hover:text-[#ff2a6d] transition-colors">Contact</Link></li>
-              <li><Link href="/a-propos" className="hover:text-[#ff2a6d] transition-colors">À propos</Link></li>
-              <li><Link href="/devenir-partenaire" className="hover:text-[#ff2a6d] transition-colors">Partenaires</Link></li>
+              <li><Link href="/contact" className="hover:text-[#1E40AF] transition-colors">Contact</Link></li>
+              <li><Link href="/a-propos" className="hover:text-[#1E40AF] transition-colors">À propos</Link></li>
+              <li><Link href="/devenir-partenaire" className="hover:text-[#1E40AF] transition-colors">Partenaires</Link></li>
             </ul>
           </div>
 
@@ -417,9 +413,9 @@ function Footer() {
           <div>
             <h4 className="font-semibold mb-4 text-white">Légal</h4>
             <ul className="space-y-2 text-[#a0a8b8] text-sm">
-              <li><Link href="/mentions-legales" className="hover:text-[#ff2a6d] transition-colors">Mentions légales</Link></li>
-              <li><Link href="/confidentialite" className="hover:text-[#ff2a6d] transition-colors">Politique de confidentialité</Link></li>
-              <li><Link href="/cgu" className="hover:text-[#ff2a6d] transition-colors">CGU</Link></li>
+              <li><Link href="/mentions-legales" className="hover:text-[#1E40AF] transition-colors">Mentions légales</Link></li>
+              <li><Link href="/confidentialite" className="hover:text-[#1E40AF] transition-colors">Politique de confidentialité</Link></li>
+              <li><Link href="/cgu" className="hover:text-[#1E40AF] transition-colors">CGU</Link></li>
             </ul>
           </div>
         </div>
@@ -427,15 +423,15 @@ function Footer() {
         {/* Contact Info */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 py-8 border-t border-[#1a2238]">
           <div className="flex items-center gap-3 text-[#a0a8b8]">
-            <MapPin className="w-5 h-5 text-[#ff2a6d]" />
+            <MapPin className="w-5 h-5 text-[#1E40AF]" />
             <span>Poissy, France</span>
           </div>
           <div className="flex items-center gap-3 text-[#a0a8b8]">
-            <Phone className="w-5 h-5 text-[#ff2a6d]" />
+            <Phone className="w-5 h-5 text-[#1E40AF]" />
             <span>+33 7 45 34 93 39</span>
           </div>
           <div className="flex items-center gap-3 text-[#a0a8b8]">
-            <Mail className="w-5 h-5 text-[#ff2a6d]" />
+            <Mail className="w-5 h-5 text-[#1E40AF]" />
             <span>contact@qrbag.com</span>
           </div>
         </div>
@@ -448,13 +444,13 @@ function Footer() {
 
           {/* Social Icons */}
           <div className="flex items-center gap-4">
-            <a href="https://facebook.com/qrbag" target="_blank" rel="noopener noreferrer" className="text-[#a0a8b8] hover:text-[#ff2a6d] transition-colors" aria-label="Facebook">
+            <a href="https://facebook.com/qrbag" target="_blank" rel="noopener noreferrer" className="text-[#a0a8b8] hover:text-[#1E40AF] transition-colors" aria-label="Facebook">
               <Facebook className="w-5 h-5" aria-hidden="true" />
             </a>
-            <a href="https://instagram.com/qrbag" target="_blank" rel="noopener noreferrer" className="text-[#a0a8b8] hover:text-[#ff2a6d] transition-colors" aria-label="Instagram">
+            <a href="https://instagram.com/qrbag" target="_blank" rel="noopener noreferrer" className="text-[#a0a8b8] hover:text-[#1E40AF] transition-colors" aria-label="Instagram">
               <Instagram className="w-5 h-5" aria-hidden="true" />
             </a>
-            <a href="https://twitter.com/qrbag" target="_blank" rel="noopener noreferrer" className="text-[#a0a8b8] hover:text-[#ff2a6d] transition-colors" aria-label="Twitter">
+            <a href="https://twitter.com/qrbag" target="_blank" rel="noopener noreferrer" className="text-[#a0a8b8] hover:text-[#1E40AF] transition-colors" aria-label="Twitter">
               <Twitter className="w-5 h-5" aria-hidden="true" />
             </a>
           </div>
@@ -464,7 +460,7 @@ function Footer() {
             href="https://maps.google.com/?q=Poissy+France"
             target="_blank"
             rel="noopener noreferrer"
-            className="text-[#a0a8b8] hover:text-[#ff2a6d] text-sm flex items-center gap-1 transition-colors"
+            className="text-[#a0a8b8] hover:text-[#1E40AF] text-sm flex items-center gap-1 transition-colors"
           >
             <MapPin className="w-4 h-4" />
             Nous trouver

@@ -97,7 +97,7 @@ function VerifyEmailContent() {
         {/* Logo */}
         <div className="text-center mb-8">
           <Link href="/" className="inline-block">
-            <h1 className="text-3xl font-bold text-[#ff7f00]">QRBag</h1>
+            <h1 className="text-3xl font-bold text-[#2563EB]">QRBag</h1>
           </Link>
           <p className="text-slate-500 mt-2">Vérification de l'email</p>
         </div>
@@ -106,19 +106,19 @@ function VerifyEmailContent() {
         <div className="bg-white rounded-2xl shadow-xl p-8">
           {status === 'loading' && token && (
             <div className="text-center py-8">
-              <RefreshCw className="w-12 h-12 text-[#ff7f00] animate-spin mx-auto mb-4" />
+              <RefreshCw className="w-12 h-12 text-[#2563EB] animate-spin mx-auto mb-4" />
               <p className="text-slate-600">Vérification en cours...</p>
             </div>
           )}
 
           {status === 'success' && (
             <div className="text-center py-4">
-              <CheckCircle className="w-16 h-16 text-emerald-500 mx-auto mb-4" />
+              <CheckCircle className="w-16 h-16 text-blue-600 mx-auto mb-4" />
               <h2 className="text-xl font-semibold text-slate-800 mb-2">Email vérifié !</h2>
               <p className="text-slate-600 mb-6">{message}</p>
               <button
                 onClick={() => router.push('/login')}
-                className="w-full py-3 bg-[#ff7f00] text-white rounded-xl font-medium hover:bg-[#ff6600] transition-colors"
+                className="w-full py-3 bg-[#2563EB] text-white rounded-xl font-medium hover:bg-[#ff6600] transition-colors"
               >
                 Se connecter
               </button>
@@ -143,7 +143,7 @@ function VerifyEmailContent() {
           {status !== 'success' && (!token || status === 'error') && (
             <div>
               <div className="text-center mb-6">
-                <Mail className="w-12 h-12 text-[#ff7f00] mx-auto mb-4" />
+                <Mail className="w-12 h-12 text-[#2563EB] mx-auto mb-4" />
                 <h2 className="text-xl font-semibold text-slate-800 mb-2">Entrez votre code</h2>
                 <p className="text-slate-500 text-sm">
                   Entrez votre email et le code à 6 chiffres reçu par email
@@ -158,7 +158,7 @@ function VerifyEmailContent() {
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     placeholder="votre@email.com"
-                    className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:border-[#ff7f00]"
+                    className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:border-[#2563EB]"
                   />
                 </div>
                 
@@ -169,7 +169,7 @@ function VerifyEmailContent() {
                     value={code}
                     onChange={(e) => setCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
                     placeholder="000000"
-                    className="w-full px-4 py-3 border border-slate-200 rounded-xl text-center text-2xl tracking-[0.5em] focus:outline-none focus:border-[#ff7f00]"
+                    className="w-full px-4 py-3 border border-slate-200 rounded-xl text-center text-2xl tracking-[0.5em] focus:outline-none focus:border-[#2563EB]"
                     maxLength={6}
                   />
                 </div>
@@ -177,7 +177,7 @@ function VerifyEmailContent() {
                 <button
                   onClick={verifyWithCode}
                   disabled={verifying || code.length !== 6 || !email}
-                  className="w-full py-3 bg-[#ff7f00] text-white rounded-xl font-medium hover:bg-[#ff6600] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="w-full py-3 bg-[#2563EB] text-white rounded-xl font-medium hover:bg-[#ff6600] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {verifying ? 'Vérification...' : 'Vérifier'}
                 </button>
@@ -189,7 +189,7 @@ function VerifyEmailContent() {
                 <button
                   onClick={resendVerification}
                   disabled={verifying || !email}
-                  className="w-full py-3 text-[#ff7f00] font-medium hover:underline"
+                  className="w-full py-3 text-[#2563EB] font-medium hover:underline"
                 >
                   Renvoyer le code
                 </button>
@@ -214,7 +214,7 @@ export default function VerifyEmailPage() {
   return (
     <Suspense fallback={
       <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 flex items-center justify-center">
-        <RefreshCw className="w-8 h-8 text-[#ff7f00] animate-spin" />
+        <RefreshCw className="w-8 h-8 text-[#2563EB] animate-spin" />
       </div>
     }>
       <VerifyEmailContent />

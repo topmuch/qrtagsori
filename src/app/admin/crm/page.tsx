@@ -68,7 +68,7 @@ interface Lead {
 const STATUS_CONFIG: Record<LeadStatus, { label: string; className: string }> = {
   new: { label: 'Nouveau', className: 'bg-blue-100 text-blue-700 dark:bg-blue-500/20 dark:text-blue-300' },
   contacted: { label: 'Contacté', className: 'bg-yellow-100 text-yellow-700 dark:bg-yellow-500/20 dark:text-yellow-300' },
-  in_discussion: { label: 'En discussion', className: 'bg-orange-100 text-orange-700 dark:bg-orange-500/20 dark:text-orange-300' },
+  in_discussion: { label: 'En discussion', className: 'bg-blue-100 text-blue-800 dark:bg-blue-500/20 dark:text-blue-300' },
   qualified: { label: 'Qualifié', className: 'bg-purple-100 text-purple-700 dark:bg-purple-500/20 dark:text-purple-300' },
   converted: { label: 'Converti', className: 'bg-green-100 text-green-700 dark:bg-green-500/20 dark:text-green-300' },
   lost: { label: 'Perdu', className: 'bg-red-100 text-red-700 dark:bg-red-500/20 dark:text-red-300' },
@@ -296,7 +296,7 @@ export default function CRMPage() {
         <Card className="bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800">
           <CardContent className="p-4">
             <p className="text-xs text-slate-500 dark:text-slate-400">En discussion</p>
-            <p className="text-2xl font-bold text-orange-600">{leads.filter(l => l.status === 'in_discussion').length}</p>
+            <p className="text-2xl font-bold text-blue-700">{leads.filter(l => l.status === 'in_discussion').length}</p>
           </CardContent>
         </Card>
         <Card className="bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800">
@@ -481,7 +481,7 @@ export default function CRMPage() {
                             <Button
                               size="sm"
                               variant="ghost"
-                              className="text-amber-500 hover:text-amber-600 hover:bg-amber-50 dark:hover:bg-amber-500/10 rounded-lg h-8 w-8 p-0"
+                              className="text-blue-600 hover:text-amber-600 hover:bg-amber-50 dark:hover:bg-blue-600/10 rounded-lg h-8 w-8 p-0"
                               onClick={() => openEditDialog(lead)}
                               title="Modifier"
                             >
@@ -733,7 +733,7 @@ export default function CRMPage() {
               />
             </div>
             <Button
-              className="w-full bg-amber-500 hover:bg-amber-600 text-white rounded-xl"
+              className="w-full bg-blue-600 hover:bg-amber-600 text-white rounded-xl"
               onClick={handleUpdateLead}
             >
               Enregistrer les modifications
