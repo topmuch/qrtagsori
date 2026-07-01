@@ -17,6 +17,8 @@ interface UseTranslationReturn {
   dir: 'ltr' | 'rtl';
   langName: string;
   isLoading: boolean;
+  /** Detected ISO country code (e.g. 'FR', 'SN', 'SA'). Used for phone dial code pre-selection. */
+  countryCode: string;
 }
 
 // Store for translations
@@ -26,6 +28,7 @@ let currentLang: Language = 'fr';
 export function useTranslation(): UseTranslationReturn {
   const [lang, setLangState] = useState<Language>('fr');
   const [isLoading, setIsLoading] = useState(true);
+  const [countryCode, setCountryCode] = useState('FR');
 
   // Detect language on mount
   useEffect(() => {
@@ -57,6 +60,7 @@ export function useTranslation(): UseTranslationReturn {
         if (response.ok) {
           const data = await response.json();
           if (data.countryCode) {
+            setCountryCode(data.countryCode.toUpperCase());
             const detectedLang = detectLanguageFromCountry(data.countryCode);
             setLangState(detectedLang);
             return;
@@ -121,7 +125,8 @@ export function useTranslation(): UseTranslationReturn {
     setLang,
     dir: LANGUAGE_DIRECTION[lang],
     langName: LANGUAGE_NAMES[lang],
-    isLoading
+    isLoading,
+    countryCode
   };
 }
 

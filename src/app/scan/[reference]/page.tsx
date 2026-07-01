@@ -22,6 +22,7 @@ import { useTranslation } from '@/hooks/useTranslation';
 import { Language, LANGUAGE_NAMES } from '@/lib/i18n';
 import dynamic from 'next/dynamic';
 import SuccessOverlay from '@/components/ui/SuccessOverlay';
+import PhoneInput from '@/components/ui/PhoneInput';
 
 // TRANSPORT-FEATURE: Multi-transport support
 import { safeTransportMode, getTransportIcon, getTransportBlockHeader, TRANSPORT_ICONS } from '@/lib/transport';
@@ -325,7 +326,7 @@ export default function ScanPage() {
   const params = useParams();
   const reference = params.reference as string;
 
-  const { t, lang, setLang, dir } = useTranslation();
+  const { t, lang, setLang, dir, countryCode } = useTranslation();
 
   const [baggageData, setBaggageData] = useState<BaggageData | null>(null);
   const [loading, setLoading] = useState(true);
@@ -340,6 +341,7 @@ export default function ScanPage() {
   // Finder form state
   const [finderName, setFinderName] = useState('');
   const [finderPhone, setFinderPhone] = useState('');
+  const [finderPhoneCountry, setFinderPhoneCountry] = useState(countryCode);
   const [otherLocation, setOtherLocation] = useState('');
   const [sharedPosition, setSharedPosition] = useState<{ lat: number; lng: number } | null>(null);
   const [isLoadingLocation, setIsLoadingLocation] = useState(false);
@@ -922,12 +924,14 @@ export default function ScanPage() {
             />
 
             {/* WhatsApp Input */}
-            <input
-              type="tel"
-              placeholder={`${t('finder.whatsapp')} ${t('finder.whatsapp_placeholder')}`}
+            <PhoneInput
+              countryCode={finderPhoneCountry}
+              onCountryChange={setFinderPhoneCountry}
               value={finderPhone}
-              onChange={(e) => setFinderPhone(e.target.value)}
-              className="w-full px-4 py-3.5 bg-white border-2 border-blue-200 rounded-xl text-blue-900 text-base md:text-lg placeholder:text-blue-900/40 focus:outline-none focus:ring-2 focus:ring-orange-400 focus:border-transparent transition-all min-h-[52px]"
+              onChange={setFinderPhone}
+              placeholder="6 12 34 56 78"
+              required
+              className="min-h-[52px]"
             />
 
             {/* Context Dropdown — optional manual override */}

@@ -14,6 +14,7 @@ import {
   ArrowRight,
   Shield
 } from 'lucide-react';
+import PhoneInput from '@/components/ui/PhoneInput';
 
 // TRANSPORT-FEATURE: Import transport utilities
 import { useTranslation } from '@/hooks/useTranslation';
@@ -79,7 +80,7 @@ function InscrireContent() {
   const qrFromUrl = searchParams.get('qr') || '';
   
   // TRANSPORT-FEATURE: Translation hook + transport mode + step state
-  const { t, lang, setLang, dir } = useTranslation();
+  const { t, lang, setLang, dir, countryCode } = useTranslation();
   // ACTIVATION-FLOW: Lire ?mode= depuis l'URL pour pré-sélectionner le mode de transport
   const modeFromUrl = searchParams.get('mode') || '';
   const isModeFromUrl = ['flight', 'train', 'boat', 'bus'].includes(modeFromUrl);
@@ -91,6 +92,7 @@ function InscrireContent() {
 
   const [loading, setLoading] = useState(false);
   // TRANSPORT-FEATURE: Extended formData with all transport fields
+  const [phoneCountry, setPhoneCountry] = useState(countryCode);
   const [formData, setFormData] = useState({
     reference: '',
     firstName: '',
@@ -109,6 +111,13 @@ function InscrireContent() {
     busCompany: '',
     busLineNumber: '',
   });
+
+  // Sync phoneCountry when countryCode is detected
+  useEffect(() => {
+    if (countryCode && countryCode !== 'FR' || !phoneCountry) {
+      setPhoneCountry(countryCode);
+    }
+  }, [countryCode]);
 
   // Pre-fill reference from URL
   useEffect(() => {
@@ -472,18 +481,17 @@ function InscrireContent() {
                 <div className="flex items-center gap-3">
                   <span className="text-xl">📱</span>
                   <div className="flex-1">
-                    <p className="text-sm text-white/80 font-medium">{t('inscrire.whatsapp_label')}</p>
-                    <input
-                      type="tel"
-                      placeholder={t('inscrire.whatsapp_placeholder')}
+                    <PhoneInput
+                      countryCode={phoneCountry}
+                      onCountryChange={setPhoneCountry}
                       value={formData.whatsapp}
-                      onChange={(e) => setFormData({ ...formData, whatsapp: e.target.value })}
-                      className="w-full bg-white/10 border border-white/20 text-white placeholder:text-white/40 focus:outline-none focus:ring-2 focus:ring-orange-400 focus:border-transparent rounded-lg px-3 py-2.5 text-base mt-1 min-h-[48px]"
+                      onChange={(fullNumber) => setFormData({ ...formData, whatsapp: fullNumber })}
+                      placeholder="6 12 34 56 78"
+                      dark
                       required
+                      label={t('inscrire.whatsapp_label')}
+                      hint={t('inscrire.whatsapp_hint')}
                     />
-                    <p className="text-xs text-white/50 mt-1.5">
-                      {t('inscrire.whatsapp_hint')}
-                    </p>
                   </div>
                 </div>
               </DashedEncart>
