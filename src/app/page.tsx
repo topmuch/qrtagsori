@@ -154,7 +154,7 @@ function Navigation() {
       <div className="max-w-7xl mx-auto px-5 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16 lg:h-[72px]">
           <Link href="/" className="flex items-center group">
-            <img src="/logo.png" alt="QRBag" className="h-8 w-auto object-contain transition-transform duration-300 group-hover:scale-105" />
+            <img src="/logo.png" alt="QRBag" className="h-11 w-auto object-contain transition-transform duration-300 group-hover:scale-105" />
           </Link>
 
           <div className="hidden md:flex items-center gap-1">
@@ -487,9 +487,9 @@ function TransportModesSection() {
         <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
           {modes.map((mode, i) => (
             <FadeIn key={mode.title} delay={i * 0.1}>
-              <div className="group h-full bg-white rounded-2xl overflow-hidden border border-slate-200/80 shadow-sm hover:shadow-xl hover:shadow-slate-200/40 transition-all duration-500 hover:-translate-y-1.5">
-                {/* Image - rectangular ~4:3 ratio, no overlay */}
-                <div className="relative aspect-[4/3] overflow-hidden">
+              <div className="group bg-white rounded-2xl overflow-hidden border border-slate-200/80 shadow-sm hover:shadow-xl hover:shadow-slate-200/40 transition-all duration-500 hover:-translate-y-1">
+                {/* Image - portrait ~3:4 ratio, dominant */}
+                <div className="relative aspect-[3/4] overflow-hidden">
                   <Image
                     src={mode.image}
                     alt={mode.title}
@@ -502,10 +502,9 @@ function TransportModesSection() {
                   </div>
                 </div>
 
-                {/* Content below image */}
-                <div className="p-5">
-                  <h3 className="text-base font-bold text-slate-900 mb-1">{mode.title}</h3>
-                  <p className="text-sm text-slate-500 leading-relaxed">{mode.description}</p>
+                {/* Content below image - minimal */}
+                <div className="p-4">
+                  <h3 className="text-sm font-bold text-slate-900">{mode.title}</h3>
                 </div>
               </div>
             </FadeIn>
