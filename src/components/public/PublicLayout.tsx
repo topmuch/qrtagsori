@@ -25,7 +25,7 @@ export function PublicNavigation() {
         <div className="flex items-center justify-between h-16">
           {/* Logo */}
           <Link href="/" className="flex items-center">
-            <img src="/logo.png" alt="QRBag" className="w-10 h-10 object-contain" />
+            <img src="/logo.png" alt="QRBag" className="h-12 w-auto object-contain" />
           </Link>
 
           {/* Desktop Nav */}
@@ -99,7 +99,7 @@ export function PublicFooter() {
           {/* Logo */}
           <div>
             <div className="mb-4">
-              <img src="/logo.png" alt="QRBag" className="w-10 h-10 object-contain" />
+              <img src="/logo.png" alt="QRBag" className="h-12 w-auto object-contain" />
             </div>
             <p className="text-[#a0a8b8] text-sm">
               Protection intelligente des bagages pour voyageurs et pèlerins.

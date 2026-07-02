@@ -71,9 +71,7 @@ function ResetPasswordContent() {
         {/* Logo */}
         <div className="text-center mb-8">
           <Link href="/" className="inline-flex flex-col items-center gap-3">
-            <div className="w-14 h-14 rounded-2xl p-2.5 flex items-center justify-center bg-blue-50">
-              <img src="/logo.png" alt="QRBag" className="w-full h-full object-contain" />
-            </div>
+            <img src="/logo.png" alt="QRBag" className="h-14 w-auto object-contain" />
           </Link>
           <p className="text-slate-500 mt-3 text-sm">Nouveau mot de passe</p>
         </div>

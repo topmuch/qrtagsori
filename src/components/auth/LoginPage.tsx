@@ -197,7 +197,7 @@ export default function LoginPage({ variant }: { variant: LoginVariant }) {
           {/* Top: Logo + Badge */}
           <div className="flex items-center justify-between">
             <Link href="/" className="flex items-center group">
-              <div className="w-12 h-12 rounded-2xl bg-white/10 backdrop-blur-xl p-2 border border-white/20 flex items-center justify-center group-hover:bg-white/15 transition-all duration-300">
+              <div className="w-14 h-14 rounded-2xl backdrop-blur-xl p-1.5 border border-white/20 flex items-center justify-center group-hover:bg-white/15 transition-all duration-300">
                 <img src="/logo.png" alt="QRBag" className="w-full h-full object-contain" />
               </div>
             </Link>
@@ -248,7 +248,7 @@ export default function LoginPage({ variant }: { variant: LoginVariant }) {
 
           {/* Mobile Logo */}
           <div className="lg:hidden flex flex-col items-center mb-10">
-            <div className="w-16 h-16 rounded-2xl p-2 mb-3 flex items-center justify-center" style={{ background: config.accentLight }}>
+            <div className="w-18 h-18 rounded-2xl p-1.5 mb-3 flex items-center justify-center" style={{ background: config.accentLight }}>
               <img src="/logo.png" alt="QRBag" className="w-full h-full object-contain" />
             </div>
             <span className={`inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-semibold tracking-wide uppercase mt-2`} style={{ background: config.accentLight, color: config.accentColor }}>
