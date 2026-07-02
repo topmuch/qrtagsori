@@ -444,7 +444,9 @@ export default function AgencyRootLayout({
     const fetchUnreadCount = async () => {
       try {
         const currentAgencyId = user?.agencyId || user?.agency?.id;
+        if (!currentAgencyId) return; // Skip if no agency ID
         const res = await fetch(`/api/agency/messages?agencyId=${currentAgencyId}&count=true`);
+        if (!res.ok) return; // Don't crash on API error
         const data = await res.json();
         if (data.unreadCount !== undefined) {
           setUnreadMessages(data.unreadCount);

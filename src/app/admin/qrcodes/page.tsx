@@ -170,36 +170,59 @@ export default function QRCodesPage() {
     setSelectedSet(set);
 
     try {
-      // Use server-side ZIP export for single set
-      const response = await fetch('/api/admin/baggages/export-zip', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ setId: set.setId }),
-      });
+      // Use server-side ZIP export for single set with timeout
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 120000); // 2 min timeout
+
+      let response: Response;
+      try {
+        response = await fetch('/api/admin/baggages/export-zip', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ setId: set.setId }),
+          signal: controller.signal,
+        });
+      } catch (fetchError) {
+        clearTimeout(timeoutId);
+        if (fetchError instanceof DOMException && fetchError.name === 'AbortError') {
+          throw new Error('Délai d\'attente dépassé');
+        }
+        throw fetchError;
+      }
+      clearTimeout(timeoutId);
 
       if (!response.ok) {
-        throw new Error('Export failed');
+        const errorData = await response.json().catch(() => ({ error: 'Export échoué' }));
+        throw new Error(errorData.error || 'Export failed');
       }
 
       // Get the filename from Content-Disposition header
       const contentDisposition = response.headers.get('Content-Disposition');
       let filename = `QRBag-${set.setId}.zip`;
       if (contentDisposition) {
-        const match = contentDisposition.match(/filename="?([^"]+)"?/);
-        if (match) filename = decodeURIComponent(match[1]);
+        const match = contentDisposition.match(/filename\*?=(?:UTF-8'')?([^;]+)/i) ||
+                      contentDisposition.match(/filename="?([^"]+)"?/);
+        if (match) filename = decodeURIComponent(match[1].replace(/"/g, ''));
       }
 
       // Download the ZIP
       const blob = await response.blob();
+
+      if (blob.size === 0) {
+        throw new Error('Le fichier ZIP est vide');
+      }
+
       const url = URL.createObjectURL(blob);
       const link = document.createElement('a');
       link.href = url;
       link.download = filename;
+      document.body.appendChild(link);
       link.click();
-      URL.revokeObjectURL(url);
+      document.body.removeChild(link);
+      setTimeout(() => URL.revokeObjectURL(url), 5000);
     } catch (error) {
       console.error('Error downloading:', error);
-      alert('Erreur lors du téléchargement');
+      alert('Erreur lors du téléchargement: ' + (error instanceof Error ? error.message : 'Erreur inconnue'));
     } finally {
       setIsDownloading(false);
       setSelectedSet(null);
@@ -234,14 +257,29 @@ export default function QRCodesPage() {
 
       setExportProgress('Génération des QR codes...');
 
-      const response = await fetch('/api/admin/baggages/export-zip', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
-      });
+      // Use timeout for large exports
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 300000); // 5 min timeout
+
+      let response: Response;
+      try {
+        response = await fetch('/api/admin/baggages/export-zip', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload),
+          signal: controller.signal,
+        });
+      } catch (fetchError) {
+        clearTimeout(timeoutId);
+        if (fetchError instanceof DOMException && fetchError.name === 'AbortError') {
+          throw new Error('Délai d\'attente dépassé. L\'export est trop volumineux.');
+        }
+        throw fetchError;
+      }
+      clearTimeout(timeoutId);
 
       if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
+        const errorData = await response.json().catch(() => ({ error: 'Export échoué' }));
         throw new Error(errorData.error || 'Export failed');
       }
 
@@ -251,17 +289,25 @@ export default function QRCodesPage() {
       const contentDisposition = response.headers.get('Content-Disposition');
       let filename = 'QRBag-export.zip';
       if (contentDisposition) {
-        const match = contentDisposition.match(/filename="?([^"]+)"?/);
-        if (match) filename = decodeURIComponent(match[1]);
+        const match = contentDisposition.match(/filename\*?=(?:UTF-8'')?([^;]+)/i) ||
+                      contentDisposition.match(/filename="?([^"]+)"?/);
+        if (match) filename = decodeURIComponent(match[1].replace(/"/g, ''));
       }
 
       const blob = await response.blob();
+
+      if (blob.size === 0) {
+        throw new Error('Le fichier ZIP est vide');
+      }
+
       const url = URL.createObjectURL(blob);
       const link = document.createElement('a');
       link.href = url;
       link.download = filename;
+      document.body.appendChild(link);
       link.click();
-      URL.revokeObjectURL(url);
+      document.body.removeChild(link);
+      setTimeout(() => URL.revokeObjectURL(url), 5000);
 
       setExportProgress('Export terminé !');
       setTimeout(() => {

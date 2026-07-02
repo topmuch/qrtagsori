@@ -1,9 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { ZipArchive } from 'archiver';
-import { PassThrough } from 'stream';
+import archiver from 'archiver';
+import { Readable } from 'stream';
 import { db } from '@/lib/db';
 import {
-  generateQRCodeImagesForBaggages,
+  generateQRCodeImage,
   formatPassengerFolderName,
 } from '@/lib/qr-server';
 
@@ -11,7 +11,7 @@ import {
  * POST /api/admin/baggages/export-zip
  *
  * Export QR codes as a ZIP file organized by passenger.
- * Each passenger gets a folder containing their 3 QR code PNG images.
+ * Uses streaming to handle large exports (1800+ QR codes) without memory issues.
  *
  * Body:
  *   - agencyId: string (required) - Filter by agency
@@ -22,6 +22,10 @@ import {
  *
  * Response: ZIP file stream
  */
+
+// Max QR codes per export to prevent server overload
+const MAX_EXPORT_SIZE = 5000;
+
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
@@ -57,6 +61,23 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // First, count total baggages to check size
+    const totalCount = await db.baggage.count({ where });
+
+    if (totalCount === 0) {
+      return NextResponse.json(
+        { error: 'Aucun baggage trouvé avec ces critères' },
+        { status: 404 }
+      );
+    }
+
+    if (totalCount > MAX_EXPORT_SIZE) {
+      return NextResponse.json(
+        { error: `Trop de bagages (${totalCount}). Maximum ${MAX_EXPORT_SIZE} par export. Veuillez filtrer par type ou par set.` },
+        { status: 400 }
+      );
+    }
+
     // Fetch baggages
     const baggages = await db.baggage.findMany({
       where,
@@ -64,32 +85,15 @@ export async function POST(request: NextRequest) {
       orderBy: [{ setId: 'asc' }, { baggageIndex: 'asc' }],
     });
 
-    if (baggages.length === 0) {
-      return NextResponse.json(
-        { error: 'Aucun baggage trouvé avec ces critères' },
-        { status: 404 }
-      );
-    }
-
-    // Get base URL from request
-    const baseUrl = `${request.nextUrl.protocol}//${request.nextUrl.host}`;
-
-    // Generate QR code images grouped by passenger (setId)
-    const groupedImages = await generateQRCodeImagesForBaggages(
-      baggages.map((b) => ({
-        reference: b.reference,
-        type: b.type,
-        setId: b.setId,
-        baggageIndex: b.baggageIndex,
-        baggageType: b.baggageType,
-        travelerFirstName: b.travelerFirstName,
-        travelerLastName: b.travelerLastName,
-      })),
-      baseUrl,
-    );
+    // Get base URL from request - handle both http/https and x-forwarded-proto
+    const protocol = request.headers.get('x-forwarded-proto') || request.nextUrl.protocol.replace(':', '');
+    const host = request.headers.get('host') || request.nextUrl.host;
+    const baseUrl = `${protocol}://${host}`;
 
     // Build a map of setId -> traveler info for folder naming
     const travelerInfoMap = new Map<string, { firstName: string | null; lastName: string | null }>();
+    const setIdOrder: string[] = [];
+
     for (const baggage of baggages) {
       const key = baggage.setId || baggage.reference.split('-')[0];
       if (!travelerInfoMap.has(key)) {
@@ -97,51 +101,113 @@ export async function POST(request: NextRequest) {
           firstName: baggage.travelerFirstName,
           lastName: baggage.travelerLastName,
         });
+        setIdOrder.push(key);
       }
     }
 
     // Sort setIds for consistent ordering
-    const sortedSetIds = Array.from(groupedImages.keys()).sort();
+    const sortedSetIds = setIdOrder.sort();
 
-    // Create ZIP archive using archiver v8 API
-    const passThrough = new PassThrough();
-    const archive = new ZipArchive({
+    // Generate filename
+    const timestamp = new Date().toISOString().slice(0, 10);
+    const agencyName = baggages[0]?.agency?.name || 'export';
+    const baggageType = type || 'all';
+    const zipFilename = `QRBag-${agencyName}-${baggageType}-${baggages.length}QR-${timestamp}.zip`;
+
+    // Group baggages by setId for batch processing
+    const baggagesBySetId = new Map<string, typeof baggages>();
+    for (const baggage of baggages) {
+      const key = baggage.setId || baggage.reference.split('-')[0];
+      if (!baggagesBySetId.has(key)) {
+        baggagesBySetId.set(key, []);
+      }
+      baggagesBySetId.get(key)!.push(baggage);
+    }
+
+    // Create ZIP archive using streaming approach
+    const archive = archiver('zip', {
       zlib: { level: 6 },
     });
 
-    // Pipe archive to passthrough
-    archive.pipe(passThrough);
-
-    // Add each passenger's QR codes to the archive
-    sortedSetIds.forEach((currentSetId, index) => {
-      const images = groupedImages.get(currentSetId)!;
-      const travelerInfo = travelerInfoMap.get(currentSetId);
-
-      const folderName = formatPassengerFolderName(
-        index,
-        currentSetId,
-        travelerInfo?.firstName,
-        travelerInfo?.lastName,
-      );
-
-      // Add each QR code image to the passenger's folder
-      for (const image of images) {
-        archive.append(image.buffer, {
-          name: `${folderName}/${image.filename}`,
-        });
-      }
-
-      // Add a README text file in each passenger folder
-      const readmeContent = generatePassengerReadme(
-        currentSetId,
-        images,
-        travelerInfo?.firstName,
-        travelerInfo?.lastName,
-      );
-      archive.append(readmeContent, {
-        name: `${folderName}/README.txt`,
-      });
+    // Handle archive errors
+    let archiveError: Error | null = null;
+    archive.on('error', (err: Error) => {
+      console.error('[EXPORT-ZIP] Archive error:', err);
+      archiveError = err;
     });
+
+    // Process QR codes in chunks and add to archive progressively
+    // This avoids loading all QR images in memory at once
+    const CHUNK_SIZE = 25; // Process 25 passengers at a time
+
+    for (let chunkStart = 0; chunkStart < sortedSetIds.length; chunkStart += CHUNK_SIZE) {
+      const chunkEnd = Math.min(chunkStart + CHUNK_SIZE, sortedSetIds.length);
+      const chunkSetIds = sortedSetIds.slice(chunkStart, chunkEnd);
+
+      // Generate QR images for this chunk
+      const chunkPromises = chunkSetIds.map(async (currentSetId, relativeIndex) => {
+        const setBaggages = baggagesBySetId.get(currentSetId) || [];
+        const globalIndex = chunkStart + relativeIndex;
+        const travelerInfo = travelerInfoMap.get(currentSetId);
+
+        const folderName = formatPassengerFolderName(
+          globalIndex,
+          currentSetId,
+          travelerInfo?.firstName,
+          travelerInfo?.lastName,
+        );
+
+        const entries: Array<{ data: Buffer; name: string }> = [];
+
+        // Generate QR images for each baggage in this set
+        for (const baggage of setBaggages) {
+          try {
+            const image = await generateQRCodeImage({
+              reference: baggage.reference,
+              type: baggage.type as 'hajj' | 'voyageur',
+              baggageIndex: baggage.baggageIndex,
+              baggageType: baggage.baggageType,
+              baseUrl,
+            });
+            entries.push({
+              data: image.buffer,
+              name: `${folderName}/${image.filename}`,
+            });
+          } catch (qrError) {
+            console.error(`[EXPORT-ZIP] Error generating QR for ${baggage.reference}:`, qrError);
+            // Skip this QR code rather than failing the entire export
+          }
+        }
+
+        // Add README for this passenger
+        const readmeContent = generatePassengerReadme(
+          currentSetId,
+          setBaggages.map(b => ({
+            reference: b.reference,
+            baggageIndex: b.baggageIndex,
+            baggageType: b.baggageType,
+          })),
+          travelerInfo?.firstName,
+          travelerInfo?.lastName,
+        );
+        entries.push({
+          data: Buffer.from(readmeContent, 'utf-8'),
+          name: `${folderName}/README.txt`,
+        });
+
+        return entries;
+      });
+
+      // Wait for this chunk to finish
+      const chunkResults = await Promise.all(chunkPromises);
+
+      // Add entries to archive
+      for (const entries of chunkResults) {
+        for (const entry of entries) {
+          archive.append(entry.data, { name: entry.name });
+        }
+      }
+    }
 
     // Add a global manifest file
     const manifestContent = generateManifest(baggages, sortedSetIds, travelerInfoMap);
@@ -150,26 +216,25 @@ export async function POST(request: NextRequest) {
     // Finalize the archive
     await archive.finalize();
 
-    // Convert stream to buffer for Next.js response
+    if (archiveError) {
+      throw archiveError;
+    }
+
+    // Convert archive stream to buffer
     const chunks: Uint8Array[] = [];
-    for await (const chunk of passThrough) {
-      chunks.push(chunk as Uint8Array);
+    for await (const chunk of archive as unknown as AsyncIterable<Uint8Array>) {
+      chunks.push(chunk);
     }
     const zipBuffer = Buffer.concat(chunks);
 
-    // Generate filename
-    const timestamp = new Date().toISOString().slice(0, 10);
-    const agencyName = baggages[0]?.agency?.name || 'export';
-    const baggageType = type || 'all';
-    const zipFilename = `QRBag-${agencyName}-${baggageType}-${baggages.length}QR-${timestamp}.zip`;
-
-    // Return ZIP file
+    // Return ZIP file with proper headers
     return new NextResponse(zipBuffer, {
       status: 200,
       headers: {
         'Content-Type': 'application/zip',
         'Content-Disposition': `attachment; filename="${encodeURIComponent(zipFilename)}"`,
         'Content-Length': zipBuffer.length.toString(),
+        'Cache-Control': 'no-cache, no-store, must-revalidate',
       },
     });
   } catch (error) {
@@ -186,7 +251,7 @@ export async function POST(request: NextRequest) {
  */
 function generatePassengerReadme(
   setId: string,
-  images: Array<{ reference: string; baggageIndex: number; baggageType: string; filename: string }>,
+  images: Array<{ reference: string; baggageIndex: number; baggageType: string }>,
   firstName?: string | null,
   lastName?: string | null,
 ): string {

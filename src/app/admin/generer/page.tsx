@@ -150,39 +150,73 @@ export default function GenererQRPage() {
 
       if (matchingSetIds.size === 0) {
         alert('Impossible de trouver les sets générés');
+        setIsExporting(false);
         return;
       }
 
-      // Call the export ZIP API
-      const exportResponse = await fetch('/api/admin/baggages/export-zip', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ setIds: Array.from(matchingSetIds) }),
-      });
+      // Call the export ZIP API with timeout for large exports
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 300000); // 5 min timeout for large exports
+
+      let exportResponse: Response;
+      try {
+        exportResponse = await fetch('/api/admin/baggages/export-zip', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ setIds: Array.from(matchingSetIds) }),
+          signal: controller.signal,
+        });
+      } catch (fetchError) {
+        clearTimeout(timeoutId);
+        if (fetchError instanceof DOMException && fetchError.name === 'AbortError') {
+          throw new Error('Délai d\'attente dépassé. L\'export est trop volumineux. Essayez de filtrer par type (hajj/voyageur).');
+        }
+        throw fetchError;
+      }
+      clearTimeout(timeoutId);
 
       if (!exportResponse.ok) {
-        const errorData = await exportResponse.json().catch(() => ({}));
+        const errorData = await exportResponse.json().catch(() => ({ error: 'Export échoué' }));
         throw new Error(errorData.error || 'Export failed');
+      }
+
+      // Check that the response is actually a ZIP
+      const contentType = exportResponse.headers.get('Content-Type');
+      if (contentType && !contentType.includes('zip') && !contentType.includes('octet-stream')) {
+        // Response is not a ZIP - likely an error JSON
+        const errorData = await exportResponse.json().catch(() => ({ error: 'Réponse invalide' }));
+        throw new Error(errorData.error || 'Le serveur n\'a pas renvoyé un fichier ZIP');
       }
 
       // Get filename
       const contentDisposition = exportResponse.headers.get('Content-Disposition');
       let filename = 'QRBag-export.zip';
       if (contentDisposition) {
-        const match = contentDisposition.match(/filename="?([^"]+)"?/);
-        if (match) filename = decodeURIComponent(match[1]);
+        const match = contentDisposition.match(/filename\*?=(?:UTF-8'')?([^;]+)/i) ||
+                      contentDisposition.match(/filename="?([^"]+)"?/);
+        if (match) filename = decodeURIComponent(match[1].replace(/"/g, ''));
       }
 
       const blob = await exportResponse.blob();
+
+      // Verify the blob is not empty
+      if (blob.size === 0) {
+        throw new Error('Le fichier ZIP est vide. Aucun QR code n\'a été généré.');
+      }
+
       const url = URL.createObjectURL(blob);
       const link = document.createElement('a');
       link.href = url;
       link.download = filename;
+      document.body.appendChild(link);
       link.click();
-      URL.revokeObjectURL(url);
+      document.body.removeChild(link);
+
+      // Delay revoking to ensure download starts
+      setTimeout(() => URL.revokeObjectURL(url), 5000);
     } catch (error) {
       console.error('Error exporting:', error);
-      alert('Erreur lors de l\'export ZIP');
+      alert('Erreur lors de l\'export ZIP: ' + (error instanceof Error ? error.message : 'Erreur inconnue'));
     } finally {
       setIsExporting(false);
     }

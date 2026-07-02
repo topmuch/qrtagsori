@@ -64,10 +64,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const fetchSession = useCallback(async () => {
     try {
       const response = await fetch('/api/auth/session');
+      if (!response.ok) {
+        // Session API returned an error - clear user
+        setUser(null);
+        return;
+      }
       const data = await response.json();
 
       if (data.authenticated && data.user) {
-        setUser(data.user as User);
+        // Validate user data has required fields
+        if (data.user.id && data.user.email && data.user.role) {
+          setUser(data.user as User);
+        } else {
+          console.error('Invalid user data from session:', data.user);
+          setUser(null);
+        }
       } else {
         setUser(null);
       }

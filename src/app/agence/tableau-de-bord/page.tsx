@@ -440,17 +440,30 @@ export default function AgencyDashboardPage() {
 
   const fetchBaggages = async () => {
     try {
+      if (!agencyId) {
+        setLoading(false);
+        return;
+      }
+
       const params = new URLSearchParams({
         agencyId: agencyId,
       });
 
       const response = await fetch(`/api/agency/baggages?${params}`);
+      if (!response.ok) {
+        console.error('Failed to fetch baggages:', response.status);
+        setBaggages([]);
+        setStats({ total: 0, pending: 0, active: 0, scanned: 0, lost: 0, found: 0 });
+        return;
+      }
       const data = await response.json();
 
-      setBaggages(data.baggages);
-      setStats(data.stats);
+      setBaggages(data.baggages || []);
+      setStats(data.stats || { total: 0, pending: 0, active: 0, scanned: 0, lost: 0, found: 0 });
     } catch (error) {
       console.error('Error fetching baggages:', error);
+      setBaggages([]);
+      setStats({ total: 0, pending: 0, active: 0, scanned: 0, lost: 0, found: 0 });
     } finally {
       setLoading(false);
     }
