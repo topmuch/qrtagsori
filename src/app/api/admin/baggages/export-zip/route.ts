@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import archiver from 'archiver';
-import { Readable } from 'stream';
+import { ZipArchive } from 'archiver';
 import { db } from '@/lib/db';
 import {
   generateQRCodeImage,
@@ -125,7 +124,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Create ZIP archive using streaming approach
-    const archive = archiver('zip', {
+    const archive = new ZipArchive({
       zlib: { level: 6 },
     });
 

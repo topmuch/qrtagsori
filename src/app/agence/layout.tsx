@@ -208,7 +208,7 @@ function Sidebar({ isOpen, setIsOpen, unreadMessages, onLogout, userName, agency
 }
 
 // Modern Header Component
-function Header({ unreadMessages, onMenuClick, userName, agencySlug }: { unreadMessages?: number; onMenuClick: () => void; userName: string; agencySlug: string }) {
+function Header({ unreadMessages, onMenuClick, userName, agencySlug, mobileActionsOpen, setMobileActionsOpen }: { unreadMessages?: number; onMenuClick: () => void; userName: string; agencySlug: string; mobileActionsOpen: boolean; setMobileActionsOpen: (open: boolean) => void }) {
   const [searchQuery, setSearchQuery] = useState('');
   const [copied, setCopied] = useState(false);
   const { theme, toggleTheme } = useTheme();
@@ -513,7 +513,7 @@ export default function AgencyRootLayout({
         <Sidebar isOpen={sidebarOpen} setIsOpen={setSidebarOpen} unreadMessages={unreadMessages} onLogout={handleLogout} userName={user.name || 'Agence'} agencySlug={agencySlug} />
 
         <div className="flex-1 flex flex-col min-w-0">
-          <Header unreadMessages={unreadMessages} onMenuClick={() => setSidebarOpen(true)} userName={user.name || 'Agence'} agencySlug={agencySlug} />
+          <Header unreadMessages={unreadMessages} onMenuClick={() => setSidebarOpen(true)} userName={user.name || 'Agence'} agencySlug={agencySlug} mobileActionsOpen={mobileActionsOpen} setMobileActionsOpen={setMobileActionsOpen} />
 
           <main className="flex-1 p-6 lg:p-8">
             {/* Advertisement Banner */}
