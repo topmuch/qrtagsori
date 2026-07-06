@@ -28,6 +28,12 @@ export interface EmailData {
   userId?: string;
   agencyId?: string;
   data?: Record<string, unknown>;
+  // refonte-8: PDF/email attachments (nodemailer-native)
+  attachments?: Array<{
+    filename: string;
+    content: Buffer | string;
+    contentType?: string;
+  }>;
 }
 
 // Generate random token
@@ -216,6 +222,10 @@ async function sendViaSMTP(config: EmailConfig, emailData: EmailData): Promise<{
       subject: emailData.subject,
       html: emailData.html,
       text: emailData.text,
+      // refonte-8: pass through attachments (PDF, etc.) if provided
+      ...(emailData.attachments && emailData.attachments.length > 0
+        ? { attachments: emailData.attachments }
+        : {}),
     };
 
     const info = await transporter.sendMail(mailOptions);
@@ -265,6 +275,9 @@ export async function sendEmail(emailData: EmailData): Promise<{ success: boolea
       console.log(`To: ${toEmail}`);
       console.log(`Subject: ${emailData.subject}`);
       console.log(`Type: ${emailData.type || 'general'}`);
+      if (emailData.attachments && emailData.attachments.length > 0) {
+        console.log(`Attachments: ${emailData.attachments.map(a => `${a.filename} (${typeof a.content === 'string' ? a.content.length : a.content.length} bytes)`).join(', ')}`);
+      }
       console.log('────────────────────────────────────────────────');
       console.log(emailData.text || emailData.html?.replace(/<[^>]*>/g, ''));
       console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
@@ -714,4 +727,122 @@ export async function verifyEmailCode(code: string, email: string, type: 'email_
   });
   
   return { valid: true };
+}
+
+// ═══════════════════════════════════════════════════════
+//  refonte-8: CHECKLIST EMAIL TEMPLATE
+// ═══════════════════════════════════════════════════════
+
+export interface ChecklistEmailData {
+  firstName: string;
+  lastName: string;
+  code: string;            // public 6-char code
+  verificationKey: string; // 8-char key required to view PDF
+  publicUrl: string;       // absolute URL to /checklist/[code]
+  itemsCount: number;
+  destination: string;
+  departureDate: string;
+}
+
+export function getChecklistEmailTemplate(data: ChecklistEmailData): { html: string; text: string } {
+  const { firstName, lastName, code, verificationKey, publicUrl, itemsCount, destination, departureDate } = data;
+  const fullName = `${firstName} ${lastName}`.trim();
+
+  const html = `
+<!DOCTYPE html>
+<html lang="fr">
+<head><meta charset="UTF-8"><title>Attestation d'inventaire QRBag</title></head>
+<body style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; background-color: #FDFBF7;">
+
+  <!-- Header band -->
+  <div style="background: #c5a643; padding: 20px 24px; border-radius: 12px 12px 0 0; border: 2px solid #1a1a1a; border-bottom: none;">
+    <div style="font-size: 22px; font-weight: bold; color: #1a1a1a;">🎒 QRBag</div>
+    <div style="font-size: 12px; color: #1a1a1a; opacity: 0.75;">Attestation d'inventaire de voyage</div>
+  </div>
+
+  <!-- Body -->
+  <div style="background: #ffffff; padding: 30px 24px; border: 2px solid #1a1a1a; border-top: none;">
+    <h1 style="color: #1a1a1a; font-size: 22px; margin: 0 0 16px 0;">Bonjour ${firstName},</h1>
+
+    <p style="color: #1a1a1a; line-height: 1.6; margin: 0 0 16px 0;">
+      Votre attestation d'inventaire de voyage a été générée et certifiée électroniquement par QRBag.
+      Elle contient <strong>${itemsCount} article${itemsCount > 1 ? 's' : ''}</strong> pour votre voyage vers
+      <strong>${destination}</strong> prévu le <strong>${departureDate}</strong>.
+    </p>
+
+    <p style="color: #1a1a1a; line-height: 1.6; margin: 0 0 24px 0;">
+      Le PDF horodaté est joint à cet email. Vous pouvez également le consulter en ligne sur la page publique ci-dessous.
+    </p>
+
+    <!-- Public URL block -->
+    <div style="background: #fffbe6; border: 2px dashed #1a1a1a; border-radius: 10px; padding: 16px 20px; margin-bottom: 20px;">
+      <div style="font-size: 11px; color: #666; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 6px;">🔗 URL publique de l'attestation</div>
+      <div style="font-size: 14px; color: #1a1a1a; font-weight: bold; word-break: break-all;">${publicUrl}</div>
+    </div>
+
+    <!-- Verification key block -->
+    <div style="background: #fef2f2; border: 2px solid #c0392b; border-radius: 10px; padding: 16px 20px; margin-bottom: 24px;">
+      <div style="font-size: 11px; color: #c0392b; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 6px;">🔑 Clé de vérification (requise pour consulter le PDF en ligne)</div>
+      <div style="font-size: 24px; color: #c0392b; font-weight: bold; font-family: 'Courier New', monospace; letter-spacing: 4px;">${verificationKey}</div>
+      <div style="font-size: 11px; color: #666; margin-top: 6px;">Code public : <strong>${code}</strong></div>
+    </div>
+
+    <!-- How to use -->
+    <div style="background: #f9f9f9; border-radius: 8px; padding: 16px 20px; margin-bottom: 24px;">
+      <div style="font-size: 13px; font-weight: bold; color: #1a1a1a; margin-bottom: 8px;">📌 Comment utiliser votre attestation :</div>
+      <ol style="color: #555; line-height: 1.7; padding-left: 20px; margin: 0; font-size: 12px;">
+        <li>Ouvrez l'URL publique ci-dessus dans votre navigateur.</li>
+        <li>Saisissez la clé de vérification à 8 caractères.</li>
+        <li>Consultez, téléchargez ou imprimez votre attestation horodatée.</li>
+        <li>Le QR code sur le PDF permet à toute personne de vérifier son authenticité.</li>
+      </ol>
+    </div>
+
+    <p style="color: #666; font-size: 12px; line-height: 1.5; margin: 0;">
+      Conservez précieusement cet email. Il constitue votre preuve d'inventaire en cas de litige avec une compagnie aérienne.
+    </p>
+  </div>
+
+  <!-- Footer -->
+  <div style="background: #1a1a1a; padding: 16px 24px; border-radius: 0 0 12px 12px; border: 2px solid #1a1a1a; border-top: none;">
+    <div style="color: #c5a643; font-size: 12px; font-weight: bold;">QRBag — Protection intelligente des bagages</div>
+    <div style="color: #999; font-size: 11px; margin-top: 4px;">qrbags.com • Document protégé par le protocole de certification QRBag</div>
+  </div>
+
+</body>
+</html>
+  `.trim();
+
+  const text = `🎒 QRBag — Attestation d'inventaire de voyage
+
+Bonjour ${fullName},
+
+Votre attestation d'inventaire de voyage a été générée et certifiée électroniquement par QRBag.
+Elle contient ${itemsCount} article${itemsCount > 1 ? 's' : ''} pour votre voyage vers ${destination} prévu le ${departureDate}.
+
+Le PDF horodaté est joint à cet email.
+
+═══════════════════════════════════════════════
+🔗 URL PUBLIQUE DE L'ATTESTATION
+${publicUrl}
+
+🔑 CLÉ DE VÉRIFICATION (requise pour consulter le PDF en ligne)
+${verificationKey}
+
+Code public : ${code}
+═══════════════════════════════════════════════
+
+Comment utiliser votre attestation :
+1. Ouvrez l'URL publique ci-dessus dans votre navigateur.
+2. Saisissez la clé de vérification à 8 caractères.
+3. Consultez, téléchargez ou imprimez votre attestation.
+4. Le QR code sur le PDF permet de vérifier son authenticité.
+
+Conservez précieusement cet email. Il constitue votre preuve d'inventaire en cas de litige.
+
+— L'équipe QRBag
+qrbags.com
+`.trim();
+
+  return { html, text };
 }

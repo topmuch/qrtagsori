@@ -1,0 +1,105 @@
+import { NextRequest, NextResponse } from 'next/server';
+import { db } from '@/lib/db';
+import { generateChecklistPdf, buildPublicChecklistUrl, type ChecklistItem } from '@/lib/checklist';
+import { rateLimit } from '@/lib/rate-limit';
+
+/**
+ * GET /api/checklist/[code]/pdf?key=XXX
+ *
+ * Streams the PDF attestation. Requires the verification key.
+ * PDF is generated on-demand (no on-disk persistence) for portability.
+ *
+ * Headers:
+ *   Content-Type: application/pdf
+ *   Content-Disposition: inline; filename="QRBag-attestation-{code}.pdf"
+ *   Cache-Control: no-store
+ */
+export async function GET(
+  request: NextRequest,
+  { params }: { params: Promise<{ code: string }> }
+) {
+  try {
+    const { code } = await params;
+    const url = new URL(request.url);
+    const providedKey = url.searchParams.get('key')?.trim();
+
+    if (!providedKey) {
+      return NextResponse.json({ error: 'Clé de vérification requise' }, { status: 401 });
+    }
+
+    // ─── Rate limit PDF downloads: 20 / hour / IP ───
+    const clientIp =
+      request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ||
+      request.headers.get('x-real-ip')?.trim() ||
+      'unknown';
+    if (rateLimit(`checklist-pdf:${code}:${clientIp}`, { windowMs: 60 * 60 * 1000, maxRequests: 20 })) {
+      return NextResponse.json(
+        { error: 'Trop de téléchargements. Réessayez plus tard.' },
+        { status: 429 }
+      );
+    }
+
+    const checklist = await db.checklist.findUnique({
+      where: { code: code.toUpperCase() },
+    });
+
+    if (!checklist) {
+      return NextResponse.json({ error: 'Attestation introuvable' }, { status: 404 });
+    }
+
+    if (providedKey !== checklist.verificationKey) {
+      return NextResponse.json({ error: 'Clé de vérification incorrecte' }, { status: 403 });
+    }
+
+    // ─── Parse items ───
+    let parsedItems: ChecklistItem[] = [];
+    try {
+      const parsed = JSON.parse(checklist.items);
+      if (Array.isArray(parsed)) {
+        parsedItems = parsed.filter(
+          (it): it is ChecklistItem =>
+            typeof it === 'object' && it !== null &&
+            typeof it.category === 'string' && typeof it.name === 'string'
+        );
+      }
+    } catch {
+      // ignore
+    }
+
+    // ─── Build public URL for QR code in PDF ───
+    const protocol = request.headers.get('x-forwarded-proto') || 'https';
+    const host = request.headers.get('host') || 'qrbags.com';
+    const publicUrl = buildPublicChecklistUrl(checklist.code, `${protocol}://${host}`);
+
+    // ─── Generate PDF ───
+    const pdfBuffer = await generateChecklistPdf({
+      code: checklist.code,
+      verificationKey: checklist.verificationKey,
+      firstName: checklist.firstName,
+      lastName: checklist.lastName,
+      email: checklist.email,
+      departureDate: checklist.departureDate,
+      destinationCountry: checklist.destinationCountry,
+      airline: checklist.airline,
+      items: parsedItems,
+      publicUrl,
+      createdAt: checklist.createdAt,
+    });
+
+    // ─── Stream as response ───
+    const filename = `QRBag-attestation-${checklist.code}.pdf`;
+    return new NextResponse(pdfBuffer as unknown as BodyInit, {
+      status: 200,
+      headers: {
+        'Content-Type': 'application/pdf',
+        'Content-Disposition': `inline; filename="${filename}"`,
+        'Content-Length': String(pdfBuffer.length),
+        'Cache-Control': 'no-store, no-cache, must-revalidate',
+        'X-Content-Type-Options': 'nosniff',
+      },
+    });
+  } catch (error) {
+    console.error('[checklist/[code]/pdf] GET error:', error);
+    return NextResponse.json({ error: 'Erreur serveur lors de la génération du PDF' }, { status: 500 });
+  }
+}

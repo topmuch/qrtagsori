@@ -51,6 +51,8 @@ import {
   BellRing,
   ArrowUpRight,
   ChevronLeft,
+  ClipboardCheck,
+  FileText,
   ChevronRight,
 } from "lucide-react";
 
@@ -122,6 +124,7 @@ function Navigation() {
 
   const navLinks = [
     { label: 'Accueil', href: '/' },
+    { label: 'Checklist', href: '/checklist' },
     { label: 'À propos', href: '/#comment' },
     { label: 'Tarifs', href: '/#tarifs' },
     { label: 'Contactez-nous', href: '/contact' },
@@ -503,6 +506,116 @@ function HeroSection() {
               </Link>
             ))}
           </div>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+/* ══════════════════════════════════════════════
+   CHECKLIST CTA SECTION — refonte-8
+   ══════════════════════════════════════════════ */
+function ChecklistCTASection() {
+  return (
+    <section className="py-16 md:py-20 bg-gradient-to-br from-[#1a1a1a] to-[#2a2a2a] relative overflow-hidden">
+      {/* Decorative blurred circles */}
+      <div className="absolute -top-20 -right-20 w-96 h-96 bg-[#c5a643]/20 rounded-full blur-3xl" />
+      <div className="absolute -bottom-20 -left-20 w-96 h-96 bg-[#c5a643]/10 rounded-full blur-3xl" />
+
+      <div className="max-w-6xl mx-auto px-5 sm:px-6 lg:px-8 relative">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 items-center">
+          {/* Left: Text + CTA */}
+          <FadeIn direction="left">
+            <div className="inline-flex items-center gap-2 bg-[#c5a643] text-[#1a1a1a] text-xs font-bold uppercase tracking-widest px-3 py-1.5 rounded-full border-2 border-[#c5a643] mb-5">
+              <Sparkles className="w-3.5 h-3.5" />
+              Service gratuit
+            </div>
+            <h2 className="text-3xl md:text-4xl lg:text-5xl font-black text-white mb-4 leading-tight">
+              Créez votre <span className="text-[#c5a643]">checklist de voyage</span> certifiée QRBag
+            </h2>
+            <p className="text-white/70 text-base md:text-lg mb-6 leading-relaxed">
+              Inventoriez vos bagages en quelques clics, générez un PDF horodaté avec tampon officiel et QR code vérifiable. L'attestation est envoyée par email avec une page publique de consultation.
+            </p>
+
+            <ul className="space-y-2.5 mb-7">
+              {[
+                'PDF horodaté avec tampon de certification',
+                'QR code scannable pour vérification publique',
+                'Page protégée par clé de vérification à 8 caractères',
+                'Envoi automatique par email avec pièce jointe',
+              ].map((feature) => (
+                <li key={feature} className="flex items-start gap-2.5 text-white/85">
+                  <CheckCircle2 className="w-5 h-5 text-[#c5a643] flex-shrink-0 mt-0.5" />
+                  <span className="text-sm md:text-base">{feature}</span>
+                </li>
+              ))}
+            </ul>
+
+            <Link
+              href="/checklist"
+              className="inline-flex items-center gap-2 bg-[#c5a643] hover:bg-[#b59633] text-[#1a1a1a] px-7 py-4 rounded-xl font-bold text-base transition-all border-2 border-[#c5a643] hover:scale-105 shadow-lg"
+            >
+              <ClipboardCheck className="w-5 h-5" />
+              Créer ma checklist gratuite
+              <ArrowRight className="w-4 h-4" />
+            </Link>
+          </FadeIn>
+
+          {/* Right: Visual mockup */}
+          <FadeIn direction="right" delay={0.2}>
+            <div className="relative">
+              {/* PDF mockup */}
+              <div className="bg-white rounded-2xl shadow-2xl border-2 border-[#1a1a1a] overflow-hidden rotate-2 hover:rotate-0 transition-transform duration-500">
+                <div className="bg-[#c5a643] border-b-2 border-[#1a1a1a] px-5 py-3 flex items-center justify-between">
+                  <div className="font-bold text-[#1a1a1a]">🎒 QRBag</div>
+                  <div className="text-[10px] text-[#1a1a1a]/70 font-mono">RÉF: K7P3MQ</div>
+                </div>
+                <div className="p-5 space-y-3">
+                  <div className="text-center">
+                    <div className="text-[10px] uppercase tracking-widest text-[#1a1a1a]/60">Attestation d'inventaire</div>
+                    <div className="text-base font-bold text-[#1a1a1a]">Voyage de Aïssatou</div>
+                  </div>
+                  <div className="grid grid-cols-2 gap-2 text-[10px]">
+                    <div className="bg-[#FDFBF7] rounded p-2 border border-[#1a1a1a]/10">
+                      <div className="text-[#1a1a1a]/60">Destination</div>
+                      <div className="font-bold text-[#1a1a1a]">Paris, France</div>
+                    </div>
+                    <div className="bg-[#FDFBF7] rounded p-2 border border-[#1a1a1a]/10">
+                      <div className="text-[#1a1a1a]/60">Départ</div>
+                      <div className="font-bold text-[#1a1a1a]">15 août 2026</div>
+                    </div>
+                  </div>
+                  <div className="space-y-1">
+                    {['T-shirts x3', 'Passeport', 'Chargeur téléphone', 'Médicaments'].map((item) => (
+                      <div key={item} className="flex items-center gap-2 text-xs">
+                        <CheckCircle2 className="w-3 h-3 text-green-600" />
+                        <span className="text-[#1a1a1a]">{item}</span>
+                      </div>
+                    ))}
+                  </div>
+                  <div className="flex items-end justify-between pt-2 border-t border-[#1a1a1a]/10">
+                    <div className="bg-red-50 border border-red-500 rounded px-2 py-1">
+                      <div className="text-[8px] text-red-700 font-bold">CERTIFIÉ</div>
+                      <div className="text-[8px] text-red-600">QRBag</div>
+                    </div>
+                    <div className="bg-[#1a1a1a] p-1.5 rounded">
+                      {/* Faux QR code visual */}
+                      <div className="grid grid-cols-5 gap-px w-12 h-12">
+                        {Array.from({ length: 25 }).map((_, i) => (
+                          <div key={i} className={`${Math.random() > 0.4 ? 'bg-[#c5a643]' : 'bg-transparent'}`} />
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Floating badge */}
+              <div className="absolute -top-4 -right-4 bg-[#c5a643] border-2 border-[#1a1a1a] rounded-full px-4 py-2 shadow-lg rotate-12">
+                <div className="text-[10px] font-bold text-[#1a1a1a]">GRATUIT</div>
+              </div>
+            </div>
+          </FadeIn>
         </div>
       </div>
     </section>
@@ -948,6 +1061,7 @@ export default function HomePage() {
     <main className="bg-white">
       <Navigation />
       <HeroSection />
+      <ChecklistCTASection />
       <TrackingWidget />
       <QRBagEnActionSection />
       <TransportModesSection />

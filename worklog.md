@@ -989,3 +989,67 @@ Stage Summary:
 - ✅ `aiMessageUsed` set to `false` — AI message generation no longer affects the user-facing message (fixed template always used)
 - Files modified: `src/app/api/scan/[reference]/route.ts` (message construction replaced, aiMessageUsed flags set to false)
 - Files already up-to-date (from partial refonte-7): `src/app/scan/[reference]/page.tsx` (generateWhatsAppMessage), `public/locales/{fr,en,ar}.json` (found_message key)
+
+---
+Task ID: refonte-8
+Agent: Main Agent
+Task: Create a public travel inventory checklist feature — passengers generate a timestamped PDF with stamp + QR code + item list, receive it by email with a public URL + verification key, and the PDF is viewable on a public read-only page protected by the key.
+
+Work Log:
+- Analyzed user screenshot with VLM (vision model) to understand the existing checklist form design (categories, items grid, selection panel)
+- Explored codebase via subagent: confirmed no /checklist page existed yet, identified existing patterns (i18n, Prisma, email lib, QR code generation, public [reference] pages)
+- Installed pdfkit + @types/pdfkit initially, then added pdf-lib (more bundler-friendly for Turbopack)
+- Extended Prisma schema with new `Checklist` model (code, verificationKey, passenger info, items JSON, viewCount, emailSent, timestamps). Pushed with `bun run db:push`
+- Created `src/lib/checklist-catalog.ts` — client-safe file with DEFAULT_CHECKLIST_CATEGORIES (7 categories, ~40 items), types, brand colors. This separation is critical because the main checklist.ts imports pdfkit/qrcode (server-only) which would break client components
+- Created `src/lib/checklist.ts` (server-only) — generateChecklistCode (6-char base32), generateVerificationKey (8-char mixed), generateChecklistPdf (uses pdf-lib + qrcode to build PDF with header band, certification stamp, passenger info, items grouped by category, QR code block, verification key block, footer), buildPublicChecklistUrl
+- Extended `src/lib/email.ts`:
+  - Added `attachments?` field to EmailData interface
+  - Pass through attachments in sendViaSMTP mailOptions
+  - Log attachments in console mode
+  - Added `getChecklistEmailTemplate()` — branded HTML/text template with public URL + verification key + instructions
+- Created API routes:
+  - `POST /api/checklist` — validates input, generates unique code + key, persists Checklist row, generates PDF, sends email with PDF attachment, returns {code, publicUrl, verificationKey, emailSent}
+  - `GET /api/checklist?email=foo@bar.com` — returns all public checklists for an email (history view, no sensitive data)
+  - `GET /api/checklist/[code]?key=XXX` — returns full content if key matches, else only public metadata (firstName, code, createdAt)
+  - `GET /api/checklist/[code]/pdf?key=XXX` — streams the PDF on-demand (no on-disk persistence)
+  - All endpoints rate-limited via `rateLimit()`
+- Created `src/components/ui/LanguageSelector.tsx` — shared component (was duplicated in /scan and /suivi pages)
+- Created `src/app/checklist/page.tsx` — public form with 3 steps: passenger info (firstName, lastName, email, departureDate, destinationCountry, airline), items selection (7 category tabs + checkbox grid + quantity counter), selection summary. Brand colors (#c5a643 yellow, #1a1a1a ink, #FDFBF7 cream). Success screen shows code, verification key, public URL
+- Created `src/app/checklist/[code]/page.tsx` — public view page with 3 states: locked (asks for verification key + has history search), unlocked (shows full attestation + PDF preview iframe + download/print buttons), not_found
+- Added i18n keys under `checklist.*` block in all 3 locales (fr, en, ar) — 53 keys each
+- Added `/checklist` link to homepage navLinks array
+- Added `ChecklistCTASection` on homepage (dark background + yellow PDF mockup + CTA button) placed right after HeroSection
+- Verified middleware does not block /checklist (only matches /admin, /agence, /login)
+- Initial test failed: pdfkit couldn't find font files in Turbopack bundle (ENOENT Helvetica.afm). Switched to pdf-lib which is bundler-friendly
+- Second test failed: pdf-lib's standard Helvetica font doesn't support emoji characters (WinAnsi encoding). Removed emojis from PDF text and replaced ✓ checkmark with 'X'
+- Browser-tested end-to-end successfully:
+  - Filled form (Moussa Diop, France, Air France, 11 items) → submitted → got code 7AQSBR + key RaTa8hHP
+  - Dev log confirmed: PDF generated (6.1KB valid PDF), email sent (emailSent=true), EmailLog entry created with type='checklist'
+  - Visited /checklist/7AQSBR → locked view showed passenger hint + verification key input
+  - Entered key → unlocked → full attestation displayed with passenger info, items list, PDF preview iframe, download/print buttons
+  - Tested PDF download via curl: HTTP 200, 6238 bytes, valid PDF 1.7
+  - Tested history endpoint: returned 5 checklists for the test email
+  - Verified homepage nav has "Checklist" link + dedicated CTA section
+
+Stage Summary:
+- ✅ Full public checklist feature operational end-to-end
+- ✅ Form → PDF generation (pdf-lib) → email with attachment (nodemailer) → public view (verification key protected) → PDF streaming
+- ✅ Brand-consistent design (Jaune Moutarde #c5a643 + ink black + cream)
+- ✅ All 3 languages (FR/EN/AR) supported via i18n keys
+- ✅ Rate-limited APIs (5 creations/hour/IP, 30 views/hour, 20 PDF downloads/hour)
+- ✅ Lint clean, dev server stable, browser-verified
+- Files created:
+  - `src/lib/checklist-catalog.ts` (client-safe constants)
+  - `src/lib/checklist.ts` (server-only: code/key gen + PDF)
+  - `src/components/ui/LanguageSelector.tsx` (shared component)
+  - `src/app/checklist/page.tsx` (form)
+  - `src/app/checklist/[code]/page.tsx` (public view)
+  - `src/app/api/checklist/route.ts` (POST create + GET list)
+  - `src/app/api/checklist/[code]/route.ts` (GET single)
+  - `src/app/api/checklist/[code]/pdf/route.ts` (GET PDF stream)
+- Files modified:
+  - `prisma/schema.prisma` (added Checklist model)
+  - `src/lib/email.ts` (attachments support + checklist template)
+  - `src/app/page.tsx` (nav link + ChecklistCTASection)
+  - `public/locales/{fr,en,ar}.json` (53 checklist keys each)
+- Dependencies added: pdf-lib (PDF generation), pdfkit + @types/pdfkit (installed but ultimately unused — could be removed)
