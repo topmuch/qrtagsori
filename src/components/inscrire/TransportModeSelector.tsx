@@ -2,20 +2,33 @@
  * TRANSPORT-FEATURE: Transport Mode Selector Component
  *
  * Sélecteur visuel de mode de transport : 4 boutons en grid 2×2.
- * Chaque bouton affiche l'icône emoji + label i18n + description.
+ * Chaque bouton affiche la VRAIE IMAGE du moyen de transport (PNG)
+ * + label i18n + description.
+ *
+ * Style:
+ *   - Non sélectionné: carte blanche + bordure noire dashed + image (mix-blend multiply).
+ *   - Sélectionné: carte jaune moutarde #c5a643 + bordure noire solide + image (mix-blend multiply)
+ *     + checkmark noir en haut à droite.
  *
  * Usage:
  *   <TransportModeSelector
  *     selectedMode={transportMode}
  *     onSelect={setTransportMode}
  *     t={t}
+ *     lang={lang}
  *   />
  */
 
 'use client';
 
+import Image from 'next/image';
 import type { TransportMode } from '@/lib/transport';
-import { TRANSPORT_MODES, TRANSPORT_ICONS, TRANSPORT_LABELS, TRANSPORT_DESCRIPTIONS } from '@/lib/transport';
+import {
+  TRANSPORT_MODES,
+  TRANSPORT_IMAGES,
+  TRANSPORT_LABELS,
+  TRANSPORT_DESCRIPTIONS,
+} from '@/lib/transport';
 import type { Language } from '@/lib/i18n';
 
 interface TransportModeSelectorProps {
@@ -39,7 +52,7 @@ export default function TransportModeSelector({
     <div className="grid grid-cols-2 gap-3 sm:gap-4">
       {TRANSPORT_MODES.map((mode) => {
         const isSelected = selectedMode === mode;
-        const icon = TRANSPORT_ICONS[mode];
+        const imgSrc = TRANSPORT_IMAGES[mode];
         const label = TRANSPORT_LABELS[mode][lang] ?? TRANSPORT_LABELS[mode].fr;
         const description = TRANSPORT_DESCRIPTIONS[mode][lang] ?? TRANSPORT_DESCRIPTIONS[mode].fr;
 
@@ -52,35 +65,44 @@ export default function TransportModeSelector({
             aria-label={t(`transport.mode_${mode}`)}
             className={`
               relative flex flex-col items-center justify-center
-              rounded-xl p-4 sm:p-5 min-h-[80px] sm:min-h-[90px]
+              rounded-xl p-4 sm:p-5 min-h-[110px] sm:min-h-[120px]
               border-2 transition-all duration-200
-              focus:outline-none focus:ring-2 focus:ring-blue-600 focus:ring-offset-2
+              focus:outline-none focus:ring-2 focus:ring-black focus:ring-offset-2
               ${
                 isSelected
-                  ? 'bg-blue-500/20 border-blue-500 shadow-lg shadow-blue-500/20 scale-[1.02]'
-                  : 'bg-white/10 border-white/20 hover:bg-white/15 hover:border-white/40'
+                  ? 'border-black border-solid bg-[#c5a643] shadow-lg shadow-black/20 scale-[1.02]'
+                  : 'border-black border-dashed bg-white hover:bg-black/5'
               }
             `}
           >
-            {/* Emoji icon */}
-            <span className={`text-3xl sm:text-4xl mb-1.5 ${isSelected ? 'scale-110' : ''} transition-transform duration-200`}>
-              {icon}
-            </span>
+            {/* Vraie image du moyen de transport.
+                mix-blend-multiply fait fondre le fond blanc de l'image
+                avec la couleur de la carte (blanc ou #c5a643). */}
+            <div className="w-12 h-12 sm:w-14 sm:h-14 mb-1.5 flex items-center justify-center">
+              <Image
+                src={imgSrc}
+                alt={label}
+                width={56}
+                height={56}
+                className="w-full h-full object-contain mix-blend-multiply transition-transform duration-200"
+                priority={false}
+              />
+            </div>
 
             {/* Label */}
-            <span className={`text-sm sm:text-base font-bold ${isSelected ? 'text-blue-600' : 'text-white'} transition-colors`}>
+            <span className="text-sm sm:text-base font-bold text-black transition-colors">
               {label}
             </span>
 
             {/* Description */}
-            <span className="text-[10px] sm:text-xs text-white/60 mt-0.5 leading-tight text-center">
+            <span className="text-[10px] sm:text-xs mt-0.5 leading-tight text-center text-black/70">
               {description}
             </span>
 
-            {/* Selected indicator */}
+            {/* Selected indicator — pastille noire avec checkmark jaune moutarde */}
             {isSelected && (
-              <div className="absolute top-2 right-2 w-5 h-5 bg-blue-500 rounded-full flex items-center justify-center">
-                <svg className="w-3 h-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+              <div className="absolute top-2 right-2 w-5 h-5 bg-black rounded-full flex items-center justify-center ring-2 ring-white">
+                <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="#c5a643" strokeWidth={3}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
                 </svg>
               </div>

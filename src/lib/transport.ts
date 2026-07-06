@@ -46,15 +46,25 @@ export interface TransportFieldDef {
 }
 
 // ═══════════════════════════════════════════════════════
-//  ICONS (Emojis)
+//  ICONS (Emojis — fallback) + IMAGES (vraies images)
 // ═══════════════════════════════════════════════════════
 
-/** Icône emoji pour chaque mode de transport */
+/** Icône emoji pour chaque mode de transport (fallback si image non disponible) */
 export const TRANSPORT_ICONS: Record<TransportMode, string> = {
   flight: '✈️',
   train: '🚆',
   boat: '🚢',
   bus: '🚌',
+};
+
+/** Vraies images (PNG) pour chaque mode de transport.
+ *  Style: silhouette noire + accent #c5a643 + fond blanc.
+ *  Utilisées dans le sélecteur de mode et les en-têtes de page. */
+export const TRANSPORT_IMAGES: Record<TransportMode, string> = {
+  flight: '/images/transport/flight.png',
+  train:  '/images/transport/train.png',
+  boat:   '/images/transport/boat.png',
+  bus:    '/images/transport/bus.png',
 };
 
 // ═══════════════════════════════════════════════════════
@@ -201,6 +211,13 @@ export function getTransportLabel(mode: TransportMode, lang: Language): string {
  */
 export function getTransportIcon(mode: TransportMode): string {
   return TRANSPORT_ICONS[mode] ?? '✈️';
+}
+
+/**
+ * Retourne le path de la vraie image d'un mode de transport.
+ */
+export function getTransportImage(mode: TransportMode): string {
+  return TRANSPORT_IMAGES[mode] ?? TRANSPORT_IMAGES.flight;
 }
 
 /**
