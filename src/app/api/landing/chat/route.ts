@@ -104,8 +104,8 @@ function buildSystemPrompt(locale: Language): string {
 • Pas de consigne/stockage : QRBag ne stocke pas les bagages, c'est un service de mise en relation.
 
 💰 TARIFS :
-• Formule Essentiel : 4€ pour 7 jours (3 étiquettes QR, support WhatsApp, géolocalisation)
-• Formule Premium : 7€ pour 1 an (3 étiquettes QR, support prioritaire 24/7, statistiques de scan, multi-voyages)
+• Formule Essentiel : 4€ pour 7 jours (2 étiquettes QR, support WhatsApp, géolocalisation)
+• Formule Premium : 7€ pour 1 an (2 étiquettes QR, support prioritaire 24/7, statistiques de scan, multi-voyages)
 • Paiement : Carte bancaire, Mobile Money. Livraison digitale immédiate.
 • Achat : ${appUrl}/inscrire
 
@@ -172,8 +172,8 @@ RÈGLES :
 • No luggage storage: QRBag is a connection service, not a storage service.
 
 💰 PRICING:
-• Essential plan: 4€ for 7 days (3 QR labels, WhatsApp support, geolocation)
-• Premium plan: 7€ for 1 year (3 QR labels, 24/7 priority support, scan statistics, multi-trip)
+• Essential plan: 4€ for 7 days (2 QR labels, WhatsApp support, geolocation)
+• Premium plan: 7€ for 1 year (2 QR labels, 24/7 priority support, scan statistics, multi-trip)
 • Payment: Credit card, Mobile Money. Instant digital delivery.
 • Purchase: ${appUrl}/inscrire
 

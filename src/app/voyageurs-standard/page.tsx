@@ -86,7 +86,7 @@ function HeroSection() {
         </h1>
 
         <p className="text-[#e0e6f0]/90 text-lg md:text-xl max-w-2xl mx-auto mb-8">
-          Choisissez 1 ou 3 bagages avec une durée adaptée à vos besoins. Sans agence, sans engagement.
+          Choisissez 1 ou 2 bagages soute avec une durée adaptée à vos besoins. Sans agence, sans engagement.
         </p>
 
         {/* Trust Pills */}
@@ -108,7 +108,7 @@ function HeroSection() {
         {/* Stats */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 max-w-lg mx-auto">
           <div className="bg-white/10 rounded-xl p-4 border border-white/20">
-            <div className="text-3xl font-bold text-white">1-3</div>
+            <div className="text-3xl font-bold text-white">1-2</div>
             <div className="text-white/70 text-sm">Bagages</div>
           </div>
           <div className="bg-white/10 rounded-xl p-4 border border-white/20">
@@ -138,7 +138,7 @@ function ProcedureSection() {
     {
       step: "01",
       title: "Commandez vos QR",
-      desc: "Choisissez 1 ou 3 QR codes selon vos besoins. Paiement sécurisé en ligne.",
+      desc: "Choisissez 1 ou 2 QR codes soute selon vos besoins. Paiement sécurisé en ligne.",
       icon: "🎫"
     },
     {
@@ -205,7 +205,7 @@ function ProcedureSection() {
 // Advantages Section
 function AdvantagesSection() {
   const advantages = [
-    { icon: "✅", text: "1 ou 3 bagages (selon besoin)" },
+    { icon: "✅", text: "1 ou 2 bagages soute (selon besoin)" },
     { icon: "✅", text: "Durée personnalisée : 7 jours ou 1 an" },
     { icon: "✅", text: "Aucune agence requise — vous gérez tout" },
     { icon: "✅", text: "Pas d'application, pas de batterie, pas de GPS" },
@@ -264,7 +264,7 @@ function PricingSection() {
       price: "4 €",
       duration: "7 jours de protection",
       features: [
-        "3 étiquettes QR incluses",
+        "2 étiquettes QR incluses",
         "Support WhatsApp",
         "Notification email",
         "Activation instantanée"
@@ -278,7 +278,7 @@ function PricingSection() {
       price: "7 €",
       duration: "1 an de protection",
       features: [
-        "3 étiquettes QR incluses",
+        "2 étiquettes QR incluses",
         "Support prioritaire",
         "Renouvellement facile",
         "Statistiques de scans"

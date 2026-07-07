@@ -83,7 +83,7 @@ export async function generateReferencesBulk(type: 'hajj' | 'voyageur', count: n
 export interface GenerateBaggageOptions {
   type: 'hajj' | 'voyageur';
   agencyId?: string;
-  count: 1 | 3;
+  count: 1 | 2;
 }
 
 // Generate baggage with individual traveler info
@@ -93,7 +93,7 @@ export interface GenerateIndividualOptions {
   lastName: string;
   whatsapp: string;
   duration: '7d' | '1y';
-  baggageCount: 1 | 3;
+  baggageCount: 1 | 2;
 }
 
 // Generate unique set ID
@@ -125,7 +125,7 @@ export async function generateBaggages(options: GenerateBaggageOptions): Promise
       setId,
       agencyId: agencyId || null,
       baggageIndex: i + 1,
-      baggageType: i === 0 ? 'cabine' : 'soute',
+      baggageType: 'soute',
       status: 'pending_activation',
     })),
   });

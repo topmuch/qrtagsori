@@ -88,7 +88,8 @@ export async function GET(
         : (baggage.status === 'lost' ? 'lost-voyageur' : 'voyageur');
     }
 
-    const response = NextResponse.json({
+    const response = NextResponse.json(
+      {
       status: isDeclaredLost ? 'lost' : 'active',
       theme,
       type: baggage.type,
@@ -118,7 +119,15 @@ export async function GET(
         departureDate: baggage.departureDate?.toISOString() || null,
         departureTime: baggage.departureTime || null,
       }
-    });
+    },
+    {
+      headers: {
+        'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
+        'Pragma': 'no-cache',
+        'Expires': '0',
+      },
+    }
+    );
 
     // AI-FEATURE: Set qrbag_locale cookie (7 days) so server can detect language on next request
     try {

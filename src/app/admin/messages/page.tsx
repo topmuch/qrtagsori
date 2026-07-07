@@ -67,7 +67,7 @@ function formatMessageContent(content: string, messageType: string): string {
     
     // Handle commande_agence type
     if (messageType === 'commande_agence') {
-      const typeLabel = parsed.type === 'hajj' ? 'Hajj (3 QR/pèlerin)' : 'Voyageur (1 ou 3 QR)';
+      const typeLabel = parsed.type === 'hajj' ? 'Hajj (3 QR/pèlerin)' : 'Voyageur (1 ou 2 QR)';
       const countLabel = parsed.type === 'hajj' ? 'pèlerins' : 'voyageurs';
       const notes = parsed.notes ? `\nNotes: ${parsed.notes}` : '';
       return `Commande: ${parsed.count} ${countLabel}\nType: ${typeLabel}${notes}`;

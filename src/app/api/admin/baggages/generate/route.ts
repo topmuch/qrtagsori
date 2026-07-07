@@ -11,7 +11,7 @@ const individualSchema = z.object({
   lastName: z.string().min(2).max(50),
   whatsapp: z.string().min(6).max(20),
   duration: z.enum(['7d', '1y']),
-  baggageCount: z.number().min(1).max(3),
+  baggageCount: z.number().min(1).max(2),
 });
 
 // Schema for agency generation
@@ -19,7 +19,7 @@ const agencySchema = z.object({
   context: z.literal('agency'),
   type: z.enum(['hajj', 'voyageur']),
   agencyId: z.string().min(1),
-  count: z.number().min(1).max(3),
+  count: z.number().min(1).max(2),
   travelerCount: z.number().min(1).max(1000),
 });
 
@@ -42,7 +42,7 @@ export async function POST(request: NextRequest) {
         lastName: validatedData.lastName,
         whatsapp: validatedData.whatsapp,
         duration: validatedData.duration,
-        baggageCount: validatedData.baggageCount as 1 | 3,
+        baggageCount: validatedData.baggageCount as 1 | 2,
       });
 
       return NextResponse.json({
@@ -91,7 +91,7 @@ async function generateBaggagesWithTraveler(options: {
   lastName: string;
   whatsapp: string;
   duration: '7d' | '1y';
-  baggageCount: 1 | 3;
+  baggageCount: 1 | 2;
 }): Promise<string[]> {
   const { type, firstName, lastName, whatsapp, duration, baggageCount } = options;
   
@@ -115,7 +115,7 @@ async function generateBaggagesWithTraveler(options: {
       travelerLastName: lastName,
       whatsappOwner: whatsapp,
       baggageIndex: i + 1,
-      baggageType: i === 0 ? 'cabine' : 'soute',
+      baggageType: 'soute',
       status: 'active',
       expiresAt,
     })),
@@ -132,7 +132,7 @@ async function generateBaggagesBatch(options: {
   type: 'hajj' | 'voyageur';
   agencyId: string;
   travelerCount: number;
-  count: 1 | 3;
+  count: 1 | 2;
 }): Promise<string[]> {
   const { type, agencyId, travelerCount, count } = options;
   const totalBaggages = travelerCount * count;
@@ -169,7 +169,7 @@ async function generateBaggagesBatch(options: {
         setId,
         agencyId,
         baggageIndex: i + 1,
-        baggageType: i === 0 ? 'cabine' : 'soute',
+        baggageType: 'soute',
         status: 'pending_activation',
       });
     }

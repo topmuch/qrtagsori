@@ -39,6 +39,7 @@ import {
   CheckCircle,
   Ship,
   Bus,
+  TrainFront,
   CheckCircle2,
   Sparkles,
   TrendingUp,
@@ -517,23 +518,23 @@ function HeroSection() {
    ══════════════════════════════════════════════ */
 function ChecklistCTASection() {
   return (
-    <section className="py-16 md:py-20 bg-gradient-to-br from-[#1a1a1a] to-[#2a2a2a] relative overflow-hidden">
+    <section className="py-16 md:py-20 bg-gradient-to-b from-slate-50/80 to-white relative overflow-hidden">
       {/* Decorative blurred circles */}
-      <div className="absolute -top-20 -right-20 w-96 h-96 bg-[#c5a643]/20 rounded-full blur-3xl" />
-      <div className="absolute -bottom-20 -left-20 w-96 h-96 bg-[#c5a643]/10 rounded-full blur-3xl" />
+      <div className="absolute -top-20 -right-20 w-96 h-96 bg-blue-200/30 rounded-full blur-3xl" />
+      <div className="absolute -bottom-20 -left-20 w-96 h-96 bg-indigo-200/20 rounded-full blur-3xl" />
 
       <div className="max-w-6xl mx-auto px-5 sm:px-6 lg:px-8 relative">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 items-center">
           {/* Left: Text + CTA */}
           <FadeIn direction="left">
-            <div className="inline-flex items-center gap-2 bg-[#c5a643] text-[#1a1a1a] text-xs font-bold uppercase tracking-widest px-3 py-1.5 rounded-full border-2 border-[#c5a643] mb-5">
+            <div className="inline-flex items-center gap-2 bg-blue-600 text-white text-xs font-bold uppercase tracking-widest px-3 py-1.5 rounded-full mb-5">
               <Sparkles className="w-3.5 h-3.5" />
               Service gratuit
             </div>
-            <h2 className="text-3xl md:text-4xl lg:text-5xl font-black text-white mb-4 leading-tight">
-              Créez votre <span className="text-[#c5a643]">checklist de voyage</span> certifiée QRBag
+            <h2 className="text-3xl md:text-4xl lg:text-5xl font-black text-slate-900 mb-4 leading-tight">
+              Créez votre <span className="bg-gradient-to-r from-blue-600 via-indigo-500 to-violet-500 bg-clip-text text-transparent">checklist de voyage</span> certifiée QRBag
             </h2>
-            <p className="text-white/70 text-base md:text-lg mb-6 leading-relaxed">
+            <p className="text-slate-600 text-base md:text-lg mb-6 leading-relaxed">
               Inventoriez vos bagages en quelques clics, générez un PDF horodaté avec tampon officiel et QR code vérifiable. L'attestation est envoyée par email avec une page publique de consultation.
             </p>
 
@@ -544,8 +545,8 @@ function ChecklistCTASection() {
                 'Page protégée par clé de vérification à 8 caractères',
                 'Envoi automatique par email avec pièce jointe',
               ].map((feature) => (
-                <li key={feature} className="flex items-start gap-2.5 text-white/85">
-                  <CheckCircle2 className="w-5 h-5 text-[#c5a643] flex-shrink-0 mt-0.5" />
+                <li key={feature} className="flex items-start gap-2.5 text-slate-700">
+                  <CheckCircle2 className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" />
                   <span className="text-sm md:text-base">{feature}</span>
                 </li>
               ))}
@@ -553,7 +554,7 @@ function ChecklistCTASection() {
 
             <Link
               href="/checklist"
-              className="inline-flex items-center gap-2 bg-[#c5a643] hover:bg-[#b59633] text-[#1a1a1a] px-7 py-4 rounded-xl font-bold text-base transition-all border-2 border-[#c5a643] hover:scale-105 shadow-lg"
+              className="inline-flex items-center gap-2 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white px-7 py-4 rounded-full font-semibold text-base transition-all shadow-lg shadow-blue-600/20 hover:shadow-blue-600/30 hover:scale-[1.03]"
             >
               <ClipboardCheck className="w-5 h-5" />
               Créer ma checklist gratuite
@@ -565,44 +566,44 @@ function ChecklistCTASection() {
           <FadeIn direction="right" delay={0.2}>
             <div className="relative">
               {/* PDF mockup */}
-              <div className="bg-white rounded-2xl shadow-2xl border-2 border-[#1a1a1a] overflow-hidden rotate-2 hover:rotate-0 transition-transform duration-500">
-                <div className="bg-[#c5a643] border-b-2 border-[#1a1a1a] px-5 py-3 flex items-center justify-between">
-                  <div className="font-bold text-[#1a1a1a]">🎒 QRBag</div>
-                  <div className="text-[10px] text-[#1a1a1a]/70 font-mono">RÉF: K7P3MQ</div>
+              <div className="bg-white rounded-2xl shadow-2xl border border-slate-200 overflow-hidden rotate-2 hover:rotate-0 transition-transform duration-500">
+                <div className="bg-gradient-to-r from-blue-600 to-indigo-600 px-5 py-3 flex items-center justify-between">
+                  <div className="font-bold text-white">🎒 QRBag</div>
+                  <div className="text-[10px] text-white/70 font-mono">RÉF: K7P3MQ</div>
                 </div>
                 <div className="p-5 space-y-3">
                   <div className="text-center">
-                    <div className="text-[10px] uppercase tracking-widest text-[#1a1a1a]/60">Attestation d'inventaire</div>
-                    <div className="text-base font-bold text-[#1a1a1a]">Voyage de Aïssatou</div>
+                    <div className="text-[10px] uppercase tracking-widest text-slate-500">Attestation d&apos;inventaire</div>
+                    <div className="text-base font-bold text-slate-900">Voyage de Aïssatou</div>
                   </div>
                   <div className="grid grid-cols-2 gap-2 text-[10px]">
-                    <div className="bg-[#FDFBF7] rounded p-2 border border-[#1a1a1a]/10">
-                      <div className="text-[#1a1a1a]/60">Destination</div>
-                      <div className="font-bold text-[#1a1a1a]">Paris, France</div>
+                    <div className="bg-blue-50 rounded-lg p-2 border border-blue-100">
+                      <div className="text-slate-500">Destination</div>
+                      <div className="font-bold text-slate-900">Paris, France</div>
                     </div>
-                    <div className="bg-[#FDFBF7] rounded p-2 border border-[#1a1a1a]/10">
-                      <div className="text-[#1a1a1a]/60">Départ</div>
-                      <div className="font-bold text-[#1a1a1a]">15 août 2026</div>
+                    <div className="bg-blue-50 rounded-lg p-2 border border-blue-100">
+                      <div className="text-slate-500">Départ</div>
+                      <div className="font-bold text-slate-900">15 août 2026</div>
                     </div>
                   </div>
                   <div className="space-y-1">
                     {['T-shirts x3', 'Passeport', 'Chargeur téléphone', 'Médicaments'].map((item) => (
                       <div key={item} className="flex items-center gap-2 text-xs">
-                        <CheckCircle2 className="w-3 h-3 text-green-600" />
-                        <span className="text-[#1a1a1a]">{item}</span>
+                        <CheckCircle2 className="w-3 h-3 text-blue-600" />
+                        <span className="text-slate-700">{item}</span>
                       </div>
                     ))}
                   </div>
-                  <div className="flex items-end justify-between pt-2 border-t border-[#1a1a1a]/10">
-                    <div className="bg-red-50 border border-red-500 rounded px-2 py-1">
-                      <div className="text-[8px] text-red-700 font-bold">CERTIFIÉ</div>
-                      <div className="text-[8px] text-red-600">QRBag</div>
+                  <div className="flex items-end justify-between pt-2 border-t border-slate-100">
+                    <div className="bg-blue-50 border border-blue-200 rounded-lg px-2 py-1">
+                      <div className="text-[8px] text-blue-700 font-bold">CERTIFIÉ</div>
+                      <div className="text-[8px] text-blue-600">QRBag</div>
                     </div>
-                    <div className="bg-[#1a1a1a] p-1.5 rounded">
+                    <div className="bg-slate-900 p-1.5 rounded-lg">
                       {/* Faux QR code visual */}
                       <div className="grid grid-cols-5 gap-px w-12 h-12">
                         {Array.from({ length: 25 }).map((_, i) => (
-                          <div key={i} className={`${Math.random() > 0.4 ? 'bg-[#c5a643]' : 'bg-transparent'}`} />
+                          <div key={i} className={`${Math.random() > 0.4 ? 'bg-blue-500' : 'bg-transparent'}`} />
                         ))}
                       </div>
                     </div>
@@ -611,8 +612,8 @@ function ChecklistCTASection() {
               </div>
 
               {/* Floating badge */}
-              <div className="absolute -top-4 -right-4 bg-[#c5a643] border-2 border-[#1a1a1a] rounded-full px-4 py-2 shadow-lg rotate-12">
-                <div className="text-[10px] font-bold text-[#1a1a1a]">GRATUIT</div>
+              <div className="absolute -top-4 -right-4 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-full px-4 py-2 shadow-lg shadow-blue-600/30 rotate-12">
+                <div className="text-[10px] font-bold text-white">GRATUIT</div>
               </div>
             </div>
           </FadeIn>
@@ -704,10 +705,74 @@ function QRBagEnActionSection() {
    ══════════════════════════════════════════════ */
 function TransportModesSection() {
   const modes = [
-    { title: 'Avion', image: '/images/landing-v2/transport-avion.jpg', stat: '15M+ passagers/an', icon: Plane, accent: 'from-blue-500 to-blue-600' },
-    { title: 'Train', image: '/images/landing-v2/transport-train.jpg', stat: '4.5M voyageurs/jour', icon: Zap, accent: 'from-violet-500 to-violet-600' },
-    { title: 'Bateau', image: '/images/landing-v2/transport-bateau.jpg', stat: '30M croisiéristes', icon: Ship, accent: 'from-teal-500 to-teal-600' },
-    { title: 'Bus', image: '/images/landing-v2/transport-bus.jpg', stat: '200K trajets/jour', icon: Bus, accent: 'from-orange-500 to-orange-600' },
+    {
+      title: 'Avion',
+      image: '/images/landing-v2/transport-avion.jpg',
+      stat: '15M+ passagers/an',
+      icon: Plane,
+      gradient: 'from-blue-600 to-indigo-600',
+      lightBg: 'bg-blue-50',
+      borderColor: 'border-blue-200/60',
+      iconBg: 'bg-blue-600',
+      statColor: 'text-blue-600',
+      features: [
+        'Compagnie aérienne & n° de vol',
+        'Alerte WhatsApp dès la découverte',
+        'Géolocalisation automatique',
+      ],
+      useCase: 'Idéal pour vols long-courrier, Hajj & Omra',
+    },
+    {
+      title: 'Train',
+      image: '/images/landing-v2/transport-train.jpg',
+      stat: '4.5M voyageurs/jour',
+      icon: TrainFront,
+      gradient: 'from-violet-600 to-purple-600',
+      lightBg: 'bg-violet-50',
+      borderColor: 'border-violet-200/60',
+      iconBg: 'bg-violet-600',
+      statColor: 'text-violet-600',
+      features: [
+        'Compagnie ferroviaire & n° de train',
+        'Notification en gare d\'arrivée',
+        'Suivi en temps réel du bagage',
+      ],
+      useCase: 'Parfait pour TER, TGV & trains internationaux',
+    },
+    {
+      title: 'Bateau',
+      image: '/images/landing-v2/transport-bateau.jpg',
+      stat: '30M croisiéristes',
+      icon: Ship,
+      gradient: 'from-teal-600 to-cyan-600',
+      lightBg: 'bg-teal-50',
+      borderColor: 'border-teal-200/60',
+      iconBg: 'bg-teal-600',
+      statColor: 'text-teal-600',
+      features: [
+        'Nom du navire & n° de cabine',
+        'Alerte en cas de perte en mer',
+        'Protection maritime complète',
+      ],
+      useCase: 'Croisières, traversées & ferry internationaux',
+    },
+    {
+      title: 'Bus',
+      image: '/images/landing-v2/transport-bus.jpg',
+      stat: '200K trajets/jour',
+      icon: Bus,
+      gradient: 'from-orange-500 to-amber-500',
+      lightBg: 'bg-orange-50',
+      borderColor: 'border-orange-200/60',
+      iconBg: 'bg-orange-500',
+      statColor: 'text-orange-600',
+      features: [
+        'Compagnie & n° de ligne',
+        'Signalement rapide par QR code',
+        'Couverture réseaux inter-villes',
+      ],
+      useCase: 'Bus interurbains, cars & voyages organisés',
+    },
   ];
 
   return (
@@ -726,16 +791,48 @@ function TransportModesSection() {
         <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-5">
           {modes.map((mode, i) => (
             <FadeIn key={mode.title} delay={i * 0.1}>
-              <div className="group bg-white rounded-2xl overflow-hidden border border-slate-200/80 shadow-sm hover:shadow-xl hover:shadow-slate-200/40 transition-all duration-500 hover:-translate-y-1">
-                <div className="relative aspect-[3/4] overflow-hidden">
+              <div className={`group relative bg-white rounded-2xl overflow-hidden border ${mode.borderColor} shadow-sm hover:shadow-xl hover:shadow-slate-200/40 transition-all duration-500 hover:-translate-y-1 h-full flex flex-col`}>
+                {/* Image */}
+                <div className="relative aspect-[4/3] overflow-hidden">
                   <Image src={mode.image} alt={mode.title} fill className="object-cover group-hover:scale-105 transition-transform duration-700 ease-out" />
-                  <div className="absolute top-3 left-3 w-9 h-9 bg-white/90 backdrop-blur-sm rounded-xl flex items-center justify-center shadow-sm">
-                    <mode.icon className="w-4 h-4 text-slate-700" />
+                  <div className={`absolute inset-0 bg-gradient-to-t ${mode.gradient} opacity-60 group-hover:opacity-50 transition-opacity duration-500`} />
+                  {/* Icon badge */}
+                  <div className="absolute top-3 left-3 w-10 h-10 bg-white/90 backdrop-blur-sm rounded-xl flex items-center justify-center shadow-sm">
+                    <mode.icon className={`w-5 h-5 ${mode.statColor}`} />
+                  </div>
+                  {/* Stat badge */}
+                  <div className="absolute top-3 right-3">
+                    <span className="text-[10px] font-bold text-white/90 bg-black/30 backdrop-blur-sm px-2.5 py-1 rounded-full">
+                      {mode.stat}
+                    </span>
                   </div>
                 </div>
-                <div className="p-4">
-                  <h3 className="text-sm font-bold text-slate-900">{mode.title}</h3>
-                  <p className="text-xs text-slate-500 mt-1">{mode.stat}</p>
+
+                {/* Content */}
+                <div className="flex-1 p-5 flex flex-col">
+                  <h3 className="text-lg font-bold text-slate-900 mb-1">{mode.title}</h3>
+
+                  {/* Features */}
+                  <ul className="space-y-2 mt-3 mb-4 flex-1">
+                    {mode.features.map((feature) => (
+                      <li key={feature} className="flex items-start gap-2 text-sm text-slate-600">
+                        <CheckCircle className={`w-4 h-4 ${mode.statColor} flex-shrink-0 mt-0.5`} />
+                        <span className="leading-snug">{feature}</span>
+                      </li>
+                    ))}
+                  </ul>
+
+                  {/* Use case */}
+                  <p className="text-xs text-slate-400 italic leading-snug mb-4">{mode.useCase}</p>
+
+                  {/* CTA */}
+                  <Link
+                    href="/inscrire"
+                    className={`inline-flex items-center justify-center gap-1.5 w-full bg-gradient-to-r ${mode.gradient} hover:opacity-90 text-white text-sm font-semibold py-2.5 rounded-xl transition-all duration-300 hover:shadow-lg`}
+                  >
+                    Protéger mes bagages
+                    <ArrowRight className="w-3.5 h-3.5" />
+                  </Link>
                 </div>
               </div>
             </FadeIn>
@@ -786,7 +883,7 @@ function WhyQRBagSection() {
 function SolutionsSection() {
   const solutions = [
     { title: 'Hajj & Omra', description: 'Protection complète pour les pèlerins avec 3 bagages inclus (cabine + 2 soutes). Gérée par votre agence de voyage partenaire.', icon: Shield, href: '/hajj-omra', gradient: 'from-amber-500 to-orange-500' },
-    { title: 'Voyageurs Standard', description: 'Protection flexible pour tous vos voyages. Choisissez 1 ou 3 bagages avec une durée adaptée à vos besoins.', icon: Plane, href: '/voyageurs-standard', gradient: 'from-blue-600 to-indigo-600' },
+    { title: 'Voyageurs Standard', description: 'Protection flexible pour tous vos voyages. Choisissez 1 ou 2 bagages soute avec une durée adaptée à vos besoins.', icon: Plane, href: '/voyageurs-standard', gradient: 'from-blue-600 to-indigo-600' },
     { title: 'Devenir Partenaire', description: 'Agences de voyage, compagnies aériennes, hôtels — proposez QRBag à vos clients et générez des revenus complémentaires.', icon: Users, href: '/devenir-partenaire', gradient: 'from-violet-600 to-purple-600' },
   ];
 
@@ -829,17 +926,17 @@ function StatsSection() {
   ];
 
   return (
-    <section className="py-20 lg:py-24 px-5 bg-gradient-to-br from-blue-600 via-indigo-600 to-violet-600 relative overflow-hidden">
-      <div className="absolute top-0 left-0 w-[400px] h-[400px] bg-white/5 rounded-full blur-[80px] -translate-x-1/2 -translate-y-1/2" />
-      <div className="absolute bottom-0 right-0 w-[400px] h-[400px] bg-white/5 rounded-full blur-[80px] translate-x-1/2 translate-y-1/2" />
+    <section className="py-20 lg:py-24 px-5 bg-gradient-to-b from-slate-50/80 to-white relative overflow-hidden">
+      <div className="absolute top-0 left-0 w-[400px] h-[400px] bg-blue-100/30 rounded-full blur-[80px] -translate-x-1/2 -translate-y-1/2" />
+      <div className="absolute bottom-0 right-0 w-[400px] h-[400px] bg-indigo-100/30 rounded-full blur-[80px] translate-x-1/2 translate-y-1/2" />
       <div className="max-w-6xl mx-auto relative z-10">
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-10 lg:gap-16">
           {stats.map((stat, i) => (
             <FadeIn key={stat.label} delay={i * 0.1}>
               <div className="text-center group">
-                <div className="flex justify-center mb-4"><div className="w-12 h-12 rounded-xl bg-white/10 flex items-center justify-center"><stat.icon className="w-5 h-5 text-white" /></div></div>
-                <div className="text-4xl sm:text-5xl font-extrabold text-white mb-2 tracking-[-0.02em]">{stat.suffix === '24/7' ? '24/7' : <AnimatedCounter target={stat.value} suffix={stat.suffix} />}</div>
-                <div className="text-sm text-white/70 font-medium">{stat.label}</div>
+                <div className="flex justify-center mb-4"><div className="w-12 h-12 rounded-xl bg-gradient-to-br from-blue-50 to-indigo-50 border border-blue-100 flex items-center justify-center"><stat.icon className="w-5 h-5 text-blue-600" /></div></div>
+                <div className="text-4xl sm:text-5xl font-extrabold text-slate-900 mb-2 tracking-[-0.02em]">{stat.suffix === '24/7' ? <span className="bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">24/7</span> : <AnimatedCounter target={stat.value} suffix={stat.suffix} />}</div>
+                <div className="text-sm text-slate-500 font-medium">{stat.label}</div>
               </div>
             </FadeIn>
           ))}
@@ -930,8 +1027,8 @@ function TestimonialsSection() {
    ══════════════════════════════════════════════ */
 function PricingSection() {
   const plans = [
-    { name: 'Solo', price: '5', period: '/an', description: 'Idéal pour un voyage ponctuel', features: ['3 bagages QR codes', 'Activation en 30 secondes', 'Notifications WhatsApp', 'Géolocalisation temps réel'], popular: false, href: '/voyageurs-standard', accentColor: 'text-cyan-600', btnClass: 'bg-gradient-to-r from-cyan-500 to-blue-500 text-white hover:from-cyan-600 hover:to-blue-600 shadow-cyan-500/25', popularBorder: 'border-slate-200/80' },
-    { name: 'Famille', price: '12', period: '/an', description: 'Pour les familles ou voyageurs fréquents', features: ['9 bagages QR codes', 'Activation en 30 secondes', 'Notifications WhatsApp', 'Géolocalisation temps réel', 'Support prioritaire'], popular: true, href: '/voyageurs-standard', accentColor: 'text-orange-600', btnClass: 'bg-gradient-to-r from-orange-500 to-amber-500 text-white hover:from-orange-600 hover:to-amber-600 shadow-orange-500/25', popularBorder: 'border-orange-200 shadow-lg shadow-orange-100/50' },
+    { name: 'Solo', price: '5', period: '/an', description: 'Idéal pour un voyage ponctuel', features: ['2 bagages QR codes', 'Activation en 30 secondes', 'Notifications WhatsApp', 'Géolocalisation temps réel'], popular: false, href: '/voyageurs-standard', accentColor: 'text-cyan-600', btnClass: 'bg-gradient-to-r from-cyan-500 to-blue-500 text-white hover:from-cyan-600 hover:to-blue-600 shadow-cyan-500/25', popularBorder: 'border-slate-200/80' },
+    { name: 'Famille', price: '12', period: '/an', description: 'Pour les familles ou voyageurs fréquents', features: ['6 bagages QR codes', 'Activation en 30 secondes', 'Notifications WhatsApp', 'Géolocalisation temps réel', 'Support prioritaire'], popular: true, href: '/voyageurs-standard', accentColor: 'text-orange-600', btnClass: 'bg-gradient-to-r from-orange-500 to-amber-500 text-white hover:from-orange-600 hover:to-amber-600 shadow-orange-500/25', popularBorder: 'border-orange-200 shadow-lg shadow-orange-100/50' },
     { name: 'Hajj & Omra', price: '5', period: '/pèlerin', description: 'Protection complète pour les pèlerins', features: ['3 bagages QR codes', 'Géré par votre agence', 'Notifications WhatsApp', 'Support 24/7 dédié', 'Couverture internationale'], popular: false, href: '/hajj-omra', accentColor: 'text-teal-600', btnClass: 'bg-gradient-to-r from-teal-500 to-emerald-500 text-white hover:from-teal-600 hover:to-emerald-600 shadow-teal-500/25', popularBorder: 'border-slate-200/80' },
   ];
 
@@ -974,17 +1071,17 @@ function PricingSection() {
    ══════════════════════════════════════════════ */
 function FinalCTASection() {
   return (
-    <section className="py-24 lg:py-32 px-5 bg-gradient-to-br from-blue-600 via-indigo-600 to-violet-600 relative overflow-hidden">
-      <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-white/5 rounded-full blur-[100px] -translate-y-1/2 translate-x-1/4" />
-      <div className="absolute bottom-0 left-0 w-[400px] h-[400px] bg-white/5 rounded-full blur-[100px] translate-y-1/4 -translate-x-1/4" />
+    <section className="py-24 lg:py-32 px-5 bg-gradient-to-b from-white via-blue-50/40 to-white relative overflow-hidden">
+      <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-blue-100/20 rounded-full blur-[100px] -translate-y-1/2 translate-x-1/4" />
+      <div className="absolute bottom-0 left-0 w-[400px] h-[400px] bg-indigo-100/20 rounded-full blur-[100px] translate-y-1/4 -translate-x-1/4" />
       <div className="max-w-3xl mx-auto text-center relative z-10">
-        <FadeIn><span className="inline-flex items-center gap-2 text-xs font-bold tracking-[0.15em] uppercase text-blue-200 mb-6"><Sparkles className="w-3.5 h-3.5" />Prêt à voyager serein ?</span></FadeIn>
-        <FadeIn delay={0.15}><h2 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold text-white mb-8 tracking-[-0.02em] leading-[1.1]">Rejoignez 10 000+ voyageurs qui protègent leurs bagages</h2></FadeIn>
-        <FadeIn delay={0.3}><p className="text-lg text-white/70 mb-12 leading-relaxed">Activation en 30 secondes, tranquillité pour tous vos voyages.</p></FadeIn>
+        <FadeIn><span className="inline-flex items-center gap-2 text-xs font-bold tracking-[0.15em] uppercase text-blue-600 mb-6"><Sparkles className="w-3.5 h-3.5" />Prêt à voyager serein ?</span></FadeIn>
+        <FadeIn delay={0.15}><h2 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold text-slate-900 mb-8 tracking-[-0.02em] leading-[1.1]">Rejoignez 10 000+ voyageurs qui protègent leurs bagages</h2></FadeIn>
+        <FadeIn delay={0.3}><p className="text-lg text-slate-500 mb-12 leading-relaxed">Activation en 30 secondes, tranquillité pour tous vos voyages.</p></FadeIn>
         <FadeIn delay={0.45}>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Link href="/contact"><Button className="bg-white hover:bg-slate-50 text-slate-900 px-8 py-4 rounded-full font-semibold text-base shadow-xl hover:scale-[1.03] transition-all duration-300 gap-2.5 h-14">Commander maintenant<ArrowRight className="w-4 h-4" /></Button></Link>
-            <Link href="/devenir-partenaire"><Button className="bg-white/10 hover:bg-white/20 border border-white/20 hover:border-white/30 text-white px-8 py-4 rounded-full font-semibold text-base backdrop-blur-sm transition-all duration-300 h-14 hover:scale-[1.03]">Devenir partenaire</Button></Link>
+            <Link href="/contact"><Button className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white px-8 py-4 rounded-full font-semibold text-base shadow-lg shadow-blue-600/20 hover:shadow-blue-600/30 hover:scale-[1.03] transition-all duration-300 gap-2.5 h-14">Commander maintenant<ArrowRight className="w-4 h-4" /></Button></Link>
+            <Link href="/devenir-partenaire"><Button className="bg-white hover:bg-slate-50 border border-slate-200 hover:border-slate-300 text-slate-700 px-8 py-4 rounded-full font-semibold text-base shadow-sm transition-all duration-300 h-14 hover:scale-[1.03]">Devenir partenaire</Button></Link>
           </div>
         </FadeIn>
       </div>
@@ -1025,28 +1122,34 @@ function Footer() {
   ];
 
   return (
-    <footer className="bg-slate-900 pt-20 pb-10">
+    <footer className="bg-white border-t border-slate-200 pt-16 pb-10">
       <div className="max-w-6xl mx-auto px-5">
         <div className="grid sm:grid-cols-2 lg:grid-cols-6 gap-12">
           <div className="lg:col-span-2">
             <div className="mb-5"><img src="/logo.png" alt="QRBag" className="h-14 w-auto object-contain" /></div>
-            <p className="text-base leading-relaxed max-w-xs text-white/60 mb-7">Protection intelligente des bagages pour voyageurs et pèlerins.</p>
+            <p className="text-base leading-relaxed max-w-xs text-slate-500 mb-7">Protection intelligente des bagages pour voyageurs et pèlerins.</p>
             <div className="flex items-center gap-2.5">
               {[{ icon: Facebook, href: 'https://facebook.com/qrbag', label: 'Facebook' }, { icon: Instagram, href: 'https://instagram.com/qrbag', label: 'Instagram' }, { icon: Twitter, href: 'https://twitter.com/qrbag', label: 'Twitter' }].map(s => (
-                <a key={s.label} href={s.href} target="_blank" rel="noopener noreferrer" className="w-10 h-10 bg-white/[0.05] hover:bg-white/[0.1] rounded-xl flex items-center justify-center transition-all duration-300" aria-label={s.label}><s.icon className="w-5 h-5 text-white/50 hover:text-white transition-colors" /></a>
+                <a key={s.label} href={s.href} target="_blank" rel="noopener noreferrer" className="w-10 h-10 bg-slate-100 hover:bg-blue-50 rounded-xl flex items-center justify-center transition-all duration-300" aria-label={s.label}><s.icon className="w-5 h-5 text-slate-400 hover:text-blue-600 transition-colors" /></a>
               ))}
             </div>
           </div>
           {columns.map(col => (
             <div key={col.title}>
-              <h4 className="text-sm font-bold tracking-[0.1em] uppercase text-white/80 mb-5">{col.title}</h4>
-              <ul className="space-y-3">{col.links.map(link => (<li key={link.label}><Link href={link.href} className="text-base text-white/50 hover:text-white transition-colors duration-300">{link.label}</Link></li>))}</ul>
+              <h4 className="text-sm font-bold tracking-[0.1em] uppercase text-slate-900 mb-5">{col.title}</h4>
+              <ul className="space-y-3">{col.links.map(link => (<li key={link.label}><Link href={link.href} className="text-sm text-slate-500 hover:text-blue-600 transition-colors duration-300">{link.label}</Link></li>))}</ul>
             </div>
           ))}
         </div>
-        <div className="mt-20 pt-8 border-t border-white/[0.06] flex flex-col sm:flex-row justify-between items-center gap-4">
-          <p className="text-sm text-white/40">&copy; {new Date().getFullYear()} QRBag. Tous droits réservés.</p>
-          <p className="text-sm text-white/30">Fait avec soin à Dakar, pour le monde.</p>
+        <div className="mt-16 pt-8 border-t border-slate-200 flex flex-col sm:flex-row justify-between items-center gap-4">
+          <p className="text-sm text-slate-400">&copy; {new Date().getFullYear()} QRBag. Tous droits réservés.</p>
+          <div className="flex items-center gap-4 text-sm">
+            <Link href="/mentions-legales" className="text-slate-400 hover:text-blue-600 transition-colors">Mentions légales</Link>
+            <span className="text-slate-300">·</span>
+            <Link href="/confidentialite" className="text-slate-400 hover:text-blue-600 transition-colors">Confidentialité</Link>
+            <span className="text-slate-300">·</span>
+            <Link href="/cgu" className="text-slate-400 hover:text-blue-600 transition-colors">CGU</Link>
+          </div>
         </div>
       </div>
     </footer>

@@ -1,6 +1,6 @@
 /// <reference lib="webworker" />
 
-const CACHE_NAME = 'qrbag-v2';
+const CACHE_NAME = 'qrbag-v3';
 const OFFLINE_URL = '/offline';
 
 // Assets to cache on install
@@ -79,12 +79,15 @@ self.addEventListener('fetch', (event: FetchEvent) => {
     return;
   }
 
-  // For other requests, try cache first, then network
-  // EXCEPT for locale JSON files — always network-first to avoid stale translations (emojis etc.)
+  // For API requests — ALWAYS network-first to avoid stale data
+  // (e.g. /api/scan/:ref must reflect real-time status after activation)
+  const isApiRequest = event.request.url.includes('/api/');
+
+  // For locale JSON files — always network-first to avoid stale translations
   const isLocaleJson = event.request.url.includes('/locales/') && event.request.url.endsWith('.json');
 
-  if (isLocaleJson) {
-    // Network-first for translations — always get fresh data
+  if (isApiRequest || isLocaleJson) {
+    // Network-first for API + translations — always get fresh data
     event.respondWith(
       fetch(event.request)
         .then((response) => {

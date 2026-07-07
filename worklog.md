@@ -1053,3 +1053,25 @@ Stage Summary:
   - `src/app/page.tsx` (nav link + ChecklistCTASection)
   - `public/locales/{fr,en,ar}.json` (53 checklist keys each)
 - Dependencies added: pdf-lib (PDF generation), pdfkit + @types/pdfkit (installed but ultimately unused — could be removed)
+---
+Task ID: 9
+Agent: Main Agent
+Task: Corriger les textes marketing/UI de Voyageur de "3 QR" → "2 QR" (Hajj inchangé)
+
+Work Log:
+- Recherché toutes les occurrences de "3" liées aux QR codes/étiquettes/bagages dans le codebase
+- Identifié que le code de génération Voyageur produit déjà max 2 QR (pas 3), le "3" nétait que dans les textes
+- Modifié 5 fichiers, 10 occurrences au total :
+  1. `/src/app/voyageurs-standard/page.tsx` — 3 changements (stat "1-3"→"1-2", 2× "3 étiquettes"→"2 étiquettes")
+  2. `/src/app/agence/tableau-de-bord/page.tsx` — 1 changement ("1 ou 3 QR"→"1 ou 2 QR")
+  3. `/src/app/admin/messages/page.tsx` — 1 changement ("1 ou 3 QR"→"1 ou 2 QR")
+  4. `/src/app/api/scan/chat/route.ts` — 4 changements (2× FR "3 étiquettes"→"2", 2× EN "3 QR labels"→"2")
+  5. `/src/app/api/landing/chat/route.ts` — 4 changements (2× FR "3 étiquettes"→"2", 2× EN "3 QR labels"→"2")
+- Vérifié quaucune occurrence "3" liée au Voyageur ne subsiste
+- Vérifié que toutes les références Hajj au "3" restent intactes
+- Lint passe proprement
+
+Stage Summary:
+- Textes marketing/UI Voyageur corrigés de 3→2 QR codes dans 5 fichiers (10 occurrences)
+- Code de génération déjà correct (max 2 pour Voyageur), aucun changement de logique nécessaire
+- Hajj entièrement préservé (3 QR/pèlerin)
