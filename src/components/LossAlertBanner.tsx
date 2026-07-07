@@ -20,7 +20,6 @@ interface LossAlertBannerProps {
 export function LossAlertBanner({ reference, departureDate, hasScans, lang }: LossAlertBannerProps) {
   const [alerts, setAlerts] = useState<LossAlert[]>([]);
   const [dismissing, setDismissing] = useState<string | null>(null);
-  const [proactiveMessage, setProactiveMessage] = useState<string | null>(null);
 
   // Fetch existing alerts
   useEffect(() => {
