@@ -225,7 +225,18 @@
     "history_toggle": "Historique des scans ({count})",
     "see_more": "Voir plus ({count})",
     "baggage_info_toggle": "Informations du bagage",
-    "close": "Fermer"
+    "close": "Fermer",
+    "urgent_title": "🚨 BAGAGE DÉCLARÉ PERDU",
+    "urgent_step1": "Contacter la compagnie {company} pour signaler la perte immédiate.",
+    "urgent_step2": "Déposer une déclaration de perte officielle auprès de la police, de la gare ou de l'aéroport le plus proche.",
+    "urgent_contact_finder": "💬 Contacter le trouveur",
+    "urgent_support": "🆘 Support Urgence QRBag",
+    "urgent_found_btn": "✅ J'ai retrouvé mon bagage",
+    "declare_lost_btn": "🚨 Déclarer mon bagage perdu",
+    "declare_lost_confirm": "Êtes-vous sûr de vouloir déclarer ce bagage comme perdu ?",
+    "urgent_support_message": "URGENT : Bagage {ref} déclaré perdu. Besoin d'assistance.",
+    "status_updated": "Statut mis à jour avec succès",
+    "urgent_fallback_company": "de transport"
   },
   "scan": {
     "success": "Scan réussi ! ✓"

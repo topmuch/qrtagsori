@@ -17,6 +17,7 @@ import {
   ArrowRight,
   ChevronDown,
   X,
+  AlertTriangle,
 } from 'lucide-react';
 import { useTranslation } from '@/hooks/useTranslation';
 import { Language, LANGUAGE_NAMES } from '@/lib/i18n';
@@ -31,6 +32,9 @@ import type { TransportMode } from '@/lib/transport';
 const BRAND = '#c5a643'; // jaune moutarde
 const INK = '#1a1a1a';   // ink black
 const CREAM = '#FDFBF7'; // cream background
+const URGENT_RED = '#EF4444';
+const URGENT_BG = '#FEF2F2';
+const QRBAG_SUPPORT_PHONE = '+33745349339';
 
 // ═══════════════════════════════════════════════════════
 //  TYPES
@@ -438,6 +442,10 @@ export default function SuiviPage() {
   const { showButton: showInstallButton, isIOS, handleInstall } = usePWAInstallPrompt();
   const [showIOSModal, setShowIOSModal] = useState(false);
 
+  // Status toggle state
+  const [statusToast, setStatusToast] = useState(false);
+  const [isTogglingStatus, setIsTogglingStatus] = useState(false);
+
   // Fetch tracking data
   const fetchSuivi = useCallback(async (isRefresh = false) => {
     if (isRefresh) setIsRefreshing(true);
@@ -517,6 +525,59 @@ export default function SuiviPage() {
     if (!data?.lastFinder?.phone) return;
     window.location.href = `tel:${data.lastFinder.phone}`;
   }, [data]);
+
+  // ─── Status toggle handler (mark-lost / mark-found) ───
+  const handleStatusToggle = useCallback(async (action: 'mark-lost' | 'mark-found') => {
+    if (isTogglingStatus) return;
+
+    if (action === 'mark-lost') {
+      const confirmed = window.confirm(t('tracking.declare_lost_confirm'));
+      if (!confirmed) return;
+    }
+
+    setIsTogglingStatus(true);
+    try {
+      const response = await fetch(`/api/baggage-status/${reference}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action }),
+      });
+      const result = await response.json();
+
+      if (result.success) {
+        // Refresh page data to reflect new status
+        await fetchSuivi(true);
+        setStatusToast(true);
+        setTimeout(() => setStatusToast(false), 3000);
+      }
+    } catch (error) {
+      console.error('Error toggling status:', error);
+    } finally {
+      setIsTogglingStatus(false);
+    }
+  }, [reference, isTogglingStatus, t, fetchSuivi]);
+
+  // ─── WhatsApp Support handler (emergency) ───
+  const handleSupportWhatsApp = useCallback(() => {
+    const message = t('tracking.urgent_support_message', { ref: reference });
+    const url = buildWhatsAppUrl(QRBAG_SUPPORT_PHONE, message);
+    const isIOSUA = /iPad|iPhone|iPod/.test(navigator.userAgent);
+    if (isIOSUA) {
+      window.location.href = url;
+    } else {
+      const newWindow = window.open(url, '_blank');
+      if (!newWindow || newWindow.closed || typeof newWindow.closed === 'undefined') {
+        window.location.href = url;
+      }
+    }
+  }, [reference, t]);
+
+  // ─── Dynamic transport company name ───
+  const transportCompany = data?.baggage?.airlineName
+    || data?.baggage?.trainCompany
+    || data?.baggage?.shipName
+    || data?.baggage?.busCompany
+    || t('tracking.urgent_fallback_company');
 
   // Format date for display
   const formatDate = (dateStr?: string | null) => {
@@ -653,6 +714,14 @@ export default function SuiviPage() {
         </div>
       )}
 
+      {/* ─── Status Toast ─── */}
+      {statusToast && (
+        <div className="fixed top-[calc(5.5rem+env(safe-area-inset-top,0px))] sm:top-[calc(6rem+env(safe-area-inset-top,0px))] left-1/2 -translate-x-1/2 bg-green-600 text-white px-4 py-2 rounded-lg shadow-lg z-50 animate-in fade-in slide-in-from-top-2 duration-300 text-sm font-medium flex items-center gap-1.5">
+          <CheckCircle className="w-4 h-4" />
+          {t('tracking.status_updated')}
+        </div>
+      )}
+
       {/* ─── Sticky Map (h-56 mobile / h-64 tablet / h-72 desktop) ─── */}
       {data.lastPosition && (data.lastPosition.hasCoordinates || data.lastPosition.address) && (
         <section className="sticky top-[52px] sm:top-[56px] z-30 bg-[#FDFBF7] px-4 sm:px-5 md:px-8 py-3">
@@ -698,6 +767,71 @@ export default function SuiviPage() {
             </p>
           )}
         </div>
+
+        {/* ═══ PANNEAU URGENCE (mode perdu uniquement) ═══ */}
+        {isDeclaredLost && (
+          <div
+            className="bg-[#FEF2F2] border-2 border-[#EF4444] rounded-2xl p-6 space-y-5"
+            role="alert"
+          >
+            {/* Titre */}
+            <div className="text-center">
+              <h2 className="text-xl md:text-2xl font-bold text-[#EF4444]">
+                {t('tracking.urgent_title')}
+              </h2>
+            </div>
+
+            {/* Instructions numérotées */}
+            <ol className="space-y-3">
+              <li className="flex gap-3 items-start">
+                <span className="flex-shrink-0 w-7 h-7 bg-[#EF4444] text-white rounded-full flex items-center justify-center text-sm font-bold mt-0.5">1</span>
+                <p className="text-sm md:text-base text-[#1a1a1a] leading-relaxed">
+                  {t('tracking.urgent_step1', { company: transportCompany })}
+                </p>
+              </li>
+              <li className="flex gap-3 items-start">
+                <span className="flex-shrink-0 w-7 h-7 bg-[#EF4444] text-white rounded-full flex items-center justify-center text-sm font-bold mt-0.5">2</span>
+                <p className="text-sm md:text-base text-[#1a1a1a] leading-relaxed">
+                  {t('tracking.urgent_step2')}
+                </p>
+              </li>
+            </ol>
+
+            {/* Boutons d'action urgence */}
+            <div className="space-y-3">
+              {hasFinderPhone && (
+                <button
+                  onClick={handleWhatsApp}
+                  className="w-full flex items-center justify-center gap-2 bg-[#25D366] hover:bg-[#1ebe57] text-white py-3.5 px-4 rounded-xl font-bold transition-colors text-base min-h-[48px]"
+                >
+                  <MessageCircle className="w-5 h-5" />
+                  {t('tracking.urgent_contact_finder')}
+                </button>
+              )}
+              <button
+                onClick={handleSupportWhatsApp}
+                className="w-full flex items-center justify-center gap-2 bg-[#EF4444] hover:bg-[#DC2626] text-white py-3.5 px-4 rounded-xl font-bold transition-colors text-base min-h-[48px]"
+              >
+                <AlertTriangle className="w-5 h-5" />
+                {t('tracking.urgent_support')}
+              </button>
+            </div>
+
+            {/* Bouton Retrouvé */}
+            <button
+              onClick={() => handleStatusToggle('mark-found')}
+              disabled={isTogglingStatus}
+              className="w-full flex items-center justify-center gap-2 bg-white border-2 border-green-600 text-green-700 hover:bg-green-50 py-3.5 px-4 rounded-xl font-bold transition-colors text-base min-h-[48px] disabled:opacity-50"
+            >
+              {isTogglingStatus ? (
+                <RefreshCw className="w-5 h-5 animate-spin" />
+              ) : (
+                <CheckCircle className="w-5 h-5" />
+              )}
+              {t('tracking.urgent_found_btn')}
+            </button>
+          </div>
+        )}
 
         {/* ═══ CARTE TROUVEUR (white + dashed, lecture seule) ═══ */}
         {data.lastFinder && (data.lastFinder.name || data.lastFinder.phone) ? (
@@ -1022,6 +1156,22 @@ export default function SuiviPage() {
           </div>
         )}
 
+        {/* ═══ BOUTON DÉCLARER PERDU (mode normal uniquement) ═══ */}
+        {!isDeclaredLost && (
+          <button
+            onClick={() => handleStatusToggle('mark-lost')}
+            disabled={isTogglingStatus}
+            className="w-full flex items-center justify-center gap-2 border-2 border-[#EF4444] text-[#EF4444] hover:bg-[#FEF2F2] py-3.5 px-4 rounded-xl font-bold transition-colors text-base min-h-[48px] disabled:opacity-50"
+          >
+            {isTogglingStatus ? (
+              <RefreshCw className="w-5 h-5 animate-spin" />
+            ) : (
+              <AlertTriangle className="w-5 h-5" />
+            )}
+            {t('tracking.declare_lost_btn')}
+          </button>
+        )}
+
         {/* ─── Trust Note (footer discret) ─── */}
         <div className="text-center text-xs text-[#1a1a1a]/60 tracking-wide flex items-center justify-center gap-1.5 pt-2">
           <Shield className="w-4 h-4 inline" />
@@ -1029,8 +1179,8 @@ export default function SuiviPage() {
         </div>
       </div>
 
-      {/* ═══ STICKY BOTTOM BAR (Appeler + WhatsApp) — only if finder phone ═══ */}
-      {hasFinderPhone && (
+      {/* ═══ STICKY BOTTOM BAR (Appeler + WhatsApp) — only if finder phone AND NOT in lost mode ═══ */}
+      {hasFinderPhone && !isDeclaredLost && (
         <div className="fixed bottom-0 left-0 right-0 z-50 bg-white border-t-2 border-[#1a1a1a] p-3 sm:p-4 pb-[calc(0.75rem+env(safe-area-inset-bottom,0px))] sm:pb-[calc(1rem+env(safe-area-inset-bottom,0px))]">
           <div className="max-w-md mx-auto flex gap-3">
             <button

@@ -225,7 +225,18 @@
     "history_toggle": "Scan history ({count})",
     "see_more": "Show more ({count})",
     "baggage_info_toggle": "Baggage information",
-    "close": "Close"
+    "close": "Close",
+    "urgent_title": "🚨 BAGGAGE DECLARED LOST",
+    "urgent_step1": "Contact {company} to report the loss immediately.",
+    "urgent_step2": "File an official loss report at the nearest police station, train station, or airport.",
+    "urgent_contact_finder": "💬 Contact the finder",
+    "urgent_support": "🆘 QRBag Emergency Support",
+    "urgent_found_btn": "✅ I found my baggage",
+    "declare_lost_btn": "🚨 Declare my baggage lost",
+    "declare_lost_confirm": "Are you sure you want to declare this baggage as lost?",
+    "urgent_support_message": "URGENT: Baggage {ref} declared lost. Need assistance.",
+    "status_updated": "Status updated successfully",
+    "urgent_fallback_company": "transport"
   },
   "scan": {
     "success": "Scan successful! ✓"

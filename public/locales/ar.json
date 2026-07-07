@@ -225,7 +225,18 @@
     "history_toggle": "سجل العمليات ({count})",
     "see_more": "عرض المزيد ({count})",
     "baggage_info_toggle": "معلومات الأمتعة",
-    "close": "إغلاق"
+    "close": "إغلاق",
+    "urgent_title": "🚨 أمتعة مسجلة كمفقودة",
+    "urgent_step1": "اتصل بشركة {company} للإبلاغ عن الفقدان فوراً.",
+    "urgent_step2": "قم بتقديم إبلاغ رسمي بالفقدان في أقرب مركز شرطة أو محطة قطار أو مطار.",
+    "urgent_contact_finder": "💬 اتصل بمن وجدها",
+    "urgent_support": "🆘 دعم طوارئ كيو آر باغ",
+    "urgent_found_btn": "✅ وجدت أمتعتي",
+    "declare_lost_btn": "🚨 الإبلاغ عن فقدان أمتعتي",
+    "declare_lost_confirm": "هل أنت متأكد أنك تريد تسجيل هذه الأمتعة كمفقودة؟",
+    "urgent_support_message": "طوارئ: أمتعة {ref} مسجلة كمفقودة. أحتاج مساعدة.",
+    "status_updated": "تم تحديث الحالة بنجاح",
+    "urgent_fallback_company": "النقل"
   },
   "scan": {
     "success": "تم المسح بنجاح! ✓"
