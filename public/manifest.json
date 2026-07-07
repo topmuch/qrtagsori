@@ -65,7 +65,7 @@
       "purpose": "maskable"
     }
   ],
-  "categories": ["travel", "utilities", "lifestyle"],
+  "categories": ["travel", "utilities"],
   "lang": "fr",
   "dir": "auto",
   "shortcuts": [
@@ -93,11 +93,18 @@
   ],
   "screenshots": [
     {
-      "src": "/screenshots/home.png",
-      "sizes": "1080x1920",
-      "type": "image/png",
-      "form_factor": "narrow",
-      "label": "Page d'accueil QRBag"
+      "src": "/images/landing-v2/hero.jpg",
+      "sizes": "1920x1080",
+      "type": "image/jpeg",
+      "form_factor": "wide",
+      "label": "Page d'accueil QRBag - Protection intelligente des bagages"
+    },
+    {
+      "src": "/images/landing-v2/step-activate.jpg",
+      "sizes": "1280x720",
+      "type": "image/jpeg",
+      "form_factor": "wide",
+      "label": "Activation d'un bagage en un scan"
     }
   ],
   "related_applications": [],

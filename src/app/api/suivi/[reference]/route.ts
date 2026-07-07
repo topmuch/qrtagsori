@@ -117,6 +117,9 @@ export async function GET(
       message: scan.message || null,
       // Approximation de l'adresse pour la carte (pas de GPS brut)
       hasMap: !!(scan.latitude && scan.longitude),
+      // Coordinates for interactive map trajectory
+      latitude: scan.latitude,
+      longitude: scan.longitude,
       // Formater la date côté serveur
       scannedAt: scan.createdAt.toISOString(),
       whatsappStatus: scan.whatsappStatus || null,

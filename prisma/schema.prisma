@@ -504,3 +504,36 @@ model Checklist {
   @@index([email])
   @@index([createdAt])
 }
+
+// Review model - user reviews/testimonials for social proof
+model Review {
+  id          String   @id @default(cuid())
+  name        String   // Reviewer name (public)
+  location    String?  // City/country
+  rating      Int      // 1-5 stars
+  title       String?  // Short title
+  content     String   // Review text
+  baggageRef  String?  // Optional reference to the baggage
+  isFeatured  Boolean  @default(false) // Show on landing page
+  isApproved  Boolean  @default(false) // Admin must approve
+  response    String?  // Admin reply
+  language    String   @default("fr") // "fr" | "en" | "ar"
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([isApproved])
+  @@index([isFeatured])
+  @@index([createdAt])
+}
+
+// LossAlert model - proactive loss detection alerts
+model LossAlert {
+  id          String   @id @default(cuid())
+  baggageId   String
+  reference   String   // Denormalized for quick lookup
+  alertType   String   @default("no_scan_after_arrival") // "no_scan_after_arrival" | "no_scan_duration"
+  message     String
+  dismissed   Boolean  @default(false)
+  dismissedAt DateTime?
+  createdAt   DateTime @default(now())
+}

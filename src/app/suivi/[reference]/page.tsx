@@ -3,6 +3,7 @@
 import { useEffect, useState, useCallback } from 'react';
 import { useParams } from 'next/navigation';
 import Image from 'next/image';
+import dynamic from 'next/dynamic';
 import {
   AlertCircle,
   Clock,
@@ -20,7 +21,17 @@ import {
   AlertTriangle,
   Volume2,
   VolumeX,
+  Star,
+  Wifi,
+  WifiOff,
 } from 'lucide-react';
+
+// Dynamic imports (avoid SSR issues)
+const LeafletMap = dynamic(() => import('@/components/LeafletMap'), { ssr: false, loading: () => <MapSkeleton /> });
+import { SocialShareButtons } from '@/components/SocialShareButtons';
+import { ReviewModal } from '@/components/ReviewModal';
+import { LossAlertBanner } from '@/components/LossAlertBanner';
+import { useTrackingSocket } from '@/hooks/useTrackingSocket';
 import { useTranslation } from '@/hooks/useTranslation';
 import { Language, LANGUAGE_NAMES } from '@/lib/i18n';
 import type { ScanContext } from '@/lib/scan-context';
@@ -52,6 +63,8 @@ interface ScanEntry {
   finderPhone: string | null;
   message: string | null;
   hasMap: boolean;
+  latitude: number | null;
+  longitude: number | null;
   scannedAt: string;
   whatsappStatus: string | null;
 }
@@ -220,6 +233,21 @@ function DashedEncart({ children, className = '' }: { children: React.ReactNode;
   return (
     <div className={`border-2 border-dashed border-[#1a1a1a]/60 rounded-xl p-3 mb-2.5 last:mb-0 ${className}`}>
       {children}
+    </div>
+  );
+}
+
+// ═══════════════════════════════════════════════════════
+//  MAP SKELETON (for Leaflet lazy loading)
+// ═══════════════════════════════════════════════════════
+
+function MapSkeleton() {
+  return (
+    <div className="w-full h-full bg-[#c5a643]/10 rounded-xl flex items-center justify-center animate-pulse">
+      <div className="text-center">
+        <MapPin className="w-8 h-8 text-[#c5a643]/40 mx-auto mb-2" />
+        <p className="text-sm text-[#1a1a1a]/40">Chargement de la carte...</p>
+      </div>
     </div>
   );
 }
@@ -450,6 +478,15 @@ export default function SuiviPage() {
 
   // Audio alert system
   const { audioEnabled, enableAudio, toggleAudio, checkAndNotify } = useAudioAlert(lang);
+
+  // WebSocket real-time connection
+  const { isConnected: wsConnected } = useTrackingSocket(reference);
+
+  // Review modal state
+  const [showReviewModal, setShowReviewModal] = useState(false);
+
+  // Show trajectory map state
+  const [showTrajectoryMap, setShowTrajectoryMap] = useState(false);
 
   // Fetch tracking data
   const fetchSuivi = useCallback(async (isRefresh = false, isSilent = false) => {
@@ -793,28 +830,78 @@ export default function SuiviPage() {
         </div>
       )}
 
-      {/* ─── Sticky Map (h-56 mobile / h-64 tablet / h-72 desktop) ─── */}
+      {/* ─── Interactive Map (Leaflet — trajectory + markers) ─── */}
       {data.lastPosition && (data.lastPosition.hasCoordinates || data.lastPosition.address) && (
         <section className="sticky top-[52px] sm:top-[56px] z-30 bg-[#FDFBF7] px-4 sm:px-5 md:px-8 py-3">
           <div className="max-w-md mx-auto">
             <div className="bg-white border-2 border-dashed border-[#1a1a1a] rounded-2xl p-2.5 shadow-sm">
               <div className="flex items-center justify-between mb-2 px-1">
                 <h2 className="text-xs uppercase tracking-widest text-[#1a1a1a] font-bold flex items-center gap-1.5">
-                  <span>🗺️</span> {t('tracking.last_location')}
+                  <span>🗺️</span> {showTrajectoryMap ? t('tracking.trajectory_map') || 'Trajectoire complète' : t('tracking.last_location')}
                 </h2>
-                {baggage.lastScanDate && (
-                  <span className="text-[10px] text-[#1a1a1a]/60">
-                    {formatDateTime(baggage.lastScanDate)}
+                <div className="flex items-center gap-2">
+                  {/* WebSocket status indicator */}
+                  <span className="flex items-center gap-1 text-[10px] text-[#1a1a1a]/50" title={wsConnected ? 'Temps réel' : 'Polling'}>
+                    {wsConnected ? <Wifi className="w-3 h-3 text-green-500" /> : <WifiOff className="w-3 h-3" />}
                   </span>
-                )}
+                  {baggage.lastScanDate && (
+                    <span className="text-[10px] text-[#1a1a1a]/60">
+                      {formatDateTime(baggage.lastScanDate)}
+                    </span>
+                  )}
+                </div>
               </div>
-              <div className="h-44 sm:h-48 md:h-56">
-                <MapEmbed
-                  latitude={data.lastPosition.latitude}
-                  longitude={data.lastPosition.longitude}
-                  address={data.lastPosition.address}
-                  t={t}
-                />
+
+              {/* Toggle: last position vs trajectory */}
+              {data.scans.filter(s => s.latitude && s.longitude).length > 1 && (
+                <div className="flex gap-2 mb-2 px-1">
+                  <button
+                    onClick={() => setShowTrajectoryMap(false)}
+                    className={`text-xs px-3 py-1 rounded-full font-medium transition-colors min-h-[28px] ${!showTrajectoryMap ? 'bg-[#1a1a1a] text-[#c5a643]' : 'bg-[#c5a643]/20 text-[#1a1a1a]/70 hover:bg-[#c5a643]/40'}`}
+                  >
+                    📍 Dernière position
+                  </button>
+                  <button
+                    onClick={() => setShowTrajectoryMap(true)}
+                    className={`text-xs px-3 py-1 rounded-full font-medium transition-colors min-h-[28px] ${showTrajectoryMap ? 'bg-[#1a1a1a] text-[#c5a643]' : 'bg-[#c5a643]/20 text-[#1a1a1a]/70 hover:bg-[#c5a643]/40'}`}
+                  >
+                    🛤️ Trajectoire ({data.scans.filter(s => s.latitude && s.longitude).length})
+                  </button>
+                </div>
+              )}
+
+              <div className="h-56 sm:h-64 md:h-72">
+                {showTrajectoryMap && data.scans.filter(s => s.latitude && s.longitude).length > 0 ? (
+                  <LeafletMap
+                    scans={data.scans.filter(s => s.latitude && s.longitude).map(s => ({
+                      id: s.id,
+                      latitude: s.latitude!,
+                      longitude: s.longitude!,
+                      location: s.location,
+                      city: s.city,
+                      country: s.country,
+                      context: s.context,
+                      scannedAt: s.scannedAt,
+                      finderName: s.finderName,
+                    }))}
+                    destination={baggage.destination}
+                  />
+                ) : (
+                  <LeafletMap
+                    scans={[{
+                      id: 'last',
+                      latitude: data.lastPosition.latitude!,
+                      longitude: data.lastPosition.longitude!,
+                      location: data.lastPosition.address,
+                      city: null,
+                      country: null,
+                      context: 'static_location',
+                      scannedAt: baggage.lastScanDate || new Date().toISOString(),
+                      finderName: null,
+                    }]}
+                    destination={baggage.destination}
+                  />
+                )}
               </div>
             </div>
           </div>
@@ -823,6 +910,31 @@ export default function SuiviPage() {
 
       {/* ─── Scrollable Content ─── */}
       <div className="flex-1 max-w-md mx-auto w-full px-4 sm:px-5 md:px-8 py-4 pb-32 space-y-4">
+
+        {/* ═══ SOCIAL SHARE BAR ═══ */}
+        {data.scans.length > 0 && (
+          <div className="flex items-center justify-between">
+            <span className="text-xs text-[#1a1a1a]/60 font-medium">
+              {lang === 'ar' ? 'مشاركة' : lang === 'en' ? 'Share' : 'Partager'}
+            </span>
+            <SocialShareButtons
+              reference={reference}
+              scanCount={data.scans.length}
+              lastCity={data.scans[0]?.city}
+              lastCountry={data.scans[0]?.country}
+              status={baggage.status}
+              lang={lang}
+            />
+          </div>
+        )}
+
+        {/* ═══ PROACTIVE LOSS ALERT ═══ */}
+        <LossAlertBanner
+          reference={reference}
+          departureDate={baggage.departureDate}
+          hasScans={data.scans.length > 0}
+          lang={lang}
+        />
 
         {/* ═══ EN-TÊTE DYNAMIQUE SELON STATUT ═══ */}
         <div className="text-center pt-2">
@@ -1208,6 +1320,17 @@ export default function SuiviPage() {
           </a>
         </div>
 
+        {/* ═══ LAISSER UN AVIS ═══ */}
+        {data.scans.length > 0 && (
+          <button
+            onClick={() => setShowReviewModal(true)}
+            className="w-full flex items-center justify-center gap-2 bg-[#c5a643]/20 border-2 border-[#c5a643] text-[#1a1a1a] hover:bg-[#c5a643]/40 py-3.5 px-4 rounded-xl font-bold transition-colors text-base min-h-[48px]"
+          >
+            <Star className="w-5 h-5" />
+            {lang === 'ar' ? 'تقييم تجربتك' : lang === 'en' ? 'Rate your experience' : 'Laisser un avis'}
+          </button>
+        )}
+
         {/* ═══ PWA INSTALL BUTTON (conditionnel) ═══ */}
         {showInstallButton && (
           <div className="text-center">
@@ -1276,6 +1399,14 @@ export default function SuiviPage() {
 
       {/* ═══ iOS Install Instructions Modal ═══ */}
       <IOSInstallModal show={showIOSModal} onClose={() => setShowIOSModal(false)} t={t} />
+
+      {/* ═══ Review Modal ═══ */}
+      <ReviewModal
+        show={showReviewModal}
+        onClose={() => setShowReviewModal(false)}
+        reference={reference}
+        lang={lang}
+      />
     </main>
   );
 }

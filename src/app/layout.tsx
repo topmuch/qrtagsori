@@ -145,6 +145,10 @@ export default function RootLayout({
         <meta name="msapplication-TileColor" content="#ffffff" />
         <meta name="msapplication-config" content="/browserconfig.xml" />
 
+        {/* PWA manifest & apple-touch-icon */}
+        <link rel="manifest" href="/manifest.json" />
+        <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+
         {/* Preconnect for performance */}
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
