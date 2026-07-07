@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo, useCallback } from 'react';
+import { useState, useMemo, useCallback, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
@@ -50,6 +50,27 @@ interface SelectedItem {
 }
 
 export default function ChecklistPage() {
+  return (
+    <Suspense fallback={<ChecklistFallback />}>
+      <ChecklistPageContent />
+    </Suspense>
+  );
+}
+
+function ChecklistFallback() {
+  return (
+    <main className="min-h-screen flex flex-col bg-[#FDFBF7]" dir="ltr">
+      <div className="flex-1 flex items-center justify-center">
+        <div className="text-center">
+          <div className="inline-block w-10 h-10 border-4 border-[#1a1a1a]/20 border-t-[#c5a643] rounded-full animate-spin" />
+          <p className="mt-4 text-[#1a1a1a]/60 text-sm">Chargement…</p>
+        </div>
+      </div>
+    </main>
+  );
+}
+
+function ChecklistPageContent() {
   const { t, lang, setLang, dir } = useTranslation();
   const searchParams = useSearchParams();
   const refParam = searchParams.get('ref');
