@@ -421,8 +421,14 @@ export default function AgencyDashboardPage() {
   const [commandSubmitting, setCommandSubmitting] = useState(false);
   const [commandSuccess, setCommandSuccess] = useState(false);
 
+  // Fetch on mount + auto-refresh every 15 seconds for real-time data
   useEffect(() => {
-    if (agencyId) fetchBaggages();
+    if (!agencyId) return;
+    fetchBaggages();
+    const interval = setInterval(() => {
+      fetchBaggages();
+    }, 15000);
+    return () => clearInterval(interval);
   }, [agencyId]);
 
   // Listen for openCommandModal event from header

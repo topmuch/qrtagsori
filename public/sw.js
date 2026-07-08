@@ -54,9 +54,9 @@ self.addEventListener('fetch', (event: FetchEvent) => {
     return;
   }
 
-  // API calls: network-first with fallback to cache
+  // API calls: network-only (no cache) for real-time data
   if (request.url.includes('/api/')) {
-    event.respondWith(networkFirstWithCacheFallback(request));
+    event.respondWith(fetch(request));
     return;
   }
 

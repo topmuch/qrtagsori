@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { sendEmail, getEmailSettings, getAgencyMessageEmailTemplate } from '@/lib/email';
 
+export const dynamic = 'force-dynamic';
+
 // GET - Fetch messages for agency
 export async function GET(request: NextRequest) {
   try {
@@ -65,7 +67,16 @@ export async function GET(request: NextRequest) {
       },
     });
 
-    return NextResponse.json({ messages, unreadCount });
+    return NextResponse.json(
+      { messages, unreadCount },
+      {
+        headers: {
+          'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
+          'Pragma': 'no-cache',
+          'Expires': '0',
+        },
+      }
+    );
 
   } catch (error) {
     console.error('Error fetching agency messages:', error);

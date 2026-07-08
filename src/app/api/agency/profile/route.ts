@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 
+export const dynamic = 'force-dynamic';
+
 // GET - Fetch agency profile
 export async function GET(request: NextRequest) {
   try {
@@ -35,7 +37,16 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    return NextResponse.json({ agency });
+    return NextResponse.json(
+      { agency },
+      {
+        headers: {
+          'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
+          'Pragma': 'no-cache',
+          'Expires': '0',
+        },
+      }
+    );
 
   } catch (error) {
     console.error('Error fetching agency profile:', error);
