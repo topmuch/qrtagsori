@@ -197,6 +197,8 @@ function InscrireContent() {
             type: 'voyageur',
             activatedAt: new Date().toISOString(),
             expiresAt: data.baggage?.expiresAt,
+            // LABS — Feature #2: PIN propriétaire (récupéré une seule fois de l'API)
+            ownerPin: data.baggage?.ownerPin,
           })
         );
         router.push('/success?type=voyageur');

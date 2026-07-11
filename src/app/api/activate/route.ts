@@ -2,6 +2,17 @@ import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { calculateExpirationDate } from '@/lib/qr';
 import { z } from 'zod';
+import bcrypt from 'bcryptjs';
+import crypto from 'crypto';
+
+// ─── LABS — Feature #2: Generate a random 4-digit PIN for the owner ───
+// Le PIN sert à :
+//  1. Authentifier le propriétaire pour éditer son profil (/suivi/[ref]/edit)
+//  2. Vérification d'identité par le trouveur (/scan/[ref] → verify-pin)
+function generateOwnerPin(): string {
+  // 4 chiffres aléatoires (0000-9999), 0-padded
+  return String(crypto.randomInt(0, 10000)).padStart(4, '0');
+}
 
 // Validation schema for activation
 const activateSchema = z.object({
@@ -55,6 +66,12 @@ export async function POST(request: NextRequest) {
     // Calculate expiration date
     const expiresAt = calculateExpirationDate(baggage.type as 'hajj' | 'voyageur', subtype);
 
+    // ─── LABS — Feature #2: Generate owner PIN (4 digits) ───
+    // Hashé bcrypt AVANT stockage. Le PIN en clair est renvoyé une seule fois
+    // dans la réponse API pour affichage sur /success (jamais re-divulgué ensuite).
+    const ownerPinPlain = generateOwnerPin();
+    const ownerPinHash = await bcrypt.hash(ownerPinPlain, 10);
+
     // Update baggage with traveler info
     const updatedBaggage = await db.baggage.update({
       where: { id: baggage.id },
@@ -77,6 +94,9 @@ export async function POST(request: NextRequest) {
         busLineNumber: validatedData.busLineNumber || null,
         status: 'active',
         expiresAt,
+        // LABS: PIN propriétaire (hashé)
+        ownerPin: ownerPinHash,
+        ownerPinSetAt: new Date(),
       }
     });
 
@@ -130,6 +150,8 @@ export async function POST(request: NextRequest) {
         type: updatedBaggage.type,
         status: updatedBaggage.status,
         expiresAt: updatedBaggage.expiresAt,
+        // LABS — Feature #2: PIN en clair (une seule fois, pour affichage sur /success)
+        ownerPin: ownerPinPlain,
       }
     });
 

@@ -24,6 +24,8 @@ import {
   Star,
   Wifi,
   WifiOff,
+  Power,
+  Edit3,
 } from 'lucide-react';
 
 // Dynamic imports (avoid SSR issues)
@@ -488,6 +490,64 @@ export default function SuiviPage() {
 
   // Show trajectory map state
   const [showTrajectoryMap, setShowTrajectoryMap] = useState(false);
+
+  // ─── LABS — Feature #3: Mode "En transit" state ───
+  const [transitMode, setTransitMode] = useState<'active' | 'inactive'>('active');
+  const [showTransitModal, setShowTransitModal] = useState(false);
+  const [transitPinInput, setTransitPinInput] = useState('');
+  const [transitLoading, setTransitLoading] = useState(false);
+  const [transitError, setTransitError] = useState('');
+  const [hasOwnerPin, setHasOwnerPin] = useState(false);
+
+  // Fetch transit mode state on mount
+  useEffect(() => {
+    if (!data?.baggage?.reference) return;
+    fetch(`/api/baggage/${data.baggage.reference}/transit-mode`)
+      .then(r => r.json())
+      .then(d => {
+        if (d.transitMode) setTransitMode(d.transitMode);
+        if (d.hasPin !== undefined) setHasOwnerPin(d.hasPin);
+      })
+      .catch(() => {});
+  }, [data?.baggage?.reference]);
+
+  // Handle transit mode toggle
+  const handleTransitToggle = useCallback(async () => {
+    if (!data?.baggage?.reference) return;
+    if (!hasOwnerPin) {
+      setTransitError('Aucun PIN défini. Contactez le support ou définissez un PIN via l\'édition de profil.');
+      return;
+    }
+    if (!transitPinInput || transitPinInput.length < 4) {
+      setTransitError('Veuillez saisir votre PIN (4-6 chiffres).');
+      return;
+    }
+
+    setTransitLoading(true);
+    setTransitError('');
+    try {
+      const newMode = transitMode === 'active' ? 'inactive' : 'active';
+      const res = await fetch(`/api/baggage/${data.baggage.reference}/transit-mode`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ pin: transitPinInput, mode: newMode }),
+      });
+      const result = await res.json();
+      if (res.ok) {
+        setTransitMode(newMode);
+        setShowTransitModal(false);
+        setTransitPinInput('');
+        setStatusToast(true);
+        setTimeout(() => setStatusToast(false), 3000);
+      } else {
+        setTransitError(result.error || 'Erreur lors du changement de mode');
+      }
+    } catch {
+      setTransitError('Erreur réseau');
+    } finally {
+      setTransitLoading(false);
+    }
+  }, [data?.baggage?.reference, transitMode, transitPinInput, hasOwnerPin]);
 
   // Fetch tracking data
   const fetchSuivi = useCallback(async (isRefresh = false, isSilent = false) => {
@@ -1351,6 +1411,53 @@ export default function SuiviPage() {
           </div>
         )}
 
+        {/* ═══ LABS — Feature #3: Mode "En transit" toggle ═══ */}
+        <div className="bg-white border-2 border-dashed border-[#1a1a1a] rounded-2xl p-4">
+          <div className="flex items-center justify-between gap-3 mb-2">
+            <div className="flex items-center gap-2">
+              <Power className={`w-5 h-5 ${transitMode === 'active' ? 'text-green-600' : 'text-slate-400'}`} />
+              <div>
+                <h3 className="text-sm font-bold text-[#1a1a1a]">Mode En transit</h3>
+                <p className="text-xs text-[#1a1a1a]/70">
+                  {transitMode === 'active'
+                    ? 'QR actif — scans visibles par le propriétaire'
+                    : 'QR désactivé — page neutre affichée aux scans'}
+                </p>
+              </div>
+            </div>
+            <button
+              onClick={() => {
+                setTransitError('');
+                setShowTransitModal(true);
+              }}
+              className={`relative inline-flex h-7 w-12 items-center rounded-full transition-colors min-w-[48px] ${
+                transitMode === 'active' ? 'bg-green-500' : 'bg-slate-300'
+              }`}
+              aria-label="Basculer le mode En transit"
+            >
+              <span
+                className={`inline-block h-5 w-5 transform rounded-full bg-white shadow transition-transform ${
+                  transitMode === 'active' ? 'translate-x-6' : 'translate-x-1'
+                }`}
+              />
+            </button>
+          </div>
+          {!hasOwnerPin && (
+            <p className="text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-lg p-2 mt-2">
+              ⚠️ Pour utiliser ce mode, définissez un PIN via le bouton "Modifier mon profil" ci-dessous.
+            </p>
+          )}
+        </div>
+
+        {/* ═══ LABS — Feature #2: Bouton Modifier mon profil (avec PIN) ═══ */}
+        <a
+          href={`/suivi/${reference}/edit`}
+          className="w-full flex items-center justify-center gap-2 bg-[#0047d6] hover:bg-[#0033a8] text-white py-3 px-4 rounded-xl font-bold transition-colors text-base min-h-[48px]"
+        >
+          <Edit3 className="w-5 h-5" />
+          Modifier mon profil de voyage
+        </a>
+
         {/* ═══ BOUTON DÉCLARER PERDU (rouge fond + texte blanc) ═══ */}
         {!isDeclaredLost && (
           <button
@@ -1408,6 +1515,60 @@ export default function SuiviPage() {
         reference={reference}
         lang={lang}
       />
+
+      {/* ═══ LABS — Feature #3: Modal PIN pour Mode En transit ═══ */}
+      {showTransitModal && (
+        <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl max-w-sm w-full p-6 shadow-2xl">
+            <div className="flex items-start justify-between mb-4">
+              <h3 className="text-lg font-bold text-[#1a1a1a]">
+                {transitMode === 'active' ? 'Désactiver' : 'Réactiver'} le QR code
+              </h3>
+              <button
+                onClick={() => { setShowTransitModal(false); setTransitPinInput(''); setTransitError(''); }}
+                className="text-slate-400 hover:text-slate-700"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            <p className="text-sm text-slate-600 mb-4">
+              {transitMode === 'active'
+                ? 'Votre QR code renverra vers une page neutre. Aucune info personnelle ne sera visible.'
+                : 'Votre QR code fonctionnera à nouveau normalement.'}
+              <br />
+              <strong>Saisissez votre PIN pour confirmer.</strong>
+            </p>
+            <input
+              type="password"
+              inputMode="numeric"
+              maxLength={6}
+              placeholder="••••"
+              value={transitPinInput}
+              onChange={(e) => setTransitPinInput(e.target.value.replace(/\D/g, ''))}
+              className="w-full text-center text-2xl tracking-[0.5em] bg-slate-50 border-2 border-slate-200 rounded-xl py-3 px-4 text-[#1a1a1a] focus:ring-2 focus:ring-[#0047d6] focus:border-[#0047d6] transition-all mb-3"
+              autoFocus
+            />
+            {transitError && (
+              <p className="text-sm text-red-600 mb-3">{transitError}</p>
+            )}
+            <div className="flex gap-2">
+              <button
+                onClick={() => { setShowTransitModal(false); setTransitPinInput(''); setTransitError(''); }}
+                className="flex-1 py-3 px-4 rounded-xl font-bold text-slate-700 bg-slate-100 hover:bg-slate-200 transition-colors"
+              >
+                Annuler
+              </button>
+              <button
+                onClick={handleTransitToggle}
+                disabled={transitLoading}
+                className="flex-1 py-3 px-4 rounded-xl font-bold text-white bg-[#0047d6] hover:bg-[#0033a8] disabled:opacity-50 transition-colors"
+              >
+                {transitLoading ? '...' : 'Confirmer'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </main>
   );
 }

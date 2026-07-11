@@ -71,4 +71,4 @@ db/*.db-journal
 *.swo
 
 # OS
-Thumbs.db
+Thumbs.dbdev-server-live.log

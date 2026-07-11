@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { CheckCircle, Luggage, Calendar, Backpack } from 'lucide-react';
+import { CheckCircle, Luggage, Calendar, Backpack, KeyRound } from 'lucide-react';
 import { QRCodeSVG } from 'qrcode.react';
 import SuccessOverlay from '@/components/ui/SuccessOverlay';
 import { useTranslation } from '@/hooks/useTranslation';
@@ -28,6 +28,8 @@ interface ActivationData {
   trainNumber?: string;
   shipName?: string;
   busLineNumber?: string;
+  // LABS — Feature #2: PIN propriétaire (une seule fois, pour affichage à l'activation)
+  ownerPin?: string;
 }
 
 function SuccessContent() {
@@ -268,6 +270,41 @@ function SuccessContent() {
             Créer ma checklist gratuite →
           </Link>
         </div>
+
+        {/* ═══ 6. LABS — Feature #2: PIN propriétaire (affichage unique à l'activation) ═══ */}
+        {activationData.ownerPin && (
+          <div
+            className="border-2 border-dashed rounded-2xl p-5"
+            style={{ backgroundColor: 'white', borderColor: INK }}
+          >
+            <div className="flex items-center justify-center gap-2 mb-2">
+              <KeyRound className="w-5 h-5" style={{ color: INK }} />
+              <h2 className="font-bold text-base" style={{ color: INK }}>
+                🔐 Votre code PIN propriétaire
+              </h2>
+            </div>
+            <p className="text-sm text-center mb-4" style={{ color: INK, opacity: 0.7 }}>
+              Notez ce code précieusement. Il vous servira à :
+              <br />
+              • Modifier votre profil de voyage (numéro de vol, destination…)
+              <br />
+              • Activer/désactiver le mode « En transit »
+              <br />
+              • Vérifier l&apos;identité de la personne qui rend votre bagage
+            </p>
+            <div
+              className="text-center text-5xl font-mono font-bold tracking-[0.5em] py-4 rounded-xl mb-3"
+              style={{ backgroundColor: ACCENT, color: INK }}
+            >
+              {activationData.ownerPin}
+            </div>
+            <p className="text-xs text-center" style={{ color: INK, opacity: 0.6 }}>
+              ⚠️ Pour votre sécurité, ce code ne sera plus jamais affiché.
+              <br />
+              En cas d&apos;oubli, vous devrez contacter le support QRBag.
+            </p>
+          </div>
+        )}
       </div>
     </main>
   );

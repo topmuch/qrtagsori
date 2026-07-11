@@ -118,6 +118,20 @@ model Baggage {
   founderName       String?   // Name of the finder
   founderPhone      String?   // WhatsApp number of the finder
   founderAt         DateTime? // Timestamp when founder info was submitted
+
+  // ─── LABS — Feature #2: Profil dynamique + Feature #6: Vérification PIN ───
+  // PIN (6 digits) hashé bcrypt. Sert à :
+  //  1. Authentifier le propriétaire pour éditer son profil (/suivi/[ref]/edit)
+  //  2. Vérification d'identité par le trouveur (/scan/[ref] → verify-pin)
+  ownerPin          String?   // hashé bcrypt, jamais en clair
+  ownerPinSetAt     DateTime?
+
+  // ─── LABS — Feature #3: Mode "En transit" ───
+  // "active" (défaut) = QR fonctionnel normalement
+  // "inactive" = QR désactivé par le propriétaire → page neutre sur /scan
+  transitMode       String    @default("active")
+  transitModeUpdatedAt DateTime?
+
   agency            Agency?   @relation(fields: [agencyId], references: [id], onDelete: SetNull)
   scanLogs          ScanLog[]
 }

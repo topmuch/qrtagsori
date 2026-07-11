@@ -15,6 +15,7 @@ import {
   Globe,
   Phone,
   MessageCircle,
+  PauseCircle,
 } from "lucide-react";
 import { useTranslation } from '@/hooks/useTranslation';
 import { Language, LANGUAGE_NAMES } from '@/lib/i18n';
@@ -301,6 +302,45 @@ function ErrorScreen({
   );
 }
 
+// ─── LABS — Feature #3: InactiveScreen (page neutre quand QR désactivé) ───
+function InactiveScreen({
+  t,
+  lang,
+  setLang
+}: {
+  t: (key: string) => string;
+  lang: Language;
+  setLang: (l: Language) => void;
+}) {
+  return (
+    <main className="min-h-screen bg-[#0047d6] flex items-center justify-center p-5 md:p-8 relative">
+      <div className="absolute top-4 right-4">
+        <LanguageSelector lang={lang} setLang={setLang} />
+      </div>
+
+      <div className="max-w-md w-full bg-white border-2 border-dashed border-[#1a1a1a] rounded-2xl p-6 md:p-8 text-center shadow-xl">
+        <div className="w-20 h-20 bg-[#fcd616]/30 border-2 border-dashed border-[#1a1a1a] rounded-full flex items-center justify-center mx-auto mb-6">
+          <PauseCircle className="w-10 h-10 text-[#1a1a1a]/60" />
+        </div>
+        <h1 className="text-2xl md:text-3xl font-bold text-[#1a1a1a] mb-3">
+          ⏸️ QR code désactivé
+        </h1>
+        <p className="text-[#1a1a1a] text-base md:text-lg mb-6">
+          Le propriétaire a temporairement désactivé ce QR code.
+          <br />
+          Il sera de nouveau fonctionnel lorsque le propriétaire le réactivera.
+        </p>
+        <div className="bg-[#fcd616]/20 border-2 border-dashed border-[#1a1a1a] rounded-xl p-4 text-sm text-[#1a1a1a]">
+          <p className="font-medium">
+            💡 Cette fonctionnalité permet au voyageur d&apos;éviter les scans
+            malveillants lorsqu&apos;il ne voyage pas.
+          </p>
+        </div>
+      </div>
+    </main>
+  );
+}
+
 // ─── Dashed Encart Helper (light variant: dashed black on white) ───
 function DashedEncart({ children, className = '' }: { children: React.ReactNode; className?: string }) {
   return (
@@ -563,6 +603,11 @@ export default function ScanPage() {
 
   if (baggageData?.status === 'blocked') {
     return <ErrorScreen type="blocked" t={t} lang={lang} setLang={setLang} />;
+  }
+
+  // ─── LABS — Feature #3: Mode "En transit" (page neutre) ───
+  if (baggageData?.status === 'inactive') {
+    return <InactiveScreen t={t} lang={lang} setLang={setLang} />;
   }
 
   if (baggageData?.status === 'expired') {

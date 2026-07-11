@@ -47,6 +47,17 @@ export async function GET(
       });
     }
 
+    // ─── LABS — Feature #3: Mode "En transit" ───
+    // Si le propriétaire a désactivé son QR, on renvoie un statut "inactive"
+    // qui affichera une page neutre sur /scan (pas d'infos sur le propriétaire).
+    if (baggage.transitMode === 'inactive') {
+      return NextResponse.json({
+        status: 'inactive',
+        message: 'Ce QR code est actuellement désactivé par son propriétaire.',
+        theme: 'neutral',
+      });
+    }
+
     // Check expiration
     if (baggage.expiresAt && new Date() > baggage.expiresAt) {
       return NextResponse.json({
