@@ -139,6 +139,14 @@ model Baggage {
   destinationCountry String?   // ex: "SN", "JP" (normalisé via CountryRegionSelect)
   suspiciousScanCount Int      @default(0)  // incrémenté à chaque scan mismatch
 
+  // ─── LABS — Feature #5: Alerte de Correspondance Manquée ───
+  // Vol de correspondance (ex: "AF456") saisi par le propriétaire.
+  // Si le premier vol a du retard et que la correspondance devient impossible,
+  // une alerte email est envoyée avec la marche à suivre.
+  connectingFlight        String?   // numéro du vol de correspondance
+  connectionAlertSentAt   DateTime? // timestamp du dernier envoi d'alerte (anti-spam)
+  lastDelayCheckAt        DateTime? // dernier check automatique (cron AviationStack)
+
   agency            Agency?   @relation(fields: [agencyId], references: [id], onDelete: SetNull)
   scanLogs          ScanLog[]
 }

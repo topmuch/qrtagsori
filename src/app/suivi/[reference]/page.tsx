@@ -499,6 +499,20 @@ export default function SuiviPage() {
   const [transitError, setTransitError] = useState('');
   const [hasOwnerPin, setHasOwnerPin] = useState(false);
 
+  // ─── LABS — Feature #5: Alerte Correspondance (signaler retard) state ───
+  const [showDelayBlock, setShowDelayBlock] = useState(false);
+  const [delayMinutes, setDelayMinutes] = useState('');
+  const [connectingFlightInput, setConnectingFlightInput] = useState('');
+  const [connectionTimeMinutes, setConnectionTimeMinutes] = useState('');
+  const [delayPinInput, setDelayPinInput] = useState('');
+  const [delayLoading, setDelayLoading] = useState(false);
+  const [delayResult, setDelayResult] = useState<{
+    success: boolean;
+    status?: string;
+    message?: string;
+    error?: string;
+  } | null>(null);
+
   // Fetch transit mode state on mount
   useEffect(() => {
     if (!data?.baggage?.reference) return;
@@ -548,6 +562,69 @@ export default function SuiviPage() {
       setTransitLoading(false);
     }
   }, [data?.baggage?.reference, transitMode, transitPinInput, hasOwnerPin]);
+
+  // ─── LABS — Feature #5: Handle delay submission (manual mode) ───
+  const handleDelaySubmit = useCallback(async () => {
+    if (!data?.baggage?.reference) return;
+    if (!delayPinInput || delayPinInput.length < 4) {
+      setDelayResult({ success: false, error: 'Veuillez saisir votre PIN.' });
+      return;
+    }
+    const delayNum = parseInt(delayMinutes, 10);
+    const connTimeNum = parseInt(connectionTimeMinutes, 10);
+    if (isNaN(delayNum) || delayNum < 0) {
+      setDelayResult({ success: false, error: 'Retard invalide (en minutes).' });
+      return;
+    }
+    if (!connectingFlightInput.trim()) {
+      setDelayResult({ success: false, error: 'Veuillez saisir votre vol de correspondance.' });
+      return;
+    }
+    if (isNaN(connTimeNum) || connTimeNum < 15) {
+      setDelayResult({ success: false, error: 'Temps de correspondance invalide (minimum 15 min).' });
+      return;
+    }
+
+    setDelayLoading(true);
+    setDelayResult(null);
+    try {
+      const res = await fetch(`/api/baggage/${data.baggage.reference}/connection-alert`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          pin: delayPinInput,
+          delayMinutes: delayNum,
+          connectingFlight: connectingFlightInput.trim().toUpperCase(),
+          connectionTimeMinutes: connTimeNum,
+        }),
+      });
+      const result = await res.json();
+      if (res.ok) {
+        setDelayResult({
+          success: true,
+          status: result.status,
+          message: result.message,
+        });
+        if (result.status !== 'ok') {
+          // Si alerte envoyée, on ferme le bloc et reset les champs
+          setDelayPinInput('');
+          setDelayMinutes('');
+          setConnectingFlightInput('');
+          setConnectionTimeMinutes('');
+          setShowDelayBlock(false);
+        }
+      } else {
+        setDelayResult({
+          success: false,
+          error: result.error || 'Erreur lors de l\'envoi de l\'alerte',
+        });
+      }
+    } catch {
+      setDelayResult({ success: false, error: 'Erreur réseau' });
+    } finally {
+      setDelayLoading(false);
+    }
+  }, [data?.baggage?.reference, delayPinInput, delayMinutes, connectingFlightInput, connectionTimeMinutes]);
 
   // Fetch tracking data
   const fetchSuivi = useCallback(async (isRefresh = false, isSilent = false) => {
@@ -1057,6 +1134,129 @@ export default function SuiviPage() {
             Modifier mon profil de voyage
           </a>
         </div>
+
+        {/* ═══ LABS — Feature #5: Alerte Correspondance Manquée ═══ */}
+        {data.baggage.transportMode === 'flight' && data.baggage.flightNumber && (
+          <div className="bg-white border-2 border-dashed border-[#1a1a1a] rounded-2xl p-4">
+            <button
+              onClick={() => setShowDelayBlock(!showDelayBlock)}
+              className="w-full flex items-center justify-between text-left"
+            >
+              <div className="flex items-center gap-2 flex-1">
+                <AlertTriangle className="w-5 h-5 flex-shrink-0 text-amber-600" />
+                <div className="min-w-0">
+                  <h3 className="text-sm font-bold text-[#1a1a1a]">Mon vol a du retard</h3>
+                  <p className="text-xs text-[#1a1a1a]/70">
+                    Signaler un retard et vérifier ma correspondance
+                  </p>
+                </div>
+              </div>
+              <span className="text-sm text-[#1a1a1a] flex-shrink-0">
+                {showDelayBlock ? '▲' : '▼'}
+              </span>
+            </button>
+
+            {showDelayBlock && (
+              <div className="mt-4 space-y-3">
+                <div className="bg-amber-50 border border-amber-200 rounded-xl p-3 text-xs text-amber-800">
+                  <p className="font-bold mb-1">💡 Comment ça marche ?</p>
+                  <p>
+                    Si votre vol <strong>{data.baggage.flightNumber}</strong> a du retard, saisissez
+                    les infos ci-dessous. On calcule automatiquement si votre correspondance est
+                    encore faisable et on vous envoie la marche à suivre.
+                  </p>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-[#1a1a1a] mb-1">
+                    Retard du vol (en minutes)
+                  </label>
+                  <input
+                    type="number"
+                    min={0}
+                    max={1440}
+                    placeholder="ex: 60"
+                    value={delayMinutes}
+                    onChange={(e) => setDelayMinutes(e.target.value)}
+                    className="w-full bg-slate-50 border-2 border-[#1a1a1a] rounded-lg px-3 py-2 text-base focus:ring-2 focus:ring-[#0047d6]"
+                    style={{ color: INK }}
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-[#1a1a1a] mb-1">
+                    Vol de correspondance
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="ex: AF456"
+                    value={connectingFlightInput}
+                    onChange={(e) => setConnectingFlightInput(e.target.value.toUpperCase())}
+                    className="w-full bg-slate-50 border-2 border-[#1a1a1a] rounded-lg px-3 py-2 text-base focus:ring-2 focus:ring-[#0047d6] font-mono"
+                    style={{ color: INK }}
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-[#1a1a1a] mb-1">
+                    Temps de correspondance prévu (en minutes)
+                  </label>
+                  <input
+                    type="number"
+                    min={15}
+                    max={720}
+                    placeholder="ex: 90"
+                    value={connectionTimeMinutes}
+                    onChange={(e) => setConnectionTimeMinutes(e.target.value)}
+                    className="w-full bg-slate-50 border-2 border-[#1a1a1a] rounded-lg px-3 py-2 text-base focus:ring-2 focus:ring-[#0047d6]"
+                    style={{ color: INK }}
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-[#1a1a1a] mb-1">
+                    🔐 Votre PIN propriétaire
+                  </label>
+                  <input
+                    type="password"
+                    inputMode="numeric"
+                    maxLength={6}
+                    placeholder="••••"
+                    value={delayPinInput}
+                    onChange={(e) => setDelayPinInput(e.target.value.replace(/\D/g, ''))}
+                    className="w-full text-center text-xl tracking-[0.5em] bg-slate-50 border-2 border-[#1a1a1a] rounded-lg px-3 py-2 focus:ring-2 focus:ring-[#0047d6]"
+                    style={{ color: INK }}
+                  />
+                </div>
+
+                {delayResult && (
+                  <div className={`rounded-xl p-3 text-sm ${
+                    delayResult.success
+                      ? delayResult.status === 'ok'
+                        ? 'bg-green-50 border border-green-200 text-green-700'
+                        : 'bg-amber-50 border border-amber-200 text-amber-800'
+                      : 'bg-red-50 border border-red-200 text-red-700'
+                  }`}>
+                    <p className="font-bold">
+                      {delayResult.success
+                        ? (delayResult.status === 'ok' ? '✅' : delayResult.status === 'missed' ? '❌' : '⚠️')
+                        : '❌'}
+                      {' '}{delayResult.message || delayResult.error}
+                    </p>
+                  </div>
+                )}
+
+                <button
+                  onClick={handleDelaySubmit}
+                  disabled={delayLoading || !delayPinInput || !delayMinutes || !connectingFlightInput || !connectionTimeMinutes}
+                  className="w-full py-2.5 px-4 rounded-xl font-bold text-white bg-amber-600 hover:bg-amber-700 disabled:opacity-50 transition-colors text-sm min-h-[44px]"
+                >
+                  {delayLoading ? 'Calcul...' : '🚨 Vérifier ma correspondance'}
+                </button>
+              </div>
+            )}
+          </div>
+        )}
 
         {/* ═══ PANNEAU URGENCE (mode perdu uniquement) ═══ */}
         {isDeclaredLost && (

@@ -1017,3 +1017,117 @@ Voir le suivi : ${data.trackingUrl}
 `.trim(),
   };
 }
+
+// ════════════════════════════════════════════════════════════════
+// LABS — Feature #5: Alerte de Correspondance Manquée
+// Email envoyé au propriétaire quand son vol a du retard et que la
+// correspondance devient risquée ou impossible.
+// ════════════════════════════════════════════════════════════════
+
+export function getConnectionMissedEmailTemplate(data: {
+  travelerName: string;
+  reference: string;
+  firstFlightNumber: string;
+  connectingFlight: string;
+  delayMinutes: number;
+  connectionTimeMinutes: number;
+  effectiveConnectionTime: number;
+  status: 'at_risk' | 'missed';
+  dataSource: 'manual' | 'aviationstack';
+  trackingUrl: string;
+}): { html: string; text: string } {
+  const isMissed = data.status === 'missed';
+  const alertColor = isMissed ? '#e74c3c' : '#f59e0b';
+  const alertBg = isMissed ? '#fff3f3' : '#fffbeb';
+  const alertTitle = isMissed
+    ? '❌ Correspondance manquée — votre valise risque de rester à l\'escale'
+    : '⚠️ Correspondance serrée — votre valise peut être transférée à temps';
+
+  return {
+    html: `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+        <div style="text-align: center; margin-bottom: 30px;">
+          <h1 style="color: ${alertColor}; margin: 0;">QRBag — Alerte Vol</h1>
+          <p style="color: #999; font-size: 12px; margin-top: 5px;">Suivi intelligent de votre bagage ${data.reference}</p>
+        </div>
+        <div style="background: ${alertBg}; border: 2px solid ${alertColor}; border-radius: 10px; padding: 30px;">
+          <h2 style="color: ${alertColor}; margin-top: 0;">${alertTitle}</h2>
+          <p style="color: #666;">Bonjour ${data.travelerName},</p>
+          <p style="color: #666;">Nous avons détecté un retard sur votre vol qui pourrait affecter le transfert de votre bagage.</p>
+
+          <table style="width: 100%; border-collapse: collapse; margin-top: 20px;">
+            <tr>
+              <td style="padding: 8px 0; color: #999; font-size: 14px; border-bottom: 1px solid #eee;">Vol initial</td>
+              <td style="padding: 8px 0; font-weight: bold; color: #333; border-bottom: 1px solid #eee;">${data.firstFlightNumber}</td>
+            </tr>
+            <tr>
+              <td style="padding: 8px 0; color: #999; font-size: 14px; border-bottom: 1px solid #eee;">Vol de correspondance</td>
+              <td style="padding: 8px 0; font-weight: bold; color: #333; border-bottom: 1px solid #eee;">${data.connectingFlight}</td>
+            </tr>
+            <tr>
+              <td style="padding: 8px 0; color: #999; font-size: 14px; border-bottom: 1px solid #eee;">Retard détecté</td>
+              <td style="padding: 8px 0; font-weight: bold; color: ${alertColor}; border-bottom: 1px solid #eee;">${data.delayMinutes} min</td>
+            </tr>
+            <tr>
+              <td style="padding: 8px 0; color: #999; font-size: 14px; border-bottom: 1px solid #eee;">Temps de correspondance prévu</td>
+              <td style="padding: 8px 0; font-weight: bold; color: #333; border-bottom: 1px solid #eee;">${data.connectionTimeMinutes} min</td>
+            </tr>
+            <tr>
+              <td style="padding: 8px 0; color: #999; font-size: 14px; border-bottom: 1px solid #eee;">Temps de correspondance réel</td>
+              <td style="padding: 8px 0; font-weight: bold; color: ${alertColor}; border-bottom: 1px solid #eee;">${data.effectiveConnectionTime} min</td>
+            </tr>
+          </table>
+
+          <div style="background: #fff; border-left: 4px solid ${alertColor}; padding: 15px; margin-top: 20px; border-radius: 4px;">
+            <p style="margin: 0 0 10px 0; color: #333; font-size: 14px; font-weight: bold;">📋 Marche à suivre :</p>
+            <ol style="margin: 0; padding-left: 20px; color: #333; font-size: 14px; line-height: 1.6;">
+              <li>Contactez immédiatement votre compagnie aérienne (${data.firstFlightNumber})</li>
+              ${isMissed
+                ? '<li>Demandez le réacheminement de votre bagage sur le prochain vol</li><li>Faites remplir un formulaire d\'irrégularité bagage (PIR)</li>'
+                : '<li>Prévenez que votre bagage est prioritaire pour le transfert</li><li>Présentez-vous rapidement à la porte d\'embarquement de la correspondance</li>'
+              }
+              <li>Conservez tous les justificatifs (billets, reçus, tickets)</li>
+              <li>Si le bagage est perdu : déclarez-le via le suivi QRBag</li>
+            </ol>
+          </div>
+
+          <div style="text-align: center; margin-top: 30px;">
+            <a href="${data.trackingUrl}" style="background: ${alertColor}; color: white; padding: 12px 30px; text-decoration: none; border-radius: 8px; font-weight: bold; display: inline-block;">Voir le suivi de mon bagage →</a>
+          </div>
+
+          <p style="color: #999; font-size: 11px; text-align: center; margin-top: 20px;">
+            Source des données : ${data.dataSource === 'aviationstack' ? 'AviationStack (temps réel)' : 'Déclaration manuelle du voyageur'}
+          </p>
+        </div>
+      </div>
+    `,
+    text: `
+QRBag — Alerte Vol (${isMissed ? 'Correspondance manquée' : 'Correspondance serrée'})
+
+Bonjour ${data.travelerName},
+
+Nous avons détecté un retard sur votre vol qui pourrait affecter le transfert de votre bagage.
+
+Vol initial : ${data.firstFlightNumber}
+Vol de correspondance : ${data.connectingFlight}
+Retard détecté : ${data.delayMinutes} min
+Temps de correspondance prévu : ${data.connectionTimeMinutes} min
+Temps de correspondance réel : ${data.effectiveConnectionTime} min
+
+📋 Marche à suivre :
+1. Contactez immédiatement votre compagnie aérienne (${data.firstFlightNumber})
+${isMissed
+  ? '2. Demandez le réacheminement de votre bagage sur le prochain vol\n3. Faites remplir un formulaire d\'irrégularité bagage (PIR)'
+  : '2. Prévenez que votre bagage est prioritaire pour le transfert\n3. Présentez-vous rapidement à la porte d\'embarquement de la correspondance'
+}
+4. Conservez tous les justificatifs
+5. Si le bagage est perdu : déclarez-le via le suivi QRBag
+
+Voir le suivi : ${data.trackingUrl}
+
+Source : ${data.dataSource === 'aviationstack' ? 'AviationStack (temps réel)' : 'Déclaration manuelle'}
+
+— L'équipe QRBag
+`.trim(),
+  };
+}
