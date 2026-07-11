@@ -1012,6 +1012,52 @@ export default function SuiviPage() {
           )}
         </div>
 
+        {/* ═══ LABS — Bloc "Actions rapides" (Mode En transit + Modifier profil) ═══ */}
+        {/* Mis en haut de page pour être immédiatement visible par le propriétaire */}
+        <div className="bg-white border-2 border-dashed border-[#1a1a1a] rounded-2xl p-4 space-y-3">
+          <div className="flex items-center justify-between gap-3">
+            <div className="flex items-center gap-2 flex-1">
+              <Power className={`w-5 h-5 flex-shrink-0 ${transitMode === 'active' ? 'text-green-600' : 'text-slate-400'}`} />
+              <div className="min-w-0">
+                <h3 className="text-sm font-bold text-[#1a1a1a]">Mode En transit</h3>
+                <p className="text-xs text-[#1a1a1a]/70">
+                  {transitMode === 'active'
+                    ? 'QR actif — scans visibles'
+                    : 'QR désactivé — page neutre affichée'}
+                </p>
+              </div>
+            </div>
+            <button
+              onClick={() => {
+                setTransitError('');
+                setShowTransitModal(true);
+              }}
+              className={`relative inline-flex h-7 w-12 items-center rounded-full transition-colors min-w-[48px] flex-shrink-0 ${
+                transitMode === 'active' ? 'bg-green-500' : 'bg-slate-300'
+              }`}
+              aria-label="Basculer le mode En transit"
+            >
+              <span
+                className={`inline-block h-5 w-5 transform rounded-full bg-white shadow transition-transform ${
+                  transitMode === 'active' ? 'translate-x-6' : 'translate-x-1'
+                }`}
+              />
+            </button>
+          </div>
+          {!hasOwnerPin && (
+            <p className="text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-lg p-2">
+              ⚠️ Pour utiliser ce mode, définissez un PIN via le bouton "Modifier mon profil" ci-dessous.
+            </p>
+          )}
+          <a
+            href={`/suivi/${reference}/edit`}
+            className="w-full flex items-center justify-center gap-2 bg-[#0047d6] hover:bg-[#0033a8] text-white py-2.5 px-4 rounded-xl font-bold transition-colors text-sm min-h-[44px]"
+          >
+            <Edit3 className="w-4 h-4" />
+            Modifier mon profil de voyage
+          </a>
+        </div>
+
         {/* ═══ PANNEAU URGENCE (mode perdu uniquement) ═══ */}
         {isDeclaredLost && (
           <div
@@ -1410,53 +1456,6 @@ export default function SuiviPage() {
             </button>
           </div>
         )}
-
-        {/* ═══ LABS — Feature #3: Mode "En transit" toggle ═══ */}
-        <div className="bg-white border-2 border-dashed border-[#1a1a1a] rounded-2xl p-4">
-          <div className="flex items-center justify-between gap-3 mb-2">
-            <div className="flex items-center gap-2">
-              <Power className={`w-5 h-5 ${transitMode === 'active' ? 'text-green-600' : 'text-slate-400'}`} />
-              <div>
-                <h3 className="text-sm font-bold text-[#1a1a1a]">Mode En transit</h3>
-                <p className="text-xs text-[#1a1a1a]/70">
-                  {transitMode === 'active'
-                    ? 'QR actif — scans visibles par le propriétaire'
-                    : 'QR désactivé — page neutre affichée aux scans'}
-                </p>
-              </div>
-            </div>
-            <button
-              onClick={() => {
-                setTransitError('');
-                setShowTransitModal(true);
-              }}
-              className={`relative inline-flex h-7 w-12 items-center rounded-full transition-colors min-w-[48px] ${
-                transitMode === 'active' ? 'bg-green-500' : 'bg-slate-300'
-              }`}
-              aria-label="Basculer le mode En transit"
-            >
-              <span
-                className={`inline-block h-5 w-5 transform rounded-full bg-white shadow transition-transform ${
-                  transitMode === 'active' ? 'translate-x-6' : 'translate-x-1'
-                }`}
-              />
-            </button>
-          </div>
-          {!hasOwnerPin && (
-            <p className="text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-lg p-2 mt-2">
-              ⚠️ Pour utiliser ce mode, définissez un PIN via le bouton "Modifier mon profil" ci-dessous.
-            </p>
-          )}
-        </div>
-
-        {/* ═══ LABS — Feature #2: Bouton Modifier mon profil (avec PIN) ═══ */}
-        <a
-          href={`/suivi/${reference}/edit`}
-          className="w-full flex items-center justify-center gap-2 bg-[#0047d6] hover:bg-[#0033a8] text-white py-3 px-4 rounded-xl font-bold transition-colors text-base min-h-[48px]"
-        >
-          <Edit3 className="w-5 h-5" />
-          Modifier mon profil de voyage
-        </a>
 
         {/* ═══ BOUTON DÉCLARER PERDU (rouge fond + texte blanc) ═══ */}
         {!isDeclaredLost && (
