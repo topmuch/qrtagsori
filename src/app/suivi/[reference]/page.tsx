@@ -28,6 +28,7 @@ import {
   Edit3,
   FileText,
   HelpCircle,
+  Share2,
 } from 'lucide-react';
 
 // Dynamic imports (avoid SSR issues)
@@ -91,6 +92,7 @@ interface BaggageInfo {
   airlineName: string | null;
   flightNumber: string | null;
   destination: string | null;
+  destinationCountry: string | null;
   departureDate: string | null;
   departureTime: string | null;
   transportMode: string;
@@ -520,6 +522,123 @@ export default function SuiviPage() {
   const [pdfPinInput, setPdfPinInput] = useState('');
   const [pdfLoading, setPdfLoading] = useState(false);
   const [pdfError, setPdfError] = useState('');
+
+  // ─── LABS — Feature F: Coordonnées d'urgence par destination ───
+  const [emergencyContacts, setEmergencyContacts] = useState<{
+    flag: string;
+    countryName: string;
+    police: string;
+    medical: string;
+    fire: string;
+    frenchEmbassy: string;
+    frenchEmbassyUrl?: string;
+    mainAirline?: string;
+    mainAirlinePhone?: string;
+    notes?: string;
+  } | null>(null);
+
+  // ─── LABS — Feature G: Partage familial du suivi state ───
+  const [showShareModal, setShowShareModal] = useState(false);
+  const [sharePinInput, setSharePinInput] = useState('');
+  const [shareLoading, setShareLoading] = useState(false);
+  const [shareError, setShareError] = useState('');
+  const [shareUrl, setShareUrl] = useState<string | null>(null);
+  const [shareCopied, setShareCopied] = useState(false);
+
+  // Fetch existing share state on mount
+  useEffect(() => {
+    if (!data?.baggage?.reference) return;
+    fetch(`/api/baggage/${data.baggage.reference}/share`)
+      .then((r) => r.json())
+      .then((d) => {
+        if (d.hasShare && d.shareUrl) {
+          setShareUrl(d.shareUrl);
+        } else {
+          setShareUrl(null);
+        }
+      })
+      .catch(() => {});
+  }, [data?.baggage?.reference]);
+
+  const handleShareGenerate = useCallback(async () => {
+    if (!data?.baggage?.reference) return;
+    if (!sharePinInput || sharePinInput.length < 4) {
+      setShareError('Veuillez saisir votre PIN (4 chiffres).');
+      return;
+    }
+    setShareLoading(true);
+    setShareError('');
+    try {
+      const res = await fetch(`/api/baggage/${data.baggage.reference}/share`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ pin: sharePinInput, action: 'generate' }),
+      });
+      const result = await res.json();
+      if (res.ok) {
+        setShareUrl(result.shareUrl);
+        setSharePinInput('');
+      } else {
+        setShareError(result.error || 'Erreur lors de la génération');
+      }
+    } catch {
+      setShareError('Erreur réseau');
+    } finally {
+      setShareLoading(false);
+    }
+  }, [data?.baggage?.reference, sharePinInput]);
+
+  const handleShareRevoke = useCallback(async () => {
+    if (!data?.baggage?.reference) return;
+    if (!sharePinInput || sharePinInput.length < 4) {
+      setShareError('Veuillez saisir votre PIN pour révoquer.');
+      return;
+    }
+    setShareLoading(true);
+    setShareError('');
+    try {
+      const res = await fetch(`/api/baggage/${data.baggage.reference}/share`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ pin: sharePinInput, action: 'revoke' }),
+      });
+      const result = await res.json();
+      if (res.ok) {
+        setShareUrl(null);
+        setSharePinInput('');
+        setShareCopied(false);
+      } else {
+        setShareError(result.error || 'Erreur lors de la révocation');
+      }
+    } catch {
+      setShareError('Erreur réseau');
+    } finally {
+      setShareLoading(false);
+    }
+  }, [data?.baggage?.reference, sharePinInput]);
+
+  const handleCopyShareUrl = useCallback(() => {
+    if (!shareUrl) return;
+    navigator.clipboard.writeText(shareUrl).then(() => {
+      setShareCopied(true);
+      setTimeout(() => setShareCopied(false), 3000);
+    });
+  }, [shareUrl]);
+
+  // Fetch emergency contacts si destinationCountry défini
+  useEffect(() => {
+    if (!data?.baggage?.destinationCountry) {
+      setEmergencyContacts(null);
+      return;
+    }
+    fetch(`/api/emergency-contacts?country=${encodeURIComponent(data.baggage.destinationCountry)}`)
+      .then((r) => r.json())
+      .then((d) => {
+        if (d.contacts) setEmergencyContacts(d.contacts);
+        else setEmergencyContacts(null);
+      })
+      .catch(() => setEmergencyContacts(null));
+  }, [data?.baggage?.destinationCountry]);
 
   const handleDownloadPdf = useCallback(async () => {
     if (!data?.baggage?.reference) return;
@@ -1176,6 +1295,17 @@ export default function SuiviPage() {
             <FileText className="w-4 h-4" />
             📄 Télécharger le parcours (PDF)
           </button>
+          <button
+            onClick={() => { setShowShareModal(true); setShareError(''); setSharePinInput(''); }}
+            className={`w-full flex items-center justify-center gap-2 border-2 border-[#1a1a1a] py-2.5 px-4 rounded-xl font-bold transition-colors text-sm min-h-[44px] ${
+              shareUrl
+                ? 'bg-green-50 text-green-700 hover:bg-green-100'
+                : 'bg-white text-[#0047d6] hover:bg-[#0047d6] hover:text-white'
+            }`}
+          >
+            <Share2 className="w-4 h-4" />
+            {shareUrl ? '✅ Partage actif — Gérer' : '🔗 Partager le suivi (famille)'}
+          </button>
         </div>
 
         {/* ═══ LABS — Feature #5: Alerte Correspondance Manquée ═══ */}
@@ -1700,6 +1830,75 @@ export default function SuiviPage() {
           </div>
         )}
 
+        {/* ═══ LABS — Feature F: Coordonnées utiles par destination ═══ */}
+        {emergencyContacts && (
+          <div className="bg-white border-2 border-dashed border-[#1a1a1a] rounded-2xl p-4">
+            <div className="flex items-center gap-2 mb-3">
+              <span className="text-3xl">{emergencyContacts.flag}</span>
+              <div>
+                <h3 className="text-sm font-bold text-[#1a1a1a]">Coordonnées utiles — {emergencyContacts.countryName}</h3>
+                <p className="text-xs text-[#1a1a1a]/70">Numéros d&apos;urgence et contacts utiles pour votre destination</p>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-3 gap-2 mb-3">
+              <div className="bg-red-50 border border-red-200 rounded-xl p-2 text-center">
+                <p className="text-xs font-bold text-red-700">🚓 Police</p>
+                <p className="text-lg font-bold text-red-700">{emergencyContacts.police}</p>
+              </div>
+              <div className="bg-blue-50 border border-blue-200 rounded-xl p-2 text-center">
+                <p className="text-xs font-bold text-blue-700">🚑 Médical</p>
+                <p className="text-lg font-bold text-blue-700">{emergencyContacts.medical}</p>
+              </div>
+              <div className="bg-orange-50 border border-orange-200 rounded-xl p-2 text-center">
+                <p className="text-xs font-bold text-orange-700">🚒 Pompiers</p>
+                <p className="text-lg font-bold text-orange-700">{emergencyContacts.fire}</p>
+              </div>
+            </div>
+
+            <div className="space-y-2 text-sm">
+              {emergencyContacts.frenchEmbassy && emergencyContacts.frenchEmbassy !== '—' && (
+                <div className="flex items-center justify-between">
+                  <span className="text-[#1a1a1a]/70">🇫🇷 Ambassade de France</span>
+                  <a
+                    href={`tel:${emergencyContacts.frenchEmbassy.replace(/[^+\d]/g, '')}`}
+                    className="font-bold text-[#0047d6] hover:underline"
+                  >
+                    {emergencyContacts.frenchEmbassy}
+                  </a>
+                </div>
+              )}
+              {emergencyContacts.mainAirline && emergencyContacts.mainAirlinePhone && (
+                <div className="flex items-center justify-between">
+                  <span className="text-[#1a1a1a]/70">✈️ {emergencyContacts.mainAirline}</span>
+                  <a
+                    href={`tel:${emergencyContacts.mainAirlinePhone.replace(/[^+\d]/g, '')}`}
+                    className="font-bold text-[#0047d6] hover:underline"
+                  >
+                    {emergencyContacts.mainAirlinePhone}
+                  </a>
+                </div>
+              )}
+              {emergencyContacts.frenchEmbassyUrl && (
+                <a
+                  href={emergencyContacts.frenchEmbassyUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="block text-center text-xs text-[#0047d6] hover:underline mt-2"
+                >
+                  🌐 Site de l&apos;Ambassade de France →
+                </a>
+              )}
+            </div>
+
+            {emergencyContacts.notes && (
+              <div className="mt-3 bg-[#fcd616]/20 border border-[#1a1a1a]/20 rounded-xl p-2 text-xs text-[#1a1a1a]">
+                💡 {emergencyContacts.notes}
+              </div>
+            )}
+          </div>
+        )}
+
         {/* ═══ LABS — Feature E: Lien vers page Assistance ═══ */}
         <a
           href="/assistance"
@@ -1766,6 +1965,123 @@ export default function SuiviPage() {
         reference={reference}
         lang={lang}
       />
+
+      {/* ═══ LABS — Feature G: Modal Partage familial ═══ */}
+      {showShareModal && (
+        <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl">
+            <div className="flex items-start justify-between mb-4">
+              <h3 className="text-lg font-bold text-[#1a1a1a]">
+                🔗 Partage familial du suivi
+              </h3>
+              <button
+                onClick={() => { setShowShareModal(false); setSharePinInput(''); setShareError(''); }}
+                className="text-slate-400 hover:text-slate-700"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <p className="text-sm text-slate-600 mb-4">
+              Générez un lien à partager avec un proche (famille, accompagnateur).
+              Il pourra voir le suivi de votre bagage <strong>en lecture seule</strong> (sans pouvoir modifier).
+            </p>
+
+            {shareUrl ? (
+              <div className="space-y-3">
+                <div className="bg-green-50 border border-green-200 rounded-xl p-3">
+                  <p className="text-sm font-bold text-green-700 mb-1">✅ Lien actif</p>
+                  <p className="text-xs text-green-600 mb-2">
+                    Votre proche peut accéder au suivi via ce lien :
+                  </p>
+                  <div className="bg-white border border-slate-200 rounded-lg p-2 flex items-center gap-2">
+                    <input
+                      type="text"
+                      readOnly
+                      value={shareUrl}
+                      className="flex-1 text-xs font-mono text-slate-700 bg-transparent outline-none"
+                    />
+                    <button
+                      onClick={handleCopyShareUrl}
+                      className="text-xs font-bold text-[#0047d6] hover:underline flex-shrink-0"
+                    >
+                      {shareCopied ? '✅ Copié' : 'Copier'}
+                    </button>
+                  </div>
+                </div>
+                <p className="text-xs text-slate-500">
+                  Pour révoquer ce lien (le rendre invalide), saisissez votre PIN ci-dessous.
+                </p>
+                <input
+                  type="password"
+                  inputMode="numeric"
+                  maxLength={6}
+                  placeholder="PIN pour révoquer"
+                  value={sharePinInput}
+                  onChange={(e) => setSharePinInput(e.target.value.replace(/\D/g, ''))}
+                  className="w-full text-center text-xl tracking-[0.5em] bg-slate-50 border-2 border-slate-200 rounded-xl py-3 px-4 text-[#1a1a1a] focus:ring-2 focus:ring-[#0047d6] focus:border-[#0047d6] transition-all mb-3"
+                />
+                {shareError && (
+                  <p className="text-sm text-red-600">{shareError}</p>
+                )}
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => { setShowShareModal(false); setSharePinInput(''); setShareError(''); }}
+                    className="flex-1 py-3 px-4 rounded-xl font-bold text-slate-700 bg-slate-100 hover:bg-slate-200 transition-colors"
+                  >
+                    Fermer
+                  </button>
+                  <button
+                    onClick={handleShareRevoke}
+                    disabled={shareLoading || !sharePinInput}
+                    className="flex-1 py-3 px-4 rounded-xl font-bold text-white bg-red-600 hover:bg-red-700 disabled:opacity-50 transition-colors"
+                  >
+                    {shareLoading ? '...' : 'Révoquer le lien'}
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                <p className="text-xs text-slate-500">
+                  Saisissez votre PIN propriétaire pour générer un lien de partage.
+                </p>
+                <input
+                  type="password"
+                  inputMode="numeric"
+                  maxLength={6}
+                  placeholder="••••"
+                  value={sharePinInput}
+                  onChange={(e) => setSharePinInput(e.target.value.replace(/\D/g, ''))}
+                  className="w-full text-center text-2xl tracking-[0.5em] bg-slate-50 border-2 border-slate-200 rounded-xl py-3 px-4 text-[#1a1a1a] focus:ring-2 focus:ring-[#0047d6] focus:border-[#0047d6] transition-all mb-3"
+                  autoFocus
+                />
+                {shareError && (
+                  <p className="text-sm text-red-600">{shareError}</p>
+                )}
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => { setShowShareModal(false); setSharePinInput(''); setShareError(''); }}
+                    className="flex-1 py-3 px-4 rounded-xl font-bold text-slate-700 bg-slate-100 hover:bg-slate-200 transition-colors"
+                  >
+                    Annuler
+                  </button>
+                  <button
+                    onClick={handleShareGenerate}
+                    disabled={shareLoading || !sharePinInput}
+                    className="flex-1 py-3 px-4 rounded-xl font-bold text-white bg-[#0047d6] hover:bg-[#0033a8] disabled:opacity-50 transition-colors"
+                  >
+                    {shareLoading ? 'Génération...' : 'Générer le lien'}
+                  </button>
+                </div>
+              </div>
+            )}
+
+            <p className="text-xs text-slate-400 mt-3 text-center">
+              🔒 Le lien donne accès au suivi en lecture seule. Aucune modification possible.
+            </p>
+          </div>
+        </div>
+      )}
 
       {/* ═══ LABS — Feature H: Modal PIN pour Export PDF ═══ */}
       {showPdfModal && (

@@ -147,6 +147,13 @@ model Baggage {
   connectionAlertSentAt   DateTime? // timestamp du dernier envoi d'alerte (anti-spam)
   lastDelayCheckAt        DateTime? // dernier check automatique (cron AviationStack)
 
+  // ─── LABS — Feature G: Partage familial du suivi ───
+  // Token aléatoire permettant à un proche de voir le suivi du bagage
+  // en lecture seule (sans pouvoir modifier). Le propriétaire peut générer
+  // et révoquer ce token à tout moment via /suivi/[reference].
+  shareToken              String?   // token unique (cuid ou uuid)
+  shareTokenCreatedAt     DateTime? // timestamp de génération
+
   agency            Agency?   @relation(fields: [agencyId], references: [id], onDelete: SetNull)
   scanLogs          ScanLog[]
 }

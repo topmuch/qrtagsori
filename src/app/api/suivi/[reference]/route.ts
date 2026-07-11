@@ -154,6 +154,7 @@ export async function GET(
         busCompany: baggage.busCompany || null,
         busLineNumber: baggage.busLineNumber || null,
         destination: baggage.destination || null,
+        destinationCountry: baggage.destinationCountry || null,
         departureDate: baggage.departureDate?.toISOString() || null,
         departureTime: baggage.departureTime || null,
         agency: baggage.agency?.name || null,
