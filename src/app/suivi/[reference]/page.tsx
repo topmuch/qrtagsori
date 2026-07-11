@@ -26,6 +26,8 @@ import {
   WifiOff,
   Power,
   Edit3,
+  FileText,
+  HelpCircle,
 } from 'lucide-react';
 
 // Dynamic imports (avoid SSR issues)
@@ -512,6 +514,40 @@ export default function SuiviPage() {
     message?: string;
     error?: string;
   } | null>(null);
+
+  // ─── LABS — Feature H: Export PDF parcours bagage state ───
+  const [showPdfModal, setShowPdfModal] = useState(false);
+  const [pdfPinInput, setPdfPinInput] = useState('');
+  const [pdfLoading, setPdfLoading] = useState(false);
+  const [pdfError, setPdfError] = useState('');
+
+  const handleDownloadPdf = useCallback(async () => {
+    if (!data?.baggage?.reference) return;
+    if (!pdfPinInput || pdfPinInput.length < 4) {
+      setPdfError('Veuillez saisir votre PIN (4 chiffres).');
+      return;
+    }
+    setPdfLoading(true);
+    setPdfError('');
+    try {
+      // Le PDF est téléchargé directement via URL signée du PIN
+      // (pas de fetch JSON : on déclenche un download navigateur)
+      const url = `/api/baggage/${data.baggage.reference}/export-pdf?pin=${encodeURIComponent(pdfPinInput)}`;
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `QRBag-parcours-${data.baggage.reference}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      // Fermer le modal après déclenchement
+      setShowPdfModal(false);
+      setPdfPinInput('');
+    } catch {
+      setPdfError('Erreur lors du téléchargement. Vérifiez votre PIN.');
+    } finally {
+      setPdfLoading(false);
+    }
+  }, [data?.baggage?.reference, pdfPinInput]);
 
   // Fetch transit mode state on mount
   useEffect(() => {
@@ -1133,6 +1169,13 @@ export default function SuiviPage() {
             <Edit3 className="w-4 h-4" />
             Modifier mon profil de voyage
           </a>
+          <button
+            onClick={() => { setShowPdfModal(true); setPdfError(''); setPdfPinInput(''); }}
+            className="w-full flex items-center justify-center gap-2 bg-[#fcd616] hover:bg-[#1a1a1a] hover:text-[#fcd616] text-[#1a1a1a] border-2 border-[#1a1a1a] py-2.5 px-4 rounded-xl font-bold transition-colors text-sm min-h-[44px]"
+          >
+            <FileText className="w-4 h-4" />
+            📄 Télécharger le parcours (PDF)
+          </button>
         </div>
 
         {/* ═══ LABS — Feature #5: Alerte Correspondance Manquée ═══ */}
@@ -1657,6 +1700,15 @@ export default function SuiviPage() {
           </div>
         )}
 
+        {/* ═══ LABS — Feature E: Lien vers page Assistance ═══ */}
+        <a
+          href="/assistance"
+          className="block w-full text-center py-3 px-4 rounded-xl font-bold text-[#0047d6] bg-white border-2 border-[#0047d6] hover:bg-[#0047d6] hover:text-white transition-colors text-sm min-h-[44px] flex items-center justify-center gap-2"
+        >
+          <HelpCircle className="w-4 h-4" />
+          Besoin d&apos;aide ? Centre d&apos;assistance
+        </a>
+
         {/* ═══ BOUTON DÉCLARER PERDU (rouge fond + texte blanc) ═══ */}
         {!isDeclaredLost && (
           <button
@@ -1714,6 +1766,62 @@ export default function SuiviPage() {
         reference={reference}
         lang={lang}
       />
+
+      {/* ═══ LABS — Feature H: Modal PIN pour Export PDF ═══ */}
+      {showPdfModal && (
+        <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl max-w-sm w-full p-6 shadow-2xl">
+            <div className="flex items-start justify-between mb-4">
+              <h3 className="text-lg font-bold text-[#1a1a1a]">
+                📄 Télécharger le parcours PDF
+              </h3>
+              <button
+                onClick={() => { setShowPdfModal(false); setPdfPinInput(''); setPdfError(''); }}
+                className="text-slate-400 hover:text-slate-700"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            <p className="text-sm text-slate-600 mb-4">
+              Le PDF contient l&apos;historique complet de votre bagage (scans, positions, statut).
+              Utilisable comme preuve pour assurances et compagnies aériennes.
+              <br />
+              <strong>Saisissez votre PIN pour confirmer.</strong>
+            </p>
+            <input
+              type="password"
+              inputMode="numeric"
+              maxLength={6}
+              placeholder="••••"
+              value={pdfPinInput}
+              onChange={(e) => setPdfPinInput(e.target.value.replace(/\D/g, ''))}
+              className="w-full text-center text-2xl tracking-[0.5em] bg-slate-50 border-2 border-slate-200 rounded-xl py-3 px-4 text-[#1a1a1a] focus:ring-2 focus:ring-[#0047d6] focus:border-[#0047d6] transition-all mb-3"
+              autoFocus
+            />
+            {pdfError && (
+              <p className="text-sm text-red-600 mb-3">{pdfError}</p>
+            )}
+            <div className="flex gap-2">
+              <button
+                onClick={() => { setShowPdfModal(false); setPdfPinInput(''); setPdfError(''); }}
+                className="flex-1 py-3 px-4 rounded-xl font-bold text-slate-700 bg-slate-100 hover:bg-slate-200 transition-colors"
+              >
+                Annuler
+              </button>
+              <button
+                onClick={handleDownloadPdf}
+                disabled={pdfLoading}
+                className="flex-1 py-3 px-4 rounded-xl font-bold text-white bg-[#0047d6] hover:bg-[#0033a8] disabled:opacity-50 transition-colors"
+              >
+                {pdfLoading ? 'Génération...' : 'Télécharger'}
+              </button>
+            </div>
+            <p className="text-xs text-slate-400 mt-3 text-center">
+              ⚠️ Ne partagez pas ce PDF : il contient l&apos;historique complet de votre bagage.
+            </p>
+          </div>
+        </div>
+      )}
 
       {/* ═══ LABS — Feature #3: Modal PIN pour Mode En transit ═══ */}
       {showTransitModal && (
