@@ -1321,18 +1321,18 @@ export default function SuiviPage() {
           </a>
         </div>
 
-        {/* ═══ LAISSER UN AVIS ═══ */}
+        {/* ═══ LAISSER UN AVIS (jaune plein + texte noir) ═══ */}
         {data.scans.length > 0 && (
           <button
             onClick={() => setShowReviewModal(true)}
-            className="w-full flex items-center justify-center gap-2 bg-[#fcd616]/20 border-2 border-[#fcd616] text-[#1a1a1a] hover:bg-[#fcd616]/40 py-3.5 px-4 rounded-xl font-bold transition-colors text-base min-h-[48px]"
+            className="w-full flex items-center justify-center gap-2 bg-[#fcd616] hover:bg-[#1a1a1a] text-[#1a1a1a] hover:text-[#fcd616] border-2 border-[#1a1a1a] py-3.5 px-4 rounded-xl font-bold transition-colors text-base min-h-[48px]"
           >
             <Star className="w-5 h-5" />
             {lang === 'ar' ? 'تقييم تجربتك' : lang === 'en' ? 'Rate your experience' : 'Laisser un avis'}
           </button>
         )}
 
-        {/* ═══ PWA INSTALL BUTTON (conditionnel) ═══ */}
+        {/* ═══ PWA INSTALL BUTTON (jaune plein + texte noir) ═══ */}
         {showInstallButton && (
           <div className="text-center">
             <button
@@ -1343,7 +1343,7 @@ export default function SuiviPage() {
                   handleInstall();
                 }
               }}
-              className="inline-flex items-center gap-2 border-2 border-[#1a1a1a] text-[#1a1a1a] hover:bg-[#fcd616] py-2 px-4 rounded-lg text-sm font-medium transition-colors min-h-[40px]"
+              className="inline-flex items-center gap-2 bg-[#fcd616] hover:bg-[#1a1a1a] text-[#1a1a1a] hover:text-[#fcd616] border-2 border-[#1a1a1a] py-2.5 px-5 rounded-lg text-sm font-bold transition-colors min-h-[44px]"
             >
               <span>{isIOS ? '📱' : '⬇️'}</span>
               <span>{isIOS ? t('tracking.install_app_ios') : t('tracking.install_app')}</span>
