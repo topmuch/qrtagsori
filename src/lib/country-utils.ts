@@ -8,7 +8,7 @@
  * Source des données : COUNTRY_REGIONS dans CountryRegionSelect.tsx
  */
 
-import { COUNTRY_REGIONS } from '@/components/inscrire/CountryRegionSelect';
+import { COUNTRY_REGIONS } from '@/lib/country-data';
 
 // ─── Map : country name (lowercase) → ISO code ───
 const COUNTRY_NAME_TO_CODE: Record<string, string> = {};
