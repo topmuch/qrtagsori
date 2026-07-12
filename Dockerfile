@@ -21,20 +21,15 @@ ENV NEXT_TELEMETRY_DISABLED=1
 ENV DATABASE_URL=file:/app/data/qrlabs.db
 RUN bun run build
 
-# Copy missing packages not included in standalone build
-# (serverExternalPackages + native/pure-JS packages used at runtime)
-RUN cp -r node_modules/bcryptjs .next/standalone/node_modules/ 2>/dev/null || true
-RUN cp -r node_modules/.prisma .next/standalone/node_modules/ 2>/dev/null || true
-RUN mkdir -p .next/standalone/public/uploads/damage
-
-# Create data directory
-RUN mkdir -p /app/data
+# Create data + upload directories
+RUN mkdir -p /app/data /app/public/uploads/damage
 
 EXPOSE 3000
 
 ENV PORT=3000
 ENV HOSTNAME="0.0.0.0"
 ENV DATABASE_URL=file:/app/data/qrlabs.db
+ENV NODE_ENV=production
 
-# Start command - create admin and start server
-CMD sh -c "mkdir -p /app/data && export DATABASE_URL=file:/app/data/qrlabs.db && npx prisma db push --skip-generate 2>/dev/null || true && node scripts/create-admin.cjs 2>/dev/null || true && exec node .next/standalone/server.js"
+# Start command — uses next start (full node_modules, no standalone issues)
+CMD sh -c "mkdir -p /app/data /app/public/uploads/damage && export DATABASE_URL=file:/app/data/qrlabs.db && npx prisma db push --skip-generate 2>/dev/null || true && node scripts/create-admin.cjs 2>/dev/null || true && exec npx next start -p 3000"
