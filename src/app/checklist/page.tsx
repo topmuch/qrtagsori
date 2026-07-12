@@ -8,37 +8,27 @@ import { useTranslation } from '@/hooks/useTranslation';
 import { toast } from '@/hooks/use-toast';
 import {
   DEFAULT_CHECKLIST_CATEGORIES,
-  ITEM_COLORS,
-  ITEM_BRANDS,
   getItemImageUrl,
   type ChecklistItem,
 } from '@/lib/checklist-catalog';
 import {
-  Plane,
   Calendar,
   Globe,
   User,
   Mail,
-  Package,
   CheckCircle2,
   Loader2,
   ArrowRight,
   Lock,
   ExternalLink,
   Sparkles,
-  Camera,
-  MapPin,
   Tag,
-  FileText,
   Plus,
   Minus,
   Trash2,
-  ChevronDown,
-  X,
 } from 'lucide-react';
 import { LanguageSelector } from '@/components/ui/LanguageSelector';
 
-// Nav links — same as homepage Navigation component
 const NAV_LINKS = [
   { label: 'Accueil', href: '/' },
   { label: 'Checklist', href: '/checklist' },
@@ -51,8 +41,6 @@ interface SelectedItem {
   category: string;
   name: string;
   qty: number;
-  color?: string;
-  brand?: string;
 }
 
 export default function ChecklistPage() {
@@ -82,18 +70,14 @@ function ChecklistPageContent() {
   const refParam = searchParams.get('ref');
   const sourceParam = searchParams.get('source');
 
-  // ─── Form state ───
+  // ─── Form state (simplified — no photo, no airline, no color/brand) ───
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
   const [email, setEmail] = useState('');
   const [departureDate, setDepartureDate] = useState('');
   const [destinationCountry, setDestinationCountry] = useState('');
-  const [airline, setAirline] = useState('');
   const [selectedItems, setSelectedItems] = useState<Record<string, SelectedItem>>({});
   const [activeCategory, setActiveCategory] = useState<string>(DEFAULT_CHECKLIST_CATEGORIES[0].id);
-  const [photoFile, setPhotoFile] = useState<File | null>(null);
-  const [photoPreview, setPhotoPreview] = useState<string | null>(null);
-  const [photoUploading, setPhotoUploading] = useState(false);
 
   const [submitting, setSubmitting] = useState(false);
   const [success, setSuccess] = useState<{
@@ -128,26 +112,6 @@ function ChecklistPageContent() {
       if (!item) return prev;
       const newQty = Math.max(1, Math.min(99, item.qty + delta));
       return { ...prev, [key]: { ...item, qty: newQty } };
-    });
-  }, []);
-
-  // Change color
-  const changeColor = useCallback((category: string, name: string, color: string) => {
-    const key = `${category}__${name}`;
-    setSelectedItems((prev) => {
-      const item = prev[key];
-      if (!item) return prev;
-      return { ...prev, [key]: { ...item, color } };
-    });
-  }, []);
-
-  // Change brand
-  const changeBrand = useCallback((category: string, name: string, brand: string) => {
-    const key = `${category}__${name}`;
-    setSelectedItems((prev) => {
-      const item = prev[key];
-      if (!item) return prev;
-      return { ...prev, [key]: { ...item, brand } };
     });
   }, []);
 
@@ -186,38 +150,6 @@ function ChecklistPageContent() {
     }
 
     setSubmitting(true);
-
-    // Upload photo first if selected
-    let photoPath: string | null = null;
-    let photoSizeBytes = 0;
-    if (photoFile) {
-      setPhotoUploading(true);
-      try {
-        const photoForm = new FormData();
-        photoForm.append('file', photoFile);
-        const photoRes = await fetch('/api/checklist/upload-photo', {
-          method: 'POST',
-          body: photoForm,
-        });
-        const photoData = await photoRes.json();
-        if (photoRes.ok && photoData.success) {
-          photoPath = photoData.photoPath;
-          photoSizeBytes = photoData.photoSizeBytes;
-        } else {
-          toast({ title: photoData.error || 'Erreur upload photo', variant: 'destructive' });
-          setPhotoUploading(false);
-          setSubmitting(false);
-          return;
-        }
-      } catch {
-        toast({ title: 'Erreur lors du téléchargement de la photo', variant: 'destructive' });
-        setPhotoUploading(false);
-        setSubmitting(false);
-        return;
-      }
-      setPhotoUploading(false);
-    }
-
     try {
       const res = await fetch('/api/checklist', {
         method: 'POST',
@@ -228,10 +160,8 @@ function ChecklistPageContent() {
           email: email.trim(),
           departureDate,
           destinationCountry: destinationCountry.trim(),
-          airline: airline.trim() || null,
+          airline: null,
           items: selectedList.map((it) => ({ ...it, checked: true } as ChecklistItem)),
-          photoPath,
-          photoSizeBytes,
         }),
       });
       const data = await res.json();
@@ -252,7 +182,7 @@ function ChecklistPageContent() {
     } finally {
       setSubmitting(false);
     }
-  }, [firstName, lastName, email, departureDate, destinationCountry, airline, selectedList, selectedCount, t]);
+  }, [firstName, lastName, email, departureDate, destinationCountry, selectedList, selectedCount, t]);
 
   // ─── Success screen ───
   if (success) {
@@ -321,7 +251,6 @@ function ChecklistPageContent() {
                   setEmail('');
                   setDepartureDate('');
                   setDestinationCountry('');
-                  setAirline('');
                   setSelectedItems({});
                 }}
                 className="w-full py-3 px-4 bg-white hover:bg-slate-50 text-slate-700 rounded-xl font-bold flex items-center justify-center gap-2 border border-slate-300 transition-colors"
@@ -355,7 +284,7 @@ function ChecklistPageContent() {
 
   return (
     <main className="min-h-screen bg-[#f8fafc] flex flex-col" dir={dir}>
-      {/* ─── Header (matches homepage: logo + nav + LanguageSelector + Generate PDF) ─── */}
+      {/* ─── Header ─── */}
       <header className="sticky top-0 z-30 bg-white/95 backdrop-blur-xl border-b border-slate-200 px-4 py-2.5">
         <div className="max-w-5xl mx-auto flex items-center justify-between gap-3">
           <Link href="/" className="flex items-center gap-2 flex-shrink-0">
@@ -375,8 +304,8 @@ function ChecklistPageContent() {
               disabled={!canSubmit}
               className="hidden sm:flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold text-sm transition-colors disabled:opacity-40 disabled:cursor-not-allowed min-h-[40px] shadow-md shadow-blue-600/25"
             >
-              {submitting || photoUploading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
-              {photoUploading ? 'Envoi de la photo...' : t('checklist.header_generate_pdf')}
+              {submitting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
+              {t('checklist.header_generate_pdf')}
             </button>
           </div>
         </div>
@@ -394,11 +323,10 @@ function ChecklistPageContent() {
           <p className="text-slate-600 text-sm">{t('checklist.subtitle')}</p>
         </div>
 
-        {/* ─── Section 1: Travel Information ─── */}
+        {/* ─── Step 1: Travel Information (compact) ─── */}
         <div className="bg-white border border-slate-200 rounded-2xl p-5 md:p-6 mb-4 shadow-sm">
           <h2 className="flex items-center gap-2 text-slate-900 font-bold text-base mb-4">
             <span className="w-7 h-7 rounded-full bg-blue-600 text-white flex items-center justify-center text-xs font-bold">1</span>
-            <MapPin className="w-4 h-4 text-blue-600" />
             {t('checklist.step_passenger')}
           </h2>
 
@@ -427,7 +355,7 @@ function ChecklistPageContent() {
                 placeholder="Diallo"
               />
             </div>
-            <div className="sm:col-span-2">
+            <div>
               <label className="text-xs font-bold text-slate-700 mb-1 block flex items-center gap-1">
                 <Mail className="w-3 h-3" /> {t('checklist.email')} *
               </label>
@@ -438,7 +366,6 @@ function ChecklistPageContent() {
                 className="w-full px-3 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-slate-900 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 min-h-[44px]"
                 placeholder="aissatou@email.com"
               />
-              <p className="text-[10px] text-slate-500 mt-1">{t('checklist.email_hint')}</p>
             </div>
             <div>
               <label className="text-xs font-bold text-slate-700 mb-1 block flex items-center gap-1">
@@ -451,7 +378,7 @@ function ChecklistPageContent() {
                 className="w-full px-3 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-slate-900 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 min-h-[44px]"
               />
             </div>
-            <div>
+            <div className="sm:col-span-2">
               <label className="text-xs font-bold text-slate-700 mb-1 block flex items-center gap-1">
                 <Globe className="w-3 h-3" /> {t('checklist.destination_country')} *
               </label>
@@ -462,70 +389,16 @@ function ChecklistPageContent() {
                 className="w-full px-3 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-slate-900 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 min-h-[44px]"
                 placeholder="Ex: Paris, Tokyo..."
               />
-            </div>
-            <div className="sm:col-span-2">
-              <label className="text-xs font-bold text-slate-700 mb-1 block flex items-center gap-1">
-                <Plane className="w-3 h-3" /> {t('checklist.airline')}
-              </label>
-              <input
-                type="text"
-                value={airline}
-                onChange={(e) => setAirline(e.target.value)}
-                className="w-full px-3 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-slate-900 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 min-h-[44px]"
-                placeholder={t('checklist.airline_placeholder')}
-              />
+              <p className="text-[10px] text-slate-500 mt-1">{t('checklist.email_hint')}</p>
             </div>
           </div>
         </div>
 
-        {/* ─── Section 2: Photo upload (optional) ─── */}
-        <div className="bg-white border border-slate-200 rounded-2xl p-5 md:p-6 mb-4 shadow-sm">
-          <h2 className="flex items-center gap-2 text-slate-900 font-bold text-base mb-4">
-            <span className="w-7 h-7 rounded-full bg-blue-600 text-white flex items-center justify-center text-xs font-bold">2</span>
-            <Camera className="w-4 h-4 text-blue-600" />
-            {t('checklist.photo_upload_title')}
-          </h2>
-          {photoPreview ? (
-            <div className="relative inline-block">
-              <img src={photoPreview} alt="Aperçu photo" className="max-h-48 rounded-xl border border-slate-200 object-contain" />
-              <button
-                type="button"
-                onClick={() => { setPhotoFile(null); setPhotoPreview(null); }}
-                className="absolute top-2 right-2 w-7 h-7 bg-red-600 text-white rounded-full flex items-center justify-center hover:bg-red-700 transition-colors shadow-md"
-                aria-label="Supprimer la photo"
-              >
-                <X className="w-4 h-4" />
-              </button>
-            </div>
-          ) : (
-            <label className="block cursor-pointer">
-              <div className="border-2 border-dashed border-slate-300 rounded-xl py-8 px-4 text-center hover:border-blue-500 hover:bg-blue-50/60 transition-colors">
-                <Camera className="w-10 h-10 text-slate-400 mx-auto mb-2" />
-                <p className="text-sm font-bold text-slate-900">{t('checklist.photo_upload_hint')}</p>
-                <p className="text-xs text-slate-500 mt-1">{t('checklist.photo_upload_optional')}</p>
-              </div>
-              <input
-                type="file"
-                accept="image/jpeg,image/png,image/webp,image/gif"
-                className="sr-only"
-                onChange={(e) => {
-                  const file = e.target.files?.[0];
-                  if (!file) return;
-                  setPhotoFile(file);
-                  const reader = new FileReader();
-                  reader.onload = () => setPhotoPreview(reader.result as string);
-                  reader.readAsDataURL(file);
-                }}
-              />
-            </label>
-          )}
-        </div>
-
-        {/* ─── Section 3: Items grid ─── */}
+        {/* ─── Step 2: Items grid ─── */}
         <div className="bg-white border border-slate-200 rounded-2xl p-5 md:p-6 mb-4 shadow-sm">
           <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
             <h2 className="flex items-center gap-2 text-slate-900 font-bold text-base">
-              <span className="w-7 h-7 rounded-full bg-blue-600 text-white flex items-center justify-center text-xs font-bold">3</span>
+              <span className="w-7 h-7 rounded-full bg-blue-600 text-white flex items-center justify-center text-xs font-bold">2</span>
               <Tag className="w-4 h-4 text-blue-600" />
               {t('checklist.step_items')}
             </h2>
@@ -569,7 +442,7 @@ function ChecklistPageContent() {
             {allCatSelected ? t('checklist.unselect_all') : t('checklist.select_all')}
           </button>
 
-          {/* Items grid — 4 columns on desktop, 2 on mobile */}
+          {/* Items grid */}
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
             {activeCat.items.map((name) => {
               const key = `${activeCat.id}__${name}`;
@@ -627,13 +500,12 @@ function ChecklistPageContent() {
           </div>
         </div>
 
-        {/* ─── Section 4: Selection list with qty + color + brand ─── */}
+        {/* ─── Step 3: Selection summary (simplified — only qty controls, no color/brand) ─── */}
         {selectedCount > 0 && (
           <div className="bg-white border border-slate-200 rounded-2xl p-5 md:p-6 mb-4 shadow-sm">
             <div className="flex items-center justify-between mb-4">
               <h2 className="flex items-center gap-2 text-slate-900 font-bold text-base">
-                <span className="w-7 h-7 rounded-full bg-blue-600 text-white flex items-center justify-center text-xs font-bold">4</span>
-                <FileText className="w-4 h-4 text-blue-600" />
+                <span className="w-7 h-7 rounded-full bg-blue-600 text-white flex items-center justify-center text-xs font-bold">3</span>
                 {t('checklist.step_selection')} ({selectedCount})
               </h2>
             </div>
@@ -654,21 +526,21 @@ function ChecklistPageContent() {
                       return (
                         <div
                           key={key}
-                          className="flex flex-wrap items-center gap-2 py-2 px-2 bg-slate-50 border border-slate-200 rounded-lg"
+                          className="flex items-center gap-2 py-2 px-2 bg-slate-50 border border-slate-200 rounded-lg"
                         >
                           {/* Image */}
-                          <div className="w-12 h-12 rounded-md overflow-hidden bg-white border border-slate-200 flex items-center justify-center flex-shrink-0">
+                          <div className="w-10 h-10 rounded-md overflow-hidden bg-white border border-slate-200 flex items-center justify-center flex-shrink-0">
                             {imageUrl ? (
                               <Image
                                 src={imageUrl}
                                 alt={it.name}
-                                width={48}
-                                height={48}
+                                width={40}
+                                height={40}
                                 className="object-contain p-1"
                                 unoptimized
                               />
                             ) : (
-                              <span className="text-2xl">{cat.emoji}</span>
+                              <span className="text-xl">{cat.emoji}</span>
                             )}
                           </div>
 
@@ -696,38 +568,6 @@ function ChecklistPageContent() {
                             </button>
                           </div>
 
-                          {/* Color dropdown */}
-                          <div className="relative">
-                            <select
-                              value={it.color || ''}
-                              onChange={(e) => changeColor(it.category, it.name, e.target.value)}
-                              className="appearance-none pl-2 pr-7 py-1.5 bg-white border border-slate-300 rounded-lg text-xs font-medium text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 cursor-pointer min-h-[32px]"
-                              aria-label={t('checklist.item_color')}
-                            >
-                              <option value="">{t('checklist.item_color')}</option>
-                              {ITEM_COLORS.map((c) => (
-                                <option key={c} value={c}>{c}</option>
-                              ))}
-                            </select>
-                            <ChevronDown className="w-3 h-3 absolute right-2 top-1/2 -translate-y-1/2 text-slate-500 pointer-events-none" />
-                          </div>
-
-                          {/* Brand dropdown */}
-                          <div className="relative">
-                            <select
-                              value={it.brand || ''}
-                              onChange={(e) => changeBrand(it.category, it.name, e.target.value)}
-                              className="appearance-none pl-2 pr-7 py-1.5 bg-white border border-slate-300 rounded-lg text-xs font-medium text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 cursor-pointer min-h-[32px]"
-                              aria-label={t('checklist.item_brand')}
-                            >
-                              <option value="">{t('checklist.item_brand')}</option>
-                              {ITEM_BRANDS.map((b) => (
-                                <option key={b} value={b}>{b}</option>
-                              ))}
-                            </select>
-                            <ChevronDown className="w-3 h-3 absolute right-2 top-1/2 -translate-y-1/2 text-slate-500 pointer-events-none" />
-                          </div>
-
                           {/* Delete */}
                           <button
                             onClick={() => toggleItem(it.category, it.name)}
@@ -746,17 +586,17 @@ function ChecklistPageContent() {
           </div>
         )}
 
-        {/* ─── Submit button (sticky bottom on mobile, inline on desktop) ─── */}
+        {/* ─── Submit button ─── */}
         <div className="sticky bottom-3 z-20">
           <button
             onClick={handleSubmit}
             disabled={!canSubmit}
             className="w-full py-4 px-6 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold text-base md:text-lg transition-colors flex items-center justify-center gap-2 shadow-lg shadow-blue-600/30 disabled:opacity-50 disabled:cursor-not-allowed min-h-[56px]"
           >
-            {submitting || photoUploading ? (
+            {submitting ? (
               <>
                 <Loader2 className="w-5 h-5 animate-spin" />
-                {photoUploading ? 'Envoi de la photo...' : t('checklist.submitting')}
+                {t('checklist.submitting')}
               </>
             ) : (
               <>

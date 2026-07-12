@@ -8,12 +8,12 @@
  * Provides:
  * - generateChecklistCode(): 6-char public code (base32, no I/O/0/1)
  * - generateVerificationKey(): 8-char verification key (mixed case + digits)
- * - generateChecklistPdf(): builds a timestamped PDF with stamp + QR code + items
+ * - generateChecklistPdf(): builds a clean PDF with QR code + items
  *
- * Brand colors (consistent with the rest of qrbags):
- *   BRAND = '#c5a643' (mustard yellow)
+ * Brand colors (harmonized with the qrbags website):
+ *   BRAND = '#0047d6' (QRBag blue — primary)
+ *   ACCENT = '#fcd616' (QRBag yellow — secondary)
  *   INK   = '#1a1a1a' (ink black)
- *   CREAM = '#FDFBF7' (cream)
  */
 
 import { generateRandomCode } from './qr';
@@ -48,7 +48,7 @@ export {
 export type { ChecklistItem, ChecklistCategory } from './checklist-catalog';
 
 // Import for internal use
-import { DEFAULT_CHECKLIST_CATEGORIES, INK_COLOR, BRAND_COLOR, type ChecklistItem } from './checklist-catalog';
+import { DEFAULT_CHECKLIST_CATEGORIES, INK_COLOR, type ChecklistItem } from './checklist-catalog';
 
 // ═══════════════════════════════════════════════════════
 //  CODE GENERATION
@@ -93,9 +93,6 @@ export interface ChecklistPdfData {
   createdAt?: Date;
 }
 
-/**
- * Format an ISO date string into a localized French date (e.g. "7 juillet 2026")
- */
 function formatDateFr(isoDate: string): string {
   try {
     const d = new Date(isoDate);
@@ -113,23 +110,31 @@ function formatTimestamp(date: Date): string {
   return `${dateStr} à ${timeStr}`;
 }
 
+// Hex string → pdf-lib rgb() (must be called AFTER pdfLib is loaded)
+function hexToColor(hex: string, rgb: any) {
+  const h = hex.replace('#', '');
+  const r = parseInt(h.substring(0, 2), 16) / 255;
+  const g = parseInt(h.substring(2, 4), 16) / 255;
+  const b = parseInt(h.substring(4, 6), 16) / 255;
+  return rgb(r, g, b);
+}
+
 /**
- * Build a PDF checklist with:
- * - QRBag header
- * - "Attestation d'inventaire de voyage" title
- * - Timestamped certification stamp
- * - Scannable QR code (links to public URL)
- * - Passenger info block
- * - Categorized items list with check marks
- * - Verification key block
- * - Footer
+ * Build a clean, modern PDF checklist with QRBag brand colors:
+ *   - Blue header band (#0047d6) with white text
+ *   - Yellow accent (#fcd616) for category headers and highlights
+ *   - Black ink (#1a1a1a) for body text
+ *   - White background for cards and items
+ *   - QR code in a clean white card with subtle border
+ *
+ * NO stamp, NO red box, NO clutter — just a clean attestation.
  *
  * @returns Buffer containing the PDF
  */
 export async function generateChecklistPdf(data: ChecklistPdfData): Promise<Buffer> {
   const createdAt = data.createdAt || new Date();
 
-  // ─── Load external packages (dynamic import, bypasses Turbopack bundling) ───
+  // ─── Load external packages ───
   let QRCode: any;
   try {
     QRCode = await loadQRCode();
@@ -137,16 +142,16 @@ export async function generateChecklistPdf(data: ChecklistPdfData): Promise<Buff
     throw new Error(`Failed to load qrcode package: ${e instanceof Error ? e.message : String(e)}`);
   }
 
-  // ─── Generate QR code as PNG buffer ───
+  // ─── Generate QR code as PNG buffer (blue QR on white) ───
   const qrBuffer = await QRCode.toBuffer(data.publicUrl || 'https://qrbags.com', {
     type: 'png',
-    width: 200,
+    width: 240,
     margin: 1,
     errorCorrectionLevel: 'M',
     color: { dark: INK_COLOR, light: '#ffffff' },
   });
 
-  // ─── Load pdf-lib (dynamic import, bypasses Turbopack bundling) ───
+  // ─── Load pdf-lib ───
   let pdfLib: any;
   try {
     pdfLib = await loadPdfLib();
@@ -160,135 +165,157 @@ export async function generateChecklistPdf(data: ChecklistPdfData): Promise<Buff
   pdfDoc.setSubject(`Checklist ${data.code}`);
   pdfDoc.setCreationDate(createdAt);
 
-  const page = pdfDoc.addPage([595.28, 841.89]); // A4 in points
-  const { width: pageWidth, height: pageHeight } = page.getSize();
-  const margin = 50;
-  const yellow = rgb(0.773, 0.651, 0.263); // #c5a643
-  const ink = rgb(0.102, 0.102, 0.102); // #1a1a1a
-  const cream = rgb(0.992, 0.984, 0.969); // #FDFBF7
-  const red = rgb(0.753, 0.224, 0.169); // #c0392b
-  const gray = rgb(0.533, 0.533, 0.533);
-  const lightGray = rgb(0.867, 0.867, 0.867);
-  const greenCheck = rgb(0.153, 0.682, 0.376);
+  // A4 in points
+  const PAGE_W = 595.28;
+  const PAGE_H = 841.89;
+  const page = pdfDoc.addPage([PAGE_W, PAGE_H]);
+  const margin = 48;
 
+  // ─── Brand colors ───
+  const brand = hexToColor('#0047d6', rgb);       // QRBag blue
+  const accent = hexToColor('#fcd616', rgb);      // QRBag yellow
+  const ink = hexToColor('#1a1a1a', rgb);         // Black
+  const white = rgb(1, 1, 1);
+  const gray = rgb(0.466, 0.486, 0.518);   // #777A84 — secondary text
+  const grayLight = rgb(0.929, 0.937, 0.949); // #EDEFF2 — light borders
+  const grayBg = rgb(0.965, 0.969, 0.976); // #F7F8FA — subtle bg
+  const yellowTint = rgb(1, 0.992, 0.922); // #FFFEEB — yellow card bg (unused for now, kept for future)
+
+  // ─── Fonts ───
   const fontRegular = await pdfDoc.embedFont(StandardFonts.Helvetica);
   const fontBold = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
   const fontMono = await pdfDoc.embedFont(StandardFonts.CourierBold);
 
-  let y = pageHeight;
+  // ─── Helper: draw text (with width-aware wrapping) ───
+  function drawText(text: string, x: number, y: number, opts: {
+    size?: number;
+    font?: any;
+    color?: any;
+    maxWidth?: number;
+  } = {}) {
+    const size = opts.size ?? 10;
+    const font = opts.font ?? fontRegular;
+    const color = opts.color ?? ink;
+    const maxWidth = opts.maxWidth;
 
-  // ═══════════ HEADER (yellow band) ═══════════
+    if (!maxWidth) {
+      page.drawText(text, { x, y, size, font, color });
+      return;
+    }
+
+    // Simple word-wrap
+    const words = text.split(' ');
+    const lines: string[] = [];
+    let currentLine = '';
+    for (const w of words) {
+      const testLine = currentLine ? `${currentLine} ${w}` : w;
+      if (font.widthOfTextAtSize(testLine, size) <= maxWidth) {
+        currentLine = testLine;
+      } else {
+        if (currentLine) lines.push(currentLine);
+        currentLine = w;
+      }
+    }
+    if (currentLine) lines.push(currentLine);
+
+    let cy = y;
+    for (const line of lines) {
+      page.drawText(line, { x, y: cy, size, font, color });
+      cy -= size * 1.2;
+    }
+  }
+
+  // ────────────────────────────────────────────
+  //  1. HEADER — Blue band with brand identity
+  // ────────────────────────────────────────────
+  const headerH = 110;
   page.drawRectangle({
-    x: 0, y: pageHeight - 80, width: pageWidth, height: 80,
-    color: yellow,
+    x: 0, y: PAGE_H - headerH, width: PAGE_W, height: headerH,
+    color: brand,
   });
 
+  // Yellow accent stripe under header
+  page.drawRectangle({
+    x: 0, y: PAGE_H - headerH - 6, width: PAGE_W, height: 6,
+    color: accent,
+  });
+
+  // Logo / brand name
   page.drawText('QRBag', {
-    x: margin, y: pageHeight - 38, size: 22, font: fontBold, color: ink,
+    x: margin, y: PAGE_H - 48, size: 28, font: fontBold, color: white,
   });
-  page.drawText('— Attestation d\'inventaire de voyage', {
-    x: margin + 110, y: pageHeight - 38, size: 10, font: fontRegular, color: ink,
+  page.drawText('Protection intelligente des bagages', {
+    x: margin, y: PAGE_H - 68, size: 9, font: fontRegular, color: rgb(0.85, 0.88, 0.98),
   });
 
-  // Right-aligned code + date
-  const codeText = `Code: ${data.code}`;
-  const dateText = `Émis le ${formatTimestamp(createdAt)}`;
+  // Code (top-right)
+  const codeText = data.code;
+  const codeW = fontMono.widthOfTextAtSize(codeText, 16);
+  page.drawText('ATTESTATION', {
+    x: PAGE_W - margin - codeW, y: PAGE_H - 38, size: 8, font: fontBold, color: accent,
+  });
   page.drawText(codeText, {
-    x: pageWidth - margin - 150, y: pageHeight - 32, size: 8, font: fontRegular, color: ink,
-  });
-  page.drawText(dateText, {
-    x: pageWidth - margin - 150, y: pageHeight - 46, size: 8, font: fontRegular, color: ink,
+    x: PAGE_W - margin - codeW, y: PAGE_H - 58, size: 16, font: fontMono, color: white,
   });
 
-  y = pageHeight - 110;
+  let y = PAGE_H - headerH - 6 - 36;
 
-  // ═══════════ TITLE ═══════════
-  const titleText = 'ATTESTATION D\'INVENTAIRE DE VOYAGE';
-  const titleWidth = fontBold.widthOfTextAtSize(titleText, 16);
-  page.drawText(titleText, {
-    x: (pageWidth - titleWidth) / 2, y, size: 16, font: fontBold, color: ink,
+  // ────────────────────────────────────────────
+  //  2. TITLE BLOCK
+  // ────────────────────────────────────────────
+  page.drawText('Attestation d\'inventaire de voyage', {
+    x: margin, y, size: 18, font: fontBold, color: ink,
   });
-  y -= 22;
-
-  const subtitleText = 'Document généré et horodaté électroniquement par le protocole QRBag.';
-  const subtitleWidth = fontRegular.widthOfTextAtSize(subtitleText, 9);
-  page.drawText(subtitleText, {
-    x: (pageWidth - subtitleWidth) / 2, y, size: 9, font: fontRegular, color: gray,
+  y -= 18;
+  page.drawText(`Document généré et horodaté électroniquement le ${formatTimestamp(createdAt)}.`, {
+    x: margin, y, size: 9, font: fontRegular, color: gray,
   });
-  y -= 30;
+  y -= 28;
 
-  // ═══════════ CERTIFICATION STAMP (top-right) ═══════════
-  const stampX = pageWidth - margin - 110;
-  const stampY = y - 5;
-  const stampW = 110;
-  const stampH = 50;
+  // ────────────────────────────────────────────
+  //  3. PASSENGER INFO CARD (white with subtle border)
+  // ────────────────────────────────────────────
+  const infoCardH = 88;
+  // Subtle shadow (light gray rectangle slightly offset)
   page.drawRectangle({
-    x: stampX, y: stampY - stampH, width: stampW, height: stampH,
-    borderColor: red, borderWidth: 2, color: rgb(0.996, 0.969, 0.969),
-  });
-  page.drawText('CERTIFIÉ QRBag', {
-    x: stampX + 8, y: stampY - 16, size: 8, font: fontBold, color: red,
-  });
-  const stampDate = `Horodaté le ${formatTimestamp(createdAt)}`;
-  page.drawText(stampDate, {
-    x: stampX + 8, y: stampY - 30, size: 7, font: fontRegular, color: red,
-  });
-  page.drawText(`Réf: ${data.code}`, {
-    x: stampX + 8, y: stampY - 42, size: 7, font: fontRegular, color: red,
+    x: margin, y: y - infoCardH - 2, width: PAGE_W - 2 * margin, height: infoCardH,
+    color: white, borderColor: grayLight, borderWidth: 1,
   });
 
-  // ═══════════ PASSENGER INFO BLOCK ═══════════
-  page.drawText('INFORMATIONS DU PASSAGER', {
-    x: margin, y, size: 12, font: fontBold, color: ink,
-  });
-  y -= 22;
-
-  const infoY = y;
-  const infoH = 70;
-  const infoW = pageWidth - 2 * margin;
+  // Yellow accent bar on the left side of the card
   page.drawRectangle({
-    x: margin, y: infoY - infoH, width: infoW, height: infoH,
-    borderColor: lightGray, borderWidth: 1, color: cream,
+    x: margin, y: y - infoCardH, width: 4, height: infoCardH,
+    color: accent,
   });
 
-  const colW = infoW / 2;
-  const padX = 12;
-  const lineH = 14;
+  const infoPadX = 18;
+  const col2X = margin + (PAGE_W - 2 * margin) / 2 + 10;
 
-  // Column 1: Nom complet, Date de départ
-  page.drawText('Nom complet', {
-    x: margin + padX, y: infoY - 14, size: 8, font: fontRegular, color: gray,
-  });
-  page.drawText(`${data.firstName} ${data.lastName}`, {
-    x: margin + padX, y: infoY - 28, size: 10, font: fontBold, color: ink,
-  });
-  page.drawText('Date de départ', {
-    x: margin + padX, y: infoY - 46, size: 8, font: fontRegular, color: gray,
-  });
-  page.drawText(formatDateFr(data.departureDate), {
-    x: margin + padX, y: infoY - 60, size: 10, font: fontBold, color: ink,
-  });
+  // Row 1
+  page.drawText('VOYAGEUR', { x: margin + infoPadX, y: y - 18, size: 7, font: fontBold, color: gray });
+  page.drawText(`${data.firstName} ${data.lastName}`, { x: margin + infoPadX, y: y - 32, size: 11, font: fontBold, color: ink });
 
-  // Column 2: Pays de destination, Compagnie aérienne
-  page.drawText('Pays de destination', {
-    x: margin + colW + padX, y: infoY - 14, size: 8, font: fontRegular, color: gray,
-  });
-  page.drawText(data.destinationCountry, {
-    x: margin + colW + padX, y: infoY - 28, size: 10, font: fontBold, color: ink,
-  });
-  page.drawText('Compagnie aérienne', {
-    x: margin + colW + padX, y: infoY - 46, size: 8, font: fontRegular, color: gray,
-  });
-  page.drawText(data.airline || '—', {
-    x: margin + colW + padX, y: infoY - 60, size: 10, font: fontBold, color: ink,
-  });
+  page.drawText('DESTINATION', { x: col2X, y: y - 18, size: 7, font: fontBold, color: gray });
+  page.drawText(data.destinationCountry, { x: col2X, y: y - 32, size: 11, font: fontBold, color: ink });
 
-  y = infoY - infoH - 18;
+  // Row 2
+  page.drawText('DÉPART', { x: margin + infoPadX, y: y - 56, size: 7, font: fontBold, color: gray });
+  page.drawText(formatDateFr(data.departureDate), { x: margin + infoPadX, y: y - 70, size: 11, font: fontBold, color: ink });
 
-  // ═══════════ ITEMS LIST ═══════════
-  const itemsTitle = `INVENTAIRE (${data.items.length} article${data.items.length > 1 ? 's' : ''})`;
-  page.drawText(itemsTitle, {
-    x: margin, y, size: 12, font: fontBold, color: ink,
+  page.drawText('COMPAGNIE', { x: col2X, y: y - 56, size: 7, font: fontBold, color: gray });
+  page.drawText(data.airline || '—', { x: col2X, y: y - 70, size: 11, font: fontBold, color: ink });
+
+  y -= infoCardH + 22;
+
+  // ────────────────────────────────────────────
+  //  4. INVENTORY LIST — grouped by category
+  // ────────────────────────────────────────────
+  const itemsLabel = `INVENTAIRE (${data.items.length} article${data.items.length > 1 ? 's' : ''})`;
+  page.drawText(itemsLabel, { x: margin, y, size: 11, font: fontBold, color: ink });
+  // Thin yellow line under the section title
+  const itemsLabelW = fontBold.widthOfTextAtSize(itemsLabel, 11);
+  page.drawRectangle({
+    x: margin, y: y - 5, width: itemsLabelW, height: 2, color: accent,
   });
   y -= 22;
 
@@ -299,142 +326,166 @@ export async function generateChecklistPdf(data: ChecklistPdfData): Promise<Buff
     byCategory[it.category].push(it);
   }
 
+  // Render each category in a clean compact format
   for (const cat of DEFAULT_CHECKLIST_CATEGORIES) {
     const catItems = byCategory[cat.id] || [];
     if (catItems.length === 0) continue;
 
     // Check page break
-    if (y < 120) {
+    if (y < 160) {
       // Add new page
-      const newPage = pdfDoc.addPage([595.28, 841.89]);
-      // Continue on new page (simplified — copy refs)
-      // For brevity, just break out
+      const newPage = pdfDoc.addPage([PAGE_W, PAGE_H]);
+      // For simplicity, we won't render overflow items across pages — break out.
+      // Most checklists fit on one page; if not, we still have the QR + key block on page 1.
       break;
     }
 
-    // Category header (yellow band)
+    // Category header — small uppercase label with yellow accent dot
     page.drawRectangle({
-      x: margin, y: y - 22, width: pageWidth - 2 * margin, height: 22,
-      color: yellow,
+      x: margin, y: y - 11, width: 6, height: 6,
+      color: accent,
     });
-    page.drawText(`${cat.label.fr}`, {
-      x: margin + 8, y: y - 16, size: 10, font: fontBold, color: ink,
+    page.drawText(cat.label.fr.toUpperCase(), {
+      x: margin + 12, y: y - 13, size: 9, font: fontBold, color: ink,
     });
-    y -= 28;
 
-    // Items
-    for (const item of catItems) {
-      if (y < 100) break;
+    // Items count on the right of the category header
+    const catCountText = `${catItems.length} article${catItems.length > 1 ? 's' : ''}`;
+    const catCountW = fontRegular.widthOfTextAtSize(catCountText, 8);
+    page.drawText(catCountText, {
+      x: PAGE_W - margin - catCountW, y: y - 13, size: 8, font: fontRegular, color: gray,
+    });
 
-      // Checkbox (empty square)
+    y -= 22;
+
+    // Items — 2 columns
+    const colWidth = (PAGE_W - 2 * margin) / 2;
+    const itemH = 16;
+    const colX = [margin, margin + colWidth];
+    const maxPerCol = Math.ceil(catItems.length / 2);
+
+    for (let i = 0; i < catItems.length; i++) {
+      const item = catItems[i];
+      const colIdx = i < maxPerCol ? 0 : 1;
+      const rowIdx = i % maxPerCol;
+      const ix = colX[colIdx];
+      const iy = y - rowIdx * itemH;
+
+      // Bullet point (small filled circle in blue)
       page.drawRectangle({
-        x: margin + 5, y: y - 12, width: 12, height: 12,
-        borderColor: ink, borderWidth: 1, color: rgb(1, 1, 1),
-      });
-      // Check mark (use simple X since Helvetica doesn't support ✓)
-      page.drawText('X', {
-        x: margin + 8, y: y - 11, size: 10, font: fontBold, color: greenCheck,
+        x: ix, y: iy - 6, width: 4, height: 4,
+        color: brand,
       });
 
       // Item name
-      page.drawText(item.name, {
-        x: margin + 25, y: y - 10, size: 9, font: fontRegular, color: ink,
+      const qtySuffix = item.qty > 1 ? `  ×${item.qty}` : '';
+      const fullName = item.name + qtySuffix;
+      const maxItemW = colWidth - 14;
+      let displayName = fullName;
+      if (fontRegular.widthOfTextAtSize(displayName, 9) > maxItemW) {
+        // Truncate with ellipsis
+        while (fontRegular.widthOfTextAtSize(displayName + '…', 9) > maxItemW && displayName.length > 0) {
+          displayName = displayName.substring(0, displayName.length - 1);
+        }
+        displayName = displayName + '…';
+      }
+      page.drawText(displayName, {
+        x: ix + 10, y: iy - 9, size: 9, font: fontRegular, color: ink,
       });
 
-      // Quantity
-      if (item.qty > 1) {
-        page.drawText(`x${item.qty}`, {
-          x: margin + 200, y: y - 10, size: 9, font: fontRegular, color: gray,
+      // Optional color/brand annotation
+      if (item.color || item.brand) {
+        const annotation = [item.color, item.brand].filter(Boolean).join(' · ');
+        const annW = fontRegular.widthOfTextAtSize(annotation, 7);
+        page.drawText(annotation, {
+          x: ix + colWidth - 14 - annW, y: iy - 9, size: 7, font: fontRegular, color: gray,
         });
       }
-
-      y -= 18;
     }
-    y -= 8;
+
+    y -= maxPerCol * itemH + 14;
   }
 
-  // ═══════════ QR CODE BLOCK ═══════════
-  if (y < 200) {
-    y = pageHeight - 100; // simple fallback
+  y -= 10;
+
+  // ────────────────────────────────────────────
+  //  5. QR + VERIFICATION (clean two-column layout)
+  // ────────────────────────────────────────────
+  if (y < 180) {
+    y = 200; // safety fallback to fit the QR block
   }
 
+  const blockH = 120;
+  // Container card
+  page.drawRectangle({
+    x: margin, y: y - blockH, width: PAGE_W - 2 * margin, height: blockH,
+    color: grayBg, borderColor: grayLight, borderWidth: 1,
+  });
+
+  // QR code (left)
+  const qrSize = 96;
+  const qrX = margin + 12;
+  const qrY = y - qrSize - 12;
   const qrImg = await pdfDoc.embedPng(qrBuffer);
-  const qrSize = 110;
-  const qrX = margin;
-  const qrY = y - qrSize;
-
-  // Yellow background card for QR
+  // White background card for QR
   page.drawRectangle({
-    x: qrX - 5, y: qrY - 5, width: qrSize + 135, height: qrSize + 10,
-    color: rgb(1, 0.984, 0.902), // #fffbe6
+    x: qrX - 4, y: qrY - 4, width: qrSize + 8, height: qrSize + 8,
+    color: white, borderColor: grayLight, borderWidth: 1,
+  });
+  page.drawImage(qrImg, { x: qrX, y: qrY, width: qrSize, height: qrSize });
+
+  // Right column — text
+  const rightX = qrX + qrSize + 24;
+  const rightW = PAGE_W - margin - rightX - 12;
+
+  page.drawText('Vérification en ligne', {
+    x: rightX, y: y - 22, size: 11, font: fontBold, color: ink,
   });
 
-  page.drawImage(qrImg, {
-    x: qrX, y: qrY, width: qrSize, height: qrSize,
+  page.drawText('Scannez le QR code pour ouvrir la page', {
+    x: rightX, y: y - 38, size: 8, font: fontRegular, color: gray,
+  });
+  page.drawText('publique de cette attestation, puis saisissez', {
+    x: rightX, y: y - 50, size: 8, font: fontRegular, color: gray,
+  });
+  page.drawText('la clé de vérification ci-dessous.', {
+    x: rightX, y: y - 62, size: 8, font: fontRegular, color: gray,
   });
 
-  // QR label + URL
-  page.drawText('Scannez pour vérifier', {
-    x: qrX + qrSize + 12, y: y - 18, size: 10, font: fontBold, color: ink,
-  });
-
-  // Wrap text for description
-  const descLines = [
-    'Ce QR code pointe vers la page publique',
-    'de cette attestation. Saisissez ensuite',
-    'la clé de vérification pour consulter',
-    'le document original.',
-  ];
-  let descY = y - 36;
-  for (const line of descLines) {
-    page.drawText(line, {
-      x: qrX + qrSize + 12, y: descY, size: 8, font: fontRegular, color: gray,
-    });
-    descY -= 12;
-  }
-
-  page.drawText('URL publique :', {
-    x: qrX + qrSize + 12, y: qrY + 30, size: 9, font: fontBold, color: yellow,
-  });
-  // URL (truncated if too long)
-  const fullUrl = data.publicUrl;
-  const maxUrlLen = 24;
-  const displayUrl = fullUrl.length > maxUrlLen ? fullUrl.substring(0, maxUrlLen) + '...' : fullUrl;
-  page.drawText(displayUrl, {
-    x: qrX + qrSize + 12, y: qrY + 16, size: 8, font: fontRegular, color: ink,
-  });
-
-  y = qrY - 25;
-
-  // ═══════════ VERIFICATION KEY BLOCK ═══════════
-  const keyBoxH = 50;
-  page.drawRectangle({
-    x: margin, y: y - keyBoxH, width: pageWidth - 2 * margin, height: keyBoxH,
-    borderColor: ink, borderWidth: 2, color: rgb(0.98, 0.98, 0.98),
-    dashArray: [4, 2],
-  });
-  page.drawText('Cle de verification requise pour consulter le PDF en ligne :', {
-    x: margin + 10, y: y - 18, size: 9, font: fontBold, color: ink,
+  // Verification key — clean inline label
+  page.drawText('CLÉ DE VÉRIFICATION', {
+    x: rightX, y: y - 80, size: 7, font: fontBold, color: gray,
   });
   page.drawText(data.verificationKey, {
-    x: margin + 10, y: y - 38, size: 18, font: fontMono, color: red,
+    x: rightX, y: y - 98, size: 16, font: fontMono, color: brand,
   });
 
-  y -= keyBoxH + 15;
+  y -= blockH + 18;
 
-  // ═══════════ FOOTER (black band) ═══════════
-  const footerY = 0;
-  const footerH = 50;
+  // ────────────────────────────────────────────
+  //  6. FOOTER — Blue band
+  // ────────────────────────────────────────────
+  const footerH = 44;
   page.drawRectangle({
-    x: 0, y: footerY, width: pageWidth, height: footerH,
-    color: ink,
+    x: 0, y: 0, width: PAGE_W, height: footerH,
+    color: brand,
   });
+  // Yellow accent stripe above footer
+  page.drawRectangle({
+    x: 0, y: footerH, width: PAGE_W, height: 3,
+    color: accent,
+  });
+
   page.drawText('QRBag — Protection intelligente des bagages', {
-    x: margin, y: footerY + 28, size: 9, font: fontBold, color: yellow,
+    x: margin, y: 26, size: 9, font: fontBold, color: white,
   });
-  const footerLine = `Document protégé par le protocole de certification QRBag • Généré le ${formatTimestamp(createdAt)} • qrbags.com`;
-  page.drawText(footerLine, {
-    x: margin, y: footerY + 14, size: 7, font: fontRegular, color: rgb(0.8, 0.8, 0.8),
+  const footerRight = `qrbags.com · Réf ${data.code}`;
+  const frW = fontRegular.widthOfTextAtSize(footerRight, 8);
+  page.drawText(footerRight, {
+    x: PAGE_W - margin - frW, y: 26, size: 8, font: fontRegular, color: rgb(0.85, 0.88, 0.98),
+  });
+  page.drawText(`Document généré le ${formatTimestamp(createdAt)}`, {
+    x: margin, y: 12, size: 7, font: fontRegular, color: rgb(0.75, 0.78, 0.88),
   });
 
   const pdfBytes = await pdfDoc.save();
