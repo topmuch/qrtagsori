@@ -560,6 +560,45 @@ export default function SuiviPage() {
   } | null>(null);
   const [showDamageBlock, setShowDamageBlock] = useState(false);
 
+  // ─── LABS — Recovery check: timer 15 min après "bagage retrouvé" ───
+  const [recoveryState, setRecoveryState] = useState<'waiting' | 'asking' | 'yes' | 'no'>('waiting');
+  const storageKey = `recovery_${reference}`;
+
+  useEffect(() => {
+    if (!isFound || !hasFinderInfo) return;
+    // Vérifier si le passager a déjà répondu
+    const stored = localStorage.getItem(storageKey);
+    if (stored === 'yes' || stored === 'no') {
+      setRecoveryState(stored);
+      return;
+    }
+    // Démarrer le timer 15 min à partir du premier affichage
+    const firstSeenKey = `recovery_first_seen_${reference}`;
+    let firstSeen = localStorage.getItem(firstSeenKey);
+    if (!firstSeen) {
+      firstSeen = Date.now().toString();
+      localStorage.setItem(firstSeenKey, firstSeen);
+    }
+    const elapsed = Date.now() - parseInt(firstSeen);
+    const remaining = 15 * 60 * 1000 - elapsed; // 15 min
+
+    if (remaining <= 0) {
+      // 15 min déjà passées → poser la question immédiatement
+      setRecoveryState('asking');
+    } else {
+      // Sinon, timer pour poser la question dans `remaining` ms
+      const timer = setTimeout(() => {
+        setRecoveryState('asking');
+      }, remaining);
+      return () => clearTimeout(timer);
+    }
+  }, [isFound, hasFinderInfo, reference, storageKey]);
+
+  const handleRecoveryAnswer = (answer: 'yes' | 'no') => {
+    localStorage.setItem(storageKey, answer);
+    setRecoveryState(answer);
+  };
+
   // Fetch damage reports on mount
   useEffect(() => {
     if (!data?.baggage?.reference) return;
@@ -1001,11 +1040,14 @@ export default function SuiviPage() {
 
   const baggage = data.baggage;
   const isDeclaredLost = !!baggage?.declaredLostAt && !baggage?.foundAt;
-  const isFound = !!baggage?.foundAt;
-  const isScanned = baggage?.status === 'scanned';
+  const hasFinderInfo = !!(data.lastFinder?.name || data.lastFinder?.phone);
+  const isFound = !!baggage?.foundAt || hasFinderInfo;
+  const isScanned = baggage?.status === 'scanned' && !hasFinderInfo;
   const hasFinderPhone = !!(data.lastFinder?.phone);
 
   // ─── Dynamic status header config ───
+  // BUG FIX: "Retrouvé" s'affiche SEULEMENT si le trouveur a laissé ses coordonnées.
+  // Si juste scanné sans infos → "Bagage localisé" (pas "retrouvé").
   const statusConfig: { title: string; badgeClass: string; desc: string } = (() => {
     if (isDeclaredLost) {
       return {
@@ -1014,18 +1056,18 @@ export default function SuiviPage() {
         desc: t('tracking.lost_description'),
       };
     }
-    if (isFound) {
+    if (isFound && hasFinderInfo) {
       return {
         title: `✅ ${t('tracking.badge_found')}`,
-        badgeClass: 'bg-[#fcd616] text-[#1a1a1a]',
-        desc: t('tracking.found_description'),
+        badgeClass: 'bg-green-500 text-white',
+        desc: 'Votre bagage a été retrouvé ! Contactez le trouveur pour organiser la récupération.',
       };
     }
     if (isScanned) {
       return {
-        title: t('tracking.bagage_localise'),
+        title: '📍 Bagage localisé',
         badgeClass: 'bg-[#fcd616] text-[#1a1a1a]',
-        desc: t('tracking.found_description'),
+        desc: 'Quelqu\'un a scanné votre QR code. En attente des coordonnées du trouveur.',
       };
     }
     return {
@@ -1270,6 +1312,57 @@ export default function SuiviPage() {
             </p>
           )}
         </div>
+
+        {/* ═══ LABS — Recovery check (15 min après "bagage retrouvé") ═══ */}
+        {isFound && hasFinderInfo && recoveryState === 'asking' && (
+          <div className="bg-[#fcd616] border-2 border-dashed border-[#1a1a1a] rounded-2xl p-5 text-center">
+            <div className="w-14 h-14 bg-white rounded-full flex items-center justify-center mx-auto mb-3 border-2 border-[#1a1a1a]">
+              <Clock className="w-7 h-7" style={{ color: INK }} />
+            </div>
+            <h3 className="text-lg font-bold mb-1" style={{ color: INK }}>
+              ⏰ Avez-vous récupéré votre bagage ?
+            </h3>
+            <p className="text-sm mb-4" style={{ color: INK, opacity: 0.7 }}>
+              Cela fait 15 minutes que votre bagage a été signalé comme retrouvé.
+            </p>
+            <div className="flex gap-3">
+              <button
+                onClick={() => handleRecoveryAnswer('yes')}
+                className="flex-1 py-3 px-4 rounded-xl font-bold text-white bg-green-600 hover:bg-green-700 transition-colors"
+              >
+                ✅ OUI, récupéré
+              </button>
+              <button
+                onClick={() => handleRecoveryAnswer('no')}
+                className="flex-1 py-3 px-4 rounded-xl font-bold text-white bg-red-600 hover:bg-red-700 transition-colors"
+              >
+                ❌ NON, pas encore
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* ═══ LABS — Recovery: NON → Contact QRBag ═══ */}
+        {isFound && hasFinderInfo && recoveryState === 'no' && (
+          <div className="bg-red-50 border-2 border-red-400 rounded-2xl p-5 text-center">
+            <div className="w-14 h-14 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-3 border-2 border-red-400">
+              <AlertTriangle className="w-7 h-7 text-red-600" />
+            </div>
+            <h3 className="text-lg font-bold text-red-700 mb-1">
+              ⚠️ Contactez QRBag
+            </h3>
+            <p className="text-sm text-red-600 mb-4">
+              Vous n&apos;avez pas récupéré votre bagage. Notre équipe vous aide à le récupérer rapidement.
+            </p>
+            <a
+              href="mailto:contact@qrbag.com?subject=Bagage non récupéré — {reference}"
+              className="inline-flex items-center gap-2 bg-red-600 hover:bg-red-700 text-white py-3 px-6 rounded-xl font-bold transition-colors"
+            >
+              <Phone className="w-4 h-4" />
+              Contacter le support QRBag
+            </a>
+          </div>
+        )}
 
         {/* ═══ LABS — Bloc "Actions rapides" (Mode En transit + Modifier profil) ═══ */}
         {/* Mis en haut de page pour être immédiatement visible par le propriétaire */}
