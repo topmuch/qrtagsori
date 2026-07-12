@@ -705,8 +705,8 @@ body * {
     padding: 1rem !important;
   }
 
-  /* Hide desktop-only elements */
-  .hidden.md\\:flex {
+  /* Hide desktop-only elements on mobile (proper CSS escape for `md:flex` class) */
+  .hidden.md\:flex {
     display: none !important;
   }
 
