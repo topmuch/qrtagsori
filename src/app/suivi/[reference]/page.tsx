@@ -497,46 +497,7 @@ export default function SuiviPage() {
     }
   }, [reference]);
 
-  // ─── LABS — WebSocket real-time: déclencher alertes quand un scan arrive ───
-  useEffect(() => {
-    if (!lastEvent) return;
-
-    // 1. Rafraîchir les données automatiquement
-    fetchSuivi(true, true);
-
-    // 2. Notification push via BroadcastChannel (service worker)
-    if (typeof BroadcastChannel !== 'undefined') {
-      const bc = new BroadcastChannel('qrbag-tracking');
-      bc.postMessage({
-        type: 'scan_detected',
-        reference,
-        message: `Votre bagage ${reference} vient d'être scanné.`,
-      });
-      bc.close();
-    }
-
-    // 3. Toast visuel sur la page
-    setRefreshToast(true);
-    setTimeout(() => setRefreshToast(false), 5000);
-
-    // 4. Bip audio si activé
-    if (audioEnabled) {
-      try {
-        const audioCtx = new (window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext)();
-        const oscillator = audioCtx.createOscillator();
-        const gain = audioCtx.createGain();
-        oscillator.connect(gain);
-        gain.connect(audioCtx.destination);
-        oscillator.frequency.value = 880;
-        gain.gain.setValueAtTime(0.3, audioCtx.currentTime);
-        gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.5);
-        oscillator.start();
-        oscillator.stop(audioCtx.currentTime + 0.5);
-      } catch {
-        // Audio peut échouer si pas d'interaction utilisateur
-      }
-    }
-  }, [lastEvent]);
+  // (WebSocket real-time effect moved after fetchSuivi declaration below)
 
   // Review modal state
   const [showReviewModal, setShowReviewModal] = useState(false);
@@ -932,6 +893,47 @@ export default function SuiviPage() {
     if (!data || data.status === 'error' || data.status === 'not_found') return;
     checkAndNotify(data.baggage, data.scans);
   }, [data, checkAndNotify]);
+
+  // ─── LABS — WebSocket real-time: déclencher alertes quand un scan arrive ───
+  useEffect(() => {
+    if (!lastEvent) return;
+
+    // 1. Rafraîchir les données automatiquement
+    fetchSuivi(true, true);
+
+    // 2. Notification push via BroadcastChannel (service worker)
+    if (typeof BroadcastChannel !== 'undefined') {
+      const bc = new BroadcastChannel('qrbag-tracking');
+      bc.postMessage({
+        type: 'scan_detected',
+        reference,
+        message: `Votre bagage ${reference} vient d'être scanné.`,
+      });
+      bc.close();
+    }
+
+    // 3. Toast visuel sur la page
+    setRefreshToast(true);
+    setTimeout(() => setRefreshToast(false), 5000);
+
+    // 4. Bip audio si activé
+    if (audioEnabled) {
+      try {
+        const audioCtx = new (window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext)();
+        const oscillator = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        oscillator.connect(gain);
+        gain.connect(audioCtx.destination);
+        oscillator.frequency.value = 880;
+        gain.gain.setValueAtTime(0.3, audioCtx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.5);
+        oscillator.start();
+        oscillator.stop(audioCtx.currentTime + 0.5);
+      } catch {
+        // Audio peut échouer si pas d'interaction utilisateur
+      }
+    }
+  }, [lastEvent, fetchSuivi, audioEnabled, reference]);
 
   // Refresh handler
   const handleRefresh = useCallback(async () => {
