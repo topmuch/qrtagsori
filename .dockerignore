@@ -9,5 +9,14 @@ package-lock.json
 yarn.lock
 pnpm-lock.yaml
 test
+__tests__
 *.log
 local-*
+dev-server*.log
+prisma/*.db
+prisma/*.sqlite
+db/*.db
+download/
+mini-services/
+examples/
+tool-results/
