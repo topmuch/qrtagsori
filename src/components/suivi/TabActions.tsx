@@ -193,7 +193,6 @@ export function TabActions({
   const [damageLoading, setDamageLoading] = useState(false);
   const [damageError, setDamageError] = useState('');
   const [damageSuccess, setDamageSuccess] = useState('');
-  const [damagePin, setDamagePin] = useState('');
 
   const handlePhotoSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
@@ -214,10 +213,6 @@ export function TabActions({
   };
 
   const handleDamageSave = useCallback(async () => {
-    if (!damagePin || damagePin.length < 4) {
-      setDamageError('Veuillez saisir votre PIN (4 chiffres).');
-      return;
-    }
     if (damagePhotos.length === 0) {
       setDamageError('Veuillez ajouter au moins une photo.');
       return;
@@ -230,7 +225,6 @@ export function TabActions({
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          pin: damagePin,
           type: damageType,
           description: damageDescription,
           photos: damagePhotos,
@@ -241,7 +235,6 @@ export function TabActions({
         setDamageSuccess(data.message || 'Photos enregistrées !');
         setDamagePhotos([]);
         setDamageDescription('');
-        setDamagePin('');
         const refreshRes = await fetch(`/api/baggage/${reference}/damage`);
         const refreshData = await refreshRes.json();
         if (refreshData.reports) setDamageReports(refreshData);
@@ -254,7 +247,7 @@ export function TabActions({
     } finally {
       setDamageLoading(false);
     }
-  }, [reference, damagePin, damagePhotos, damageType, damageDescription]);
+  }, [reference, damagePhotos, damageType, damageDescription]);
 
   return (
     <div className="space-y-3">
@@ -378,15 +371,12 @@ export function TabActions({
               {/* Description */}
               <textarea placeholder={damageType === 'before' ? 'ex: Bagage en bon état...' : 'ex: Poignée cassée...'} value={damageDescription} onChange={(e) => setDamageDescription(e.target.value)} maxLength={1000} rows={2} className="w-full bg-white border-2 border-[#1a1a1a] rounded-lg px-3 py-2 text-sm text-[#1a1a1a]" />
 
-              {/* PIN */}
-              <input type="password" inputMode="numeric" maxLength={6} placeholder="PIN (••••)" value={damagePin} onChange={(e) => setDamagePin(e.target.value.replace(/\D/g, ''))} className="w-full text-center text-lg tracking-[0.5em] bg-white border-2 border-[#1a1a1a] rounded-lg px-3 py-2 text-[#1a1a1a]" />
-
               {damageError && <p className="text-sm text-red-700 bg-red-50 border border-red-200 rounded-lg p-2">{damageError}</p>}
               {damageSuccess && <p className="text-sm text-green-700 bg-green-50 border border-green-200 rounded-lg p-2">{damageSuccess}</p>}
 
               <div className="flex gap-2">
                 <button onClick={() => { setShowDamageUpload(false); setDamagePhotos([]); setDamageError(''); }} className="flex-1 py-2 bg-slate-200 rounded-xl font-bold text-slate-700 text-sm">Annuler</button>
-                <button onClick={handleDamageSave} disabled={damageLoading || damagePhotos.length === 0 || !damagePin} className="flex-1 py-2 bg-[#1a1a1a] text-[#fcd616] rounded-xl font-bold text-sm disabled:opacity-50">{damageLoading ? '...' : 'Enregistrer'}</button>
+                <button onClick={handleDamageSave} disabled={damageLoading || damagePhotos.length === 0} className="flex-1 py-2 bg-[#1a1a1a] text-[#fcd616] rounded-xl font-bold text-sm disabled:opacity-50">{damageLoading ? '...' : 'Enregistrer'}</button>
               </div>
             </div>
           )}

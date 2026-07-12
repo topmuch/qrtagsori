@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
-import bcrypt from 'bcryptjs';
 import crypto from 'crypto';
 import sharp from 'sharp';
 import fs from 'fs';
@@ -31,7 +30,6 @@ export const runtime = 'nodejs';
 export const maxDuration = 60;
 
 const damageSchema = z.object({
-  pin: z.string().min(4).max(8),
   type: z.enum(['before', 'after']),
   description: z.string().max(1000).optional(),
   photos: z.array(z.string()).min(1).max(3), // 1-3 photos en base64
@@ -94,8 +92,7 @@ export async function POST(
     const baggage = await db.baggage.findUnique({
       where: { reference },
       select: {
-        reference: true,
-        ownerPin: true,
+        id: true,
         status: true,
       },
     });
@@ -114,25 +111,9 @@ export async function POST(
       );
     }
 
-    // Vérifier le PIN
-    if (!baggage.ownerPin) {
-      return NextResponse.json(
-        { error: 'Aucun PIN défini pour ce bagage' },
-        { status: 400 }
-      );
-    }
-
-    const pinValid = await bcrypt.compare(validated.pin, baggage.ownerPin);
-    if (!pinValid) {
-      return NextResponse.json(
-        { error: 'PIN incorrect' },
-        { status: 401 }
-      );
-    }
-
     // Vérifier s'il existe déjà un rapport de ce type
     const existing = await db.damageReport.findFirst({
-      where: { baggageId: baggage.reference, type: validated.type },
+      where: { baggageId: baggage.id, type: validated.type },
     });
 
     // Sauvegarder les photos
