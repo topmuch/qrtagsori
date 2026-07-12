@@ -43,7 +43,7 @@ export async function POST(
     const baggage = await db.baggage.findUnique({
       where: { reference },
       select: {
-        id: true,
+        reference: true,
         ownerPin: true,
         status: true,
       },
@@ -120,10 +120,10 @@ export async function POST(
     }
 
     const updated = await db.baggage.update({
-      where: { id: baggage.id },
+      where: { reference: baggage.reference },
       data: updateData,
       select: {
-        id: true,
+        reference: true,
         reference: true,
         travelerFirstName: true,
         travelerLastName: true,

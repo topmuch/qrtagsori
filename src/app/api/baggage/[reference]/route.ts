@@ -4,15 +4,15 @@ import { db } from '@/lib/db';
 // PUT - Update a baggage by ID
 export async function PUT(
   request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: Promise<{ reference: string }> }
 ) {
   try {
-    const { id } = await params;
+    const { reference } = await params;
     const body = await request.json();
 
     // Check if baggage exists
     const existingBaggage = await db.baggage.findUnique({
-      where: { id },
+      where: { reference },
     });
 
     if (!existingBaggage) {
@@ -40,7 +40,7 @@ export async function PUT(
 
     // Update the baggage
     const updatedBaggage = await db.baggage.update({
-      where: { id },
+      where: { reference },
       data: updateData,
     });
 
@@ -68,14 +68,14 @@ export async function PUT(
 // DELETE - Delete a baggage by ID
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: Promise<{ reference: string }> }
 ) {
   try {
-    const { id } = await params;
+    const { reference } = await params;
 
     // Check if baggage exists
     const baggage = await db.baggage.findUnique({
-      where: { id },
+      where: { reference },
     });
 
     if (!baggage) {
@@ -87,12 +87,12 @@ export async function DELETE(
 
     // Delete related scan logs first
     await db.scanLog.deleteMany({
-      where: { baggageId: id },
+      where: { baggageId: baggage.id },
     });
 
     // Delete the baggage
     await db.baggage.delete({
-      where: { id },
+      where: { reference },
     });
 
     return NextResponse.json({
@@ -112,13 +112,13 @@ export async function DELETE(
 // GET - Get a single baggage by ID
 export async function GET(
   request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: Promise<{ reference: string }> }
 ) {
   try {
-    const { id } = await params;
+    const { reference } = await params;
 
     const baggage = await db.baggage.findUnique({
-      where: { id },
+      where: { reference },
       include: { agency: true },
     });
 
@@ -141,7 +141,7 @@ export async function GET(
       status: baggage.status,
       agencyId: baggage.agencyId,
       agency: baggage.agency ? {
-        id: baggage.agency.id,
+        reference: baggage.agency.id,
         name: baggage.agency.name,
         email: baggage.agency.email,
         phone: baggage.agency.phone,

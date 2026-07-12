@@ -61,7 +61,7 @@ export async function POST(
     const baggage = await db.baggage.findUnique({
       where: { reference },
       select: {
-        id: true,
+        reference: true,
         ownerPin: true,
         status: true,
         transitMode: true,

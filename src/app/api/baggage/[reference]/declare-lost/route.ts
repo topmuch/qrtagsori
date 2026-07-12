@@ -1,17 +1,17 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
-import { sendEmail, getEmailSettings, getBaggageFoundEmailTemplate } from '@/lib/email';
+import { sendEmail, getEmailSettings, getBaggageLostEmailTemplate } from '@/lib/email';
 
-// PUT - Mark lost baggage as found
+// PUT - Declare baggage as lost
 export async function PUT(
   request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: Promise<{ reference: string }> }
 ) {
   try {
-    const { id } = await params;
+    const { reference } = await params;
 
     const baggage = await db.baggage.findUnique({
-      where: { id },
+      where: { reference },
       include: { agency: true }
     });
 
@@ -22,43 +22,31 @@ export async function PUT(
       );
     }
 
-    // Only allow marking lost baggages as found
-    if (baggage.status !== 'lost') {
+    // Only allow declaring active or scanned baggages as lost
+    if (baggage.status !== 'active' && baggage.status !== 'scanned') {
       return NextResponse.json(
-        { error: 'This baggage is not marked as lost' },
+        { error: 'Cannot declare this baggage as lost' },
         { status: 400 }
       );
     }
 
-    // Update baggage status and set foundAt timestamp
+    // Update baggage status and set declaredLostAt timestamp
     const updatedBaggage = await db.baggage.update({
-      where: { id },
+      where: { reference },
       data: {
-        status: 'found',
-        foundAt: new Date(),
-      }
-    });
-
-    // Mark any existing "baggage_declared_lost" notifications for this baggage as read
-    await db.notification.updateMany({
-      where: {
-        baggageId: baggage.id,
-        type: 'baggage_declared_lost',
-        read: false,
-      },
-      data: {
-        read: true,
+        status: 'lost',
+        declaredLostAt: new Date(),
       }
     });
 
     // 🔔 Create notification for SuperAdmin
     await db.notification.create({
       data: {
-        type: 'baggage_found',
+        type: 'baggage_declared_lost',
         userId: null, // broadcast to all superadmins
         agencyId: baggage.agencyId,
         baggageId: baggage.id,
-        message: `Le bagage ${baggage.reference} a été marqué comme retrouvé !`,
+        message: `🚨 L'agence ${baggage.agency?.name || 'Inconnue'} a déclaré le bagage ${baggage.reference} comme perdu`,
         data: JSON.stringify({
           reference: baggage.reference,
           agencyName: baggage.agency?.name,
@@ -72,13 +60,15 @@ export async function PUT(
     try {
       const emailSettings = await getEmailSettings();
       if (emailSettings) {
-        const template = getBaggageFoundEmailTemplate({
+        const template = getBaggageLostEmailTemplate({
           reference: baggage.reference,
           agencyName: baggage.agency?.name || undefined,
           travelerName: baggage.travelerFirstName && baggage.travelerLastName
             ? `${baggage.travelerFirstName} ${baggage.travelerLastName}`
             : baggage.travelerFirstName || undefined,
           baggageType: baggage.baggageType,
+          destination: baggage.destination || undefined,
+          flightNumber: baggage.flightNumber || undefined,
         });
 
         // Build recipients list
@@ -95,33 +85,33 @@ export async function PUT(
         if (recipients.length > 0) {
           await sendEmail({
             to: recipients,
-            subject: `✅ Bagage retrouvé — ${baggage.reference}`,
+            subject: `🚨 Bagage perdu — ${baggage.reference}`,
             html: template.html,
             text: template.text,
-            type: 'baggage_found',
+            type: 'baggage_declared_lost',
             agencyId: baggage.agencyId || undefined,
             data: { reference: baggage.reference, agencyName: baggage.agency?.name, baggageId: baggage.id },
           });
-          console.log(`📧 Found baggage notification sent for ${baggage.reference} to ${recipients.join(', ')}`);
+          console.log(`📧 Lost baggage notification sent for ${baggage.reference} to ${recipients.join(', ')}`);
         }
       }
     } catch (emailError) {
-      console.error('Failed to send found baggage email notification:', emailError);
+      console.error('Failed to send lost baggage email notification:', emailError);
     }
 
     return NextResponse.json({
       success: true,
-      message: 'Baggage marked as found',
+      message: 'Baggage declared as lost',
       baggage: {
         id: updatedBaggage.id,
         reference: updatedBaggage.reference,
         status: updatedBaggage.status,
-        foundAt: updatedBaggage.foundAt,
+        declaredLostAt: updatedBaggage.declaredLostAt,
       }
     });
 
   } catch (error) {
-    console.error('Mark found error:', error);
+    console.error('Declare lost error:', error);
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }

@@ -4,10 +4,10 @@ import { db } from '@/lib/db';
 // PATCH - Update baggage status
 export async function PATCH(
   request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: Promise<{ reference: string }> }
 ) {
   try {
-    const { id } = await params;
+    const { reference } = await params;
     const body = await request.json();
     const { status } = body;
 
@@ -28,7 +28,7 @@ export async function PATCH(
     }
 
     const baggage = await db.baggage.update({
-      where: { id },
+      where: { reference },
       data: { status },
     });
 

@@ -80,7 +80,7 @@ export async function POST(
     const baggage = await db.baggage.findUnique({
       where: { reference },
       select: {
-        id: true,
+        reference: true,
         ownerPin: true,
         status: true,
       },
@@ -118,7 +118,7 @@ export async function POST(
 
     // Vérifier s'il existe déjà un rapport de ce type
     const existing = await db.damageReport.findFirst({
-      where: { baggageId: baggage.id, type: validated.type },
+      where: { baggageId: baggage.reference, type: validated.type },
     });
 
     // Sauvegarder les photos
@@ -153,7 +153,7 @@ export async function POST(
       }
 
       report = await db.damageReport.update({
-        where: { id: existing.id },
+        where: { reference: existing.reference },
         data: {
           photos: JSON.stringify(photoPaths),
           description: validated.description || null,
@@ -162,7 +162,7 @@ export async function POST(
     } else {
       report = await db.damageReport.create({
         data: {
-          baggageId: baggage.id,
+          baggageId: baggage.reference,
           type: validated.type,
           photos: JSON.stringify(photoPaths),
           description: validated.description || null,
@@ -173,7 +173,7 @@ export async function POST(
     return NextResponse.json({
       success: true,
       report: {
-        id: report.id,
+        reference: report.reference,
         type: report.type,
         photos: photoPaths,
         description: report.description,
@@ -209,7 +209,7 @@ export async function GET(
     const { reference } = await params;
     const baggage = await db.baggage.findUnique({
       where: { reference },
-      select: { id: true },
+      select: { reference: true },
     });
 
     if (!baggage) {
@@ -220,13 +220,13 @@ export async function GET(
     }
 
     const reports = await db.damageReport.findMany({
-      where: { baggageId: baggage.id },
+      where: { baggageId: baggage.reference },
       orderBy: { createdAt: 'desc' },
     });
 
     return NextResponse.json({
       reports: reports.map((r) => ({
-        id: r.id,
+        reference: r.reference,
         type: r.type,
         photos: JSON.parse(r.photos) as string[],
         description: r.description,

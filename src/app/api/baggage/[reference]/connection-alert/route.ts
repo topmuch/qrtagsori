@@ -41,7 +41,7 @@ export async function POST(
     const baggage = await db.baggage.findUnique({
       where: { reference },
       select: {
-        id: true,
+        reference: true,
         ownerPin: true,
         status: true,
         flightNumber: true,
@@ -216,7 +216,7 @@ export async function POST(
 
     // ─── Mettre à jour le baggage (connectingFlight si fourni + timestamp alerte) ───
     await db.baggage.update({
-      where: { id: baggage.id },
+      where: { reference: baggage.reference },
       data: {
         connectingFlight: connectingFlight !== baggage.connectingFlight ? connectingFlight : undefined,
         connectionAlertSentAt: new Date(),

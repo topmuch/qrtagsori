@@ -22,7 +22,7 @@ export async function POST(
     const baggage = await db.baggage.findUnique({
       where: { reference },
       select: {
-        id: true,
+        reference: true,
         ownerPin: true,
         transitMode: true,
         status: true,
@@ -62,13 +62,13 @@ export async function POST(
 
     // Mettre à jour le mode
     const updated = await db.baggage.update({
-      where: { id: baggage.id },
+      where: { reference: baggage.reference },
       data: {
         transitMode: validated.mode,
         transitModeUpdatedAt: new Date(),
       },
       select: {
-        id: true,
+        reference: true,
         reference: true,
         transitMode: true,
         transitModeUpdatedAt: true,

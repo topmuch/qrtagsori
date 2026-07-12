@@ -37,7 +37,7 @@ export async function POST(
     const baggage = await db.baggage.findUnique({
       where: { reference },
       select: {
-        id: true,
+        reference: true,
         ownerPin: true,
         status: true,
         shareToken: true,
@@ -77,7 +77,7 @@ export async function POST(
       // Générer un nouveau token (remplace l'ancien s'il existe)
       const newToken = generateShareToken();
       await db.baggage.update({
-        where: { id: baggage.id },
+        where: { reference: baggage.reference },
         data: {
           shareToken: newToken,
           shareTokenCreatedAt: new Date(),
@@ -105,7 +105,7 @@ export async function POST(
       }
 
       await db.baggage.update({
-        where: { id: baggage.id },
+        where: { reference: baggage.reference },
         data: {
           shareToken: null,
           shareTokenCreatedAt: null,
