@@ -10,6 +10,7 @@ import {
   User,
   Clock,
   Shield,
+  AlertTriangle,
 } from 'lucide-react';
 import type { SuiviData, BaggageInfo } from './types';
 
@@ -39,6 +40,42 @@ export function TabOverview({
 
   return (
     <div className="space-y-3">
+      {/* ─── Alerte expiration proche (≤ 3 jours) ─── */}
+      {(() => {
+        if (!baggage.expiresAt) return null;
+        const now = new Date();
+        const expiry = new Date(baggage.expiresAt);
+        const diffMs = expiry.getTime() - now.getTime();
+        const diffDays = Math.ceil(diffMs / (1000 * 60 * 60 * 24));
+        if (diffDays < 0) return null; // déjà expiré — pas d'alerte ici
+        if (diffDays > 3) return null; // plus de 3 jours — pas d'alerte
+
+        return (
+          <div className="bg-red-50 border-2 border-red-400 rounded-2xl p-4">
+            <div className="flex items-start gap-3">
+              <AlertTriangle className="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" />
+              <div className="flex-1">
+                <p className="text-sm font-bold text-red-700">
+                  ⏰ Votre QR code expire {diffDays === 0 ? "aujourd'hui" : diffDays === 1 ? 'demain' : `dans ${diffDays} jours`}
+                </p>
+                <p className="text-xs text-red-600 mt-1">
+                  Date d&apos;expiration : {expiry.toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })}
+                </p>
+                <p className="text-xs text-red-600 mt-1">
+                  Contactez votre agence ou QRBag pour prolonger la validité.
+                </p>
+                <a
+                  href="mailto:contact@qrbag.com?subject=Prolongation QR Bag"
+                  className="inline-block mt-2 bg-red-600 text-white px-4 py-2 rounded-lg text-xs font-bold hover:bg-red-700 transition-colors"
+                >
+                  Demander une prolongation
+                </a>
+              </div>
+            </div>
+          </div>
+        );
+      })()}
+
       {/* Travel info */}
       <div className="bg-white border-2 border-dashed border-[#1a1a1a] rounded-2xl p-4">
         <h2 className="text-xs uppercase tracking-widest font-bold mb-3 flex items-center gap-2" style={{ color: INK }}>

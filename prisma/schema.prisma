@@ -154,6 +154,10 @@ model Baggage {
   shareToken              String?   // token unique (cuid ou uuid)
   shareTokenCreatedAt     DateTime? // timestamp de génération
 
+  // ─── Extend Validity (SuperAdmin) ───
+  validityExtendedAt      DateTime? // Dernière prolongation manuelle par l'admin
+  validityExtendedBy      String?   // Email de l'admin qui a prolongé
+
   agency            Agency?   @relation(fields: [agencyId], references: [id], onDelete: SetNull)
   scanLogs          ScanLog[]
   damageReports     DamageReport[]

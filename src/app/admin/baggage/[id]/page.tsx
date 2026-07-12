@@ -14,8 +14,10 @@ import {
   CheckCircle,
   Building,
   Luggage,
-  Send
+  Send,
+  CalendarClock
 } from 'lucide-react';
+import { ExtendValidityModal } from '@/components/admin/ExtendValidityModal';
 
 interface BaggageData {
   id: string;
@@ -52,6 +54,8 @@ interface BaggageData {
   destination?: string | null;
   departureDate?: string | null;
   departureTime?: string | null;
+  expiresAt?: string | null;
+  validityExtendedAt?: string | null;
 }
 
 export default function AdminBaggageDetailPage() {
@@ -62,6 +66,7 @@ export default function AdminBaggageDetailPage() {
   const [baggage, setBaggage] = useState<BaggageData | null>(null);
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState(false);
+  const [showExtendModal, setShowExtendModal] = useState(false);
 
   useEffect(() => {
     fetchBaggage();
@@ -360,8 +365,26 @@ export default function AdminBaggageDetailPage() {
             <QrCode className="w-5 h-5" />
             Voir la page de scan
           </Link>
+          <button
+            onClick={() => setShowExtendModal(true)}
+            className="flex-1 py-3 bg-[#0047d6] text-white rounded-lg font-medium hover:bg-[#0033a8] transition-colors flex items-center justify-center gap-2"
+          >
+            <CalendarClock className="w-5 h-5" />
+            Prolonger
+          </button>
         </div>
       </div>
+
+      {/* Extend Validity Modal */}
+      <ExtendValidityModal
+        reference={baggage.reference}
+        currentExpiry={baggage.expiresAt || null}
+        isOpen={showExtendModal}
+        onClose={() => setShowExtendModal(false)}
+        onSuccess={(newExpiry) => {
+          setBaggage({ ...baggage, expiresAt: newExpiry, validityExtendedAt: new Date().toISOString() });
+        }}
+      />
     </div>
   );
 }
