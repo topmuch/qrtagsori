@@ -570,11 +570,18 @@ export default function SuiviPage() {
   const [showDamageBlock, setShowDamageBlock] = useState(false);
 
   // ─── LABS — Recovery check: timer 15 min après "bagage retrouvé" ───
+  // NOTE: isFound et hasFinderInfo sont calculés plus bas (après fetch data).
+  // On utilise data directement ici pour éviter une référence avant déclaration.
   const [recoveryState, setRecoveryState] = useState<'waiting' | 'asking' | 'yes' | 'no'>('waiting');
   const storageKey = `recovery_${reference}`;
 
   useEffect(() => {
-    if (!isFound || !hasFinderInfo) return;
+    // Vérifier si le bagage est retrouvé (trouveur a laissé ses infos)
+    if (!data) return;
+    const hasFinder = !!(data.lastFinder?.name || data.lastFinder?.phone);
+    const found = !!data.baggage?.foundAt || hasFinder;
+    if (!found || !hasFinder) return;
+
     // Vérifier si le passager a déjà répondu
     const stored = localStorage.getItem(storageKey);
     if (stored === 'yes' || stored === 'no') {
@@ -592,16 +599,14 @@ export default function SuiviPage() {
     const remaining = 15 * 60 * 1000 - elapsed; // 15 min
 
     if (remaining <= 0) {
-      // 15 min déjà passées → poser la question immédiatement
       setRecoveryState('asking');
     } else {
-      // Sinon, timer pour poser la question dans `remaining` ms
       const timer = setTimeout(() => {
         setRecoveryState('asking');
       }, remaining);
       return () => clearTimeout(timer);
     }
-  }, [isFound, hasFinderInfo, reference, storageKey]);
+  }, [data, reference, storageKey]);
 
   const handleRecoveryAnswer = (answer: 'yes' | 'no') => {
     localStorage.setItem(storageKey, answer);
