@@ -1,915 +1,104 @@
 'use client';
 
-import { useEffect, useState, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useParams } from 'next/navigation';
-import Image from 'next/image';
 import dynamic from 'next/dynamic';
-import {
-  AlertCircle,
-  Clock,
-  Shield,
-  Navigation,
-  CheckCircle,
-  RefreshCw,
-  Phone,
-  MessageCircle,
-  MapPin,
-  Globe,
-  ArrowRight,
-  ChevronDown,
-  X,
-  AlertTriangle,
-  Volume2,
-  VolumeX,
-  Star,
-  Wifi,
-  WifiOff,
-  Power,
-  Edit3,
-  FileText,
-  HelpCircle,
-  Share2,
-  Camera,
-  KeyRound,
-} from 'lucide-react';
-
-// Dynamic imports (avoid SSR issues)
-const LeafletMap = dynamic(() => import('@/components/LeafletMap'), { ssr: false, loading: () => <MapSkeleton /> });
-import { SocialShareButtons } from '@/components/SocialShareButtons';
-import { ReviewModal } from '@/components/ReviewModal';
-import { PreDepartureAlert } from '@/components/PreDepartureAlert';
 import { useTrackingSocket } from '@/hooks/useTrackingSocket';
 import { useTranslation } from '@/hooks/useTranslation';
-import { Language, LANGUAGE_NAMES } from '@/lib/i18n';
-import type { ScanContext } from '@/lib/scan-context';
-import { CONTEXT_ICONS, CONTEXT_COLORS } from '@/lib/scan-context';
-import { generatePreFilledMessage, buildWhatsAppUrl } from '@/lib/whatsapp-message';
-import { safeTransportMode, getTransportImage } from '@/lib/transport';
-import type { TransportMode } from '@/lib/transport';
 import { useAudioAlert, POLL_INTERVAL_MS } from '@/hooks/useAudioAlert';
+import { PreDepartureAlert } from '@/components/PreDepartureAlert';
+import {
+  Luggage,
+  Plane,
+  Settings,
+  Camera,
+  Phone,
+  Shield,
+  Clock,
+  Wifi,
+  WifiOff,
+  Volume2,
+  VolumeX,
+  RefreshCw,
+  Globe,
+  AlertCircle,
+} from 'lucide-react';
 
-// ─── Brand constants (QRBag palette: blue #0047d6 + yellow #fcd616) ───
-const BRAND = '#0047d6';   // bleu vif — fonds principaux
-const ACCENT = '#fcd616'; // jaune vif — cards, accents
-const INK = '#1a1a1a';    // noir — texte sur jaune, bordures dashed
-const CREAM = '#0047d6';  // (alias — désormais bleu QRBag)
-const URGENT_RED = '#EF4444';
-const URGENT_BG = '#FEF2F2';
-const QRBAG_SUPPORT_PHONE = '+33745349339';
+// Dynamic imports
+const LeafletMap = dynamic(() => import('@/components/LeafletMap'), { ssr: false, loading: () => <MapSkeleton /> });
 
-// ═══════════════════════════════════════════════════════
-//  TYPES
-// ═══════════════════════════════════════════════════════
+// ─── Brand constants ───
+const BRAND = '#0047d6';
+const ACCENT = '#fcd616';
+const INK = '#1a1a1a';
 
-interface ScanEntry {
-  id: string;
-  location: string | null;
-  city: string | null;
-  country: string | null;
-  context: string;
-  finderName: string | null;
-  finderPhone: string | null;
-  message: string | null;
-  hasMap: boolean;
-  latitude: number | null;
-  longitude: number | null;
-  scannedAt: string;
-  whatsappStatus: string | null;
-}
-
-interface LastPosition {
-  latitude: number | null;
-  longitude: number | null;
-  address: string | null;
-  hasCoordinates: boolean;
-}
-
-interface BaggageInfo {
-  reference: string;
-  type: string;
-  travelerName: string;
-  baggageIndex: number;
-  baggageType: string;
-  status: string;
-  airlineName: string | null;
-  flightNumber: string | null;
-  destination: string | null;
-  destinationCountry: string | null;
-  departureDate: string | null;
-  departureTime: string | null;
-  transportMode: string;
-  trainCompany: string | null;
-  trainNumber: string | null;
-  shipName: string | null;
-  shipCabin: string | null;
-  busCompany: string | null;
-  busLineNumber: string | null;
-  agency: string | null;
-  createdAt: string | null;
-  lastScanDate: string | null;
-  lastLocation: string | null;
-  declaredLostAt: string | null;
-  foundAt: string | null;
-  expiresAt: string | null;
-}
-
-interface SuiviData {
-  status: string;
-  baggage: BaggageInfo;
-  lastFinder: { name: string | null; phone: string | null } | null;
-  scans: ScanEntry[];
-  lastPosition: LastPosition | null;
-}
-
-// Type for beforeinstallprompt event (not in standard TS DOM lib)
-interface BeforeInstallPromptEvent extends Event {
-  prompt(): Promise<void>;
-  userChoice: Promise<{ outcome: 'accepted' | 'dismissed' }>;
-}
-
-// ═══════════════════════════════════════════════════════
-//  HOOK: PWA Install Prompt (local, with iOS detection)
-// ═══════════════════════════════════════════════════════
-
-function usePWAInstallPrompt() {
-  // Detect iOS up-front (no setState-in-effect needed: navigator is stable on client)
-  // Default to false for SSR; useEffect below sets the real value via lazy init.
-  const [isIOS, setIsIOS] = useState(false);
-
-  const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null);
-  const [showButton, setShowButton] = useState(false);
-
-  // iOS detection runs once on mount — we use a ref-less pattern:
-  //   - setState is allowed here because this is reading a non-React external value
-  //   - The lint rule complains because setState happens synchronously, but this is
-  //     a legitimate pattern for reading navigator.userAgent at mount time.
-  useEffect(() => {
-    if (typeof window === 'undefined') return;
-
-    // Detect iOS (no beforeinstallprompt event on iOS Safari)
-    const iOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    setIsIOS(iOS);
-
-    // Already installed? (standalone mode)
-    const isStandalone =
-      window.matchMedia('(display-mode: standalone)').matches ||
-      (window.navigator as Navigator & { standalone?: boolean }).standalone === true;
-    if (isStandalone) return;
-
-    // On iOS, show the "Add to Home Screen" instruction button
-    if (iOS) {
-      setShowButton(true);
-      return;
-    }
-
-    // On Android/Chrome: capture beforeinstallprompt
-    const handler = (e: Event) => {
-      e.preventDefault();
-      setDeferredPrompt(e as BeforeInstallPromptEvent);
-      setShowButton(true);
-    };
-    window.addEventListener('beforeinstallprompt', handler);
-    return () => window.removeEventListener('beforeinstallprompt', handler);
-  }, []);
-
-  const handleInstall = useCallback(async () => {
-    if (isIOS) {
-      // Caller opens the instructions modal
-      return;
-    }
-    if (deferredPrompt) {
-      await deferredPrompt.prompt();
-      await deferredPrompt.userChoice;
-      setShowButton(false);
-      setDeferredPrompt(null);
-    }
-  }, [deferredPrompt, isIOS]);
-
-  return { showButton, isIOS, handleInstall };
-}
-
-// ═══════════════════════════════════════════════════════
-//  LANGUAGE SELECTOR (recoloré — light theme, brand-aware)
-// ═══════════════════════════════════════════════════════
-
-function LanguageSelector({ lang, setLang }: { lang: Language; setLang: (l: Language) => void }) {
-  const [isOpen, setIsOpen] = useState(false);
-
-  return (
-    <div className="relative">
-      <button
-        onClick={() => setIsOpen(!isOpen)}
-        aria-expanded={isOpen}
-        aria-haspopup="listbox"
-        className="flex items-center gap-1.5 px-3 py-2 sm:px-4 sm:py-2.5 bg-white border-2 border-[#1a1a1a] rounded-full text-[#1a1a1a] hover:bg-[#fcd616] transition-colors text-xs sm:text-sm md:text-base font-medium shadow-sm min-h-[36px] sm:min-h-[40px] md:min-h-[44px]"
-      >
-        <Globe className="w-4 h-4 sm:w-5 sm:h-5" />
-        <span>{LANGUAGE_NAMES[lang]}</span>
-      </button>
-
-      {isOpen && (
-        <div role="listbox" aria-label="Language" className="absolute top-full right-0 mt-1 sm:mt-2 bg-white border-2 border-[#1a1a1a] rounded-xl shadow-lg overflow-hidden z-50 min-w-[140px] sm:min-w-[160px]">
-          {(['fr', 'en', 'ar'] as Language[]).map((l) => (
-            <button
-              key={l}
-              role="option"
-              aria-selected={lang === l}
-              onClick={() => {
-                setLang(l);
-                setIsOpen(false);
-              }}
-              className={`w-full px-4 py-2.5 sm:px-5 sm:py-3 text-left text-xs sm:text-sm md:text-base font-medium transition-colors ${
-                lang === l
-                  ? 'bg-[#fcd616] text-[#1a1a1a]'
-                  : 'text-[#1a1a1a] hover:bg-[#fcd616]/30'
-              }`}
-            >
-              {LANGUAGE_NAMES[l]}
-            </button>
-          ))}
-        </div>
-      )}
-    </div>
-  );
-}
-
-// ═══════════════════════════════════════════════════════
-//  DASHED ENCART (light variant: dashed black on white)
-// ═══════════════════════════════════════════════════════
-
-function DashedEncart({ children, className = '' }: { children: React.ReactNode; className?: string }) {
-  return (
-    <div className={`border-2 border-dashed border-[#1a1a1a]/60 rounded-xl p-3 mb-2.5 last:mb-0 ${className}`}>
-      {children}
-    </div>
-  );
-}
-
-// ═══════════════════════════════════════════════════════
-//  MAP SKELETON (for Leaflet lazy loading)
-// ═══════════════════════════════════════════════════════
+// ─── Types imported from @/components/suivi/types ───
 
 function MapSkeleton() {
-  return (
-    <div className="w-full h-full bg-[#fcd616]/10 rounded-xl flex items-center justify-center animate-pulse">
-      <div className="text-center">
-        <MapPin className="w-8 h-8 text-[#fcd616]/40 mx-auto mb-2" />
-        <p className="text-sm text-[#1a1a1a]/40">Chargement de la carte...</p>
-      </div>
-    </div>
-  );
+  return <div className="w-full h-44 sm:h-48 md:h-56 bg-slate-200 animate-pulse rounded-xl" />;
 }
 
-// ═══════════════════════════════════════════════════════
-//  LOADING SCREEN (recoloré)
-// ═══════════════════════════════════════════════════════
+// ═══════════════════════════════════════════════════════════════
+// TAB COMPONENTS (imported from separate files)
+// ═══════════════════════════════════════════════════════════════
+import { TabOverview } from '@/components/suivi/TabOverview';
+import { TabActions } from '@/components/suivi/TabActions';
+import { TabHistory } from '@/components/suivi/TabHistory';
+import { TabContact } from '@/components/suivi/TabContact';
 
-function LoadingScreen({ t }: { t: (key: string) => string }) {
-  return (
-    <main className="min-h-screen bg-[#0047d6] flex items-center justify-center">
-      <div className="text-center">
-        <div className="animate-spin w-12 h-12 border-4 border-white/20 border-t-[#fcd616] rounded-full mx-auto mb-4"></div>
-        <p className="text-lg text-white">{t('common.loading')}</p>
-      </div>
-    </main>
-  );
-}
+// Shared types
+import type { BaggageInfo, ScanEntry, LastPosition, SuiviData } from '@/components/suivi/types';
 
-// ═══════════════════════════════════════════════════════
-//  ERROR SCREEN (recoloré)
-// ═══════════════════════════════════════════════════════
+// ═══════════════════════════════════════════════════════════════
+// MAIN PAGE
+// ═══════════════════════════════════════════════════════════════
 
-function ErrorScreen({
-  type,
-  t,
-  lang,
-  setLang,
-}: {
-  type: string;
-  t: (key: string) => string;
-  lang: Language;
-  setLang: (l: Language) => void;
-}) {
-  const errorConfig = {
-    not_found: {
-      icon: <AlertCircle className="w-12 h-12 text-red-500" />,
-      title: t('tracking.baggage_not_found'),
-      message: t('tracking.baggage_not_found_desc'),
-    },
-    blocked: {
-      icon: <Shield className="w-12 h-12 text-[#1a1a1a]/40" />,
-      title: t('errors.baggage_blocked'),
-      message: t('tracking.baggage_blocked_desc'),
-    },
-    expired: {
-      icon: <Clock className="w-12 h-12 text-[#1a1a1a]/40" />,
-      title: t('errors.protection_expired'),
-      message: t('tracking.baggage_expired_desc'),
-    },
-    pending_activation: {
-      icon: <AlertCircle className="w-12 h-12 text-[#fcd616]" />,
-      title: t('tracking.baggage_not_found'),
-      message: t('tracking.baggage_pending_desc'),
-    },
-  };
-
-  const config = errorConfig[type as keyof typeof errorConfig] || errorConfig.not_found;
-
-  return (
-    <main className="min-h-screen bg-[#0047d6] flex items-center justify-center p-5 md:p-8 relative">
-      <div className="absolute top-4 right-4">
-        <LanguageSelector lang={lang} setLang={setLang} />
-      </div>
-
-      <div className="max-w-md w-full bg-white border-2 border-dashed border-[#1a1a1a] rounded-2xl p-6 md:p-8 text-center shadow-xl">
-        <div className="w-20 h-20 bg-[#fcd616]/30 border-2 border-dashed border-[#1a1a1a] rounded-full flex items-center justify-center mx-auto mb-6">
-          {config.icon}
-        </div>
-        <h1 className="text-2xl md:text-3xl font-bold text-[#1a1a1a] mb-3">{config.title}</h1>
-        <p className="text-[#1a1a1a] text-base md:text-lg mb-6">{config.message}</p>
-        <div className="w-full py-4 px-6 bg-[#fcd616]/20 border-2 border-dashed border-[#1a1a1a] text-[#1a1a1a] rounded-xl text-center text-base font-medium min-h-[56px]">
-          {t('tracking.trust_note')}
-        </div>
-      </div>
-    </main>
-  );
-}
-
-// ═══════════════════════════════════════════════════════
-//  GOOGLE MAPS IFRAME (recoloré fallback)
-// ═══════════════════════════════════════════════════════
-
-function MapEmbed({
-  latitude,
-  longitude,
-  address,
-  t,
-}: {
-  latitude: number | null;
-  longitude: number | null;
-  address: string | null;
-  t: (key: string) => string;
-}) {
-  let mapSrc: string | null = null;
-
-  if (latitude && longitude) {
-    mapSrc = `https://maps.google.com/maps?q=${latitude},${longitude}&z=15&output=embed`;
-  } else if (address) {
-    mapSrc = `https://maps.google.com/maps?q=${encodeURIComponent(address)}&z=13&output=embed`;
-  }
-
-  if (!mapSrc) {
-    return (
-      <div className="bg-[#fcd616]/20 border-2 border-dashed border-[#1a1a1a] rounded-xl p-4 text-center text-[#1a1a1a]">
-        <MapPin className="w-6 h-6 mx-auto mb-2" />
-        <p className="text-base font-medium">{address || t('tracking.no_location')}</p>
-        <p className="text-sm text-[#1a1a1a]/70 mt-1">{t('tracking.map_unavailable')}</p>
-      </div>
-    );
-  }
-
-  return (
-    <div className="rounded-xl overflow-hidden border-2 border-[#1a1a1a]">
-      <iframe
-        src={mapSrc}
-        width="100%"
-        height="100%"
-        style={{ border: 0, minHeight: '180px' }}
-        allowFullScreen
-        loading="lazy"
-        referrerPolicy="no-referrer-when-downgrade"
-        title="Location"
-        className="w-full h-full"
-      />
-    </div>
-  );
-}
-
-// ═══════════════════════════════════════════════════════
-//  CONTEXT BADGE (conservé, recoloré sur fond jaune/20)
-// ═══════════════════════════════════════════════════════
-
-function ContextBadge({ context, t }: { context: string; t: (key: string) => string }) {
-  const scanContext = context as ScanContext;
-  const icon = CONTEXT_ICONS[scanContext] || '📍';
-  // Map original color classes to neutral brand-aware classes
-  const colorClass = CONTEXT_COLORS[scanContext] || 'bg-[#1a1a1a]';
-
-  const contextKeyMap: Record<string, string> = {
-    departure_airport_urgent: 'tracking.context_departure',
-    arrival_airport: 'tracking.context_arrival',
-    in_transit: 'tracking.context_transit',
-    static_location: 'tracking.context_static',
-  };
-  const labelKey = contextKeyMap[scanContext] || 'tracking.context_static';
-
-  return (
-    <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 ${colorClass} text-white text-xs font-bold rounded-full`}>
-      <span>{icon}</span>
-      <span>{t(labelKey)}</span>
-    </span>
-  );
-}
-
-// ═══════════════════════════════════════════════════════
-//  iOS INSTALL INSTRUCTIONS MODAL
-// ═══════════════════════════════════════════════════════
-
-function IOSInstallModal({
-  show,
-  onClose,
-  t,
-}: {
-  show: boolean;
-  onClose: () => void;
-  t: (key: string) => string;
-}) {
-  if (!show) return null;
-  return (
-    <div
-      className="fixed inset-0 bg-black/60 z-[60] flex items-end sm:items-center justify-center p-4"
-      onClick={onClose}
-      role="dialog"
-      aria-modal="true"
-    >
-      <div
-        className="bg-white border-2 border-[#1a1a1a] rounded-2xl p-5 max-w-sm w-full shadow-2xl"
-        onClick={(e) => e.stopPropagation()}
-      >
-        <div className="flex items-center justify-between mb-3">
-          <h3 className="text-lg font-bold text-[#1a1a1a]">📱 {t('tracking.install_app_ios')}</h3>
-          <button
-            onClick={onClose}
-            aria-label={t('tracking.close')}
-            className="w-8 h-8 rounded-full hover:bg-[#fcd616]/30 flex items-center justify-center"
-          >
-            <X className="w-4 h-4" />
-          </button>
-        </div>
-        <ol className="space-y-2 text-sm text-[#1a1a1a]">
-          <li className="flex gap-2"><span>1.</span><span>{t('tracking.install_ios_step1')} <span className="inline-block px-1.5 py-0.5 bg-[#fcd616] rounded text-xs font-bold">⬆️</span></span></li>
-          <li className="flex gap-2"><span>2.</span><span>{t('tracking.install_ios_step2')}</span></li>
-          <li className="flex gap-2"><span>3.</span><span>{t('tracking.install_ios_step3')}</span></li>
-        </ol>
-      </div>
-    </div>
-  );
-}
-
-// ═══════════════════════════════════════════════════════
-//  MAIN PAGE
-// ═══════════════════════════════════════════════════════
+type TabId = 'overview' | 'actions' | 'history' | 'contact';
 
 export default function SuiviPage() {
   const params = useParams();
   const reference = params.reference as string;
+  const { t, lang, setLang, dir, countryCode } = useTranslation();
 
-  const { t, lang, setLang, dir } = useTranslation();
-
+  // ─── State ───
   const [data, setData] = useState<SuiviData | null>(null);
   const [loading, setLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [refreshToast, setRefreshToast] = useState(false);
-
-  // Accordion/collapsible state
-  const [historyOpen, setHistoryOpen] = useState(true);
-  const [showAllScans, setShowAllScans] = useState(false);
-  const [baggageOpen, setBaggageOpen] = useState(false);
-
-  // PWA install state
-  const { showButton: showInstallButton, isIOS, handleInstall } = usePWAInstallPrompt();
-  const [showIOSModal, setShowIOSModal] = useState(false);
-
-  // Status toggle state
+  const [activeTab, setActiveTab] = useState<TabId>('overview');
   const [statusToast, setStatusToast] = useState(false);
   const [isTogglingStatus, setIsTogglingStatus] = useState(false);
 
-  // Audio alert system
-  const { audioEnabled, enableAudio, toggleAudio, checkAndNotify } = useAudioAlert(lang);
+  // Audio alert
+  const { audioEnabled, enableAudio, toggleAudio } = useAudioAlert(lang);
 
-  // WebSocket real-time connection
+  // WebSocket
   const { isConnected: wsConnected, lastEvent } = useTrackingSocket(reference);
 
-  // ─── LABS — Stocker la dernière référence consultée (pour redirection PWA) ───
+  // Store last reference for PWA redirect
   useEffect(() => {
     if (reference) {
       localStorage.setItem('qrbag_last_reference', reference);
     }
   }, [reference]);
 
-  // (WebSocket real-time effect moved after fetchSuivi declaration below)
-
-  // Review modal state
-  const [showReviewModal, setShowReviewModal] = useState(false);
-
-  // Show trajectory map state
-  const [showTrajectoryMap, setShowTrajectoryMap] = useState(false);
-
-  // ─── LABS — Feature #3: Mode "En transit" state ───
-  const [transitMode, setTransitMode] = useState<'active' | 'inactive'>('active');
-  const [showTransitModal, setShowTransitModal] = useState(false);
-  const [transitPinInput, setTransitPinInput] = useState('');
-  const [transitLoading, setTransitLoading] = useState(false);
-  const [transitError, setTransitError] = useState('');
-  const [hasOwnerPin, setHasOwnerPin] = useState(false);
-
-  // ─── LABS — Feature #5: Alerte Correspondance (signaler retard) state ───
-  const [showDelayBlock, setShowDelayBlock] = useState(false);
-  const [delayMinutes, setDelayMinutes] = useState('');
-  const [connectingFlightInput, setConnectingFlightInput] = useState('');
-  const [connectionTimeMinutes, setConnectionTimeMinutes] = useState('');
-  const [delayPinInput, setDelayPinInput] = useState('');
-  const [delayLoading, setDelayLoading] = useState(false);
-  const [delayResult, setDelayResult] = useState<{
-    success: boolean;
-    status?: string;
-    message?: string;
-    error?: string;
-  } | null>(null);
-
-  // ─── LABS — Feature H: Export PDF parcours bagage state ───
-  const [showPdfModal, setShowPdfModal] = useState(false);
-  const [pdfPinInput, setPdfPinInput] = useState('');
-  const [pdfLoading, setPdfLoading] = useState(false);
-  const [pdfError, setPdfError] = useState('');
-
-  // ─── LABS — PIN recovery (regenerate) state ───
-  const [showPinRecoveryModal, setShowPinRecoveryModal] = useState(false);
-  const [pinRecoveryInput, setPinRecoveryInput] = useState('');
-  const [pinRecoveryLoading, setPinRecoveryLoading] = useState(false);
-  const [pinRecoveryError, setPinRecoveryError] = useState('');
-  const [pinRecoveryResult, setPinRecoveryResult] = useState<string | null>(null);
-
-  const handlePinRecovery = useCallback(async () => {
-    if (!pinRecoveryInput || pinRecoveryInput.length < 4) {
-      setPinRecoveryError('Veuillez saisir votre PIN actuel (4 chiffres).');
-      return;
-    }
-    setPinRecoveryLoading(true);
-    setPinRecoveryError('');
-    setPinRecoveryResult(null);
-    try {
-      const res = await fetch(`/api/baggage/${reference}/regenerate-pin`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ pin: pinRecoveryInput }),
-      });
-      const data = await res.json();
-      if (res.ok) {
-        setPinRecoveryResult(data.ownerPin);
-        setPinRecoveryInput('');
-      } else {
-        setPinRecoveryError(data.error || 'Erreur');
-      }
-    } catch {
-      setPinRecoveryError('Erreur réseau');
-    } finally {
-      setPinRecoveryLoading(false);
-    }
-  }, [reference, pinRecoveryInput]);
-
-  // ─── LABS — Feature F: Coordonnées d'urgence par destination ───
-  const [emergencyContacts, setEmergencyContacts] = useState<{
-    flag: string;
-    countryName: string;
-    police: string;
-    medical: string;
-    fire: string;
-    frenchEmbassy: string;
-    frenchEmbassyUrl?: string;
-    mainAirline?: string;
-    mainAirlinePhone?: string;
-    notes?: string;
-  } | null>(null);
-
-  // ─── LABS — Feature G: Partage familial du suivi state ───
-  const [showShareModal, setShowShareModal] = useState(false);
-  const [sharePinInput, setSharePinInput] = useState('');
-  const [shareLoading, setShareLoading] = useState(false);
-  const [shareError, setShareError] = useState('');
-  const [shareUrl, setShareUrl] = useState<string | null>(null);
-  const [shareCopied, setShareCopied] = useState(false);
-
-  // ─── LABS — Feature D: Preuve de dommage state ───
-  const [damageReports, setDamageReports] = useState<{
-    hasBefore: boolean;
-    hasAfter: boolean;
-    reports: Array<{
-      id: string;
-      type: string;
-      photos: string[];
-      description: string | null;
-      createdAt: string;
-    }>;
-  } | null>(null);
-  const [showDamageBlock, setShowDamageBlock] = useState(false);
-
-  // ─── LABS — Recovery check: timer 15 min après "bagage retrouvé" ───
-  // NOTE: isFound et hasFinderInfo sont calculés plus bas (après fetch data).
-  // On utilise data directement ici pour éviter une référence avant déclaration.
-  const [recoveryState, setRecoveryState] = useState<'waiting' | 'asking' | 'yes' | 'no'>('waiting');
-  const storageKey = `recovery_${reference}`;
-
-  useEffect(() => {
-    // Vérifier si le bagage est retrouvé (trouveur a laissé ses infos)
-    if (!data) return;
-    const hasFinder = !!(data.lastFinder?.name || data.lastFinder?.phone);
-    const found = !!data.baggage?.foundAt || hasFinder;
-    if (!found || !hasFinder) return;
-
-    // Vérifier si le passager a déjà répondu
-    const stored = localStorage.getItem(storageKey);
-    if (stored === 'yes' || stored === 'no') {
-      setRecoveryState(stored);
-      return;
-    }
-    // Démarrer le timer 15 min à partir du premier affichage
-    const firstSeenKey = `recovery_first_seen_${reference}`;
-    let firstSeen = localStorage.getItem(firstSeenKey);
-    if (!firstSeen) {
-      firstSeen = Date.now().toString();
-      localStorage.setItem(firstSeenKey, firstSeen);
-    }
-    const elapsed = Date.now() - parseInt(firstSeen);
-    const remaining = 15 * 60 * 1000 - elapsed; // 15 min
-
-    if (remaining <= 0) {
-      setRecoveryState('asking');
-    } else {
-      const timer = setTimeout(() => {
-        setRecoveryState('asking');
-      }, remaining);
-      return () => clearTimeout(timer);
-    }
-  }, [data, reference, storageKey]);
-
-  const handleRecoveryAnswer = (answer: 'yes' | 'no') => {
-    localStorage.setItem(storageKey, answer);
-    setRecoveryState(answer);
-  };
-
-  // Fetch damage reports on mount
-  useEffect(() => {
-    if (!data?.baggage?.reference) return;
-    fetch(`/api/baggage/${data.baggage.reference}/damage`)
-      .then((r) => r.json())
-      .then((d) => {
-        if (d.reports) setDamageReports(d);
-      })
-      .catch(() => {});
-  }, [data?.baggage?.reference]);
-
-  // Fetch existing share state on mount
-  useEffect(() => {
-    if (!data?.baggage?.reference) return;
-    fetch(`/api/baggage/${data.baggage.reference}/share`)
-      .then((r) => r.json())
-      .then((d) => {
-        if (d.hasShare && d.shareUrl) {
-          setShareUrl(d.shareUrl);
-        } else {
-          setShareUrl(null);
-        }
-      })
-      .catch(() => {});
-  }, [data?.baggage?.reference]);
-
-  const handleShareGenerate = useCallback(async () => {
-    if (!data?.baggage?.reference) return;
-    if (!sharePinInput || sharePinInput.length < 4) {
-      setShareError('Veuillez saisir votre PIN (4 chiffres).');
-      return;
-    }
-    setShareLoading(true);
-    setShareError('');
-    try {
-      const res = await fetch(`/api/baggage/${data.baggage.reference}/share`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ pin: sharePinInput, action: 'generate' }),
-      });
-      const result = await res.json();
-      if (res.ok) {
-        setShareUrl(result.shareUrl);
-        setSharePinInput('');
-      } else {
-        setShareError(result.error || 'Erreur lors de la génération');
-      }
-    } catch {
-      setShareError('Erreur réseau');
-    } finally {
-      setShareLoading(false);
-    }
-  }, [data?.baggage?.reference, sharePinInput]);
-
-  const handleShareRevoke = useCallback(async () => {
-    if (!data?.baggage?.reference) return;
-    if (!sharePinInput || sharePinInput.length < 4) {
-      setShareError('Veuillez saisir votre PIN pour révoquer.');
-      return;
-    }
-    setShareLoading(true);
-    setShareError('');
-    try {
-      const res = await fetch(`/api/baggage/${data.baggage.reference}/share`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ pin: sharePinInput, action: 'revoke' }),
-      });
-      const result = await res.json();
-      if (res.ok) {
-        setShareUrl(null);
-        setSharePinInput('');
-        setShareCopied(false);
-      } else {
-        setShareError(result.error || 'Erreur lors de la révocation');
-      }
-    } catch {
-      setShareError('Erreur réseau');
-    } finally {
-      setShareLoading(false);
-    }
-  }, [data?.baggage?.reference, sharePinInput]);
-
-  const handleCopyShareUrl = useCallback(() => {
-    if (!shareUrl) return;
-    navigator.clipboard.writeText(shareUrl).then(() => {
-      setShareCopied(true);
-      setTimeout(() => setShareCopied(false), 3000);
-    });
-  }, [shareUrl]);
-
-  // Fetch emergency contacts si destinationCountry défini
-  useEffect(() => {
-    if (!data?.baggage?.destinationCountry) {
-      setEmergencyContacts(null);
-      return;
-    }
-    fetch(`/api/emergency-contacts?country=${encodeURIComponent(data.baggage.destinationCountry)}`)
-      .then((r) => r.json())
-      .then((d) => {
-        if (d.contacts) setEmergencyContacts(d.contacts);
-        else setEmergencyContacts(null);
-      })
-      .catch(() => setEmergencyContacts(null));
-  }, [data?.baggage?.destinationCountry]);
-
-  const handleDownloadPdf = useCallback(async () => {
-    if (!data?.baggage?.reference) return;
-    if (!pdfPinInput || pdfPinInput.length < 4) {
-      setPdfError('Veuillez saisir votre PIN (4 chiffres).');
-      return;
-    }
-    setPdfLoading(true);
-    setPdfError('');
-    try {
-      // Le PDF est téléchargé directement via URL signée du PIN
-      // (pas de fetch JSON : on déclenche un download navigateur)
-      const url = `/api/baggage/${data.baggage.reference}/export-pdf?pin=${encodeURIComponent(pdfPinInput)}`;
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `QRBag-parcours-${data.baggage.reference}.pdf`;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      // Fermer le modal après déclenchement
-      setShowPdfModal(false);
-      setPdfPinInput('');
-    } catch {
-      setPdfError('Erreur lors du téléchargement. Vérifiez votre PIN.');
-    } finally {
-      setPdfLoading(false);
-    }
-  }, [data?.baggage?.reference, pdfPinInput]);
-
-  // Fetch transit mode state on mount
-  useEffect(() => {
-    if (!data?.baggage?.reference) return;
-    fetch(`/api/baggage/${data.baggage.reference}/transit-mode`)
-      .then(r => r.json())
-      .then(d => {
-        if (d.transitMode) setTransitMode(d.transitMode);
-        if (d.hasPin !== undefined) setHasOwnerPin(d.hasPin);
-      })
-      .catch(() => {});
-  }, [data?.baggage?.reference]);
-
-  // Handle transit mode toggle
-  const handleTransitToggle = useCallback(async () => {
-    if (!data?.baggage?.reference) return;
-    if (!hasOwnerPin) {
-      setTransitError('Aucun PIN défini. Contactez le support ou définissez un PIN via l\'édition de profil.');
-      return;
-    }
-    if (!transitPinInput || transitPinInput.length < 4) {
-      setTransitError('Veuillez saisir votre PIN (4-6 chiffres).');
-      return;
-    }
-
-    setTransitLoading(true);
-    setTransitError('');
-    try {
-      const newMode = transitMode === 'active' ? 'inactive' : 'active';
-      const res = await fetch(`/api/baggage/${data.baggage.reference}/transit-mode`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ pin: transitPinInput, mode: newMode }),
-      });
-      const result = await res.json();
-      if (res.ok) {
-        setTransitMode(newMode);
-        setShowTransitModal(false);
-        setTransitPinInput('');
-        setStatusToast(true);
-        setTimeout(() => setStatusToast(false), 3000);
-      } else {
-        setTransitError(result.error || 'Erreur lors du changement de mode');
-      }
-    } catch {
-      setTransitError('Erreur réseau');
-    } finally {
-      setTransitLoading(false);
-    }
-  }, [data?.baggage?.reference, transitMode, transitPinInput, hasOwnerPin]);
-
-  // ─── LABS — Feature #5: Handle delay submission (manual mode) ───
-  const handleDelaySubmit = useCallback(async () => {
-    if (!data?.baggage?.reference) return;
-    if (!delayPinInput || delayPinInput.length < 4) {
-      setDelayResult({ success: false, error: 'Veuillez saisir votre PIN.' });
-      return;
-    }
-    const delayNum = parseInt(delayMinutes, 10);
-    const connTimeNum = parseInt(connectionTimeMinutes, 10);
-    if (isNaN(delayNum) || delayNum < 0) {
-      setDelayResult({ success: false, error: 'Retard invalide (en minutes).' });
-      return;
-    }
-    if (!connectingFlightInput.trim()) {
-      setDelayResult({ success: false, error: 'Veuillez saisir votre vol de correspondance.' });
-      return;
-    }
-    if (isNaN(connTimeNum) || connTimeNum < 15) {
-      setDelayResult({ success: false, error: 'Temps de correspondance invalide (minimum 15 min).' });
-      return;
-    }
-
-    setDelayLoading(true);
-    setDelayResult(null);
-    try {
-      const res = await fetch(`/api/baggage/${data.baggage.reference}/connection-alert`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          pin: delayPinInput,
-          delayMinutes: delayNum,
-          connectingFlight: connectingFlightInput.trim().toUpperCase(),
-          connectionTimeMinutes: connTimeNum,
-        }),
-      });
-      const result = await res.json();
-      if (res.ok) {
-        setDelayResult({
-          success: true,
-          status: result.status,
-          message: result.message,
-        });
-        if (result.status !== 'ok') {
-          // Si alerte envoyée, on ferme le bloc et reset les champs
-          setDelayPinInput('');
-          setDelayMinutes('');
-          setConnectingFlightInput('');
-          setConnectionTimeMinutes('');
-          setShowDelayBlock(false);
-        }
-      } else {
-        setDelayResult({
-          success: false,
-          error: result.error || 'Erreur lors de l\'envoi de l\'alerte',
-        });
-      }
-    } catch {
-      setDelayResult({ success: false, error: 'Erreur réseau' });
-    } finally {
-      setDelayLoading(false);
-    }
-  }, [data?.baggage?.reference, delayPinInput, delayMinutes, connectingFlightInput, connectionTimeMinutes]);
-
-  // Fetch tracking data
+  // ─── Fetch tracking data ───
   const fetchSuivi = useCallback(async (isRefresh = false, isSilent = false) => {
     if (isRefresh && !isSilent) setIsRefreshing(true);
-
     try {
-      const response = await fetch(`/api/suivi/${reference}`);
-      const result = await response.json();
-      setData(result);
-    } catch (error) {
-      console.error('Error fetching suivi:', error);
-      setData({ status: 'error', baggage: null as unknown as BaggageInfo, lastFinder: null, scans: [], lastPosition: null });
+      const res = await fetch(`/api/suivi/${reference}`);
+      if (!res.ok) throw new Error('Failed');
+      const d = await res.json();
+      setData(d);
+    } catch {
+      // silent
     } finally {
       setLoading(false);
-      if (!isSilent) setIsRefreshing(false);
+      if (isRefresh && !isSilent) {
+        setIsRefreshing(false);
+        setRefreshToast(true);
+        setTimeout(() => setRefreshToast(false), 2000);
+      }
     }
   }, [reference]);
 
@@ -918,469 +107,164 @@ export default function SuiviPage() {
     fetchSuivi(false);
   }, [fetchSuivi]);
 
-  // ─── Polling: auto-refresh when audio alerts are enabled ───
+  // Polling when audio enabled
   useEffect(() => {
     if (!audioEnabled) return;
-
-    const interval = setInterval(() => {
-      fetchSuivi(false, true); // silent refresh
-    }, POLL_INTERVAL_MS);
-
+    const interval = setInterval(() => fetchSuivi(false, true), POLL_INTERVAL_MS);
     return () => clearInterval(interval);
   }, [audioEnabled, fetchSuivi]);
 
-  // ─── Audio notification: check when data changes ───
-  useEffect(() => {
-    if (!data || data.status === 'error' || data.status === 'not_found') return;
-    checkAndNotify(data.baggage, data.scans);
-  }, [data, checkAndNotify]);
-
-  // ─── LABS — WebSocket real-time: déclencher alertes quand un scan arrive ───
+  // WebSocket real-time alerts
   useEffect(() => {
     if (!lastEvent) return;
-
-    // 1. Rafraîchir les données automatiquement
     fetchSuivi(true, true);
-
-    // 2. Notification push via BroadcastChannel (service worker)
-    if (typeof BroadcastChannel !== 'undefined') {
-      const bc = new BroadcastChannel('qrbag-tracking');
-      bc.postMessage({
-        type: 'scan_detected',
-        reference,
-        message: `Votre bagage ${reference} vient d'être scanné.`,
-      });
-      bc.close();
-    }
-
-    // 3. Toast visuel sur la page
     setRefreshToast(true);
     setTimeout(() => setRefreshToast(false), 5000);
-
-    // 4. Bip audio si activé
     if (audioEnabled) {
       try {
         const audioCtx = new (window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext)();
-        const oscillator = audioCtx.createOscillator();
+        const osc = audioCtx.createOscillator();
         const gain = audioCtx.createGain();
-        oscillator.connect(gain);
+        osc.connect(gain);
         gain.connect(audioCtx.destination);
-        oscillator.frequency.value = 880;
+        osc.frequency.value = 880;
         gain.gain.setValueAtTime(0.3, audioCtx.currentTime);
         gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.5);
-        oscillator.start();
-        oscillator.stop(audioCtx.currentTime + 0.5);
-      } catch {
-        // Audio peut échouer si pas d'interaction utilisateur
-      }
+        osc.start();
+        osc.stop(audioCtx.currentTime + 0.5);
+      } catch { /* silent */ }
+    }
+    // BroadcastChannel for push notification
+    if (typeof BroadcastChannel !== 'undefined') {
+      const bc = new BroadcastChannel('qrbag-tracking');
+      bc.postMessage({ type: 'scan_detected', reference, message: `Votre bagage ${reference} vient d'être scanné.` });
+      bc.close();
     }
   }, [lastEvent, fetchSuivi, audioEnabled, reference]);
 
-  // Refresh handler
   const handleRefresh = useCallback(async () => {
     await fetchSuivi(true);
-    setRefreshToast(true);
-    setTimeout(() => setRefreshToast(false), 2000);
   }, [fetchSuivi]);
 
-  // WHATSAPP-HARMONIZED: WhatsApp handler — owner contacts finder
-  const handleWhatsApp = useCallback(() => {
-    if (!data?.lastFinder?.phone) return;
-
-    const lastScan = data.scans[0];
-    const message = generatePreFilledMessage({
-      baggage: {
-        reference: data.baggage.reference,
-        bagType: data.baggage.baggageType || 'cabine',
-        transportMode: (data.baggage.transportMode || 'flight') as 'flight' | 'train' | 'boat' | 'bus',
-        airlineName: data.baggage.airlineName || undefined,
-        flightNumber: data.baggage.flightNumber || undefined,
-        trainCompany: data.baggage.trainCompany || undefined,
-        trainNumber: data.baggage.trainNumber || undefined,
-        shipName: data.baggage.shipName || undefined,
-        shipCabin: data.baggage.shipCabin || undefined,
-        busCompany: data.baggage.busCompany || undefined,
-        busLineNumber: data.baggage.busLineNumber || undefined,
-        destination: data.baggage.destination || undefined,
-      },
-      scanData: {
-        city: data.lastPosition?.address || data.baggage?.lastLocation || '',
-        address: data.lastPosition?.address || '',
-        context: (lastScan?.context || 'static_location') as ScanContext,
-      },
-      finder: {
-        name: data.lastFinder?.name || '',
-        whatsapp: data.lastFinder?.phone || '',
-      },
-      locale: lang,
-      ownerName: data.baggage?.travelerName || undefined,
-    });
-
-    const url = buildWhatsAppUrl(data.lastFinder.phone, message);
-
-    const isIOSUA = /iPad|iPhone|iPod/.test(navigator.userAgent);
-    if (isIOSUA) {
-      window.location.href = url;
-    } else {
-      const newWindow = window.open(url, '_blank');
-      if (!newWindow || newWindow.closed || typeof newWindow.closed === 'undefined') {
-        window.location.href = url;
-      }
-    }
-  }, [data, reference, lang]);
-
-  // Phone call handler
-  const handlePhoneCall = useCallback(() => {
-    if (!data?.lastFinder?.phone) return;
-    window.location.href = `tel:${data.lastFinder.phone}`;
-  }, [data]);
-
-  // ─── Status toggle handler (mark-lost / mark-found) ───
   const handleStatusToggle = useCallback(async (action: 'mark-lost' | 'mark-found') => {
-    if (isTogglingStatus) return;
-
     if (action === 'mark-lost') {
       const confirmed = window.confirm(t('tracking.declare_lost_confirm'));
       if (!confirmed) return;
     }
-
     setIsTogglingStatus(true);
     try {
-      const response = await fetch(`/api/baggage-status/${reference}`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action }),
-      });
-      const result = await response.json();
-
-      if (result.success) {
-        // Refresh page data to reflect new status
-        await fetchSuivi(true);
-        setStatusToast(true);
-        setTimeout(() => setStatusToast(false), 3000);
-      }
-    } catch (error) {
-      console.error('Error toggling status:', error);
+      await fetch(`/api/baggage/${reference}/declare-lost`, { method: 'PUT' });
+      await fetchSuivi(true, true);
+      setStatusToast(true);
+      setTimeout(() => setStatusToast(false), 3000);
+    } catch {
+      // silent
     } finally {
       setIsTogglingStatus(false);
     }
-  }, [reference, isTogglingStatus, t, fetchSuivi]);
-
-  // ─── WhatsApp Support handler (emergency) ───
-  const handleSupportWhatsApp = useCallback(() => {
-    const message = t('tracking.urgent_support_message', { ref: reference });
-    const url = buildWhatsAppUrl(QRBAG_SUPPORT_PHONE, message);
-    const isIOSUA = /iPad|iPhone|iPod/.test(navigator.userAgent);
-    if (isIOSUA) {
-      window.location.href = url;
-    } else {
-      const newWindow = window.open(url, '_blank');
-      if (!newWindow || newWindow.closed || typeof newWindow.closed === 'undefined') {
-        window.location.href = url;
-      }
-    }
-  }, [reference, t]);
-
-  // ─── Dynamic transport company name ───
-  const transportCompany = data?.baggage?.airlineName
-    || data?.baggage?.trainCompany
-    || data?.baggage?.shipName
-    || data?.baggage?.busCompany
-    || t('tracking.urgent_fallback_company');
-
-  // Format date for display
-  const formatDate = (dateStr?: string | null) => {
-    if (!dateStr) return null;
-    const locale = lang === 'ar' ? 'ar-SA' : lang === 'en' ? 'en-US' : 'fr-FR';
-    return new Date(dateStr).toLocaleDateString(locale, {
-      day: 'numeric',
-      month: 'long',
-      year: 'numeric',
-    });
-  };
-
-  const formatDateTime = (dateStr?: string | null) => {
-    if (!dateStr) return null;
-    const locale = lang === 'ar' ? 'ar-SA' : lang === 'en' ? 'en-US' : 'fr-FR';
-    return new Date(dateStr).toLocaleString(locale, {
-      day: 'numeric',
-      month: 'short',
-      hour: '2-digit',
-      minute: '2-digit',
-    });
-  };
+  }, [reference, t, fetchSuivi]);
 
   // ─── Loading ───
   if (loading) {
-    return <LoadingScreen t={t} />;
+    return (
+      <main className="min-h-screen bg-[#0047d6] flex items-center justify-center">
+        <div className="text-center">
+          <Luggage className="w-16 h-16 text-[#fcd616] mx-auto mb-4 animate-bounce" />
+          <div className="animate-spin w-8 h-8 border-4 border-white/20 border-t-[#fcd616] rounded-full mx-auto mb-4" />
+          <p className="text-white">Chargement du suivi...</p>
+        </div>
+      </main>
+    );
   }
 
   // ─── Error states ───
   if (!data || data.status === 'not_found' || data.status === 'error') {
-    return <ErrorScreen type="not_found" t={t} lang={lang} setLang={setLang} />;
-  }
-  if (data.status === 'blocked') {
-    return <ErrorScreen type="blocked" t={t} lang={lang} setLang={setLang} />;
-  }
-  if (data.status === 'expired') {
-    return <ErrorScreen type="expired" t={t} lang={lang} setLang={setLang} />;
-  }
-  if (data.status === 'pending_activation') {
-    return <ErrorScreen type="pending_activation" t={t} lang={lang} setLang={setLang} />;
+    return (
+      <main className="min-h-screen bg-[#0047d6] flex items-center justify-center p-4">
+        <div className="bg-white border-2 border-dashed border-[#1a1a1a] rounded-2xl p-8 text-center max-w-md">
+          <AlertCircle className="w-12 h-12 text-red-500 mx-auto mb-4" />
+          <h1 className="text-xl font-bold mb-2" style={{ color: INK }}>Bagage introuvable</h1>
+          <p className="text-sm mb-4" style={{ color: INK, opacity: 0.7 }}>
+            Ce code QR n&apos;existe pas ou n&apos;est pas encore activé.
+          </p>
+          <a href="/" className="inline-block bg-[#0047d6] text-white px-6 py-3 rounded-xl font-bold">
+            Retour à l&apos;accueil
+          </a>
+        </div>
+      </main>
+    );
   }
 
   const baggage = data.baggage;
   const isDeclaredLost = !!baggage?.declaredLostAt && !baggage?.foundAt;
   const hasFinderInfo = !!(data.lastFinder?.name || data.lastFinder?.phone);
   const isFound = !!baggage?.foundAt || hasFinderInfo;
-  const isScanned = baggage?.status === 'scanned' && !hasFinderInfo;
   const hasFinderPhone = !!(data.lastFinder?.phone);
 
-  // ─── Dynamic status header config ───
-  // BUG FIX: "Retrouvé" s'affiche SEULEMENT si le trouveur a laissé ses coordonnées.
-  // Si juste scanné sans infos → "Bagage localisé" (pas "retrouvé").
-  const statusConfig: { title: string; badgeClass: string; desc: string } = (() => {
-    if (isDeclaredLost) {
-      return {
-        title: `🚨 ${t('tracking.badge_lost')}`,
-        badgeClass: 'bg-red-600 text-white animate-pulse',
-        desc: t('tracking.lost_description'),
-      };
-    }
-    if (isFound && hasFinderInfo) {
-      return {
-        title: `✅ ${t('tracking.badge_found')}`,
-        badgeClass: 'bg-green-500 text-white',
-        desc: 'Votre bagage a été retrouvé ! Contactez le trouveur pour organiser la récupération.',
-      };
-    }
-    if (isScanned) {
-      return {
-        title: '📍 Bagage localisé',
-        badgeClass: 'bg-[#fcd616] text-[#1a1a1a]',
-        desc: 'Quelqu\'un a scanné votre QR code. En attente des coordonnées du trouveur.',
-      };
-    }
-    return {
-      title: t('tracking.bagage_protege'),
-      badgeClass: 'bg-[#1a1a1a] text-[#fcd616]',
-      desc: t('tracking.active_description'),
-    };
+  // ─── Status badge config ───
+  const statusConfig = (() => {
+    if (isDeclaredLost) return { title: '🚨 Perdu', class: 'bg-red-600 text-white animate-pulse' };
+    if (isFound && hasFinderInfo) return { title: '✅ Retrouvé', class: 'bg-green-500 text-white' };
+    if (baggage.status === 'scanned') return { title: '📍 Localisé', class: 'bg-[#fcd616] text-[#1a1a1a]' };
+    return { title: '🛡️ Protégé', class: 'bg-[#1a1a1a] text-[#fcd616]' };
   })();
 
-  // History accordion: 3 first by default if >3, all if <=3
-  const INITIAL_SCAN_COUNT = 3;
-  const visibleScans = showAllScans ? data.scans : data.scans.slice(0, INITIAL_SCAN_COUNT);
-  const hiddenScansCount = data.scans.length - INITIAL_SCAN_COUNT;
-
-  // Support mailto link
-  const supportSubject = encodeURIComponent(`Problème bagage ${reference}`);
-  const supportBody = encodeURIComponent(
-    `Bonjour, je rencontre un problème avec mon bagage ${reference}.\n\nDescription du problème :\n`
-  );
-  const supportHref = `mailto:contact@qrbags.com?subject=${supportSubject}&body=${supportBody}`;
-
-  // Checklist CTA link
-  const checklistHref = `/checklist?ref=${encodeURIComponent(reference)}&source=tracking_page`;
-
-  // ═══════════════════════════════════════════════════════
-  //  RENDER
-  // ═══════════════════════════════════════════════════════
+  // ─── Tab config ───
+  const tabs: { id: TabId; label: string; icon: typeof Plane; badge?: number }[] = [
+    { id: 'overview', label: 'Suivi', icon: Luggage },
+    { id: 'actions', label: 'Actions', icon: Settings },
+    { id: 'history', label: 'Historique', icon: Clock, badge: data.scans.length || undefined },
+    { id: 'contact', label: 'Contact', icon: Phone },
+  ];
 
   return (
-    <main
-      className="min-h-screen bg-[#0047d6] flex flex-col"
-      dir={dir}
-    >
-      {/* ─── Sticky Header ─── */}
-      <header className="sticky top-0 z-40 bg-[#0047d6] border-b-2 border-[#fcd616]/30 pt-[env(safe-area-inset-top,0px)] px-4 sm:px-5 md:px-8 py-2 sm:py-3">
+    <main className="min-h-screen bg-[#0047d6] flex flex-col" dir={dir}>
+      {/* ═══ Header ═══ */}
+      <header className="sticky top-0 z-40 bg-[#0047d6] border-b border-[#fcd616]/30 py-3 px-4">
         <div className="max-w-md mx-auto flex items-center justify-between">
-          <button
-            onClick={() => window.history.back()}
-            className="flex items-center gap-1 text-white hover:text-[#fcd616] transition-colors text-sm font-medium min-h-[40px] px-2"
-            aria-label={t('tracking.back_to_scan')}
-          >
-            <ArrowRight className="w-4 h-4 rtl:rotate-180" />
-            <span>{t('tracking.back_to_scan')}</span>
-          </button>
-
           <div className="flex items-center gap-2">
-            {/* Audio alert toggle */}
-            <button
-              onClick={toggleAudio}
-              className={`flex items-center justify-center w-9 h-9 rounded-full border-2 transition-colors min-h-[40px] ${
-                audioEnabled
-                  ? 'border-[#fcd616] bg-[#fcd616] text-[#1a1a1a]'
-                  : 'border-[#1a1a1a] text-[#1a1a1a] hover:bg-[#fcd616]'
-              }`}
-              aria-label={t('tracking.audio_alert_toggle_aria')}
-              title={audioEnabled ? t('tracking.audio_alert_enabled') : t('tracking.audio_alert_disabled')}
-            >
+            <Luggage className="w-5 h-5 text-[#fcd616]" />
+            <span className="text-sm font-bold text-white">QRBag Suivi</span>
+            {wsConnected ? <Wifi className="w-3 h-3 text-green-400" /> : <WifiOff className="w-3 h-3 text-white/40" />}
+          </div>
+          <div className="flex items-center gap-2">
+            <button onClick={toggleAudio} className="p-2 text-white/70 hover:text-white" aria-label="Audio">
               {audioEnabled ? <Volume2 className="w-4 h-4" /> : <VolumeX className="w-4 h-4" />}
             </button>
-            <button
-              onClick={handleRefresh}
-              disabled={isRefreshing}
-              className="flex items-center justify-center w-9 h-9 rounded-full border-2 border-[#1a1a1a] text-[#1a1a1a] hover:bg-[#fcd616] transition-colors disabled:opacity-50"
-              aria-label={t('common.refresh')}
-            >
+            <button onClick={handleRefresh} disabled={isRefreshing} className="p-2 text-white/70 hover:text-white" aria-label="Refresh">
               <RefreshCw className={`w-4 h-4 ${isRefreshing ? 'animate-spin' : ''}`} />
             </button>
-            <LanguageSelector lang={lang} setLang={setLang} />
+            <select
+              value={lang}
+              onChange={(e) => setLang(e.target.value as 'fr' | 'en' | 'ar')}
+              className="bg-[#0047d6] text-white text-xs border border-white/20 rounded-lg px-2 py-1"
+            >
+              <option value="fr">FR</option>
+              <option value="en">EN</option>
+              <option value="ar">AR</option>
+            </select>
           </div>
         </div>
       </header>
 
-      {/* ─── Refresh Toast ─── */}
-      {refreshToast && (
-        <div className="fixed top-[calc(3.5rem+env(safe-area-inset-top,0px))] sm:top-[calc(4rem+env(safe-area-inset-top,0px))] left-1/2 -translate-x-1/2 bg-[#1a1a1a] text-[#fcd616] px-4 py-2 rounded-lg shadow-lg z-50 animate-in fade-in slide-in-from-top-2 duration-300 text-sm font-medium flex items-center gap-1.5">
-          <CheckCircle className="w-4 h-4" />
-          {t('tracking.refresh_success')}
-        </div>
-      )}
-
-      {/* ─── Status Toast ─── */}
-      {statusToast && (
-        <div className="fixed top-[calc(5.5rem+env(safe-area-inset-top,0px))] sm:top-[calc(6rem+env(safe-area-inset-top,0px))] left-1/2 -translate-x-1/2 bg-green-600 text-white px-4 py-2 rounded-lg shadow-lg z-50 animate-in fade-in slide-in-from-top-2 duration-300 text-sm font-medium flex items-center gap-1.5">
-          <CheckCircle className="w-4 h-4" />
-          {t('tracking.status_updated')}
-        </div>
-      )}
-
-      {/* ─── Audio Alert Banner (show when not enabled AND baggage not yet scanned) ─── */}
-      {!audioEnabled && data && data.scans.length === 0 && (
-        <div className="sticky top-[52px] sm:top-[56px] z-30 bg-[#0047d6] px-4 sm:px-5 md:px-8 py-2">
-          <div className="max-w-md mx-auto">
-            <div className="bg-[#fcd616] border-2 border-[#1a1a1a] rounded-2xl p-4 text-center">
-              <p className="font-bold text-[#1a1a1a] text-base mb-2">
-                🔔 {t('tracking.audio_alert_banner_title')}
-              </p>
-              <button
-                onClick={enableAudio}
-                className="bg-[#1a1a1a] hover:bg-black text-[#fcd616] py-2.5 px-6 rounded-xl font-bold transition-colors text-sm min-h-[44px] inline-flex items-center gap-2"
-              >
-                <Volume2 className="w-4 h-4" />
-                {t('tracking.audio_alert_activate_btn')}
-              </button>
-              <p className="text-xs text-[#1a1a1a]/70 mt-2">
-                {t('tracking.audio_alert_keep_open')}
-              </p>
-            </div>
+      {/* ═══ Hero: Valise + QR ═══ */}
+      <div className="max-w-md mx-auto w-full px-4 pt-4">
+        <div className="bg-[#fcd616] border-2 border-dashed border-[#1a1a1a] rounded-2xl p-4 flex items-center gap-4">
+          <div className="w-16 h-16 bg-white rounded-xl flex items-center justify-center flex-shrink-0 border-2 border-[#1a1a1a]">
+            <Luggage className="w-8 h-8" style={{ color: INK }} />
           </div>
-        </div>
-      )}
-
-      {/* ─── Scanning indicator (show when audio is enabled AND no scans yet) ─── */}
-      {audioEnabled && data && data.scans.length === 0 && (
-        <div className="sticky top-[52px] sm:top-[56px] z-30 bg-[#0047d6] px-4 sm:px-5 md:px-8 py-2">
-          <div className="max-w-md mx-auto">
-            <div className="bg-[#fcd616]/20 border-2 border-dashed border-[#fcd616] rounded-xl px-4 py-2.5 flex items-center gap-2">
-              <div className="w-2 h-2 rounded-full bg-[#fcd616] animate-pulse flex-shrink-0" />
-              <span className="text-sm font-medium text-[#1a1a1a]">{t('tracking.audio_alert_scanning')}</span>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* ─── Interactive Map (Leaflet — trajectory + markers) ─── */}
-      {data.lastPosition && (data.lastPosition.hasCoordinates || data.lastPosition.address) && (
-        <section className="sticky top-[52px] sm:top-[56px] z-30 bg-[#0047d6] px-4 sm:px-5 md:px-8 py-3">
-          <div className="max-w-md mx-auto">
-            <div className="bg-white border-2 border-dashed border-[#1a1a1a] rounded-2xl p-2.5 shadow-sm">
-              <div className="flex items-center justify-between mb-2 px-1">
-                <h2 className="text-xs uppercase tracking-widest text-[#1a1a1a] font-bold flex items-center gap-1.5">
-                  <span>🗺️</span> {showTrajectoryMap ? t('tracking.trajectory_map') || 'Trajectoire complète' : t('tracking.last_location')}
-                </h2>
-                <div className="flex items-center gap-2">
-                  {/* WebSocket status indicator */}
-                  <span className="flex items-center gap-1 text-[10px] text-[#1a1a1a]/50" title={wsConnected ? 'Temps réel' : 'Polling'}>
-                    {wsConnected ? <Wifi className="w-3 h-3 text-green-500" /> : <WifiOff className="w-3 h-3" />}
-                  </span>
-                  {baggage.lastScanDate && (
-                    <span className="text-[10px] text-[#1a1a1a]/60">
-                      {formatDateTime(baggage.lastScanDate)}
-                    </span>
-                  )}
-                </div>
-              </div>
-
-              {/* Toggle: last position vs trajectory */}
-              {data.scans.filter(s => s.latitude && s.longitude).length > 1 && (
-                <div className="flex gap-2 mb-2 px-1">
-                  <button
-                    onClick={() => setShowTrajectoryMap(false)}
-                    className={`text-xs px-3 py-1 rounded-full font-medium transition-colors min-h-[28px] ${!showTrajectoryMap ? 'bg-[#1a1a1a] text-[#fcd616]' : 'bg-[#fcd616]/20 text-[#1a1a1a]/70 hover:bg-[#fcd616]/40'}`}
-                  >
-                    📍 Dernière position
-                  </button>
-                  <button
-                    onClick={() => setShowTrajectoryMap(true)}
-                    className={`text-xs px-3 py-1 rounded-full font-medium transition-colors min-h-[28px] ${showTrajectoryMap ? 'bg-[#1a1a1a] text-[#fcd616]' : 'bg-[#fcd616]/20 text-[#1a1a1a]/70 hover:bg-[#fcd616]/40'}`}
-                  >
-                    🛤️ Trajectoire ({data.scans.filter(s => s.latitude && s.longitude).length})
-                  </button>
-                </div>
-              )}
-
-              <div className="h-56 sm:h-64 md:h-72">
-                {showTrajectoryMap && data.scans.filter(s => s.latitude && s.longitude).length > 0 ? (
-                  <LeafletMap
-                    scans={data.scans.filter(s => s.latitude && s.longitude).map(s => ({
-                      id: s.id,
-                      latitude: s.latitude!,
-                      longitude: s.longitude!,
-                      location: s.location,
-                      city: s.city,
-                      country: s.country,
-                      context: s.context,
-                      scannedAt: s.scannedAt,
-                      finderName: s.finderName,
-                    }))}
-                    destination={baggage.destination}
-                  />
-                ) : (
-                  <LeafletMap
-                    scans={[{
-                      id: 'last',
-                      latitude: data.lastPosition.latitude!,
-                      longitude: data.lastPosition.longitude!,
-                      location: data.lastPosition.address,
-                      city: null,
-                      country: null,
-                      context: 'static_location',
-                      scannedAt: baggage.lastScanDate || new Date().toISOString(),
-                      finderName: null,
-                    }]}
-                    destination={baggage.destination}
-                  />
-                )}
-              </div>
-            </div>
-          </div>
-        </section>
-      )}
-
-      {/* ─── Scrollable Content ─── */}
-      <div className="flex-1 max-w-md mx-auto w-full px-4 sm:px-5 md:px-8 py-4 pb-32 space-y-4">
-
-        {/* ═══ SOCIAL SHARE BAR ═══ */}
-        {data.scans.length > 0 && (
-          <div className="flex items-center justify-between">
-            <span className="text-xs text-[#1a1a1a]/60 font-medium">
-              {lang === 'ar' ? 'مشاركة' : lang === 'en' ? 'Share' : 'Partager'}
+          <div className="flex-1 min-w-0">
+            <p className="text-xs font-medium" style={{ color: INK, opacity: 0.7 }}>Référence</p>
+            <p className="text-lg font-mono font-bold truncate" style={{ color: INK }}>{reference}</p>
+            <span className={`inline-block mt-1 px-3 py-0.5 rounded-full text-xs font-bold ${statusConfig.class}`}>
+              {statusConfig.title}
             </span>
-            <SocialShareButtons
-              reference={reference}
-              scanCount={data.scans.length}
-              lastCity={data.scans[0]?.city}
-              lastCountry={data.scans[0]?.country}
-              status={baggage.status}
-              lang={lang}
-            />
           </div>
-        )}
+        </div>
+      </div>
 
-        {/* ═══ LABS — Pre-Departure Smart Alert (remplace LossAlertBanner) ═══ */}
+      {/* ═══ Pre-departure alert ═══ */}
+      <div className="max-w-md mx-auto w-full px-4 pt-3">
         <PreDepartureAlert
           reference={reference}
           departureDate={baggage.departureDate}
@@ -1388,1185 +272,86 @@ export default function SuiviPage() {
           hasScans={data.scans.length > 0}
           lang={lang}
         />
-
-        {/* ═══ EN-TÊTE DYNAMIQUE SELON STATUT ═══ */}
-        <div className="text-center pt-2">
-          <span className={`inline-flex items-center justify-center px-4 py-1.5 rounded-full text-sm font-bold ${statusConfig.badgeClass}`}>
-            {statusConfig.title}
-          </span>
-          <p className="mt-3 text-sm md:text-base text-white/90 leading-relaxed">
-            {statusConfig.desc}
-          </p>
-          {data.scans.length > 0 && (
-            <p className="mt-1 text-xs text-white/70">
-              {t('tracking.scan_count', { count: String(data.scans.length) })}
-            </p>
-          )}
-        </div>
-
-        {/* ═══ LABS — Recovery check (15 min après "bagage retrouvé") ═══ */}
-        {isFound && hasFinderInfo && recoveryState === 'asking' && (
-          <div className="bg-[#fcd616] border-2 border-dashed border-[#1a1a1a] rounded-2xl p-5 text-center">
-            <div className="w-14 h-14 bg-white rounded-full flex items-center justify-center mx-auto mb-3 border-2 border-[#1a1a1a]">
-              <Clock className="w-7 h-7" style={{ color: INK }} />
-            </div>
-            <h3 className="text-lg font-bold mb-1" style={{ color: INK }}>
-              ⏰ Avez-vous récupéré votre bagage ?
-            </h3>
-            <p className="text-sm mb-4" style={{ color: INK, opacity: 0.7 }}>
-              Cela fait 15 minutes que votre bagage a été signalé comme retrouvé.
-            </p>
-            <div className="flex gap-3">
-              <button
-                onClick={() => handleRecoveryAnswer('yes')}
-                className="flex-1 py-3 px-4 rounded-xl font-bold text-white bg-green-600 hover:bg-green-700 transition-colors"
-              >
-                ✅ OUI, récupéré
-              </button>
-              <button
-                onClick={() => handleRecoveryAnswer('no')}
-                className="flex-1 py-3 px-4 rounded-xl font-bold text-white bg-red-600 hover:bg-red-700 transition-colors"
-              >
-                ❌ NON, pas encore
-              </button>
-            </div>
-          </div>
-        )}
-
-        {/* ═══ LABS — Recovery: NON → Contact QRBag ═══ */}
-        {isFound && hasFinderInfo && recoveryState === 'no' && (
-          <div className="bg-red-50 border-2 border-red-400 rounded-2xl p-5 text-center">
-            <div className="w-14 h-14 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-3 border-2 border-red-400">
-              <AlertTriangle className="w-7 h-7 text-red-600" />
-            </div>
-            <h3 className="text-lg font-bold text-red-700 mb-1">
-              ⚠️ Contactez QRBag
-            </h3>
-            <p className="text-sm text-red-600 mb-4">
-              Vous n&apos;avez pas récupéré votre bagage. Notre équipe vous aide à le récupérer rapidement.
-            </p>
-            <a
-              href="mailto:contact@qrbag.com?subject=Bagage non récupéré — {reference}"
-              className="inline-flex items-center gap-2 bg-red-600 hover:bg-red-700 text-white py-3 px-6 rounded-xl font-bold transition-colors"
-            >
-              <Phone className="w-4 h-4" />
-              Contacter le support QRBag
-            </a>
-          </div>
-        )}
-
-        {/* ═══ LABS — Bloc "Actions rapides" (Mode En transit + Modifier profil) ═══ */}
-        {/* Mis en haut de page pour être immédiatement visible par le propriétaire */}
-        <div className="bg-white border-2 border-dashed border-[#1a1a1a] rounded-2xl p-4 space-y-3">
-          <div className="flex items-center justify-between gap-3">
-            <div className="flex items-center gap-2 flex-1">
-              <Power className={`w-5 h-5 flex-shrink-0 ${transitMode === 'active' ? 'text-green-600' : 'text-slate-400'}`} />
-              <div className="min-w-0">
-                <h3 className="text-sm font-bold text-[#1a1a1a]">Mode En transit</h3>
-                <p className="text-xs text-[#1a1a1a]/70">
-                  {transitMode === 'active'
-                    ? 'QR actif — scans visibles'
-                    : 'QR désactivé — page neutre affichée'}
-                </p>
-              </div>
-            </div>
-            <button
-              onClick={() => {
-                setTransitError('');
-                setShowTransitModal(true);
-              }}
-              className={`relative inline-flex h-7 w-12 items-center rounded-full transition-colors min-w-[48px] flex-shrink-0 ${
-                transitMode === 'active' ? 'bg-green-500' : 'bg-slate-300'
-              }`}
-              aria-label="Basculer le mode En transit"
-            >
-              <span
-                className={`inline-block h-5 w-5 transform rounded-full bg-white shadow transition-transform ${
-                  transitMode === 'active' ? 'translate-x-6' : 'translate-x-1'
-                }`}
-              />
-            </button>
-          </div>
-          {!hasOwnerPin && (
-            <p className="text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-lg p-2">
-              ⚠️ Pour utiliser ce mode, définissez un PIN via le bouton "Modifier mon profil" ci-dessous.
-            </p>
-          )}
-          <a
-            href={`/suivi/${reference}/edit`}
-            className="w-full flex items-center justify-center gap-2 bg-[#0047d6] hover:bg-[#0033a8] text-white py-2.5 px-4 rounded-xl font-bold transition-colors text-sm min-h-[44px]"
-          >
-            <Edit3 className="w-4 h-4" />
-            Modifier mon profil de voyage
-          </a>
-          <button
-            onClick={() => { setShowPinRecoveryModal(true); setPinRecoveryError(''); setPinRecoveryInput(''); setPinRecoveryResult(null); }}
-            className="w-full flex items-center justify-center gap-2 bg-white text-slate-600 hover:bg-slate-100 border-2 border-slate-300 py-2.5 px-4 rounded-xl font-bold transition-colors text-sm min-h-[44px]"
-          >
-            <KeyRound className="w-4 h-4" />
-            🔐 Mon code PIN
-          </button>
-          <button
-            onClick={() => { setShowPdfModal(true); setPdfError(''); setPdfPinInput(''); }}
-            className="w-full flex items-center justify-center gap-2 bg-[#fcd616] hover:bg-[#1a1a1a] hover:text-[#fcd616] text-[#1a1a1a] border-2 border-[#1a1a1a] py-2.5 px-4 rounded-xl font-bold transition-colors text-sm min-h-[44px]"
-          >
-            <FileText className="w-4 h-4" />
-            📄 Télécharger le parcours (PDF)
-          </button>
-          <button
-            onClick={() => { setShowShareModal(true); setShareError(''); setSharePinInput(''); }}
-            className={`w-full flex items-center justify-center gap-2 border-2 border-[#1a1a1a] py-2.5 px-4 rounded-xl font-bold transition-colors text-sm min-h-[44px] ${
-              shareUrl
-                ? 'bg-green-50 text-green-700 hover:bg-green-100'
-                : 'bg-white text-[#0047d6] hover:bg-[#0047d6] hover:text-white'
-            }`}
-          >
-            <Share2 className="w-4 h-4" />
-            {shareUrl ? '✅ Partage actif — Gérer' : '🔗 Partager le suivi (famille)'}
-          </button>
-        </div>
-
-        {/* ═══ LABS — Feature #5: Alerte Correspondance Manquée ═══ */}
-        {data.baggage.transportMode === 'flight' && data.baggage.flightNumber && (
-          <div className="bg-white border-2 border-dashed border-[#1a1a1a] rounded-2xl p-4">
-            <button
-              onClick={() => setShowDelayBlock(!showDelayBlock)}
-              className="w-full flex items-center justify-between text-left"
-            >
-              <div className="flex items-center gap-2 flex-1">
-                <AlertTriangle className="w-5 h-5 flex-shrink-0 text-amber-600" />
-                <div className="min-w-0">
-                  <h3 className="text-sm font-bold text-[#1a1a1a]">Mon vol a du retard</h3>
-                  <p className="text-xs text-[#1a1a1a]/70">
-                    Signaler un retard et vérifier ma correspondance
-                  </p>
-                </div>
-              </div>
-              <span className="text-sm text-[#1a1a1a] flex-shrink-0">
-                {showDelayBlock ? '▲' : '▼'}
-              </span>
-            </button>
-
-            {showDelayBlock && (
-              <div className="mt-4 space-y-3">
-                <div className="bg-amber-50 border border-amber-200 rounded-xl p-3 text-xs text-amber-800">
-                  <p className="font-bold mb-1">💡 Comment ça marche ?</p>
-                  <p>
-                    Si votre vol <strong>{data.baggage.flightNumber}</strong> a du retard, saisissez
-                    les infos ci-dessous. On calcule automatiquement si votre correspondance est
-                    encore faisable et on vous envoie la marche à suivre.
-                  </p>
-                </div>
-
-                <div>
-                  <label className="block text-xs font-bold text-[#1a1a1a] mb-1">
-                    Retard du vol (en minutes)
-                  </label>
-                  <input
-                    type="number"
-                    min={0}
-                    max={1440}
-                    placeholder="ex: 60"
-                    value={delayMinutes}
-                    onChange={(e) => setDelayMinutes(e.target.value)}
-                    className="w-full bg-slate-50 border-2 border-[#1a1a1a] rounded-lg px-3 py-2 text-base focus:ring-2 focus:ring-[#0047d6]"
-                    style={{ color: INK }}
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-xs font-bold text-[#1a1a1a] mb-1">
-                    Vol de correspondance
-                  </label>
-                  <input
-                    type="text"
-                    placeholder="ex: AF456"
-                    value={connectingFlightInput}
-                    onChange={(e) => setConnectingFlightInput(e.target.value.toUpperCase())}
-                    className="w-full bg-slate-50 border-2 border-[#1a1a1a] rounded-lg px-3 py-2 text-base focus:ring-2 focus:ring-[#0047d6] font-mono"
-                    style={{ color: INK }}
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-xs font-bold text-[#1a1a1a] mb-1">
-                    Temps de correspondance prévu (en minutes)
-                  </label>
-                  <input
-                    type="number"
-                    min={15}
-                    max={720}
-                    placeholder="ex: 90"
-                    value={connectionTimeMinutes}
-                    onChange={(e) => setConnectionTimeMinutes(e.target.value)}
-                    className="w-full bg-slate-50 border-2 border-[#1a1a1a] rounded-lg px-3 py-2 text-base focus:ring-2 focus:ring-[#0047d6]"
-                    style={{ color: INK }}
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-xs font-bold text-[#1a1a1a] mb-1">
-                    🔐 Votre PIN propriétaire
-                  </label>
-                  <input
-                    type="password"
-                    inputMode="numeric"
-                    maxLength={6}
-                    placeholder="••••"
-                    value={delayPinInput}
-                    onChange={(e) => setDelayPinInput(e.target.value.replace(/\D/g, ''))}
-                    className="w-full text-center text-xl tracking-[0.5em] bg-slate-50 border-2 border-[#1a1a1a] rounded-lg px-3 py-2 focus:ring-2 focus:ring-[#0047d6]"
-                    style={{ color: INK }}
-                  />
-                </div>
-
-                {delayResult && (
-                  <div className={`rounded-xl p-3 text-sm ${
-                    delayResult.success
-                      ? delayResult.status === 'ok'
-                        ? 'bg-green-50 border border-green-200 text-green-700'
-                        : 'bg-amber-50 border border-amber-200 text-amber-800'
-                      : 'bg-red-50 border border-red-200 text-red-700'
-                  }`}>
-                    <p className="font-bold">
-                      {delayResult.success
-                        ? (delayResult.status === 'ok' ? '✅' : delayResult.status === 'missed' ? '❌' : '⚠️')
-                        : '❌'}
-                      {' '}{delayResult.message || delayResult.error}
-                    </p>
-                  </div>
-                )}
-
-                <button
-                  onClick={handleDelaySubmit}
-                  disabled={delayLoading || !delayPinInput || !delayMinutes || !connectingFlightInput || !connectionTimeMinutes}
-                  className="w-full py-2.5 px-4 rounded-xl font-bold text-white bg-amber-600 hover:bg-amber-700 disabled:opacity-50 transition-colors text-sm min-h-[44px]"
-                >
-                  {delayLoading ? 'Calcul...' : '🚨 Vérifier ma correspondance'}
-                </button>
-              </div>
-            )}
-          </div>
-        )}
-
-        {/* ═══ PANNEAU URGENCE (mode perdu uniquement) ═══ */}
-        {isDeclaredLost && (
-          <div
-            className="bg-[#FEF2F2] border-2 border-[#EF4444] rounded-2xl p-6 space-y-5"
-            role="alert"
-          >
-            {/* Titre */}
-            <div className="text-center">
-              <h2 className="text-xl md:text-2xl font-bold text-[#EF4444]">
-                {t('tracking.urgent_title')}
-              </h2>
-            </div>
-
-            {/* Instructions numérotées */}
-            <ol className="space-y-3">
-              <li className="flex gap-3 items-start">
-                <span className="flex-shrink-0 w-7 h-7 bg-[#EF4444] text-white rounded-full flex items-center justify-center text-sm font-bold mt-0.5">1</span>
-                <p className="text-sm md:text-base text-[#1a1a1a] leading-relaxed">
-                  {t('tracking.urgent_step1', { company: transportCompany })}
-                </p>
-              </li>
-              <li className="flex gap-3 items-start">
-                <span className="flex-shrink-0 w-7 h-7 bg-[#EF4444] text-white rounded-full flex items-center justify-center text-sm font-bold mt-0.5">2</span>
-                <p className="text-sm md:text-base text-[#1a1a1a] leading-relaxed">
-                  {t('tracking.urgent_step2')}
-                </p>
-              </li>
-            </ol>
-
-            {/* Boutons d'action urgence */}
-            <div className="space-y-3">
-              {hasFinderPhone && (
-                <button
-                  onClick={handleWhatsApp}
-                  className="w-full flex items-center justify-center gap-2 bg-[#25D366] hover:bg-[#1ebe57] text-white py-3.5 px-4 rounded-xl font-bold transition-colors text-base min-h-[48px]"
-                >
-                  <MessageCircle className="w-5 h-5" />
-                  {t('tracking.urgent_contact_finder')}
-                </button>
-              )}
-              <button
-                onClick={handleSupportWhatsApp}
-                className="w-full flex items-center justify-center gap-2 bg-[#EF4444] hover:bg-[#DC2626] text-white py-3.5 px-4 rounded-xl font-bold transition-colors text-base min-h-[48px]"
-              >
-                <AlertTriangle className="w-5 h-5" />
-                {t('tracking.urgent_support')}
-              </button>
-            </div>
-
-            {/* Bouton Retrouvé */}
-            <button
-              onClick={() => handleStatusToggle('mark-found')}
-              disabled={isTogglingStatus}
-              className="w-full flex items-center justify-center gap-2 bg-white border-2 border-green-600 text-green-700 hover:bg-green-50 py-3.5 px-4 rounded-xl font-bold transition-colors text-base min-h-[48px] disabled:opacity-50"
-            >
-              {isTogglingStatus ? (
-                <RefreshCw className="w-5 h-5 animate-spin" />
-              ) : (
-                <CheckCircle className="w-5 h-5" />
-              )}
-              {t('tracking.urgent_found_btn')}
-            </button>
-          </div>
-        )}
-
-        {/* ═══ CARTE TROUVEUR (white + dashed, lecture seule) ═══ */}
-        {data.lastFinder && (data.lastFinder.name || data.lastFinder.phone) ? (
-          <div className="bg-white border-2 border-dashed border-[#1a1a1a] rounded-2xl p-5 shadow-sm">
-            <h2 className="text-xs uppercase tracking-widest text-[#1a1a1a] font-bold mb-3 flex items-center gap-2">
-              <span>🔍</span> {t('tracking.finder_info')}
-            </h2>
-
-            {data.lastFinder.name && (
-              <DashedEncart>
-                <div className="flex items-center gap-3">
-                  <span className="text-xl">👤</span>
-                  <div>
-                    <p className="text-xs text-[#1a1a1a]/60 font-medium">{t('finder.fullName')}</p>
-                    <p className="text-base font-bold text-[#1a1a1a]">{data.lastFinder.name}</p>
-                  </div>
-                </div>
-              </DashedEncart>
-            )}
-
-            {data.lastFinder.phone && (
-              <DashedEncart className="mb-0">
-                <div className="flex items-center gap-3">
-                  <span className="text-xl">📱</span>
-                  <div>
-                    <p className="text-xs text-[#1a1a1a]/60 font-medium">{t('finder.whatsapp')}</p>
-                    <p className="text-base font-bold text-[#1a1a1a]" dir="ltr">{data.lastFinder.phone}</p>
-                  </div>
-                </div>
-              </DashedEncart>
-            )}
-          </div>
-        ) : (
-          <div className="bg-white border-2 border-dashed border-[#1a1a1a] rounded-2xl p-5 shadow-sm text-center">
-            <div className="w-14 h-14 bg-[#fcd616]/20 border-2 border-dashed border-[#1a1a1a] rounded-full flex items-center justify-center mx-auto mb-3">
-              <Clock className="w-7 h-7 text-[#1a1a1a]/60" />
-            </div>
-            <p className="text-[#1a1a1a]/70 text-sm">{t('tracking.no_finder')}</p>
-          </div>
-        )}
-
-        {/* ═══ CTA CHECKLIST (jaune #fcd616 + dashed) ═══ */}
-        <div className="bg-[#fcd616] border-2 border-dashed border-[#1a1a1a] rounded-2xl p-4 shadow-sm">
-          <h3 className="text-base font-bold text-[#1a1a1a] mb-1">{t('tracking.checklist_title')}</h3>
-          <p className="text-sm text-[#1a1a1a]/80 mb-3 leading-relaxed">{t('tracking.checklist_desc')}</p>
-          <a
-            href={checklistHref}
-            className="block w-full text-center py-3 px-4 bg-[#1a1a1a] hover:bg-black text-[#fcd616] rounded-xl font-bold transition-colors min-h-[44px]"
-          >
-            {t('tracking.checklist_cta')}
-          </a>
-        </div>
-
-        {/* ═══ HISTORIQUE (ACCORDION) ═══ */}
-        {data.scans.length > 0 && (
-          <div className="bg-white border-2 border-dashed border-[#1a1a1a] rounded-2xl shadow-sm overflow-hidden">
-            <button
-              onClick={() => setHistoryOpen(!historyOpen)}
-              className="w-full flex items-center justify-between px-5 py-4 text-left"
-              aria-expanded={historyOpen}
-            >
-              <h2 className="text-xs uppercase tracking-widest text-[#1a1a1a] font-bold flex items-center gap-2">
-                <span>📜</span>
-                {t('tracking.history_toggle', { count: String(data.scans.length) })}
-              </h2>
-              <ChevronDown className={`w-4 h-4 text-[#1a1a1a] transition-transform ${historyOpen ? '' : '-rotate-90'}`} />
-            </button>
-
-            {historyOpen && (
-              <div className="px-5 pb-4 space-y-2.5">
-                {visibleScans.map((scan, index) => (
-                  <DashedEncart key={scan.id} className={index === visibleScans.length - 1 && !showAllScans ? 'mb-0' : ''}>
-                    <div className="flex items-start justify-between gap-3">
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2 mb-1 flex-wrap">
-                          <span className="text-xs text-[#1a1a1a]/70">
-                            {formatDateTime(scan.scannedAt)}
-                          </span>
-                          <ContextBadge context={scan.context} t={t} />
-                        </div>
-                        {scan.location && (
-                          <p className="text-[#1a1a1a] font-medium text-sm truncate">
-                            📍 {scan.location}
-                          </p>
-                        )}
-                        {scan.finderName && (
-                          <p className="text-[#1a1a1a]/70 text-xs mt-1">
-                            👤 {scan.finderName}
-                          </p>
-                        )}
-                      </div>
-                      <div className="w-7 h-7 rounded-full bg-[#fcd616]/20 border border-[#1a1a1a]/40 flex items-center justify-center flex-shrink-0">
-                        <span className="text-xs font-bold text-[#1a1a1a]">{index + 1}</span>
-                      </div>
-                    </div>
-                  </DashedEncart>
-                ))}
-
-                {hiddenScansCount > 0 && !showAllScans && (
-                  <button
-                    onClick={() => setShowAllScans(true)}
-                    className="w-full py-2.5 text-center text-sm font-medium text-[#1a1a1a] hover:text-[#fcd616] border-2 border-dashed border-[#1a1a1a]/40 rounded-xl transition-colors min-h-[40px]"
-                  >
-                    {t('tracking.see_more', { count: String(hiddenScansCount) })} ▼
-                  </button>
-                )}
-                {showAllScans && hiddenScansCount > 0 && (
-                  <button
-                    onClick={() => setShowAllScans(false)}
-                    className="w-full py-2.5 text-center text-sm font-medium text-[#1a1a1a]/70 hover:text-[#fcd616] transition-colors min-h-[40px]"
-                  >
-                    ▲ Réduire
-                  </button>
-                )}
-              </div>
-            )}
-          </div>
-        )}
-
-        {/* ═══ INFOS BAGAGE (COLLAPSIBLE, replié par défaut) ═══ */}
-        <div className="bg-white border-2 border-dashed border-[#1a1a1a] rounded-2xl shadow-sm overflow-hidden">
-          <button
-            onClick={() => setBaggageOpen(!baggageOpen)}
-            className="w-full flex items-center justify-between px-5 py-4 text-left"
-            aria-expanded={baggageOpen}
-          >
-            <h2 className="text-xs uppercase tracking-widest text-[#1a1a1a] font-bold flex items-center gap-2">
-              <span>📦</span> {t('tracking.baggage_info_toggle')}
-            </h2>
-            <ChevronDown className={`w-4 h-4 text-[#1a1a1a] transition-transform ${baggageOpen ? '' : '-rotate-90'}`} />
-          </button>
-
-          {baggageOpen && (
-            <div className="px-5 pb-5">
-              {/* Reference */}
-              <DashedEncart>
-                <div className="flex items-center gap-3">
-                  <span className="text-xl">🏷️</span>
-                  <div>
-                    <p className="text-xs text-[#1a1a1a]/60 font-medium">{t('whatsapp.reference').replace(' :', '')}</p>
-                    <p className="text-base font-bold text-[#1a1a1a] font-mono tracking-widest">{baggage.reference}</p>
-                  </div>
-                </div>
-              </DashedEncart>
-
-              {/* Traveler Name */}
-              <DashedEncart>
-                <div className="flex items-center gap-3">
-                  <span className="text-xl">👤</span>
-                  <div>
-                    <p className="text-xs text-[#1a1a1a]/60 font-medium">{t('finder.fullName')}</p>
-                    <p className="text-base font-bold text-[#1a1a1a]">{baggage.travelerName || t('finder.notSet')}</p>
-                  </div>
-                </div>
-              </DashedEncart>
-
-              {/* TRANSPORT-FEATURE: Conditional transport info with real PNG images */}
-              {(() => {
-                const mode = safeTransportMode(baggage.transportMode) as TransportMode;
-                const transportImg = getTransportImage(mode);
-
-                if (mode === 'flight' && (baggage.airlineName || baggage.flightNumber)) {
-                  return (
-                    <DashedEncart>
-                      <div className="flex items-center justify-between">
-                        <div className="flex-1">
-                          {baggage.airlineName && (
-                            <div className="mb-1">
-                              <p className="text-xs text-[#1a1a1a]/60 font-medium">{t('transport.airline')}</p>
-                              <p className="text-base font-bold text-[#1a1a1a]">{baggage.airlineName}</p>
-                            </div>
-                          )}
-                          {baggage.flightNumber && (
-                            <div>
-                              <p className="text-xs text-[#1a1a1a]/60 font-medium">{t('transport.flight_number')}</p>
-                              <p className="text-xl font-bold text-[#1a1a1a] font-mono tracking-widest">{baggage.flightNumber}</p>
-                            </div>
-                          )}
-                        </div>
-                        <div className="h-12 w-12 rounded-full bg-[#fcd616]/20 border border-[#1a1a1a]/20 flex items-center justify-center ml-4 flex-shrink-0">
-                          <Image src={transportImg} alt="flight" width={28} height={28} className="mix-blend-multiply" />
-                        </div>
-                      </div>
-                    </DashedEncart>
-                  );
-                }
-                if (mode === 'train' && (baggage.trainCompany || baggage.trainNumber)) {
-                  return (
-                    <DashedEncart>
-                      <div className="flex items-center justify-between">
-                        <div className="flex-1">
-                          {baggage.trainCompany && (
-                            <div className="mb-1">
-                              <p className="text-xs text-[#1a1a1a]/60 font-medium">{t('transport.train_company')}</p>
-                              <p className="text-base font-bold text-[#1a1a1a]">{baggage.trainCompany}</p>
-                            </div>
-                          )}
-                          {baggage.trainNumber && (
-                            <div>
-                              <p className="text-xs text-[#1a1a1a]/60 font-medium">{t('transport.train_number')}</p>
-                              <p className="text-xl font-bold text-[#1a1a1a] font-mono tracking-widest">{baggage.trainNumber}</p>
-                            </div>
-                          )}
-                        </div>
-                        <div className="h-12 w-12 rounded-full bg-[#fcd616]/20 border border-[#1a1a1a]/20 flex items-center justify-center ml-4 flex-shrink-0">
-                          <Image src={transportImg} alt="train" width={28} height={28} className="mix-blend-multiply" />
-                        </div>
-                      </div>
-                    </DashedEncart>
-                  );
-                }
-                if (mode === 'boat' && (baggage.shipName || baggage.shipCabin)) {
-                  return (
-                    <DashedEncart>
-                      <div className="flex items-center justify-between">
-                        <div className="flex-1">
-                          {baggage.shipName && (
-                            <div className="mb-1">
-                              <p className="text-xs text-[#1a1a1a]/60 font-medium">{t('transport.ship_name')}</p>
-                              <p className="text-base font-bold text-[#1a1a1a]">{baggage.shipName}</p>
-                            </div>
-                          )}
-                          {baggage.shipCabin && (
-                            <div>
-                              <p className="text-xs text-[#1a1a1a]/60 font-medium">{t('transport.ship_cabin')}</p>
-                              <p className="text-base font-bold text-[#1a1a1a]">{baggage.shipCabin}</p>
-                            </div>
-                          )}
-                        </div>
-                        <div className="h-12 w-12 rounded-full bg-[#fcd616]/20 border border-[#1a1a1a]/20 flex items-center justify-center ml-4 flex-shrink-0">
-                          <Image src={transportImg} alt="boat" width={28} height={28} className="mix-blend-multiply" />
-                        </div>
-                      </div>
-                    </DashedEncart>
-                  );
-                }
-                if (mode === 'bus' && (baggage.busCompany || baggage.busLineNumber)) {
-                  return (
-                    <DashedEncart>
-                      <div className="flex items-center justify-between">
-                        <div className="flex-1">
-                          {baggage.busCompany && (
-                            <div className="mb-1">
-                              <p className="text-xs text-[#1a1a1a]/60 font-medium">{t('transport.bus_company')}</p>
-                              <p className="text-base font-bold text-[#1a1a1a]">{baggage.busCompany}</p>
-                            </div>
-                          )}
-                          {baggage.busLineNumber && (
-                            <div>
-                              <p className="text-xs text-[#1a1a1a]/60 font-medium">{t('transport.bus_line')}</p>
-                              <p className="text-base font-bold text-[#1a1a1a]">{baggage.busLineNumber}</p>
-                            </div>
-                          )}
-                        </div>
-                        <div className="h-12 w-12 rounded-full bg-[#fcd616]/20 border border-[#1a1a1a]/20 flex items-center justify-center ml-4 flex-shrink-0">
-                          <Image src={transportImg} alt="bus" width={28} height={28} className="mix-blend-multiply" />
-                        </div>
-                      </div>
-                    </DashedEncart>
-                  );
-                }
-                return null;
-              })()}
-
-              {/* Destination */}
-              {baggage.destination && (
-                <DashedEncart>
-                  <div className="flex items-center gap-3">
-                    <span className="text-xl">📍</span>
-                    <div>
-                      <p className="text-xs text-[#1a1a1a]/60 font-medium">{t('transport.common_destination')}</p>
-                      <p className="text-base font-bold text-[#1a1a1a]">{baggage.destination}</p>
-                    </div>
-                  </div>
-                </DashedEncart>
-              )}
-
-              {/* Departure Date */}
-              {(baggage.departureDate || baggage.createdAt) && (
-                <DashedEncart className="mb-0">
-                  <div className="flex items-center gap-3">
-                    <span className="text-xl">📅</span>
-                    <div>
-                      <p className="text-xs text-[#1a1a1a]/60 font-medium">{t('transport.common_departure_date')}</p>
-                      <p className="text-base font-bold text-[#1a1a1a]">
-                        {formatDate(baggage.departureDate || baggage.createdAt)}{baggage.departureTime ? ` — ${baggage.departureTime}` : ''}
-                      </p>
-                    </div>
-                  </div>
-                </DashedEncart>
-              )}
-            </div>
-          )}
-        </div>
-
-        {/* ═══ SUPPORT MAILTO ═══ */}
-        <div className="text-center py-2">
-          <a
-            href={supportHref}
-            className="text-sm text-[#fcd616] underline hover:text-[#1a1a1a] transition-colors"
-          >
-            {t('tracking.support_cta')}
-          </a>
-        </div>
-
-        {/* ═══ LAISSER UN AVIS (jaune plein + texte noir) ═══ */}
-        {data.scans.length > 0 && (
-          <button
-            onClick={() => setShowReviewModal(true)}
-            className="w-full flex items-center justify-center gap-2 bg-[#fcd616] hover:bg-[#1a1a1a] text-[#1a1a1a] hover:text-[#fcd616] border-2 border-[#1a1a1a] py-3.5 px-4 rounded-xl font-bold transition-colors text-base min-h-[48px]"
-          >
-            <Star className="w-5 h-5" />
-            {lang === 'ar' ? 'تقييم تجربتك' : lang === 'en' ? 'Rate your experience' : 'Laisser un avis'}
-          </button>
-        )}
-
-        {/* ═══ PWA INSTALL BUTTON (jaune plein + texte noir) ═══ */}
-        {showInstallButton && (
-          <div className="text-center">
-            <button
-              onClick={() => {
-                if (isIOS) {
-                  setShowIOSModal(true);
-                } else {
-                  handleInstall();
-                }
-              }}
-              className="inline-flex items-center gap-2 bg-[#fcd616] hover:bg-[#1a1a1a] text-[#1a1a1a] hover:text-[#fcd616] border-2 border-[#1a1a1a] py-2.5 px-5 rounded-lg text-sm font-bold transition-colors min-h-[44px]"
-            >
-              <span>{isIOS ? '📱' : '⬇️'}</span>
-              <span>{isIOS ? t('tracking.install_app_ios') : t('tracking.install_app')}</span>
-            </button>
-          </div>
-        )}
-
-        {/* ═══ LABS — Feature F: Coordonnées utiles par destination ═══ */}
-        {emergencyContacts && (
-          <div className="bg-white border-2 border-dashed border-[#1a1a1a] rounded-2xl p-4">
-            <div className="flex items-center gap-2 mb-3">
-              <span className="text-3xl">{emergencyContacts.flag}</span>
-              <div>
-                <h3 className="text-sm font-bold text-[#1a1a1a]">Coordonnées utiles — {emergencyContacts.countryName}</h3>
-                <p className="text-xs text-[#1a1a1a]/70">Numéros d&apos;urgence et contacts utiles pour votre destination</p>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-3 gap-2 mb-3">
-              <div className="bg-red-50 border border-red-200 rounded-xl p-2 text-center">
-                <p className="text-xs font-bold text-red-700">🚓 Police</p>
-                <p className="text-lg font-bold text-red-700">{emergencyContacts.police}</p>
-              </div>
-              <div className="bg-blue-50 border border-blue-200 rounded-xl p-2 text-center">
-                <p className="text-xs font-bold text-blue-700">🚑 Médical</p>
-                <p className="text-lg font-bold text-blue-700">{emergencyContacts.medical}</p>
-              </div>
-              <div className="bg-orange-50 border border-orange-200 rounded-xl p-2 text-center">
-                <p className="text-xs font-bold text-orange-700">🚒 Pompiers</p>
-                <p className="text-lg font-bold text-orange-700">{emergencyContacts.fire}</p>
-              </div>
-            </div>
-
-            <div className="space-y-2 text-sm">
-              {emergencyContacts.frenchEmbassy && emergencyContacts.frenchEmbassy !== '—' && (
-                <div className="flex items-center justify-between">
-                  <span className="text-[#1a1a1a]/70">🇫🇷 Ambassade de France</span>
-                  <a
-                    href={`tel:${emergencyContacts.frenchEmbassy.replace(/[^+\d]/g, '')}`}
-                    className="font-bold text-[#0047d6] hover:underline"
-                  >
-                    {emergencyContacts.frenchEmbassy}
-                  </a>
-                </div>
-              )}
-              {emergencyContacts.mainAirline && emergencyContacts.mainAirlinePhone && (
-                <div className="flex items-center justify-between">
-                  <span className="text-[#1a1a1a]/70">✈️ {emergencyContacts.mainAirline}</span>
-                  <a
-                    href={`tel:${emergencyContacts.mainAirlinePhone.replace(/[^+\d]/g, '')}`}
-                    className="font-bold text-[#0047d6] hover:underline"
-                  >
-                    {emergencyContacts.mainAirlinePhone}
-                  </a>
-                </div>
-              )}
-              {emergencyContacts.frenchEmbassyUrl && (
-                <a
-                  href={emergencyContacts.frenchEmbassyUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="block text-center text-xs text-[#0047d6] hover:underline mt-2"
-                >
-                  🌐 Site de l&apos;Ambassade de France →
-                </a>
-              )}
-            </div>
-
-            {emergencyContacts.notes && (
-              <div className="mt-3 bg-[#fcd616]/20 border border-[#1a1a1a]/20 rounded-xl p-2 text-xs text-[#1a1a1a]">
-                💡 {emergencyContacts.notes}
-              </div>
-            )}
-          </div>
-        )}
-
-        {/* ═══ LABS — Feature D: Photos de protection bagage ═══ */}
-        {damageReports && damageReports.reports.length > 0 ? (
-          <div className="bg-white border-2 border-dashed border-[#1a1a1a] rounded-2xl p-4">
-            <button
-              onClick={() => setShowDamageBlock(!showDamageBlock)}
-              className="w-full flex items-center justify-between text-left"
-            >
-              <div className="flex items-center gap-2 flex-1">
-                <Camera className="w-5 h-5 flex-shrink-0 text-[#0047d6]" />
-                <div className="min-w-0">
-                  <h3 className="text-sm font-bold text-[#1a1a1a]">📷 Photos de protection</h3>
-                  <p className="text-xs text-[#1a1a1a]/70">
-                    {damageReports.hasBefore && damageReports.hasAfter
-                      ? '✅ AVANT + APRÈS documentés — vous êtes protégé'
-                      : `${damageReports.reports.length} photo(s) — ${damageReports.hasBefore ? '✅ Avant' : '⬜ Avant'} / ${damageReports.hasAfter ? '✅ Après' : '⬜ Après'}`}
-                  </p>
-                </div>
-              </div>
-              <span className="text-sm text-[#1a1a1a] flex-shrink-0">
-                {showDamageBlock ? '▲' : '▼'}
-              </span>
-            </button>
-
-            {showDamageBlock && (
-              <div className="mt-4 space-y-3">
-                {damageReports.reports.map((r) => (
-                  <div key={r.id} className="border-l-4 border-[#0047d6] pl-3">
-                    <p className="text-xs font-bold text-[#1a1a1a] mb-1">
-                      {r.type === 'before' ? '📦 Avant voyage' : '📦 Après voyage'}
-                      {' — '}
-                      {new Date(r.createdAt).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })}
-                    </p>
-                    <div className="flex gap-2 overflow-x-auto mb-2">
-                      {r.photos.map((p, i) => (
-                        <img key={i} src={p} alt={`Photo ${i + 1}`} className="w-20 h-20 object-cover rounded-lg border border-[#1a1a1a]/20" />
-                      ))}
-                    </div>
-                    {r.description && (
-                      <p className="text-xs text-[#1a1a1a]/70">{r.description}</p>
-                    )}
-                  </div>
-                ))}
-                <a
-                  href={`/suivi/${reference}/edit`}
-                  className="block w-full text-center py-2 px-4 rounded-xl font-bold text-[#0047d6] bg-[#fcd616]/20 border-2 border-[#0047d6]/30 hover:bg-[#fcd616]/40 transition-colors text-xs"
-                >
-                  📸 Ajouter / modifier les photos
-                </a>
-              </div>
-            )}
-          </div>
-        ) : (
-          /* ─── Bloc incitatif (quand aucune photo n'a encore été prise) ─── */
-          <a
-            href={`/suivi/${reference}/edit`}
-            className="block bg-[#fcd616] border-2 border-dashed border-[#1a1a1a] rounded-2xl p-4 hover:bg-[#fcd616]/80 transition-colors"
-          >
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-[#1a1a1a] flex items-center justify-center flex-shrink-0">
-                <Camera className="w-5 h-5 text-[#fcd616]" />
-              </div>
-              <div className="flex-1 min-w-0">
-                <h3 className="text-sm font-bold text-[#1a1a1a]">📷 Protégez votre bagage en cas de casse</h3>
-                <p className="text-xs text-[#1a1a1a]/70 mt-0.5">
-                  Prenez une photo de votre valise avant le vol. En cas de dommage, vous serez dédommagé.
-                </p>
-              </div>
-              <span className="text-xs font-bold text-[#1a1a1a] flex-shrink-0">→</span>
-            </div>
-          </a>
-        )}
-
-        {/* ═══ LABS — Feature E: Lien vers page Assistance ═══ */}
-        <a
-          href="/assistance"
-          className="block w-full text-center py-3 px-4 rounded-xl font-bold text-[#0047d6] bg-white border-2 border-[#0047d6] hover:bg-[#0047d6] hover:text-white transition-colors text-sm min-h-[44px] flex items-center justify-center gap-2"
-        >
-          <HelpCircle className="w-4 h-4" />
-          Besoin d&apos;aide ? Centre d&apos;assistance
-        </a>
-
-        {/* ═══ BOUTON DÉCLARER PERDU (rouge fond + texte blanc) ═══ */}
-        {!isDeclaredLost && (
-          <button
-            onClick={() => handleStatusToggle('mark-lost')}
-            disabled={isTogglingStatus}
-            className="w-full flex items-center justify-center gap-2 bg-[#EF4444] hover:bg-[#DC2626] text-white py-3.5 px-4 rounded-xl font-bold transition-colors text-base min-h-[48px] disabled:opacity-50"
-          >
-            {isTogglingStatus ? (
-              <RefreshCw className="w-5 h-5 animate-spin" />
-            ) : (
-              <AlertTriangle className="w-5 h-5" />
-            )}
-            {t('tracking.declare_lost_btn')}
-          </button>
-        )}
-
-        {/* ─── Trust Note (footer discret) ─── */}
-        <div className="text-center text-xs text-white/70 tracking-wide flex items-center justify-center gap-1.5 pt-2">
-          <Shield className="w-4 h-4 inline" />
-          <span>{t('tracking.trust_note')}</span>
-        </div>
       </div>
 
-      {/* ═══ STICKY BOTTOM BAR (Appeler + WhatsApp) — only if finder phone AND NOT in lost mode ═══ */}
-      {hasFinderPhone && !isDeclaredLost && (
-        <div className="fixed bottom-0 left-0 right-0 z-50 bg-white border-t-2 border-[#1a1a1a] p-3 sm:p-4 pb-[calc(0.75rem+env(safe-area-inset-bottom,0px))] sm:pb-[calc(1rem+env(safe-area-inset-bottom,0px))]">
-          <div className="max-w-md mx-auto flex gap-3">
-            <button
-              onClick={handlePhoneCall}
-              className="flex-1 bg-[#1a1a1a] hover:bg-black text-[#fcd616] py-3 rounded-lg font-bold transition-colors flex items-center justify-center gap-2 text-base min-h-[48px]"
-              aria-label={t('tracking.by_phone')}
-            >
-              <Phone className="w-5 h-5" />
-              <span>📞 {t('tracking.by_phone')}</span>
-            </button>
-            <button
-              onClick={handleWhatsApp}
-              className="flex-1 bg-[#25D366] hover:bg-[#1ebe57] text-white py-3 rounded-lg font-bold transition-colors flex items-center justify-center gap-2 text-base min-h-[48px]"
-              aria-label={t('tracking.by_whatsapp')}
-            >
-              <MessageCircle className="w-5 h-5" />
-              <span>💬 {t('tracking.by_whatsapp')}</span>
-            </button>
-          </div>
+      {/* ═══ Refresh toast ═══ */}
+      {refreshToast && (
+        <div className="fixed top-20 left-1/2 -translate-x-1/2 bg-green-600 text-white px-4 py-2 rounded-xl shadow-lg z-50 text-sm font-medium">
+          ✅ Données rafraîchies
         </div>
       )}
 
-      {/* ═══ iOS Install Instructions Modal ═══ */}
-      <IOSInstallModal show={showIOSModal} onClose={() => setShowIOSModal(false)} t={t} />
+      {/* ═══ Tab content ═══ */}
+      <div className="flex-1 max-w-md mx-auto w-full px-4 py-4 pb-24">
+        {activeTab === 'overview' && (
+          <TabOverview
+            data={data}
+            baggage={baggage}
+            lang={lang}
+            t={t}
+          />
+        )}
+        {activeTab === 'actions' && (
+          <TabActions
+            reference={reference}
+            baggage={baggage}
+            data={data}
+            isDeclaredLost={isDeclaredLost}
+            isTogglingStatus={isTogglingStatus}
+            onStatusToggle={handleStatusToggle}
+            lang={lang}
+            t={t}
+          />
+        )}
+        {activeTab === 'history' && (
+          <TabHistory
+            scans={data.scans}
+            lang={lang}
+            t={t}
+          />
+        )}
+        {activeTab === 'contact' && (
+          <TabContact
+            reference={reference}
+            baggage={baggage}
+            lastFinder={data.lastFinder}
+            hasFinderPhone={hasFinderPhone}
+            isDeclaredLost={isDeclaredLost}
+            lang={lang}
+            t={t}
+          />
+        )}
+      </div>
 
-      {/* ═══ Review Modal ═══ */}
-      <ReviewModal
-        show={showReviewModal}
-        onClose={() => setShowReviewModal(false)}
-        reference={reference}
-        lang={lang}
-      />
-
-      {/* ═══ LABS — Modal récupération PIN ═══ */}
-      {showPinRecoveryModal && (
-        <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl max-w-sm w-full p-6 shadow-2xl">
-            <div className="flex items-start justify-between mb-4">
-              <h3 className="text-lg font-bold text-[#1a1a1a]">🔐 Mon code PIN</h3>
+      {/* ═══ Bottom tab bar ═══ */}
+      <nav className="fixed bottom-0 left-0 right-0 bg-white border-t-2 border-[#1a1a1a] z-50">
+        <div className="max-w-md mx-auto flex">
+          {tabs.map((tab) => {
+            const Icon = tab.icon;
+            const isActive = activeTab === tab.id;
+            return (
               <button
-                onClick={() => { setShowPinRecoveryModal(false); setPinRecoveryInput(''); setPinRecoveryError(''); setPinRecoveryResult(null); }}
-                className="text-slate-400 hover:text-slate-700"
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id)}
+                className={`flex-1 flex flex-col items-center justify-center py-3 relative transition-colors ${
+                  isActive ? 'text-[#0047d6]' : 'text-slate-400'
+                }`}
               >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-
-            {pinRecoveryResult ? (
-              /* Nouveau PIN affiché */
-              <div className="text-center">
-                <p className="text-sm text-slate-600 mb-3">
-                  Voici votre nouveau code PIN. <strong>Notez-le précieusement,</strong> il ne sera plus jamais affiché.
-                </p>
-                <div className="bg-[#fcd616] border-2 border-dashed border-[#1a1a1a] rounded-xl py-6 mb-4">
-                  <p className="text-5xl font-mono font-bold tracking-[0.5em]" style={{ color: INK }}>
-                    {pinRecoveryResult}
-                  </p>
-                </div>
-                <p className="text-xs text-slate-500 mb-4">
-                  Ce PIN sert à :<br/>
-                  • Modifier votre profil de voyage<br/>
-                  • Activer/désactiver le mode En transit<br/>
-                  • Vérifier l&apos;identité du propriétaire (page trouveur)<br/>
-                  • Télécharger le parcours PDF<br/>
-                  • Partager le suivi avec un proche
-                </p>
-                <button
-                  onClick={() => { setShowPinRecoveryModal(false); setPinRecoveryResult(null); }}
-                  className="w-full py-3 px-4 rounded-xl font-bold text-white bg-[#0047d6] hover:bg-[#0033a8] transition-colors"
-                >
-                  J&apos;ai noté mon PIN
-                </button>
-              </div>
-            ) : (
-              /* Saisie PIN actuel pour régénérer */
-              <div>
-                <p className="text-sm text-slate-600 mb-4">
-                  Pour des raisons de sécurité, votre PIN est hashé et ne peut pas être affiché en clair.
-                  Si vous l&apos;avez oublié, vous pouvez en <strong>générer un nouveau</strong> en saisissant votre PIN actuel.
-                </p>
-                <p className="text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-lg p-2 mb-3">
-                  ⚠️ Si vous avez oublié votre PIN actuel, contactez le support :{' '}
-                  <a href="mailto:contact@qrbag.com" className="underline font-bold">contact@qrbag.com</a>
-                </p>
-                <input
-                  type="password"
-                  inputMode="numeric"
-                  maxLength={6}
-                  placeholder="PIN actuel (••••)"
-                  value={pinRecoveryInput}
-                  onChange={(e) => setPinRecoveryInput(e.target.value.replace(/\D/g, ''))}
-                  className="w-full text-center text-2xl tracking-[0.5em] bg-slate-50 border-2 border-slate-200 rounded-xl py-3 px-4 text-[#1a1a1a] focus:ring-2 focus:ring-[#0047d6] focus:border-[#0047d6] transition-all mb-3"
-                  autoFocus
-                />
-                {pinRecoveryError && (
-                  <p className="text-sm text-red-600 mb-3">{pinRecoveryError}</p>
+                <Icon className="w-5 h-5 mb-0.5" />
+                <span className="text-[10px] font-bold">{tab.label}</span>
+                {tab.badge ? (
+                  <span className="absolute top-1.5 right-1/4 bg-red-500 text-white text-[9px] px-1.5 py-0.5 rounded-full font-bold">
+                    {tab.badge}
+                  </span>
+                ) : null}
+                {isActive && (
+                  <span className="absolute top-0 left-1/4 right-1/4 h-1 bg-[#0047d6] rounded-full" />
                 )}
-                <div className="flex gap-2">
-                  <button
-                    onClick={() => { setShowPinRecoveryModal(false); setPinRecoveryInput(''); setPinRecoveryError(''); }}
-                    className="flex-1 py-3 px-4 rounded-xl font-bold text-slate-700 bg-slate-100 hover:bg-slate-200 transition-colors"
-                  >
-                    Annuler
-                  </button>
-                  <button
-                    onClick={handlePinRecovery}
-                    disabled={pinRecoveryLoading || !pinRecoveryInput}
-                    className="flex-1 py-3 px-4 rounded-xl font-bold text-white bg-[#0047d6] hover:bg-[#0033a8] disabled:opacity-50 transition-colors"
-                  >
-                    {pinRecoveryLoading ? '...' : 'Régénérer'}
-                  </button>
-                </div>
-              </div>
-            )}
-          </div>
+              </button>
+            );
+          })}
         </div>
-      )}
-
-      {/* ═══ LABS — Feature G: Modal Partage familial ═══ */}
-      {showShareModal && (
-        <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl">
-            <div className="flex items-start justify-between mb-4">
-              <h3 className="text-lg font-bold text-[#1a1a1a]">
-                🔗 Partage familial du suivi
-              </h3>
-              <button
-                onClick={() => { setShowShareModal(false); setSharePinInput(''); setShareError(''); }}
-                className="text-slate-400 hover:text-slate-700"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-
-            <p className="text-sm text-slate-600 mb-4">
-              Générez un lien à partager avec un proche (famille, accompagnateur).
-              Il pourra voir le suivi de votre bagage <strong>en lecture seule</strong> (sans pouvoir modifier).
-            </p>
-
-            {shareUrl ? (
-              <div className="space-y-3">
-                <div className="bg-green-50 border border-green-200 rounded-xl p-3">
-                  <p className="text-sm font-bold text-green-700 mb-1">✅ Lien actif</p>
-                  <p className="text-xs text-green-600 mb-2">
-                    Votre proche peut accéder au suivi via ce lien :
-                  </p>
-                  <div className="bg-white border border-slate-200 rounded-lg p-2 flex items-center gap-2">
-                    <input
-                      type="text"
-                      readOnly
-                      value={shareUrl}
-                      className="flex-1 text-xs font-mono text-slate-700 bg-transparent outline-none"
-                    />
-                    <button
-                      onClick={handleCopyShareUrl}
-                      className="text-xs font-bold text-[#0047d6] hover:underline flex-shrink-0"
-                    >
-                      {shareCopied ? '✅ Copié' : 'Copier'}
-                    </button>
-                  </div>
-                </div>
-                <p className="text-xs text-slate-500">
-                  Pour révoquer ce lien (le rendre invalide), saisissez votre PIN ci-dessous.
-                </p>
-                <input
-                  type="password"
-                  inputMode="numeric"
-                  maxLength={6}
-                  placeholder="PIN pour révoquer"
-                  value={sharePinInput}
-                  onChange={(e) => setSharePinInput(e.target.value.replace(/\D/g, ''))}
-                  className="w-full text-center text-xl tracking-[0.5em] bg-slate-50 border-2 border-slate-200 rounded-xl py-3 px-4 text-[#1a1a1a] focus:ring-2 focus:ring-[#0047d6] focus:border-[#0047d6] transition-all mb-3"
-                />
-                {shareError && (
-                  <p className="text-sm text-red-600">{shareError}</p>
-                )}
-                <div className="flex gap-2">
-                  <button
-                    onClick={() => { setShowShareModal(false); setSharePinInput(''); setShareError(''); }}
-                    className="flex-1 py-3 px-4 rounded-xl font-bold text-slate-700 bg-slate-100 hover:bg-slate-200 transition-colors"
-                  >
-                    Fermer
-                  </button>
-                  <button
-                    onClick={handleShareRevoke}
-                    disabled={shareLoading || !sharePinInput}
-                    className="flex-1 py-3 px-4 rounded-xl font-bold text-white bg-red-600 hover:bg-red-700 disabled:opacity-50 transition-colors"
-                  >
-                    {shareLoading ? '...' : 'Révoquer le lien'}
-                  </button>
-                </div>
-              </div>
-            ) : (
-              <div className="space-y-3">
-                <p className="text-xs text-slate-500">
-                  Saisissez votre PIN propriétaire pour générer un lien de partage.
-                </p>
-                <input
-                  type="password"
-                  inputMode="numeric"
-                  maxLength={6}
-                  placeholder="••••"
-                  value={sharePinInput}
-                  onChange={(e) => setSharePinInput(e.target.value.replace(/\D/g, ''))}
-                  className="w-full text-center text-2xl tracking-[0.5em] bg-slate-50 border-2 border-slate-200 rounded-xl py-3 px-4 text-[#1a1a1a] focus:ring-2 focus:ring-[#0047d6] focus:border-[#0047d6] transition-all mb-3"
-                  autoFocus
-                />
-                {shareError && (
-                  <p className="text-sm text-red-600">{shareError}</p>
-                )}
-                <div className="flex gap-2">
-                  <button
-                    onClick={() => { setShowShareModal(false); setSharePinInput(''); setShareError(''); }}
-                    className="flex-1 py-3 px-4 rounded-xl font-bold text-slate-700 bg-slate-100 hover:bg-slate-200 transition-colors"
-                  >
-                    Annuler
-                  </button>
-                  <button
-                    onClick={handleShareGenerate}
-                    disabled={shareLoading || !sharePinInput}
-                    className="flex-1 py-3 px-4 rounded-xl font-bold text-white bg-[#0047d6] hover:bg-[#0033a8] disabled:opacity-50 transition-colors"
-                  >
-                    {shareLoading ? 'Génération...' : 'Générer le lien'}
-                  </button>
-                </div>
-              </div>
-            )}
-
-            <p className="text-xs text-slate-400 mt-3 text-center">
-              🔒 Le lien donne accès au suivi en lecture seule. Aucune modification possible.
-            </p>
-          </div>
-        </div>
-      )}
-
-      {/* ═══ LABS — Feature H: Modal PIN pour Export PDF ═══ */}
-      {showPdfModal && (
-        <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl max-w-sm w-full p-6 shadow-2xl">
-            <div className="flex items-start justify-between mb-4">
-              <h3 className="text-lg font-bold text-[#1a1a1a]">
-                📄 Télécharger le parcours PDF
-              </h3>
-              <button
-                onClick={() => { setShowPdfModal(false); setPdfPinInput(''); setPdfError(''); }}
-                className="text-slate-400 hover:text-slate-700"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-            <p className="text-sm text-slate-600 mb-4">
-              Le PDF contient l&apos;historique complet de votre bagage (scans, positions, statut).
-              Utilisable comme preuve pour assurances et compagnies aériennes.
-              <br />
-              <strong>Saisissez votre PIN pour confirmer.</strong>
-            </p>
-            <input
-              type="password"
-              inputMode="numeric"
-              maxLength={6}
-              placeholder="••••"
-              value={pdfPinInput}
-              onChange={(e) => setPdfPinInput(e.target.value.replace(/\D/g, ''))}
-              className="w-full text-center text-2xl tracking-[0.5em] bg-slate-50 border-2 border-slate-200 rounded-xl py-3 px-4 text-[#1a1a1a] focus:ring-2 focus:ring-[#0047d6] focus:border-[#0047d6] transition-all mb-3"
-              autoFocus
-            />
-            {pdfError && (
-              <p className="text-sm text-red-600 mb-3">{pdfError}</p>
-            )}
-            <div className="flex gap-2">
-              <button
-                onClick={() => { setShowPdfModal(false); setPdfPinInput(''); setPdfError(''); }}
-                className="flex-1 py-3 px-4 rounded-xl font-bold text-slate-700 bg-slate-100 hover:bg-slate-200 transition-colors"
-              >
-                Annuler
-              </button>
-              <button
-                onClick={handleDownloadPdf}
-                disabled={pdfLoading}
-                className="flex-1 py-3 px-4 rounded-xl font-bold text-white bg-[#0047d6] hover:bg-[#0033a8] disabled:opacity-50 transition-colors"
-              >
-                {pdfLoading ? 'Génération...' : 'Télécharger'}
-              </button>
-            </div>
-            <p className="text-xs text-slate-400 mt-3 text-center">
-              ⚠️ Ne partagez pas ce PDF : il contient l&apos;historique complet de votre bagage.
-            </p>
-          </div>
-        </div>
-      )}
-
-      {/* ═══ LABS — Feature #3: Modal PIN pour Mode En transit ═══ */}
-      {showTransitModal && (
-        <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl max-w-sm w-full p-6 shadow-2xl">
-            <div className="flex items-start justify-between mb-4">
-              <h3 className="text-lg font-bold text-[#1a1a1a]">
-                {transitMode === 'active' ? 'Désactiver' : 'Réactiver'} le QR code
-              </h3>
-              <button
-                onClick={() => { setShowTransitModal(false); setTransitPinInput(''); setTransitError(''); }}
-                className="text-slate-400 hover:text-slate-700"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-            <p className="text-sm text-slate-600 mb-4">
-              {transitMode === 'active'
-                ? 'Votre QR code renverra vers une page neutre. Aucune info personnelle ne sera visible.'
-                : 'Votre QR code fonctionnera à nouveau normalement.'}
-              <br />
-              <strong>Saisissez votre PIN pour confirmer.</strong>
-            </p>
-            <input
-              type="password"
-              inputMode="numeric"
-              maxLength={6}
-              placeholder="••••"
-              value={transitPinInput}
-              onChange={(e) => setTransitPinInput(e.target.value.replace(/\D/g, ''))}
-              className="w-full text-center text-2xl tracking-[0.5em] bg-slate-50 border-2 border-slate-200 rounded-xl py-3 px-4 text-[#1a1a1a] focus:ring-2 focus:ring-[#0047d6] focus:border-[#0047d6] transition-all mb-3"
-              autoFocus
-            />
-            {transitError && (
-              <p className="text-sm text-red-600 mb-3">{transitError}</p>
-            )}
-            <div className="flex gap-2">
-              <button
-                onClick={() => { setShowTransitModal(false); setTransitPinInput(''); setTransitError(''); }}
-                className="flex-1 py-3 px-4 rounded-xl font-bold text-slate-700 bg-slate-100 hover:bg-slate-200 transition-colors"
-              >
-                Annuler
-              </button>
-              <button
-                onClick={handleTransitToggle}
-                disabled={transitLoading}
-                className="flex-1 py-3 px-4 rounded-xl font-bold text-white bg-[#0047d6] hover:bg-[#0033a8] disabled:opacity-50 transition-colors"
-              >
-                {transitLoading ? '...' : 'Confirmer'}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      </nav>
     </main>
   );
 }
