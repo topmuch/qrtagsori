@@ -1,8 +1,8 @@
 # QRLabs - Dockerfile for Coolify Deployment (standalone test environment)
 FROM node:20-alpine
 
-# Install required packages
-RUN apk add --no-cache git libc6-compat sqlite
+# Install required packages + cron
+RUN apk add --no-cache git libc6-compat sqlite curl dcron
 RUN npm install -g bun
 
 WORKDIR /app
@@ -35,13 +35,17 @@ RUN cp package.json .next/standalone/package.json 2>/dev/null || true
 # Create data + upload directories
 RUN mkdir -p /app/data /app/data/backups /app/.next/standalone/public/uploads/damage
 
+# ─── Setup cron for automatic DB backup (every hour) ───
+RUN echo '0 * * * * curl -s -H "Authorization: Bearer qrlabs-backup-2026" http://localhost:3000/api/cron/backup-db > /dev/null 2>&1' > /etc/crontabs/root
+RUN chmod 0644 /etc/crontabs/root
+
 EXPOSE 3000
 
 ENV PORT=3000
 ENV HOSTNAME="0.0.0.0"
-ENV DATABASE_URL=file:/app/data/qrlabs.db
+ENV DATABASE_URL=file:/app/data/qrlags.db
 ENV NODE_ENV=production
 
-# Start command — standalone server with full node_modules
+# Start command — standalone server + cron (both run in background, server in foreground)
 WORKDIR /app/.next/standalone
-CMD sh -c "mkdir -p /app/data /app/data/backups /app/.next/standalone/public/uploads/damage && export DATABASE_URL=file:/app/data/qrlabs.db && npx prisma db push --skip-generate 2>/dev/null || true && node /app/scripts/create-admin.cjs 2>/dev/null || true && exec node server.js"
+CMD sh -c "mkdir -p /app/data /app/data/backups /app/.next/standalone/public/uploads/damage && export DATABASE_URL=file:/app/data/qrlags.db && npx prisma db push --skip-generate 2>/dev/null || true && node /app/scripts/create-admin.cjs 2>/dev/null || true && crond && exec node server.js"
