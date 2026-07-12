@@ -1,6 +1,6 @@
 /// <reference lib="webworker" />
 
-const CACHE_NAME = 'qrbag-v1';
+const CACHE_NAME = 'qrbag-v2';
 
 // Assets to pre-cache on install
 const PRECACHE_ASSETS = [
@@ -10,123 +10,171 @@ const PRECACHE_ASSETS = [
   '/favicon.png',
 ];
 
-// Install event - pre-cache essential assets
-self.addEventListener('install', (event: ExtendableEvent) => {
+// ─── Install ───
+self.addEventListener('install', (event) => {
   event.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => {
-      console.log('[QRBag SW] Precaching app shell');
-      return cache.addAll(PRECACHE_ASSETS);
-    })
+    caches.open(CACHE_NAME).then((cache) => cache.addAll(PRECACHE_ASSETS))
   );
-  // Activate immediately without waiting
-  (self as unknown as ServiceWorkerGlobalScope).skipWaiting();
+  self.skipWaiting();
 });
 
-// Activate event - clean up old caches
-self.addEventListener('activate', (event: ExtendableEvent) => {
+// ─── Activate ───
+self.addEventListener('activate', (event) => {
   event.waitUntil(
-    caches.keys().then((cacheNames) => {
-      return Promise.all(
-        cacheNames
-          .filter((name) => name !== CACHE_NAME)
-          .map((name) => {
-            console.log('[QRBag SW] Deleting old cache:', name);
-            return caches.delete(name);
-          })
-      );
-    })
+    caches.keys().then((names) =>
+      Promise.all(names.filter((n) => n !== CACHE_NAME).map((n) => caches.delete(n)))
+    )
   );
-  // Take control of all pages immediately
-  (self as unknown as ServiceWorkerGlobalScope).clients.claim();
+  self.clients.claim();
 });
 
-// Fetch event - routing based on request type
-self.addEventListener('fetch', (event: FetchEvent) => {
+// ─── Fetch strategy ───
+self.addEventListener('fetch', (event) => {
   const { request } = event;
+  if (request.method !== 'GET' || !request.url.startsWith(self.location.origin)) return;
 
-  // Skip non-GET requests
-  if (request.method !== 'GET') {
-    return;
-  }
-
-  // Skip cross-origin requests
-  if (!request.url.startsWith(self.location.origin)) {
-    return;
-  }
-
-  // API calls: network-only (no cache) for real-time data
   if (request.url.includes('/api/')) {
     event.respondWith(fetch(request));
     return;
   }
 
-  // Static images / icons / items: cache-first
-  const isImageRequest =
-    request.url.includes('/images/') ||
-    request.url.includes('/items/') ||
-    request.url.includes('/icons/');
-
-  if (isImageRequest) {
-    event.respondWith(cacheFirstWithNetworkFallback(request));
+  const isImage = request.url.includes('/images/') || request.url.includes('/icons/') || request.url.includes('/items/');
+  if (isImage) {
+    event.respondWith(cacheFirst(request));
     return;
   }
 
-  // Navigation / other requests: network-first
-  event.respondWith(networkFirstWithCacheFallback(request));
+  event.respondWith(networkFirst(request));
 });
 
-/**
- * Network-first strategy: try network, fall back to cache.
- * On success, update the cache with the fresh response.
- */
-async function networkFirstWithCacheFallback(request: Request): Promise<Response> {
+async function networkFirst(request) {
   try {
-    const response = await fetch(request);
-    if (response.status === 200) {
+    const res = await fetch(request);
+    if (res.status === 200) {
       const cache = await caches.open(CACHE_NAME);
-      cache.put(request, response.clone());
+      cache.put(request, res.clone());
     }
-    return response;
+    return res;
   } catch {
     const cached = await caches.match(request);
-    if (cached) {
-      return cached;
-    }
-    // If nothing in cache either, return a minimal offline response
-    return new Response('Offline', { status: 503, statusText: 'Service Unavailable' });
+    return cached || new Response('Offline', { status: 503 });
   }
 }
 
-/**
- * Cache-first strategy: try cache, fall back to network.
- * On network success, populate the cache for future use.
- */
-async function cacheFirstWithNetworkFallback(request: Request): Promise<Response> {
+async function cacheFirst(request) {
   const cached = await caches.match(request);
-  if (cached) {
-    return cached;
-  }
-
+  if (cached) return cached;
   try {
-    const response = await fetch(request);
-    if (response.status === 200) {
+    const res = await fetch(request);
+    if (res.status === 200) {
       const cache = await caches.open(CACHE_NAME);
-      cache.put(request, response.clone());
+      cache.put(request, res.clone());
     }
-    return response;
+    return res;
   } catch {
-    return new Response('Offline', { status: 503, statusText: 'Service Unavailable' });
+    return new Response('Offline', { status: 503 });
   }
 }
 
-// Type declarations for service worker
-declare const self: ServiceWorkerGlobalScope;
+// ════════════════════════════════════════════════════
+// LABS — Push Notifications via BroadcastChannel
+// ════════════════════════════════════════════════════
+// The /suivi page broadcasts scan events via BroadcastChannel.
+// The service worker listens and shows a native notification
+// even if the user is on a different page or the app is in background.
 
-interface ExtendableEvent extends Event {
-  waitUntil(fn: Promise<unknown>): void;
-}
+const broadcastChannel = new BroadcastChannel('qrbag-tracking');
 
-interface FetchEvent extends Event {
-  request: Request;
-  respondWith(response: Promise<Response | undefined> | Response | undefined): void;
-}
+broadcastChannel.onmessage = (event) => {
+  const { type, reference, message } = event.data || {};
+
+  if (type === 'scan_detected') {
+    self.registration.showNotification('📍 QRBag — Bagage scanné', {
+      body: message || `Votre bagage ${reference} a été scanné.`,
+      icon: '/icons/icon-192x192.png',
+      badge: '/icons/icon-96x96.png',
+      tag: `scan-${reference}`,
+      data: { url: `/suivi/${reference}` },
+      vibrate: [200, 100, 200],
+      requireInteraction: false,
+    });
+  }
+
+  if (type === 'baggage_found') {
+    self.registration.showNotification('✅ QRBag — Bagage retrouvé !', {
+      body: message || `Votre bagage ${reference} a été retrouvé. Contactez le trouveur.`,
+      icon: '/icons/icon-192x192.png',
+      badge: '/icons/icon-96x96.png',
+      tag: `found-${reference}`,
+      data: { url: `/suivi/${reference}` },
+      vibrate: [200, 100, 200, 100, 200],
+      requireInteraction: true,
+    });
+  }
+
+  if (type === 'country_mismatch') {
+    self.registration.showNotification('🚨 QRBag — Alerte critique !', {
+      body: message || `Anomalie de routage détectée pour ${reference}.`,
+      icon: '/icons/icon-192x192.png',
+      badge: '/icons/icon-96x96.png',
+      tag: `alert-${reference}`,
+      data: { url: `/suivi/${reference}` },
+      vibrate: [300, 100, 300, 100, 300],
+      requireInteraction: true,
+    });
+  }
+};
+
+// ─── Notification click → open /suivi/[reference] ───
+self.addEventListener('notificationclick', (event) => {
+  event.notification.close();
+  const targetUrl = event.notification.data?.url || '/';
+
+  event.waitUntil(
+    self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then((clientList) => {
+      // If app is already open, focus it and navigate
+      for (const client of clientList) {
+        if (client.url.includes(targetUrl)) {
+          return client.focus();
+        }
+      }
+      // If app is open but on different page, navigate
+      for (const client of clientList) {
+        if ('focus' in client) {
+          client.navigate(targetUrl);
+          return client.focus();
+        }
+      }
+      // Otherwise open new window
+      if (self.clients.openWindow) {
+        return self.clients.openWindow(targetUrl);
+      }
+    })
+  );
+});
+
+// ─── Push event (for future server-side push with VAPID) ───
+self.addEventListener('push', (event) => {
+  if (!event.data) return;
+  try {
+    const payload = event.data.json();
+    event.waitUntil(
+      self.registration.showNotification(payload.title || '📍 QRBag', {
+        body: payload.body || '',
+        icon: '/icons/icon-192x192.png',
+        badge: '/icons/icon-96x96.png',
+        tag: payload.tag || 'qrbag-notification',
+        data: { url: payload.url || '/' },
+        vibrate: [200, 100, 200],
+      })
+    );
+  } catch {
+    // Plain text push
+    event.waitUntil(
+      self.registration.showNotification('📍 QRBag', {
+        body: event.data.text(),
+        icon: '/icons/icon-192x192.png',
+      })
+    );
+  }
+});

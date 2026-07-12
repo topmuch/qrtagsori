@@ -1160,6 +1160,20 @@ function Footer() {
    MAIN PAGE
    ══════════════════════════════════════════════ */
 export default function HomePage() {
+  const router = useRouter();
+
+  // ─── LABS — PWA redirect: si ?from=pwa, rediriger vers /suivi/[last_ref] ───
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('from') === 'pwa') {
+      const lastRef = localStorage.getItem('qrbag_last_reference');
+      if (lastRef) {
+        router.replace(`/suivi/${lastRef}`);
+      }
+    }
+  }, [router]);
+
   return (
     <main className="bg-white">
       <Navigation />
