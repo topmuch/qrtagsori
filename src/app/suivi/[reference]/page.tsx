@@ -8,6 +8,7 @@ import { useTranslation } from '@/hooks/useTranslation';
 import { useAudioAlert, POLL_INTERVAL_MS } from '@/hooks/useAudioAlert';
 import { usePWAInstallPrompt } from '@/hooks/usePWAInstallPrompt';
 import { PreDepartureAlert } from '@/components/PreDepartureAlert';
+import { FeedbackButton } from '@/components/suivi/FeedbackButton';
 import {
   Luggage,
   Plane,
@@ -78,10 +79,17 @@ export default function SuiviPage() {
   // WebSocket
   const { isConnected: wsConnected, lastEvent } = useTrackingSocket(reference);
 
-  // Store last reference for PWA redirect
+  // Store last reference for PWA redirect + multi-bagages
   useEffect(() => {
     if (reference) {
       localStorage.setItem('qrbag_last_reference', reference);
+      // Ajouter à la liste des bagages consultés (multi-bagages)
+      const refs = JSON.parse(localStorage.getItem('qrbag_my_references') || '[]');
+      if (!refs.includes(reference)) {
+        refs.unshift(reference);
+        // Garder max 20 références
+        localStorage.setItem('qrbag_my_references', JSON.stringify(refs.slice(0, 20)));
+      }
     }
   }, [reference]);
 
@@ -376,6 +384,9 @@ export default function SuiviPage() {
           })}
         </div>
       </nav>
+
+      {/* Feedback button */}
+      <FeedbackButton reference={reference} />
     </main>
   );
 }

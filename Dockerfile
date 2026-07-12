@@ -33,7 +33,7 @@ RUN cp -r prisma .next/standalone/prisma 2>/dev/null || true
 RUN cp package.json .next/standalone/package.json 2>/dev/null || true
 
 # Create data + upload directories
-RUN mkdir -p /app/data /app/.next/standalone/public/uploads/damage
+RUN mkdir -p /app/data /app/data/backups /app/.next/standalone/public/uploads/damage
 
 EXPOSE 3000
 
@@ -44,4 +44,4 @@ ENV NODE_ENV=production
 
 # Start command — standalone server with full node_modules
 WORKDIR /app/.next/standalone
-CMD sh -c "mkdir -p /app/data /app/.next/standalone/public/uploads/damage && export DATABASE_URL=file:/app/data/qrlabs.db && npx prisma db push --skip-generate 2>/dev/null || true && node /app/scripts/create-admin.cjs 2>/dev/null || true && exec node server.js"
+CMD sh -c "mkdir -p /app/data /app/data/backups /app/.next/standalone/public/uploads/damage && export DATABASE_URL=file:/app/data/qrlabs.db && npx prisma db push --skip-generate 2>/dev/null || true && node /app/scripts/create-admin.cjs 2>/dev/null || true && exec node server.js"

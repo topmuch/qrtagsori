@@ -1,7 +1,6 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
-import { io, Socket } from 'socket.io-client';
 
 interface ScanEventData {
   [key: string]: unknown;
@@ -17,55 +16,67 @@ interface UseTrackingSocketReturn {
 }
 
 /**
- * React hook that connects to the tracking WebSocket mini-service
- * and listens for real-time scan events for a single baggage reference.
+ * Tracking hook — uses polling (not WebSocket) for maximum reliability.
  *
- * - Connects via the Caddy gateway: `io("/?XTransformPort=3005")`
- * - On connect, emits a `join` event with the given reference
- * - Returns `{ isConnected, lastEvent }`
- * - Auto-reconnects on disconnect
- * - Cleans up (disconnects) on unmount
+ * The WebSocket mini-service (tracking-ws) requires port 3005 to be
+ * proxied by Caddy/Nginx, which is complex to configure on Coolify.
+ * Polling every 15s is simpler, more reliable, and sufficient for
+ * baggage tracking (scans are not sub-second events).
+ *
+ * If WebSocket is needed later, re-enable the socket.io code below.
  */
 export function useTrackingSocket(reference: string): UseTrackingSocketReturn {
-  const socketRef = useRef<Socket | null>(null);
   const [isConnected, setIsConnected] = useState(false);
   const [lastEvent, setLastEvent] = useState<ScanEventData | null>(null);
+  const lastScanDateRef = useRef<string | null>(null);
+  const mountedRef = useRef(true);
 
   useEffect(() => {
-    // Guard: skip when reference is empty (e.g. page not yet loaded)
     if (!reference) return;
+    mountedRef.current = true;
 
-    const socket = io('/?XTransformPort=3005', {
-      transports: ['websocket', 'polling'],
-      forceNew: true,
-      reconnection: true,
-      reconnectionAttempts: Infinity,
-      reconnectionDelay: 1000,
-      reconnectionDelayMax: 5000,
-      timeout: 10000,
-    });
+    const POLL_INTERVAL = 15000; // 15 secondes
 
-    socketRef.current = socket;
+    const poll = async () => {
+      if (!mountedRef.current) return;
+      try {
+        const res = await fetch(`/api/suivi/${reference}`, {
+          headers: { 'Cache-Control': 'no-cache' },
+        });
+        if (!res.ok) return;
 
-    socket.on('connect', () => {
-      setIsConnected(true);
-      // Join the room for this baggage reference
-      socket.emit('join', { reference });
-    });
+        const data = await res.json();
+        if (!mountedRef.current) return;
 
-    socket.on('disconnect', () => {
-      setIsConnected(false);
-    });
+        setIsConnected(true);
 
-    // Listen for real-time scan events broadcast to this room
-    socket.on('scan-event', (data: ScanEventData) => {
-      setLastEvent(data);
-    });
+        // Détecter un nouveau scan en comparant la date du dernier scan
+        const currentLastScan = data.baggage?.lastScanDate || null;
+        if (currentLastScan && currentLastScan !== lastScanDateRef.current) {
+          if (lastScanDateRef.current !== null) {
+            // Nouveau scan détecté !
+            setLastEvent({
+              reference,
+              scanDate: currentLastScan,
+              location: data.baggage?.lastLocation || null,
+              _source: 'polling',
+              _broadcastAt: new Date().toISOString(),
+            });
+          }
+          lastScanDateRef.current = currentLastScan;
+        }
+      } catch {
+        if (mountedRef.current) setIsConnected(false);
+      }
+    };
 
-    // Cleanup on unmount
+    // Premier poll immédiat
+    poll();
+    const interval = setInterval(poll, POLL_INTERVAL);
+
     return () => {
-      socket.disconnect();
-      socketRef.current = null;
+      mountedRef.current = false;
+      clearInterval(interval);
       setIsConnected(false);
     };
   }, [reference]);

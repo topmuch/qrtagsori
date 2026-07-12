@@ -111,6 +111,14 @@ export async function POST(
       );
     }
 
+    // Sécurité: refuser l'upload si le bagage est bloqué ou expiré
+    if (baggage.status === 'blocked') {
+      return NextResponse.json(
+        { error: 'Ce bagage est bloqué. Impossible d\'ajouter des photos.' },
+        { status: 400 }
+      );
+    }
+
     // Vérifier s'il existe déjà un rapport de ce type
     const existing = await db.damageReport.findFirst({
       where: { baggageId: baggage.id, type: validated.type },
