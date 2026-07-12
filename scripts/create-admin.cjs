@@ -1,11 +1,12 @@
 /**
- * QRBag Labs — Admin user creation script (CommonJS for Docker CMD)
+ * QRLabs — Admin user creation script (CommonJS for Docker CMD)
  *
+ * Standalone test environment — completely independent from QRBag production.
  * Creates a superadmin user if none exists. Safe to run multiple times
  * (uses upsert). Called by the Dockerfile CMD on container startup.
  *
  * Usage: node scripts/create-admin.cjs
- * Env:   DATABASE_URL=file:/app/data/qrbag.db
+ * Env:   DATABASE_URL=file:/app/data/qrlabs.db
  */
 
 const { PrismaClient } = require('@prisma/client');
@@ -30,23 +31,23 @@ async function main() {
     return;
   }
 
-  // Create default superadmin
+  // Create default superadmin for QRLabs test environment
   const hashedPassword = await hashPassword('admin123');
   await prisma.user.upsert({
-    where: { email: 'admin@qrbag.com' },
+    where: { email: 'admin@qrlabs.com' },
     update: {
       password: hashedPassword,
       role: 'superadmin',
     },
     create: {
-      email: 'admin@qrbag.com',
-      name: 'SuperAdmin',
+      email: 'admin@qrlabs.com',
+      name: 'QRLabs Admin',
       password: hashedPassword,
       role: 'superadmin',
     },
   });
 
-  console.log('✅ Superadmin created: admin@qrbag.com / admin123');
+  console.log('✅ Superadmin created: admin@qrlabs.com / admin123');
   console.log('⚠️  Change this password immediately after first login!');
 }
 
