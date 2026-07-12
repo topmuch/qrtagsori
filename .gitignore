@@ -72,3 +72,6 @@ db/*.db-journal
 
 # OS
 Thumbs.dbdev-server-live.log
+prisma/db.sqlite
+prisma/qrbag.db
+download/
