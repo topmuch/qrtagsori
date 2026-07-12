@@ -382,8 +382,19 @@ export default function ScanPage() {
 
   // ─── LABS — Feature #6: Vérification Identité (PIN) state ───
   // Le bloc PIN ne s'affiche qu'APRÈS que le trouveur a contacté le propriétaire
+  // Persisté en localStorage pour survivre au rechargement (retour depuis WhatsApp)
   const [hasContactedOwner, setHasContactedOwner] = useState(false);
   const [showVerifyPinBlock, setShowVerifyPinBlock] = useState(false);
+
+  // Au montage, vérifier si le trouveur a déjà contacté le propriétaire
+  useEffect(() => {
+    const contacted = localStorage.getItem(`contacted_owner_${reference}`);
+    if (contacted === 'true') {
+      setHasContactedOwner(true);
+      setShowVerifyPinBlock(true);
+    }
+  }, [reference]);
+
   const [verifyPinInput, setVerifyPinInput] = useState('');
   const [verifyPinLoading, setVerifyPinLoading] = useState(false);
   const [verifyPinResult, setVerifyPinResult] = useState<{
@@ -580,6 +591,8 @@ export default function ScanPage() {
       }
 
       setShowSuccess(true);
+      setHasContactedOwner(true);
+      localStorage.setItem(`contacted_owner_${reference}`, 'true');
       setHasContactedOwner(true);  // LABS: débloque le bloc vérification PIN
       setTimeout(() => setShowSuccess(false), 4000);
       toast({ title: t('finder.success_title'), description: t('finder.message_sent') });
@@ -603,6 +616,8 @@ export default function ScanPage() {
 
     const phoneNumber = baggageData?.baggage?.whatsappOwner || FALLBACK_PHONE;
     setHasContactedOwner(true);  // LABS: débloque le bloc vérification PIN
+    setHasContactedOwner(true);
+    localStorage.setItem(`contacted_owner_${reference}`, 'true');
     window.location.href = `tel:${phoneNumber}`;
   }, [finderName, finderPhone, t, logScan, baggageData]);
 

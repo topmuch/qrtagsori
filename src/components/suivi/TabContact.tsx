@@ -58,21 +58,21 @@ export function TabContact({
   return (
     <div className="space-y-3">
       {/* Finder info */}
-      <div className="bg-green-50 border-2 border-green-300 rounded-2xl p-4">
-        <h2 className="text-xs uppercase tracking-widest font-bold mb-3 text-green-700 flex items-center gap-2">
+      <div className="bg-green-600 border-2 border-green-700 rounded-2xl p-4">
+        <h2 className="text-xs uppercase tracking-widest font-bold mb-3 text-white flex items-center gap-2">
           <User className="w-4 h-4" /> Trouveur
         </h2>
         <div className="space-y-2 text-sm">
           {lastFinder.name && (
             <div className="flex items-center justify-between">
-              <span className="text-green-600">Nom</span>
-              <span className="font-bold text-green-700">{lastFinder.name}</span>
+              <span className="text-green-200">Nom</span>
+              <span className="font-bold text-white">{lastFinder.name}</span>
             </div>
           )}
           {lastFinder.phone && (
             <div className="flex items-center justify-between">
-              <span className="text-green-600">Téléphone</span>
-              <span className="font-bold text-green-700" dir="ltr">{lastFinder.phone}</span>
+              <span className="text-green-200">Téléphone</span>
+              <span className="font-bold text-white" dir="ltr">{lastFinder.phone}</span>
             </div>
           )}
         </div>
@@ -99,7 +99,7 @@ export function TabContact({
       </div>
 
       {/* Tips */}
-      <div className="bg-[#fcd616]/20 border border-[#1a1a1a]/20 rounded-xl p-3 text-xs" style={{ color: INK }}>
+      <div className="bg-[#0047d6]/40 border border-white/20 rounded-xl p-3 text-xs text-white">
         <p className="font-bold mb-1">💡 Conseils :</p>
         <p>• Contactez le trouveur rapidement pour organiser la récupération</p>
         <p>• Demandez-lui un rendez-vous dans un lieu public</p>
