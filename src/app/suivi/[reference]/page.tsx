@@ -6,6 +6,7 @@ import dynamic from 'next/dynamic';
 import { useTrackingSocket } from '@/hooks/useTrackingSocket';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useAudioAlert, POLL_INTERVAL_MS } from '@/hooks/useAudioAlert';
+import { usePWAInstallPrompt } from '@/hooks/usePWAInstallPrompt';
 import { PreDepartureAlert } from '@/components/PreDepartureAlert';
 import {
   Luggage,
@@ -22,6 +23,7 @@ import {
   RefreshCw,
   Globe,
   AlertCircle,
+  Download,
 } from 'lucide-react';
 
 // Dynamic imports
@@ -71,6 +73,7 @@ export default function SuiviPage() {
 
   // Audio alert
   const { audioEnabled, enableAudio, toggleAudio } = useAudioAlert(lang);
+  const { canInstall, promptInstall } = usePWAInstallPrompt();
 
   // WebSocket
   const { isConnected: wsConnected, lastEvent } = useTrackingSocket(reference);
@@ -278,6 +281,25 @@ export default function SuiviPage() {
       {refreshToast && (
         <div className="fixed top-20 left-1/2 -translate-x-1/2 bg-green-600 text-white px-4 py-2 rounded-xl shadow-lg z-50 text-sm font-medium">
           ✅ Données rafraîchies
+        </div>
+      )}
+
+      {/* ═══ PWA Install Banner ═══ */}
+      {canInstall && (
+        <div className="max-w-md mx-auto w-full px-4 pt-3">
+          <button
+            onClick={promptInstall}
+            className="w-full bg-[#fcd616] border-2 border-dashed border-[#1a1a1a] rounded-2xl p-3 flex items-center gap-3 hover:bg-[#fcd616]/80 transition-colors"
+          >
+            <div className="w-10 h-10 rounded-xl bg-[#0047d6] flex items-center justify-center flex-shrink-0">
+              <Download className="w-5 h-5 text-white" />
+            </div>
+            <div className="flex-1 text-left">
+              <p className="text-sm font-bold text-[#1a1a1a]">📱 Installer l&apos;application</p>
+              <p className="text-xs text-slate-700">Recevez les notifications sur votre téléphone</p>
+            </div>
+            <span className="text-xs font-bold text-[#0047d6]">Installer →</span>
+          </button>
         </div>
       )}
 

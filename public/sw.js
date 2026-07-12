@@ -5,6 +5,7 @@ const CACHE_NAME = 'qrbag-v2';
 // Assets to pre-cache on install
 const PRECACHE_ASSETS = [
   '/',
+  '/offline',
   '/manifest.json',
   '/logo.png',
   '/favicon.png',
@@ -57,7 +58,13 @@ async function networkFirst(request) {
     return res;
   } catch {
     const cached = await caches.match(request);
-    return cached || new Response('Offline', { status: 503 });
+    if (cached) return cached;
+    // Navigation requests: redirect to offline page
+    if (request.mode === 'navigate') {
+      const offlinePage = await caches.match('/offline');
+      if (offlinePage) return offlinePage;
+    }
+    return new Response('Offline', { status: 503 });
   }
 }
 

@@ -1,7 +1,7 @@
 {
-  "name": "QRBag - Protection intelligente des bagages",
+  "name": "QRBag — Suivi de bagage",
   "short_name": "QRBag",
-  "description": "Protégez vos bagages avec un autocollant QR intelligent. Sans application, sans batterie, sans GPS. Un seul scan pour la tranquillité d'esprit.",
+  "description": "Protection intelligente des bagages. Suivi en temps réel, alertes, et assistance voyage.",
   "start_url": "/?from=pwa",
   "display": "standalone",
   "background_color": "#0047d6",
@@ -47,6 +47,12 @@
       "purpose": "any"
     },
     {
+      "src": "/icons/icon-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "maskable"
+    },
+    {
       "src": "/icons/icon-384x384.png",
       "sizes": "384x384",
       "type": "image/png",
@@ -70,49 +76,20 @@
   "dir": "auto",
   "shortcuts": [
     {
-      "name": "Scanner un QR",
-      "short_name": "Scanner",
-      "description": "Scanner un code QR de bagage",
-      "url": "/?action=scan",
-      "icons": [{ "src": "/icons/icon-96x96.png", "sizes": "96x96" }]
+      "name": "Suivre mon bagage",
+      "short_name": "Suivi",
+      "description": "Voir le suivi de votre bagage",
+      "url": "/?from=pwa"
     },
     {
-      "name": "Activer Hajj",
-      "short_name": "Hajj",
-      "description": "Activer un bagage Hajj",
-      "url": "/hajj/activate",
-      "icons": [{ "src": "/icons/icon-96x96.png", "sizes": "96x96" }]
-    },
-    {
-      "name": "Inscription Voyageur",
-      "short_name": "Voyageur",
-      "description": "Inscrire un bagage voyageur",
-      "url": "/inscrire",
-      "icons": [{ "src": "/icons/icon-96x96.png", "sizes": "96x96" }]
+      "name": "Activer un bagage",
+      "short_name": "Activer",
+      "description": "Activer un nouveau bagage",
+      "url": "/inscrire"
     }
   ],
-  "screenshots": [
-    {
-      "src": "/images/landing-v2/hero.jpg",
-      "sizes": "1920x1080",
-      "type": "image/jpeg",
-      "form_factor": "wide",
-      "label": "Page d'accueil QRBag - Protection intelligente des bagages"
-    },
-    {
-      "src": "/images/landing-v2/step-activate.jpg",
-      "sizes": "1280x720",
-      "type": "image/jpeg",
-      "form_factor": "wide",
-      "label": "Activation d'un bagage en un scan"
-    }
-  ],
-  "related_applications": [],
   "handle_links": "preferred",
   "launch_handler": {
     "client_mode": "navigate-existing"
-  },
-  "edge_side_panel": {
-    "preferred_width": 400
   }
 }
