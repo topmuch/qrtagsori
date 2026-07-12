@@ -21,6 +21,12 @@ ENV NEXT_TELEMETRY_DISABLED=1
 ENV DATABASE_URL=file:/app/data/qrlabs.db
 RUN bun run build
 
+# Copy missing packages not included in standalone build
+# (serverExternalPackages + native/pure-JS packages used at runtime)
+RUN cp -r node_modules/bcryptjs .next/standalone/node_modules/ 2>/dev/null || true
+RUN cp -r node_modules/.prisma .next/standalone/node_modules/ 2>/dev/null || true
+RUN mkdir -p .next/standalone/public/uploads/damage
+
 # Create data directory
 RUN mkdir -p /app/data
 
