@@ -261,7 +261,7 @@ export async function generateChecklistPdf(data: ChecklistPdfData): Promise<Buff
   let y = PAGE_H - headerH - 6 - 36;
 
   // ────────────────────────────────────────────
-  //  2. TITLE BLOCK
+  //  2. TITLE BLOCK + CERTIFICATION STAMP
   // ────────────────────────────────────────────
   page.drawText('Attestation d\'inventaire de voyage', {
     x: margin, y, size: 18, font: fontBold, color: ink,
@@ -270,12 +270,83 @@ export async function generateChecklistPdf(data: ChecklistPdfData): Promise<Buff
   page.drawText(`Document généré et horodaté électroniquement le ${formatTimestamp(createdAt)}.`, {
     x: margin, y, size: 9, font: fontRegular, color: gray,
   });
-  y -= 28;
+
+  // ═══ CERTIFICATION STAMP (top-right, serious & official) ═══
+  // Design: double border in brand blue, date in large bold, ref code at bottom.
+  // Replaces the old ugly red stamp with a clean, on-brand certification mark.
+  const stampW = 138;
+  const stampH = 76;
+  const stampX = PAGE_W - margin - stampW;
+  const stampY = y - 6 - stampH; // top-aligned with title baseline
+
+  // Outer border (thicker, brand blue)
+  page.drawRectangle({
+    x: stampX, y: stampY, width: stampW, height: stampH,
+    color: white, borderColor: brand, borderWidth: 1.5,
+  });
+  // Inner border (thin, brand blue — creates the "official" double-frame look)
+  page.drawRectangle({
+    x: stampX + 3, y: stampY + 3, width: stampW - 6, height: stampH - 6,
+    color: rgb(1, 1, 1), borderColor: brand, borderWidth: 0.5,
+  });
+
+  // Top label — "CERTIFIÉ QRBag"
+  page.drawText('CERTIFIÉ QRBag', {
+    x: stampX + (stampW - fontBold.widthOfTextAtSize('CERTIFIÉ QRBag', 7.5)) / 2,
+    y: stampY + stampH - 13,
+    size: 7.5, font: fontBold, color: brand,
+  });
+  // Yellow separator line under the top label
+  page.drawRectangle({
+    x: stampX + 14, y: stampY + stampH - 18,
+    width: stampW - 28, height: 1, color: accent,
+  });
+
+  // Big date — the prominent timestamp (DD/MM/YYYY)
+  const dateObj = new Date(createdAt);
+  const dd = String(dateObj.getDate()).padStart(2, '0');
+  const mm = String(dateObj.getMonth() + 1).padStart(2, '0');
+  const yyyy = dateObj.getFullYear();
+  const bigDate = `${dd}/${mm}/${yyyy}`;
+  const bigDateW = fontBold.widthOfTextAtSize(bigDate, 16);
+  page.drawText(bigDate, {
+    x: stampX + (stampW - bigDateW) / 2,
+    y: stampY + stampH - 38,
+    size: 16, font: fontBold, color: ink,
+  });
+
+  // Time below date
+  const hh = String(dateObj.getHours()).padStart(2, '0');
+  const mn = String(dateObj.getMinutes()).padStart(2, '0');
+  const timeText = `à ${hh}:${mn}`;
+  const timeW = fontRegular.widthOfTextAtSize(timeText, 7.5);
+  page.drawText(timeText, {
+    x: stampX + (stampW - timeW) / 2,
+    y: stampY + stampH - 50,
+    size: 7.5, font: fontRegular, color: gray,
+  });
+
+  // Yellow separator above bottom label
+  page.drawRectangle({
+    x: stampX + 14, y: stampY + 14,
+    width: stampW - 28, height: 1, color: accent,
+  });
+  // Bottom label — "HORODATÉ ÉLECTRONIQUEMENT"
+  const bottomLabel = 'HORODATÉ ÉLECTRONIQUEMENT';
+  const bottomLabelW = fontBold.widthOfTextAtSize(bottomLabel, 6);
+  page.drawText(bottomLabel, {
+    x: stampX + (stampW - bottomLabelW) / 2,
+    y: stampY + 7,
+    size: 6, font: fontBold, color: brand,
+  });
+
+  // Advance y past the stamp (so the next section doesn't overlap it)
+  y = stampY - 12;
 
   // ────────────────────────────────────────────
   //  3. PASSENGER INFO CARD (white with subtle border)
   // ────────────────────────────────────────────
-  const infoCardH = 88;
+  const infoCardH = 76;
   // Subtle shadow (light gray rectangle slightly offset)
   page.drawRectangle({
     x: margin, y: y - infoCardH - 2, width: PAGE_W - 2 * margin, height: infoCardH,
@@ -292,20 +363,20 @@ export async function generateChecklistPdf(data: ChecklistPdfData): Promise<Buff
   const col2X = margin + (PAGE_W - 2 * margin) / 2 + 10;
 
   // Row 1
-  page.drawText('VOYAGEUR', { x: margin + infoPadX, y: y - 18, size: 7, font: fontBold, color: gray });
-  page.drawText(`${data.firstName} ${data.lastName}`, { x: margin + infoPadX, y: y - 32, size: 11, font: fontBold, color: ink });
+  page.drawText('VOYAGEUR', { x: margin + infoPadX, y: y - 16, size: 7, font: fontBold, color: gray });
+  page.drawText(`${data.firstName} ${data.lastName}`, { x: margin + infoPadX, y: y - 28, size: 11, font: fontBold, color: ink });
 
-  page.drawText('DESTINATION', { x: col2X, y: y - 18, size: 7, font: fontBold, color: gray });
-  page.drawText(data.destinationCountry, { x: col2X, y: y - 32, size: 11, font: fontBold, color: ink });
+  page.drawText('DESTINATION', { x: col2X, y: y - 16, size: 7, font: fontBold, color: gray });
+  page.drawText(data.destinationCountry, { x: col2X, y: y - 28, size: 11, font: fontBold, color: ink });
 
   // Row 2
-  page.drawText('DÉPART', { x: margin + infoPadX, y: y - 56, size: 7, font: fontBold, color: gray });
-  page.drawText(formatDateFr(data.departureDate), { x: margin + infoPadX, y: y - 70, size: 11, font: fontBold, color: ink });
+  page.drawText('DÉPART', { x: margin + infoPadX, y: y - 48, size: 7, font: fontBold, color: gray });
+  page.drawText(formatDateFr(data.departureDate), { x: margin + infoPadX, y: y - 60, size: 11, font: fontBold, color: ink });
 
-  page.drawText('COMPAGNIE', { x: col2X, y: y - 56, size: 7, font: fontBold, color: gray });
-  page.drawText(data.airline || '—', { x: col2X, y: y - 70, size: 11, font: fontBold, color: ink });
+  page.drawText('COMPAGNIE', { x: col2X, y: y - 48, size: 7, font: fontBold, color: gray });
+  page.drawText(data.airline || '—', { x: col2X, y: y - 60, size: 11, font: fontBold, color: ink });
 
-  y -= infoCardH + 22;
+  y -= infoCardH + 16;
 
   // ────────────────────────────────────────────
   //  4. INVENTORY LIST — grouped by category
@@ -356,11 +427,11 @@ export async function generateChecklistPdf(data: ChecklistPdfData): Promise<Buff
       x: PAGE_W - margin - catCountW, y: y - 13, size: 8, font: fontRegular, color: gray,
     });
 
-    y -= 22;
+    y -= 18;
 
     // Items — 2 columns
     const colWidth = (PAGE_W - 2 * margin) / 2;
-    const itemH = 16;
+    const itemH = 14;
     const colX = [margin, margin + colWidth];
     const maxPerCol = Math.ceil(catItems.length / 2);
 
@@ -403,10 +474,10 @@ export async function generateChecklistPdf(data: ChecklistPdfData): Promise<Buff
       }
     }
 
-    y -= maxPerCol * itemH + 14;
+    y -= maxPerCol * itemH + 10;
   }
 
-  y -= 10;
+  y -= 6;
 
   // ────────────────────────────────────────────
   //  5. QR + VERIFICATION (clean two-column layout)
