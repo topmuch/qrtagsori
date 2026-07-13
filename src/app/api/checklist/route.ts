@@ -104,7 +104,7 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { firstName, lastName, email, departureDate, destinationCountry, airline, flightNumber, items, photoPath, photoSizeBytes } = body;
+    const { firstName, lastName, email, departureDate, departureCity, destinationCountry, airline, flightNumber, items, photoPath, photoSizeBytes } = body;
 
     // ─── Validation ───
     if (!firstName || typeof firstName !== 'string' || firstName.trim().length < 2) {
@@ -171,6 +171,7 @@ export async function POST(request: NextRequest) {
         lastName: lastName.trim().slice(0, 80),
         email: email.trim().toLowerCase(),
         departureDate,
+        departureCity: departureCity?.trim()?.slice(0, 80) || null,
         destinationCountry: destinationCountry.trim().slice(0, 80),
         airline: airline?.trim()?.slice(0, 100) || null,
         flightNumber: flightNumber?.trim()?.slice(0, 20) || null,
@@ -191,6 +192,7 @@ export async function POST(request: NextRequest) {
         lastName: checklist.lastName,
         email: checklist.email,
         departureDate: checklist.departureDate,
+        departureCity: checklist.departureCity,
         destinationCountry: checklist.destinationCountry,
         airline: checklist.airline,
         flightNumber: checklist.flightNumber,

@@ -14,6 +14,7 @@ import {
 import {
   Calendar,
   Globe,
+  MapPin,
   User,
   Mail,
   Plane,
@@ -76,6 +77,7 @@ function ChecklistPageContent() {
   const [lastName, setLastName] = useState('');
   const [email, setEmail] = useState('');
   const [departureDate, setDepartureDate] = useState('');
+  const [departureCity, setDepartureCity] = useState('');
   const [destinationCountry, setDestinationCountry] = useState('');
   const [airline, setAirline] = useState('');
   const [flightNumber, setFlightNumber] = useState('');
@@ -162,6 +164,7 @@ function ChecklistPageContent() {
           lastName: lastName.trim(),
           email: email.trim(),
           departureDate,
+          departureCity: departureCity.trim() || null,
           destinationCountry: destinationCountry.trim(),
           airline: airline.trim() || null,
           flightNumber: flightNumber.trim() || null,
@@ -186,7 +189,7 @@ function ChecklistPageContent() {
     } finally {
       setSubmitting(false);
     }
-  }, [firstName, lastName, email, departureDate, destinationCountry, airline, flightNumber, selectedList, selectedCount, t]);
+  }, [firstName, lastName, email, departureDate, departureCity, destinationCountry, airline, flightNumber, selectedList, selectedCount, t]);
 
   // ─── Success screen ───
   if (success) {
@@ -254,6 +257,7 @@ function ChecklistPageContent() {
                   setLastName('');
                   setEmail('');
                   setDepartureDate('');
+                  setDepartureCity('');
                   setDestinationCountry('');
                   setAirline('');
                   setFlightNumber('');
@@ -384,7 +388,19 @@ function ChecklistPageContent() {
                 className="w-full px-3 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-slate-900 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 min-h-[44px]"
               />
             </div>
-            <div className="sm:col-span-2">
+            <div>
+              <label className="text-xs font-bold text-slate-700 mb-1 block flex items-center gap-1">
+                <MapPin className="w-3 h-3" /> Ville de départ
+              </label>
+              <input
+                type="text"
+                value={departureCity}
+                onChange={(e) => setDepartureCity(e.target.value)}
+                className="w-full px-3 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-slate-900 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 min-h-[44px]"
+                placeholder="Ex: Paris, Dakar..."
+              />
+            </div>
+            <div>
               <label className="text-xs font-bold text-slate-700 mb-1 block flex items-center gap-1">
                 <Globe className="w-3 h-3" /> {t('checklist.destination_country')} *
               </label>
@@ -395,6 +411,8 @@ function ChecklistPageContent() {
                 className="w-full px-3 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-slate-900 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 min-h-[44px]"
                 placeholder="Ex: Paris, Tokyo..."
               />
+            </div>
+            <div className="sm:col-span-2">
               <p className="text-[10px] text-slate-500 mt-1">{t('checklist.email_hint')}</p>
             </div>
             <div>

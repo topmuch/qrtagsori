@@ -521,6 +521,7 @@ model Checklist {
   lastName        String
   email           String
   departureDate   String   // ISO date string (yyyy-mm-dd) — kept as string for simplicity
+  departureCity   String?  // ex: "Paris", "Dakar"
   destinationCountry String
   airline         String?
   flightNumber    String?  // ex: "AF123", "AT020"

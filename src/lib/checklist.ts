@@ -86,6 +86,7 @@ export interface ChecklistPdfData {
   lastName: string;
   email: string;
   departureDate: string; // ISO date
+  departureCity?: string | null;
   destinationCountry: string;
   airline?: string | null;
   flightNumber?: string | null;
@@ -161,7 +162,6 @@ export async function generateChecklistPdf(data: ChecklistPdfData): Promise<Buff
   }
   const { PDFDocument, rgb, StandardFonts } = pdfLib;
   const pdfDoc = await PDFDocument.create();
-  pdfDoc.setTitle(`Attestation d'inventaire QRBag - ${data.firstName} ${data.lastName}`);
   pdfDoc.setAuthor('QRBag');
   pdfDoc.setSubject(`Checklist ${data.code}`);
   pdfDoc.setCreationDate(createdAt);
@@ -264,9 +264,42 @@ export async function generateChecklistPdf(data: ChecklistPdfData): Promise<Buff
   // ────────────────────────────────────────────
   //  2. TITLE BLOCK + CERTIFICATION STAMP
   // ────────────────────────────────────────────
-  page.drawText('Attestation d\'inventaire de voyage', {
-    x: margin, y, size: 18, font: fontBold, color: ink,
+  // Build dynamic title: "Checklist de voyage — Vol [Airline] — [DepartureCity] → [DestinationCountry]"
+  // Falls back gracefully when fields are missing.
+  const depCity = (data.departureCity || '').trim();
+  const destCity = (data.destinationCountry || '').trim();
+  const airline = (data.airline || '').trim();
+
+  // Route segment: "Paris -> Dakar" (or just one city if the other is missing)
+  // Note: Standard Helvetica font can't encode → (U+2192), so we use '->' instead
+  let route = '';
+  if (depCity && destCity) route = `${depCity} -> ${destCity}`;
+  else if (depCity) route = depCity;
+  else if (destCity) route = destCity;
+
+  // Compose the title
+  let titleText = 'Checklist de voyage';
+  if (airline && route) {
+    titleText = `Checklist de voyage — Vol ${airline} — ${route}`;
+  } else if (airline) {
+    titleText = `Checklist de voyage — Vol ${airline}`;
+  } else if (route) {
+    titleText = `Checklist de voyage — ${route}`;
+  }
+
+  // Truncate if too long (avoid overlapping with the stamp)
+  const maxTitleW = PAGE_W - 2 * margin - 150; // leave room for stamp on the right
+  let displayTitle = titleText;
+  while (fontBold.widthOfTextAtSize(displayTitle, 16) > maxTitleW && displayTitle.length > 10) {
+    displayTitle = displayTitle.substring(0, displayTitle.length - 1);
+  }
+  if (displayTitle !== titleText) displayTitle = displayTitle + '…';
+
+  page.drawText(displayTitle, {
+    x: margin, y, size: 16, font: fontBold, color: ink,
   });
+  // Also update the PDF document metadata title to match
+  pdfDoc.setTitle(`${titleText} — ${data.firstName} ${data.lastName}`);
   y -= 18;
   page.drawText(`Document généré et horodaté électroniquement le ${formatTimestamp(createdAt)}.`, {
     x: margin, y, size: 9, font: fontRegular, color: gray,
@@ -347,7 +380,7 @@ export async function generateChecklistPdf(data: ChecklistPdfData): Promise<Buff
   // ────────────────────────────────────────────
   //  3. PASSENGER INFO CARD (white with subtle border)
   // ────────────────────────────────────────────
-  const infoCardH = 76;
+  const infoCardH = 102;
   // Subtle shadow (light gray rectangle slightly offset)
   page.drawRectangle({
     x: margin, y: y - infoCardH - 2, width: PAGE_W - 2 * margin, height: infoCardH,
@@ -365,19 +398,20 @@ export async function generateChecklistPdf(data: ChecklistPdfData): Promise<Buff
   const col2X = margin + colW + 4;
   const col3X = margin + 2 * colW + 8;
 
-  // Row 1
+  // Row 1 — passenger identity + dates
   page.drawText('VOYAGEUR', { x: margin + infoPadX, y: y - 16, size: 7, font: fontBold, color: gray });
   page.drawText(`${data.firstName} ${data.lastName}`, { x: margin + infoPadX, y: y - 28, size: 11, font: fontBold, color: ink });
 
-  page.drawText('DESTINATION', { x: col2X, y: y - 16, size: 7, font: fontBold, color: gray });
-  page.drawText(data.destinationCountry, { x: col2X, y: y - 28, size: 11, font: fontBold, color: ink });
+  page.drawText('DÉPART', { x: col2X, y: y - 16, size: 7, font: fontBold, color: gray });
+  page.drawText(formatDateFr(data.departureDate), { x: col2X, y: y - 28, size: 11, font: fontBold, color: ink });
 
-  page.drawText('DÉPART', { x: col3X, y: y - 16, size: 7, font: fontBold, color: gray });
-  page.drawText(formatDateFr(data.departureDate), { x: col3X, y: y - 28, size: 11, font: fontBold, color: ink });
+  page.drawText('DESTINATION', { x: col3X, y: y - 16, size: 7, font: fontBold, color: gray });
+  page.drawText(data.destinationCountry, { x: col3X, y: y - 28, size: 11, font: fontBold, color: ink });
 
-  // Row 2 — flight info (airline + flight number)
+  // Row 2 — flight info
   const airlineText = data.airline || '—';
   const flightText = data.flightNumber || '—';
+  const depCityText = data.departureCity || '—';
 
   page.drawText('COMPAGNIE', { x: margin + infoPadX, y: y - 48, size: 7, font: fontBold, color: gray });
   page.drawText(airlineText, { x: margin + infoPadX, y: y - 60, size: 11, font: fontBold, color: ink });
@@ -385,11 +419,24 @@ export async function generateChecklistPdf(data: ChecklistPdfData): Promise<Buff
   page.drawText('N° DE VOL', { x: col2X, y: y - 48, size: 7, font: fontBold, color: gray });
   page.drawText(flightText, { x: col2X, y: y - 60, size: 11, font: fontBold, color: ink });
 
-  // Bottom-right: code/référence (to balance the empty 3rd cell on row 2)
   page.drawText('RÉFÉRENCE', { x: col3X, y: y - 48, size: 7, font: fontBold, color: gray });
   page.drawText(data.code, { x: col3X, y: y - 60, size: 11, font: fontMono, color: ink });
 
-  y -= infoCardH + 16;
+  // Row 3 — route (departure city → destination)
+  page.drawText('VILLE DE DÉPART', { x: margin + infoPadX, y: y - 80, size: 7, font: fontBold, color: gray });
+  page.drawText(depCityText, { x: margin + infoPadX, y: y - 92, size: 11, font: fontBold, color: ink });
+
+  page.drawText('VILLE D\'ARRIVEE', { x: col2X, y: y - 80, size: 7, font: fontBold, color: gray });
+  page.drawText(data.destinationCountry, { x: col2X, y: y - 92, size: 11, font: fontBold, color: ink });
+
+  // Third column on row 3 — leave empty or show flight route summary
+  if (depCityText !== '—' && data.destinationCountry) {
+    const routeSummary = `${depCityText} -> ${data.destinationCountry}`;
+    page.drawText('TRAJET', { x: col3X, y: y - 80, size: 7, font: fontBold, color: gray });
+    page.drawText(routeSummary, { x: col3X, y: y - 92, size: 10, font: fontBold, color: brand });
+  }
+
+  y -= infoCardH + 14;
 
   // ────────────────────────────────────────────
   //  4. INVENTORY LIST — grouped by category
