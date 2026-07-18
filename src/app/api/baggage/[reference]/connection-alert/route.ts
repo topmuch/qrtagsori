@@ -187,7 +187,7 @@ export async function POST(
     // ─── Envoyer l'email d'alerte (at_risk ou missed) ───
     const effectiveConnectionTime = connectionTimeMinutes - delayMinutes;
     const travelerName = `${baggage.travelerFirstName || ''} ${baggage.travelerLastName || ''}`.trim() || 'Voyageur';
-    const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://qrbags.com';
+    const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://qrtags.com';
     const trackingUrl = `${appUrl}/suivi/${reference}`;
 
     const emailTemplate = getConnectionMissedEmailTemplate({
@@ -203,7 +203,7 @@ export async function POST(
       trackingUrl,
     });
 
-    const notifEmail = baggage.agency?.email || 'proprietaire@qrbag.com';
+    const notifEmail = baggage.agency?.email || 'proprietaire@qrtags.com';
     const emailResult = await sendEmail({
       to: notifEmail,
       subject: connectionStatus === 'missed'
@@ -242,7 +242,7 @@ export async function POST(
 
     if (error instanceof z.ZodError) {
       return NextResponse.json(
-        { error: 'Données invalides', details: error.errors },
+        { error: 'Données invalides', details: error.issues },
         { status: 400 }
       );
     }

@@ -89,8 +89,6 @@ function Sidebar({
     // Travelers Category
     { label: "VOYAGEURS", icon: null, isCategory: true },
 
-    // Hajj pilgrims
-    { label: "Pèlerins Hajj", icon: <Users className="w-5 h-5" />, href: "/admin/hajj", permission: PERMISSIONS.VIEW_BAGGAGES },
 
     // Voyageurs
     { label: "Voyageurs", icon: <Users className="w-5 h-5" />, href: "/admin/voyageurs", permission: PERMISSIONS.VIEW_BAGGAGES },

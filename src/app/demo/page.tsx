@@ -132,7 +132,7 @@ export default function DemoPage() {
 
               <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold mb-6">
                 <span className="bg-gradient-to-r from-[#1E40AF] to-[#1D4ED8] bg-clip-text text-transparent">
-                  Essayez QRBag
+                  Essayez QRTags
                 </span>
                 <br />
                 <span className="text-white">en 60 secondes</span>

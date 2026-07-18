@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect, Suspense } from 'react';
+import QRTagsLogo from "@/components/qrtags/QRTagsLogo";
 import Image from 'next/image';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
@@ -16,6 +17,8 @@ import {
 } from 'lucide-react';
 import PhoneInput from '@/components/ui/PhoneInput';
 import CountryRegionSelect from '@/components/inscrire/CountryRegionSelect';
+import DynamicTagForm from '@/components/qrtags/DynamicTagForm';
+import { getAgencyTypeDef } from '@/lib/agency-types';
 
 // TRANSPORT-FEATURE: Import transport utilities
 import { useTranslation } from '@/hooks/useTranslation';
@@ -29,9 +32,9 @@ import {
   getTransportImage,
 } from '@/lib/transport';
 
-// ─── Brand constants (QRBag palette: blue #0047d6 + yellow #fcd616) ───
-const BRAND = '#0047d6'; // bleu vif — fonds principaux, headers
-const ACCENT = '#fcd616'; // jaune vif — cards, badges, accents
+// ─── Brand constants (QRTags palette: blue #111111 + yellow #E3B23C) ───
+const BRAND = '#111111'; // bleu vif — fonds principaux, headers
+const ACCENT = '#E3B23C'; // jaune vif — cards, badges, accents
 const INK = '#1a1a1a'; // noir — texte sur jaune, bordures dashed
 
 // ─── Language Selector Component ───
@@ -66,7 +69,7 @@ function LanguageSelector({ lang, setLang }: { lang: Language; setLang: (l: Lang
                 setIsOpen(false);
               }}
               className={`w-full px-4 py-2.5 sm:px-5 sm:py-3 text-left text-xs sm:text-sm md:text-base font-medium transition-colors ${
-                lang === l ? 'bg-[#fcd616] text-black' : 'text-black hover:bg-black/5'
+                lang === l ? 'bg-[#E3B23C] text-black' : 'text-black hover:bg-black/5'
               }`}
             >
               {LANGUAGE_NAMES[l]}
@@ -105,6 +108,12 @@ function InscrireContent() {
 
   const [loading, setLoading] = useState(false);
   const [phoneCountry, setPhoneCountry] = useState(countryCode);
+
+  // QRTags : agencyType du tag (récupéré via /api/baggage/[ref]/status au chargement)
+  // Permet d'afficher des champs dynamiques (N° chambre, N° casier, etc.) selon le métier de l'agence.
+  const [agencyType, setAgencyType] = useState<string | null>(null);
+  const [customData, setCustomData] = useState<Record<string, string>>({});
+
   const [formData, setFormData] = useState({
     reference: qrFromUrl.toUpperCase(), // caché UI, conservé pour l'API
     firstName: '',
@@ -123,6 +132,22 @@ function InscrireContent() {
     busCompany: '',
     busLineNumber: '',
   });
+
+  // QRTags : récupère l'agencyType du tag pour afficher les bons champs dynamiques
+  useEffect(() => {
+    if (!qrFromUrl) return;
+    (async () => {
+      try {
+        const res = await fetch(`/api/baggage/${qrFromUrl.toUpperCase()}/status`);
+        if (res.ok) {
+          const data = await res.json();
+          setAgencyType(data.tag?.agency?.agencyType || null);
+        }
+      } catch {
+        // silent — fallback sur generic
+      }
+    })();
+  }, [qrFromUrl]);
 
   // Sync phoneCountry when countryCode is detected
   useEffect(() => {
@@ -172,6 +197,8 @@ function InscrireContent() {
           destination: formData.destination,
           departureDate: formData.departureDate || undefined,
           departureTime: formData.departureTime || undefined,
+          // QRTags : champs dynamiques par métier (custom_data JSON)
+          customData: Object.keys(customData).length > 0 ? customData : undefined,
         }),
       });
 
@@ -220,20 +247,20 @@ function InscrireContent() {
 
   return (
     <main
-      className="min-h-[100dvh] min-h-screen bg-[#0047d6] flex flex-col px-4 sm:px-5 md:px-8 pb-[env(safe-area-inset-bottom,0px)]"
+      className="min-h-[100dvh] min-h-screen bg-[#111111] flex flex-col px-4 sm:px-5 md:px-8 pb-[env(safe-area-inset-bottom,0px)]"
       dir={dir}
     >
       {/* ─── Header ─── */}
-      <header className="sticky top-0 z-40 flex items-center justify-between pt-[env(safe-area-inset-top,0px)] px-0 py-2 sm:py-3 md:py-4 bg-[#0047d6]">
+      <header className="sticky top-0 z-40 flex items-center justify-between pt-[env(safe-area-inset-top,0px)] px-0 py-2 sm:py-3 md:py-4 bg-[#111111]">
         <Link
           href="/"
-          className="flex items-center gap-2 text-white hover:text-[#fcd616] transition-colors min-h-[44px]"
+          className="flex items-center gap-2 text-white hover:text-[#E3B23C] transition-colors min-h-[44px]"
         >
           <ArrowLeft className="w-5 h-5" />
           <span className="text-sm md:text-base font-medium">{t('inscrire.back')}</span>
         </Link>
         <div className="flex items-center gap-2">
-          <img src="/logo.png" alt="QRBag" className="h-16 w-auto object-contain" />
+          <QRTagsLogo size="md" variant="light" />
         </div>
         <LanguageSelector lang={lang} setLang={setLang} />
       </header>
@@ -261,7 +288,7 @@ function InscrireContent() {
           </span>
         </div>
 
-        {/* ═══ BLOC PRINCIPAL — Formulaire Activation (jaune QRBag) ═══ */}
+        {/* ═══ BLOC PRINCIPAL — Formulaire Activation (jaune QRTags) ═══ */}
         <div
           className="w-full rounded-2xl p-5 md:p-6 mb-5 shadow-xl"
           style={{ backgroundColor: ACCENT, boxShadow: `0 20px 40px ${INK}15` }}
@@ -518,6 +545,31 @@ function InscrireContent() {
           )}
         </div>
 
+        {/* ═══ QRTags : Champs dynamiques par métier (custom_data JSON) ═══ */}
+        {step === 2 && agencyType && agencyType !== 'generic' && (
+          <div className="mb-6">
+            <DashedEncart>
+              <div className="flex items-center gap-2 mb-4">
+                <span className="text-xl">🏢</span>
+                <div className="flex-1">
+                  <div className="font-bold text-base text-black">
+                    {getAgencyTypeDef(agencyType)?.label || 'Informations métier'}
+                  </div>
+                  <div className="text-xs text-black/70">
+                    {getAgencyTypeDef(agencyType)?.description}
+                  </div>
+                </div>
+              </div>
+              <DynamicTagForm
+                agencyType={agencyType}
+                values={customData}
+                onChange={setCustomData}
+                compact
+              />
+            </DashedEncart>
+          </div>
+        )}
+
         {/* ═══ BOUTON SUBMIT (noir) ═══ */}
         {step === 2 && (
           <div className="mb-6">
@@ -561,9 +613,9 @@ export default function InscrirePage() {
   return (
     <Suspense
       fallback={
-        <main className="min-h-screen bg-[#0047d6] flex items-center justify-center">
+        <main className="min-h-screen bg-[#111111] flex items-center justify-center">
           <div className="text-center">
-            <div className="animate-spin w-12 h-12 border-4 border-white/20 border-t-[#fcd616] rounded-full mx-auto mb-4" />
+            <div className="animate-spin w-12 h-12 border-4 border-white/20 border-t-[#E3B23C] rounded-full mx-auto mb-4" />
             <p className="text-lg text-white">{t('common.loading')}</p>
           </div>
         </main>

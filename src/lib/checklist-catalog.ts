@@ -7,10 +7,10 @@
  */
 
 // ═══════════════════════════════════════════════════════
-//  BRAND COLORS (harmonized with qrbags website — see src/lib/brand.ts)
+//  BRAND COLORS (harmonized with qrtags website — see src/lib/brand.ts)
 // ═══════════════════════════════════════════════════════
 
-export const BRAND_COLOR = '#0047d6'; // QRBag blue (primary)
+export const BRAND_COLOR = '#111111'; // QRTags blue (primary)
 export const INK_COLOR = '#1a1a1a';   // Black ink
 export const CREAM_COLOR = '#ffffff'; // White background
 export const RED_COLOR = '#dc2626';   // Kept for backwards compat (rarely used)

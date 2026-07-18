@@ -1,12 +1,14 @@
 /**
- * QRLabs — Admin user creation script (CommonJS for Docker CMD)
+ * QRTags — Superadmin creation script (CommonJS for Docker entrypoint)
  *
- * Standalone test environment — completely independent from QRBag production.
- * Creates a superadmin user if none exists. Safe to run multiple times
- * (uses upsert). Called by the Dockerfile CMD on container startup.
+ * Creates a default superadmin user if none exists. Safe to run multiple
+ * times (uses upsert). Called by docker-entrypoint.sh on container startup.
  *
  * Usage: node scripts/create-admin.cjs
- * Env:   DATABASE_URL=file:/app/data/qrlabs.db
+ * Env:
+ *   DATABASE_URL=file:/app/data/qrtags.db
+ *   ADMIN_EMAIL=admin@qrtags.com (default)
+ *   ADMIN_PASSWORD=admin123 (default — change in production!)
  */
 
 const { PrismaClient } = require('@prisma/client');
@@ -19,7 +21,10 @@ async function hashPassword(password) {
 }
 
 async function main() {
-  console.log('🔐 Checking admin users...');
+  console.log('🔐 QRTags — Vérification du compte superadmin...');
+
+  const adminEmail = process.env.ADMIN_EMAIL || 'admin@qrtags.com';
+  const adminPassword = process.env.ADMIN_PASSWORD || 'admin123';
 
   // Check if any superadmin exists
   const existingAdmin = await prisma.user.findFirst({
@@ -27,34 +32,34 @@ async function main() {
   });
 
   if (existingAdmin) {
-    console.log('✅ Superadmin already exists:', existingAdmin.email);
+    console.log('✅ Superadmin déjà existant:', existingAdmin.email);
     return;
   }
 
-  // Create default superadmin for QRLabs test environment
-  const hashedPassword = await hashPassword('admin123');
+  // Create default superadmin
+  const hashedPassword = await hashPassword(adminPassword);
   await prisma.user.upsert({
-    where: { email: 'admin@qrlabs.com' },
+    where: { email: adminEmail },
     update: {
       password: hashedPassword,
       role: 'superadmin',
     },
     create: {
-      email: 'admin@qrlabs.com',
-      name: 'QRLabs Admin',
+      email: adminEmail,
+      name: 'QRTags SuperAdmin',
       password: hashedPassword,
       role: 'superadmin',
     },
   });
 
-  console.log('✅ Superadmin created: admin@qrlabs.com / admin123');
-  console.log('⚠️  Change this password immediately after first login!');
+  console.log(`✅ Superadmin créé: ${adminEmail}`);
+  console.log('⚠️  Changez ce mot de passe immédiatement après la 1ère connexion !');
 }
 
 main()
   .catch((e) => {
-    console.error('❌ Error creating admin:', e.message);
-    // Non-blocking: don't exit with error code so container still starts
+    console.error('❌ Erreur création admin:', e.message);
+    // Non-bloquant : le container démarre quand même
   })
   .finally(async () => {
     await prisma.$disconnect();

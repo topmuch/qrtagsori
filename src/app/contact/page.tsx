@@ -101,8 +101,8 @@ function ContactContent() {
                   </div>
                   <div>
                     <h3 className="font-semibold text-lg mb-1 text-white">Email</h3>
-                    <a href="mailto:contact@qrbag.com" className="text-[#a0a8b8] hover:text-[#1E40AF] transition-colors">
-                      contact@qrbag.com
+                    <a href="mailto:contact@qrtags.com" className="text-[#a0a8b8] hover:text-[#1E40AF] transition-colors">
+                      contact@qrtags.com
                     </a>
                   </div>
                 </div>

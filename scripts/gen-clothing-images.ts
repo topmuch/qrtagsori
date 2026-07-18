@@ -97,12 +97,12 @@ async function generateOne(
       return { slug: item.slug, ok: true, path: outPath, bytes: buffer.length, attempts: attempt };
     } catch (err: any) {
       lastError = err?.message ?? String(err);
-      const rl = isRateLimitError(lastError);
+      const rl = isRateLimitError(lastError || '');
       // Backoff: 429 -> longer waits (4s, 8s, 16s, 30s, 60s); other errors -> 2s, 4s, 8s, 16s, 30s
       const baseWait = rl ? 4000 : 2000;
       const wait = attempt < MAX_ATTEMPTS ? Math.min(baseWait * Math.pow(2, attempt - 1), 60000) : 0;
       console.error(
-        `FAIL [${item.slug}] attempt ${attempt}/${MAX_ATTEMPTS}${rl ? ' (429)' : ''}: ${lastError.slice(0, 200)}` +
+        `FAIL [${item.slug}] attempt ${attempt}/${MAX_ATTEMPTS}${rl ? ' (429)' : ''}: ${(lastError || '').slice(0, 200)}` +
           (wait ? ` -> retry in ${Math.round(wait / 1000)}s` : ''),
       );
       if (wait > 0) await new Promise((r) => setTimeout(r, wait));

@@ -67,8 +67,8 @@ function formatMessageContent(content: string, messageType: string): string {
     
     // Handle commande_agence type
     if (messageType === 'commande_agence') {
-      const typeLabel = parsed.type === 'hajj' ? 'Hajj (3 QR/pèlerin)' : 'Voyageur (1 ou 2 QR)';
-      const countLabel = parsed.type === 'hajj' ? 'pèlerins' : 'voyageurs';
+      const typeLabel = parsed.type === 'hajj' ? 'Hajj (legacy)' : 'Tag QRTags (1 QR)';
+      const countLabel = parsed.type === 'hajj' ? 'clients (legacy)' : 'clients';
       const notes = parsed.notes ? `\nNotes: ${parsed.notes}` : '';
       return `Commande: ${parsed.count} ${countLabel}\nType: ${typeLabel}${notes}`;
     }
@@ -567,7 +567,7 @@ export default function MessagesPage() {
               )}
               {selectedMessage.senderEmail && selectedMessage.type !== 'assistance_agence' && (
                 <a
-                  href={`mailto:${selectedMessage.senderEmail}?subject=Re: Votre message sur QRBag`}
+                  href={`mailto:${selectedMessage.senderEmail}?subject=Re: Votre message sur QRTags`}
                   className="flex items-center gap-2 px-4 py-2 bg-[#2563EB] text-white rounded-xl hover:bg-[#ff9f00] transition-colors"
                 >
                   <Send className="w-4 h-4" aria-hidden="true" />
@@ -664,7 +664,7 @@ export default function MessagesPage() {
                           recipientAgencyId: selectedMessage.agencyId,
                           subject: `Re: ${selectedMessage.subject || 'Votre demande d\'assistance'}`,
                           content: replyContent,
-                          senderName: 'Support QRBag',
+                          senderName: 'Support QRTags',
                         }),
                       });
                       

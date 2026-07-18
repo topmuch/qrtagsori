@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
+import QRTagsLogo from "@/components/qrtags/QRTagsLogo";
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useAuth } from '@/contexts/AuthContext';
@@ -19,7 +20,7 @@ import {
   Server,
   type LucideIcon,
 } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion, AnimatePresence, easeOut, type Variants } from 'framer-motion';
 
 /* ══════════════════════════════════════════════════════════════
    DATA
@@ -35,8 +36,8 @@ const STATS = [
 const TESTIMONIALS = [
   {
     name: 'Fatou Diallo',
-    role: 'Agence Hajj Express',
-    text: 'QRBag a transformé notre gestion de bagages. Zéro perte depuis 2 ans.',
+    role: 'Hôtel Le Royal',
+    text: 'QRTags a transformé notre gestion de bagages. Zéro perte depuis 2 ans.',
   },
   {
     name: 'Moussa Koné',
@@ -179,7 +180,7 @@ function StatCard({ value, label, icon: Icon }: { value: string; label: string; 
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.6, ease: 'easeOut' }}
+      transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
       className="text-center group"
     >
       <div className="inline-flex items-center justify-center w-10 h-10 rounded-xl bg-blue-500/10 border border-blue-500/20 mb-2 group-hover:bg-blue-500/20 transition-colors">
@@ -209,9 +210,9 @@ const staggerContainer = {
   animate: { transition: { staggerChildren: 0.1, delayChildren: 0.2 } },
 };
 
-const formChild = {
+const formChild: Variants = {
   initial: { opacity: 0, y: 16 },
-  animate: { opacity: 1, y: 0, transition: { duration: 0.5, ease: 'easeOut' } },
+  animate: { opacity: 1, y: 0, transition: { duration: 0.5, ease: [0.16, 1, 0.3, 1] as [number, number, number, number] } },
 };
 
 /* ══════════════════════════════════════════════════════════════
@@ -278,7 +279,7 @@ export default function AdminLoginPage() {
 
   /* ─── Demo fill ─── */
   const fillDemo = useCallback(() => {
-    setEmail('admin@qrbag.com');
+    setEmail('admin@qrtags.com');
     setPassword('admin123');
   }, []);
 
@@ -289,7 +290,7 @@ export default function AdminLoginPage() {
     .join('');
 
   return (
-    <div className="min-h-screen flex flex-col lg:flex-row bg-[#0047d6] overflow-hidden">
+    <div className="min-h-screen flex flex-col lg:flex-row bg-[#111111] overflow-hidden">
       {/* ════════════════════════════════════════════════════════
           LEFT PANEL — "Midnight Command Center" (desktop only)
           ════════════════════════════════════════════════════════ */}
@@ -300,7 +301,7 @@ export default function AdminLoginPage() {
             className="absolute inset-0"
             style={{
               background:
-                'radial-gradient(ellipse at 30% 20%, rgba(0, 71, 214, 0.15) 0%, transparent 60%), radial-gradient(ellipse at 80% 80%, rgba(0, 71, 214, 0.10) 0%, transparent 50%), linear-gradient(160deg, #0047d6 0%, #0033a8 40%, #0047d6 100%)',
+                'radial-gradient(ellipse at 30% 20%, rgba(0, 71, 214, 0.15) 0%, transparent 60%), radial-gradient(ellipse at 80% 80%, rgba(0, 71, 214, 0.10) 0%, transparent 50%), linear-gradient(160deg, #111111 0%, #0033a8 40%, #111111 100%)',
             }}
           />
         </div>
@@ -335,13 +336,13 @@ export default function AdminLoginPage() {
           <motion.div
             initial={{ opacity: 0, x: -20 }}
             animate={{ opacity: 1, x: 0 }}
-            transition={{ duration: 0.7, ease: 'easeOut' }}
+            transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
           >
             <Link href="/" className="group inline-block">
               <div className="relative w-20 h-20 rounded-2xl bg-white/[0.07] backdrop-blur-sm p-2 border border-blue-500/20 flex items-center justify-center group-hover:bg-white/[0.12] group-hover:border-blue-500/40 transition-all duration-300">
                 {/* Glow effect behind logo */}
                 <div className="absolute -inset-1 rounded-2xl bg-blue-500/10 blur-lg opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-                <img src="/logo.png" alt="QRBag" className="w-full h-full object-contain relative z-10" />
+                <QRTagsLogo size="md" variant="light" />
               </div>
             </Link>
           </motion.div>
@@ -393,7 +394,7 @@ export default function AdminLoginPage() {
                 de la plateforme
               </span>
               <br />
-              QRBag.
+              QRTags.
             </motion.h2>
 
             <motion.p
@@ -473,7 +474,7 @@ export default function AdminLoginPage() {
       {/* ════════════════════════════════════════════════════════
           RIGHT PANEL — DARK MODE FORM
           ════════════════════════════════════════════════════════ */}
-      <div className="w-full lg:w-[48%] min-h-screen flex items-center justify-center bg-[#0047d6] px-6 py-12 sm:px-10 relative">
+      <div className="w-full lg:w-[48%] min-h-screen flex items-center justify-center bg-[#111111] px-6 py-12 sm:px-10 relative">
         {/* Subtle right-side background treatment */}
         <div className="absolute inset-0">
           <div
@@ -497,7 +498,7 @@ export default function AdminLoginPage() {
           className="w-full max-w-[400px] relative z-10"
           initial={{ opacity: 0, x: 30 }}
           animate={{ opacity: 1, x: 0 }}
-          transition={{ duration: 0.7, ease: 'easeOut' }}
+          transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
         >
           {/* Mobile Logo */}
           <motion.div
@@ -508,7 +509,7 @@ export default function AdminLoginPage() {
           >
             <div className="relative w-20 h-20 rounded-2xl bg-white/[0.07] backdrop-blur-sm p-2 border border-blue-500/20 flex items-center justify-center">
               <div className="absolute -inset-1 rounded-2xl bg-blue-500/10 blur-lg" />
-              <img src="/logo.png" alt="QRBag" className="w-full h-full object-contain relative z-10" />
+              <QRTagsLogo size="md" variant="light" />
             </div>
           </motion.div>
 
@@ -524,7 +525,7 @@ export default function AdminLoginPage() {
           <motion.div className="mb-8" {...formChild} transition={{ delay: 0.2 }}>
             <h1 className="text-3xl font-bold text-white tracking-tight mb-2">Administration</h1>
             <p className="text-white/40 text-sm leading-relaxed">
-              Accès réservé aux administrateurs de la plateforme QRBag
+              Accès réservé aux administrateurs de la plateforme QRTags
             </p>
           </motion.div>
 
@@ -576,7 +577,7 @@ export default function AdminLoginPage() {
                   onFocus={() => setFocusedField('email')}
                   onBlur={() => setFocusedField(null)}
                   className="w-full bg-transparent border-none outline-none text-white placeholder-white/25 py-3.5 px-3 text-sm"
-                  placeholder="admin@qrbag.com"
+                  placeholder="admin@qrtags.com"
                   required
                   autoComplete="email"
                 />
@@ -708,7 +709,7 @@ export default function AdminLoginPage() {
                 <div>
                   <p className="text-xs font-semibold text-white/70">Compte démo</p>
                   <p className="text-[10px] text-white/25 font-mono mt-0.5">
-                    admin@qrbag.com / admin123
+                    admin@qrtags.com / admin123
                   </p>
                 </div>
               </div>

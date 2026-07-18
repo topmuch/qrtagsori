@@ -98,7 +98,7 @@ function getMailtoUrl(email: string, subject: string, body: string): string {
 }
 
 function buildRenewalMessage(name: string, reference: string, expiryDate: string): string {
-  return `Bonjour ${name}, votre bagage QRBag (${reference}) arrive à expiration le ${expiryDate}. Souhaitez-vous le renouveler pour 7€ ?`;
+  return `Bonjour ${name}, votre bagage QRTags (${reference}) arrive à expiration le ${expiryDate}. Souhaitez-vous le renouveler pour 7€ ?`;
 }
 
 function statusBadgeClass(status: string): string {
@@ -187,7 +187,7 @@ export default function MarketingPage() {
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `qrbags-marketing-${new Date().toISOString().slice(0, 10)}.csv`;
+    a.download = `qrtags-marketing-${new Date().toISOString().slice(0, 10)}.csv`;
     a.click();
     URL.revokeObjectURL(url);
   }, [data]);
@@ -483,7 +483,7 @@ function TravelerRow({ traveler, onView }: { traveler: Traveler; onView: () => v
     expiryStr
   );
   const mailtoUrl = traveler.email
-    ? getMailtoUrl(traveler.email, 'Renouvellement QRBag', emailBody)
+    ? getMailtoUrl(traveler.email, 'Renouvellement QRTags', emailBody)
     : null;
 
   return (
@@ -570,7 +570,7 @@ function TravelerCard({ traveler, onView }: { traveler: Traveler; onView: () => 
     expiryStr
   );
   const mailtoUrl = traveler.email
-    ? getMailtoUrl(traveler.email, 'Renouvellement QRBag', emailBody)
+    ? getMailtoUrl(traveler.email, 'Renouvellement QRTags', emailBody)
     : null;
 
   return (
@@ -660,7 +660,7 @@ function DetailModalContent({ traveler }: { traveler: Traveler }) {
     expiryStr
   );
   const mailtoUrl = traveler.email
-    ? getMailtoUrl(traveler.email, 'Renouvellement QRBag', emailBody)
+    ? getMailtoUrl(traveler.email, 'Renouvellement QRTags', emailBody)
     : null;
 
   return (
@@ -712,7 +712,7 @@ function DetailModalContent({ traveler }: { traveler: Traveler }) {
               <div className="flex items-center justify-between mb-1.5">
                 <span className="font-mono text-sm font-semibold text-slate-800 dark:text-white">{b.reference}</span>
                 <Badge variant="outline" className="text-[10px] px-2 py-0">
-                  {b.type === 'hajj' ? 'Hajj' : 'Voyageur'}
+                  {b.type === 'hajj' ? 'Legacy' : 'Objet'}
                 </Badge>
               </div>
               <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-slate-500 dark:text-slate-400">
@@ -769,7 +769,7 @@ function DetailModalContent({ traveler }: { traveler: Traveler }) {
         ) : (
           <button
             onClick={() => {
-              window.location.href = getMailtoUrl('contact@qrbag.com', 'Renouvellement QRBag', emailBody);
+              window.location.href = getMailtoUrl('contact@qrtags.com', 'Renouvellement QRTags', emailBody);
             }}
             className="flex-1 flex items-center justify-center gap-2 py-3 bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-200 rounded-xl font-medium transition-colors"
           >

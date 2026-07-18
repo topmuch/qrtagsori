@@ -163,17 +163,24 @@ export async function getAllFeatureFlags() {
     );
 
     if (missingFlags.length > 0) {
-      await db.featureFlag.createMany({
-        data: missingFlags.map(def => ({
-          key: def.key,
-          label: def.label,
-          description: def.description,
-          category: def.category,
-          icon: def.icon,
-          enabled: def.enabled,
-        })),
-        skipDuplicates: true,
-      });
+      // Create flags one by one (createMany typing is finicky with Boolean fields in Prisma 6)
+      for (const def of missingFlags) {
+        try {
+          await db.featureFlag.create({
+            data: {
+              key: def.key,
+              label: def.label,
+              description: def.description,
+              category: def.category,
+              icon: def.icon || null,
+              enabled: def.enabled === true,
+            },
+          });
+        } catch (e) {
+          // Ignore duplicate key errors (concurrent seeding)
+          console.warn(`[features] Flag ${def.key} may already exist:`, e);
+        }
+      }
     }
 
     // Return all flags

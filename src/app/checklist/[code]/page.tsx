@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
+import QRTagsLogo from "@/components/qrtags/QRTagsLogo";
 import { useParams } from 'next/navigation';
 import Link from 'next/link';
 import { useTranslation } from '@/hooks/useTranslation';
@@ -144,7 +145,7 @@ export default function ChecklistViewPage() {
       <header className="sticky top-0 z-30 bg-white border-b border-slate-200 px-4 py-3">
         <div className="max-w-3xl mx-auto flex items-center justify-between gap-3">
           <Link href="/" className="flex items-center gap-2 flex-shrink-0">
-            <img src="/logo.png" alt="QRBag" className="h-10 w-auto object-contain" />
+            <QRTagsLogo size="sm" variant="light" />
           </Link>
           <LanguageSelector lang={lang} setLang={setLang} variant="blue" />
         </div>
@@ -251,7 +252,7 @@ export default function ChecklistViewPage() {
             <div className="bg-white border border-slate-200 rounded-2xl overflow-hidden shadow-sm">
               <div className="bg-blue-600 px-5 py-4 flex items-center justify-between">
                 <div>
-                  <div className="font-bold text-white text-lg">QRBag</div>
+                  <div className="font-bold text-white text-lg">QRTags</div>
                   <div className="text-xs text-blue-100">Checklist de voyage</div>
                 </div>
                 <div className="text-right">
@@ -276,7 +277,7 @@ export default function ChecklistViewPage() {
                   </div>
                   <div className="bg-yellow-50 border border-yellow-200 rounded-lg px-3 py-1.5 text-center flex-shrink-0">
                     <div className="text-[9px] uppercase tracking-widest text-slate-700 font-bold">Certifié</div>
-                    <div className="text-[9px] text-slate-600">QRBag</div>
+                    <div className="text-[9px] text-slate-600">QRTags</div>
                   </div>
                 </div>
 
@@ -374,7 +375,7 @@ export default function ChecklistViewPage() {
 
             {/* Footer info */}
             <div className="text-center text-xs text-slate-500 pt-2">
-              <p>🔒 Attestation sécurisée QRBag · {view.itemsCount} article{view.itemsCount && view.itemsCount > 1 ? 's' : ''}</p>
+              <p>🔒 Attestation sécurisée QRTags · {view.itemsCount} article{view.itemsCount && view.itemsCount > 1 ? 's' : ''}</p>
             </div>
           </div>
         )}
@@ -395,7 +396,7 @@ export default function ChecklistViewPage() {
       </section>
 
       <footer className="bg-slate-900 text-slate-400 text-center py-3 mt-auto">
-        <p className="text-xs">QRBag — Protection intelligente des bagages • qrbags.com</p>
+        <p className="text-xs">QRTags — Protection intelligente des bagages • qrtags.com</p>
       </footer>
     </main>
   );

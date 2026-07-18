@@ -18,8 +18,8 @@ import {
 } from 'lucide-react';
 
 // ─── Brand constants ───
-const BRAND = '#0047d6';
-const ACCENT = '#fcd616';
+const BRAND = '#111111';
+const ACCENT = '#E3B23C';
 const INK = '#1a1a1a';
 
 // ─── Types ───
@@ -32,6 +32,7 @@ interface Scenario {
   steps?: {
     title: string;
     description: string;
+    icon?: unknown; // icône lucide optionnelle pour certaines étapes
     action?: { label: string; href: string; external?: boolean };
   }[];
 }
@@ -61,7 +62,7 @@ const SCENARIOS: Scenario[] = [
             description: 'Déclarez votre bagage manquant. Demandez un numéro de réclamation (PIR).',
           },
           {
-            title: '4. Déclarez votre bagage perdu sur QRBag',
+            title: '4. Déclarez votre bagage perdu sur QRTags',
             description: 'Cela notifie votre agence et active le suivi renforcé.',
             action: { label: 'Déclarer mon bagage perdu', href: '/suivi/' },
           },
@@ -90,13 +91,13 @@ const SCENARIOS: Scenario[] = [
             description: 'Déclarez le dommage. Demandez un constat de dégâts écrit.',
           },
           {
-            title: '4. Téléchargez votre parcours QRBag',
+            title: '4. Téléchargez votre parcours QRTags',
             description: 'Le PDF officiel avec l\'historique complet servira de preuve pour l\'assurance.',
             action: { label: 'Télécharger mon parcours PDF', href: '/suivi/' },
           },
           {
             title: '5. Contactez votre assurance',
-            description: 'Transmettez : le PIR compagnie, le constat de dégâts, le parcours QRBag, vos photos.',
+            description: 'Transmettez : le PIR compagnie, le constat de dégâts, le parcours QRTags, vos photos.',
           },
         ],
       },
@@ -118,13 +119,13 @@ const SCENARIOS: Scenario[] = [
             description: 'Si le vol a eu lieu pendant le transport, la compagnie est responsable.',
           },
           {
-            title: '4. Déclarez votre bagage perdu sur QRBag',
+            title: '4. Déclarez votre bagage perdu sur QRTags',
             description: 'Active le suivi et notifie votre agence.',
             action: { label: 'Déclarer mon bagage perdu', href: '/suivi/' },
           },
           {
             title: '5. Contactez votre assurance voyage',
-            description: 'Fournissez : plainte, récépissé compagnie, parcours QRBag.',
+            description: 'Fournissez : plainte, récépissé compagnie, parcours QRTags.',
           },
         ],
       },
@@ -142,7 +143,7 @@ const SCENARIOS: Scenario[] = [
         steps: [
           {
             title: '1. Vérifiez votre QR code',
-            description: 'L\'autocollant QRBag doit être collé sur votre bagage. Repérez la référence (ex: VOL26-ABC123).',
+            description: 'L\'autocollant QRTags doit être collé sur votre bagage. Repérez la référence (ex: VOL26-ABC123).',
           },
           {
             title: '2. Scannez le QR code',
@@ -169,9 +170,9 @@ const SCENARIOS: Scenario[] = [
         icon: HelpCircle,
         steps: [
           {
-            title: '1. Contactez le support QRBag',
-            description: 'Envoyez un email à contact@qrbag.com avec votre référence bagage et une pièce d\'identité.',
-            action: { label: 'Contacter le support', href: 'mailto:contact@qrbag.com', external: true },
+            title: '1. Contactez le support QRTags',
+            description: 'Envoyez un email à contact@qrtags.com avec votre référence bagage et une pièce d\'identité.',
+            action: { label: 'Contacter le support', href: 'mailto:contact@qrtags.com', external: true },
           },
           {
             title: '2. Vérification d\'identité',
@@ -207,12 +208,12 @@ const SCENARIOS: Scenario[] = [
           },
           {
             title: '4. Saisissez la référence manuellement',
-            description: 'Si le QR est illisible, allez sur qrbags.com/inscrire et tapez votre référence (ex: VOL26-ABC123).',
+            description: 'Si le QR est illisible, allez sur qrtags.com/inscrire et tapez votre référence (ex: VOL26-ABC123).',
             action: { label: 'Saisir ma référence', href: '/inscrire' },
           },
           {
             title: '5. Commandez un nouvel autocollant',
-            description: 'Si le QR est endommagé définitivement, contactez QRBag pour un remplacement.',
+            description: 'Si le QR est endommagé définitivement, contactez QRTags pour un remplacement.',
             action: { label: 'Commander un nouvel autocollant', href: '/#pricing' },
           },
         ],
@@ -221,7 +222,7 @@ const SCENARIOS: Scenario[] = [
   },
   {
     id: 'finder',
-    question: 'Je viens de trouver un bagage QRBag',
+    question: 'Je viens de trouver un bagage QRTags',
     icon: Luggage,
     children: [
       {
@@ -271,13 +272,13 @@ const SCENARIOS: Scenario[] = [
             description: 'La personne n\'est probablement pas le propriétaire. Ne lui remettez PAS le bagage.',
           },
           {
-            title: '4. Contactez QRBag',
+            title: '4. Contactez QRTags',
             description: 'Signalez la tentative. Le propriétaire sera alerté.',
-            action: { label: 'Contacter le support', href: 'mailto:contact@qrbag.com', external: true },
+            action: { label: 'Contacter le support', href: 'mailto:contact@qrtags.com', external: true },
           },
           {
             title: '5. Déposez le bagage en lieu sûr',
-            description: 'Commissariat, comptoir d\'aéroport, ou agence QRBag partenaire.',
+            description: 'Commissariat, comptoir d\'aéroport, ou agence QRTags partenaire.',
           },
         ],
       },
@@ -324,20 +325,20 @@ export default function AssistancePage() {
   const hasSteps = currentScenario?.steps && currentScenario.steps.length > 0;
 
   return (
-    <main className="min-h-screen bg-[#0047d6] flex flex-col">
+    <main className="min-h-screen bg-[#111111] flex flex-col">
       {/* Header */}
-      <header className="sticky top-0 z-40 bg-[#0047d6] border-b border-[#fcd616]/30 py-4 px-4">
+      <header className="sticky top-0 z-40 bg-[#111111] border-b border-[#E3B23C]/30 py-4 px-4">
         <div className="max-w-3xl mx-auto flex items-center justify-between">
           <Link
             href="/"
-            className="flex items-center gap-1 text-white hover:text-[#fcd616] transition-colors text-sm font-medium"
+            className="flex items-center gap-1 text-white hover:text-[#E3B23C] transition-colors text-sm font-medium"
           >
             <ArrowLeft className="w-4 h-4" />
             Accueil
           </Link>
           <h1 className="text-lg font-bold text-white flex items-center gap-2">
             <HelpCircle className="w-5 h-5" />
-            Assistance QRBag
+            Assistance QRTags
           </h1>
           <div className="w-16" />
         </div>
@@ -358,7 +359,7 @@ export default function AssistancePage() {
         {/* Hero */}
         {selectedPath.length === 0 && (
           <div className="text-center mb-8">
-            <div className="w-20 h-20 bg-[#fcd616] rounded-2xl flex items-center justify-center mx-auto mb-4 border-2 border-[#1a1a1a]">
+            <div className="w-20 h-20 bg-[#E3B23C] rounded-2xl flex items-center justify-center mx-auto mb-4 border-2 border-[#1a1a1a]">
               <HelpCircle className="w-10 h-10" style={{ color: INK }} />
             </div>
             <h2 className="text-3xl font-bold text-white mb-2">Que pouvez-vous faire ?</h2>
@@ -377,7 +378,7 @@ export default function AssistancePage() {
               placeholder="Rechercher (ex: perdu, retard, PIN...)"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-12 pr-4 py-3 rounded-xl bg-white border-2 border-[#1a1a1a] text-[#1a1a1a] focus:ring-2 focus:ring-[#fcd616]"
+              className="w-full pl-12 pr-4 py-3 rounded-xl bg-white border-2 border-[#1a1a1a] text-[#1a1a1a] focus:ring-2 focus:ring-[#E3B23C]"
             />
           </div>
         )}
@@ -387,7 +388,7 @@ export default function AssistancePage() {
           <div className="space-y-4">
             <div className="bg-white border-2 border-dashed border-[#1a1a1a] rounded-2xl p-6">
               <div className="flex items-center gap-3 mb-4">
-                <div className="w-10 h-10 rounded-xl bg-[#0047d6] flex items-center justify-center">
+                <div className="w-10 h-10 rounded-xl bg-[#111111] flex items-center justify-center">
                   <currentScenario.icon className="w-5 h-5 text-white" />
                 </div>
                 <h2 className="text-xl font-bold text-[#1a1a1a]">{currentScenario.question}</h2>
@@ -407,7 +408,7 @@ export default function AssistancePage() {
                     href={step.action.href}
                     target={step.action.external ? '_blank' : undefined}
                     rel={step.action.external ? 'noopener noreferrer' : undefined}
-                    className="inline-flex items-center gap-2 bg-[#0047d6] hover:bg-[#0033a8] text-white py-2 px-4 rounded-xl font-bold transition-colors text-sm"
+                    className="inline-flex items-center gap-2 bg-[#111111] hover:bg-[#0033a8] text-white py-2 px-4 rounded-xl font-bold transition-colors text-sm"
                   >
                     {step.action.label}
                     <ArrowRight className="w-4 h-4" />
@@ -417,16 +418,16 @@ export default function AssistancePage() {
             ))}
 
             {/* Contact support card */}
-            <div className="bg-[#fcd616] border-2 border-dashed border-[#1a1a1a] rounded-2xl p-5 text-center">
+            <div className="bg-[#E3B23C] border-2 border-dashed border-[#1a1a1a] rounded-2xl p-5 text-center">
               <p className="text-sm font-bold mb-2" style={{ color: INK }}>
                 Besoin d&apos;aide supplémentaire ?
               </p>
               <a
-                href="mailto:contact@qrbag.com"
-                className="inline-flex items-center gap-2 bg-[#1a1a1a] hover:bg-black text-[#fcd616] py-2 px-4 rounded-xl font-bold transition-colors text-sm"
+                href="mailto:contact@qrtags.com"
+                className="inline-flex items-center gap-2 bg-[#1a1a1a] hover:bg-black text-[#E3B23C] py-2 px-4 rounded-xl font-bold transition-colors text-sm"
               >
                 <MessageCircle className="w-4 h-4" />
-                Contacter le support QRBag
+                Contacter le support QRTags
               </a>
             </div>
           </div>
@@ -446,10 +447,10 @@ export default function AssistancePage() {
                 <button
                   key={scenario.id}
                   onClick={() => setSelectedPath([...selectedPath, scenario.id])}
-                  className="bg-white border-2 border-dashed border-[#1a1a1a] rounded-2xl p-5 text-left hover:bg-[#fcd616] transition-colors group"
+                  className="bg-white border-2 border-dashed border-[#1a1a1a] rounded-2xl p-5 text-left hover:bg-[#E3B23C] transition-colors group"
                 >
                   <div className="flex items-center gap-4">
-                    <div className="w-12 h-12 rounded-xl bg-[#0047d6] flex items-center justify-center flex-shrink-0">
+                    <div className="w-12 h-12 rounded-xl bg-[#111111] flex items-center justify-center flex-shrink-0">
                       <Icon className="w-6 h-6 text-white" />
                     </div>
                     <div className="flex-1 min-w-0">
@@ -475,14 +476,14 @@ export default function AssistancePage() {
           <div className="mt-8 grid grid-cols-2 gap-3">
             <Link
               href="/"
-              className="bg-[#fcd616] border-2 border-[#1a1a1a] rounded-2xl p-4 text-center hover:bg-[#1a1a1a] hover:text-[#fcd616] transition-colors"
+              className="bg-[#E3B23C] border-2 border-[#1a1a1a] rounded-2xl p-4 text-center hover:bg-[#1a1a1a] hover:text-[#E3B23C] transition-colors"
             >
               <Home className="w-6 h-6 mx-auto mb-2" />
               <p className="text-sm font-bold" style={{ color: INK }}>Accueil</p>
             </Link>
             <a
-              href="mailto:contact@qrbag.com"
-              className="bg-[#fcd616] border-2 border-[#1a1a1a] rounded-2xl p-4 text-center hover:bg-[#1a1a1a] hover:text-[#fcd616] transition-colors"
+              href="mailto:contact@qrtags.com"
+              className="bg-[#E3B23C] border-2 border-[#1a1a1a] rounded-2xl p-4 text-center hover:bg-[#1a1a1a] hover:text-[#E3B23C] transition-colors"
             >
               <MessageCircle className="w-6 h-6 mx-auto mb-2" />
               <p className="text-sm font-bold" style={{ color: INK }}>Support</p>

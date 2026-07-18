@@ -8,9 +8,9 @@ import SuccessOverlay from '@/components/ui/SuccessOverlay';
 import { useTranslation } from '@/hooks/useTranslation';
 import { toast } from '@/hooks/use-toast';
 
-// ─── Brand constants (QRBag palette: blue #0047d6 + yellow #fcd616) ───
-const BRAND = '#0047d6'; // bleu vif — fonds, boutons primaires
-const ACCENT = '#fcd616'; // jaune vif — cards, accents
+// ─── Brand constants (QRTags palette: blue #111111 + yellow #E3B23C) ───
+const BRAND = '#111111'; // bleu vif — fonds, boutons primaires
+const ACCENT = '#E3B23C'; // jaune vif — cards, accents
 const INK = '#1a1a1a'; // noir — texte sur jaune, bordures dashed
 
 interface ActivationData {
@@ -85,8 +85,8 @@ function SuccessContent() {
     if (navigator.share) {
       try {
         await navigator.share({
-          title: 'Mon bagage QRBag',
-          text: 'Suivez mon bagage en temps réel avec QRBag.',
+          title: 'Mon bagage QRTags',
+          text: 'Suivez mon bagage en temps réel avec QRTags.',
           url: trackingUrl,
         });
       } catch (err) {
@@ -112,9 +112,9 @@ function SuccessContent() {
   // ─── Empty state : pas d'activation data ───
   if (!activationData) {
     return (
-      <main className="min-h-screen bg-[#0047d6] flex items-center justify-center p-4">
+      <main className="min-h-screen bg-[#111111] flex items-center justify-center p-4">
         <div className="max-w-md w-full">
-          <div className="bg-[#fcd616] border-2 border-dashed border-[#1a1a1a] rounded-2xl p-8 text-center">
+          <div className="bg-[#E3B23C] border-2 border-dashed border-[#1a1a1a] rounded-2xl p-8 text-center">
             <div className="w-16 h-16 bg-white rounded-full flex items-center justify-center mx-auto mb-4 border-2 border-[#1a1a1a]">
               <CheckCircle className="w-8 h-8" style={{ color: INK }} />
             </div>
@@ -138,7 +138,7 @@ function SuccessContent() {
   }
 
   return (
-    <main className="min-h-screen bg-[#0047d6] flex items-center justify-center p-4">
+    <main className="min-h-screen bg-[#111111] flex items-center justify-center p-4">
       {/* SuccessOverlay — feedback premium d'activation (indépendant du thème) */}
       <SuccessOverlay show={activationConfirmed} messageKey="activation.success" t={t} />
 
@@ -163,7 +163,7 @@ function SuccessContent() {
           <p className="text-white/80">Votre bagage est maintenant protégé</p>
         </div>
 
-        {/* ═══ 2. Carte QR Code (fond jaune QRBag + bordure dashed noire) ═══ */}
+        {/* ═══ 2. Carte QR Code (fond jaune QRTags + bordure dashed noire) ═══ */}
         <div
           className="border-2 border-dashed rounded-2xl p-5 mb-4 text-center"
           style={{ backgroundColor: ACCENT, borderColor: INK }}
@@ -251,7 +251,7 @@ function SuccessContent() {
           </button>
         </div>
 
-        {/* ═══ 5. Encart Checklist (fond jaune QRBag + bordure dashed noire) ═══ */}
+        {/* ═══ 5. Encart Checklist (fond jaune QRTags + bordure dashed noire) ═══ */}
         <div
           className="border-2 border-dashed rounded-2xl p-5 text-center"
           style={{ backgroundColor: ACCENT, borderColor: INK }}
@@ -301,7 +301,7 @@ function SuccessContent() {
             <p className="text-xs text-center" style={{ color: INK, opacity: 0.6 }}>
               ⚠️ Pour votre sécurité, ce code ne sera plus jamais affiché.
               <br />
-              En cas d&apos;oubli, vous devrez contacter le support QRBag.
+              En cas d&apos;oubli, vous devrez contacter le support QRTags.
             </p>
           </div>
         )}

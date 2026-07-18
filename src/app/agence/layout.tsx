@@ -73,6 +73,7 @@ function Sidebar({ isOpen, setIsOpen, unreadMessages, onLogout, userName, agency
   
   const menuItems: MenuItem[] = [
     { label: "Tableau de bord", icon: <Home className="w-5 h-5" />, href: "/agence/tableau-de-bord" },
+    { label: "Traçabilité QR", icon: <QrCode className="w-5 h-5" />, href: "/agence/traceabilite" },
     { label: "Bagages", icon: <Luggage className="w-5 h-5" />, href: "/agence/baggages" },
     { label: "Assistance", icon: <MessageCircle className="w-5 h-5" />, href: "/agence/assistance", badge: unreadMessages },
     { label: "Trouvailles", icon: <CheckCircle className="w-5 h-5" />, href: "/agence/trouvailles" },
@@ -90,10 +91,10 @@ function Sidebar({ isOpen, setIsOpen, unreadMessages, onLogout, userName, agency
         />
       )}
 
-      {/* Sidebar - QRBag Blue Background */}
+      {/* Sidebar - QRTags Blue Background */}
       <aside className={`
         fixed lg:static inset-y-0 left-0 z-50
-        w-[280px] bg-[#0047d6]
+        w-[280px] bg-[#111111]
         transform transition-transform duration-300
         ${isOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
         flex flex-col shadow-2xl
@@ -181,7 +182,7 @@ function Sidebar({ isOpen, setIsOpen, unreadMessages, onLogout, userName, agency
                 <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 20H5a2 2 0 01-2-2V6a2 2 0 012-2h10a2 2 0 012 2v1m2 13a2 2 0 01-2-2V7m2 13a2 2 0 002-2V9a2 2 0 00-2-2h-2m-4-3H9M7 16h6M7 8h6v4H7V8z" />
                 </svg>
-                <span className="font-medium text-sm">📰 Blog QRBag</span>
+                <span className="font-medium text-sm">📰 Blog QRTags</span>
               </Link>
             </li>
             
@@ -277,7 +278,7 @@ function Header({ unreadMessages, onMenuClick, userName, agencySlug, mobileActio
             </Link>
             <Link
               href="/agence/trouvailles"
-              className="flex items-center gap-2 px-3 py-1.5 bg-[#0047d6]/10 hover:bg-[#0047d6]/20 text-[#0047d6] dark:text-[#0047d6] rounded-xl text-sm font-medium transition-colors border border-[#0047d6]/20 dark:border-[#0047d6]/30"
+              className="flex items-center gap-2 px-3 py-1.5 bg-[#111111]/10 hover:bg-[#111111]/20 text-[#111111] dark:text-[#111111] rounded-xl text-sm font-medium transition-colors border border-[#111111]/20 dark:border-[#111111]/30"
             >
               <CheckCircle className="w-4 h-4" />
               <span className="hidden xl:inline">Trouvailles</span>
@@ -285,12 +286,12 @@ function Header({ unreadMessages, onMenuClick, userName, agencySlug, mobileActio
           </div>
           
           {/* Public Page Button */}
-          <div className="hidden lg:flex items-center gap-2 bg-gradient-to-r from-[#0047d6]/10 to-[#fcd616]/10 dark:from-[#0047d6]/20 dark:to-[#fcd616]/20 border border-[#0047d6]/30 rounded-xl px-3 py-1.5">
-            <Globe className="w-4 h-4 text-[#0047d6]" />
+          <div className="hidden lg:flex items-center gap-2 bg-gradient-to-r from-[#111111]/10 to-[#E3B23C]/10 dark:from-[#111111]/20 dark:to-[#E3B23C]/20 border border-[#111111]/30 rounded-xl px-3 py-1.5">
+            <Globe className="w-4 h-4 text-[#111111]" />
             <span className="text-sm text-slate-600 dark:text-slate-300">Page publique</span>
             <button
               onClick={handleCopy}
-              className={`p-1 rounded-lg transition-colors ${copied ? 'text-[#0047d6]' : 'hover:bg-[#0047d6]/20 text-[#0047d6]'}`}
+              className={`p-1 rounded-lg transition-colors ${copied ? 'text-[#111111]' : 'hover:bg-[#111111]/20 text-[#111111]'}`}
               title="Copier le lien"
             >
               {copied ? <CheckCircle className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
@@ -298,7 +299,7 @@ function Header({ unreadMessages, onMenuClick, userName, agencySlug, mobileActio
             <Link
               href={`/agency/${agencySlug}`}
               target="_blank"
-              className="p-1 rounded-lg hover:bg-[#0047d6]/20 text-[#0047d6] transition-colors"
+              className="p-1 rounded-lg hover:bg-[#111111]/20 text-[#111111] transition-colors"
               title="Voir la page"
             >
               <ExternalLink className="w-4 h-4" />
@@ -372,7 +373,7 @@ function Header({ unreadMessages, onMenuClick, userName, agencySlug, mobileActio
             title={theme === 'dark' ? 'Mode clair' : 'Mode sombre'}
           >
             {theme === 'dark' ? (
-              <Sun className="w-5 h-5 text-[#0047d6]" />
+              <Sun className="w-5 h-5 text-[#111111]" />
             ) : (
               <Moon className="w-5 h-5 text-slate-600" />
             )}
@@ -384,16 +385,16 @@ function Header({ unreadMessages, onMenuClick, userName, agencySlug, mobileActio
             className="relative p-2.5 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition-colors"
           >
             <Bell className="w-5 h-5 text-slate-600 dark:text-slate-300" />
-            {unreadMessages > 0 && (
+            {(unreadMessages ?? 0) > 0 && (
               <span className="absolute -top-1 -right-1 w-5 h-5 bg-rose-500 rounded-full flex items-center justify-center text-white text-xs font-bold">
-                {unreadMessages > 9 ? '9+' : unreadMessages}
+                {(unreadMessages ?? 0) > 9 ? '9+' : (unreadMessages ?? 0)}
               </span>
             )}
           </Link>
           
           {/* User */}
           <div className="flex items-center gap-3 pl-3 border-l border-slate-200 dark:border-slate-700">
-            <div className="w-9 h-9 rounded-full bg-[#0047d6] flex items-center justify-center">
+            <div className="w-9 h-9 rounded-full bg-[#111111] flex items-center justify-center">
               <span className="text-white font-semibold text-sm">{userName ? userName.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2) : 'AG'}</span>
             </div>
             <div className="hidden sm:block">
@@ -490,7 +491,7 @@ export default function AgencyRootLayout({
     return (
       <div className="min-h-screen bg-slate-50 dark:bg-slate-950 flex items-center justify-center">
         <div className="flex items-center gap-3">
-          <div className="w-6 h-6 border-2 border-[#0047d6]/30 border-t-[#0047d6] rounded-full animate-spin" />
+          <div className="w-6 h-6 border-2 border-[#111111]/30 border-t-[#111111] rounded-full animate-spin" />
           <span className="text-slate-500">Vérification...</span>
         </div>
       </div>

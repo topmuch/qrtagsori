@@ -9,13 +9,15 @@ import {
   Building,
   Save,
   CheckCircle,
-  Key
+  Key,
+  Briefcase,
 } from "lucide-react";
 import { useAgency } from '../layout';
+import { AGENCY_TYPES, getAgencyTypeDef } from '@/lib/agency-types';
 
-// ─── Brand constants (QRBag palette: blue #0047d6 + yellow #fcd616) ───
-const BRAND = '#0047d6';   // bleu vif — boutons primaires
-const ACCENT = '#fcd616';  // jaune vif — cards
+// ─── Brand constants (QRTags palette: blue #111111 + yellow #E3B23C) ───
+const BRAND = '#111111';   // bleu vif — boutons primaires
+const ACCENT = '#E3B23C';  // jaune vif — cards
 const INK = '#1a1a1a';     // noir — texte sur jaune
 
 export default function ProfilPage() {
@@ -25,6 +27,7 @@ export default function ProfilPage() {
     email: agencyData?.email || userEmail || '',
     phone: agencyData?.phone || '',
     address: agencyData?.address || '',
+    agencyType: (agencyData as any)?.agencyType || 'generic',
     currentPassword: '',
     newPassword: '',
     confirmPassword: ''
@@ -137,6 +140,30 @@ export default function ProfilPage() {
                   className="w-full bg-white border-2 rounded-xl py-3 px-4 transition-all focus:outline-none focus:ring-2 focus:ring-offset-2"
                   style={{ borderColor: INK, color: INK }}
                 />
+              </div>
+
+              {/* QRTags : sélecteur de type d'agence (multi-métiers) */}
+              <div className="md:col-span-2">
+                <label className="block text-sm font-medium mb-2" style={{ color: INK }}>
+                  <Briefcase className="w-4 h-4 inline mr-2" />
+                  Type d&apos;activité
+                </label>
+                <select
+                  value={form.agencyType}
+                  onChange={(e) => setForm({ ...form, agencyType: e.target.value })}
+                  className="w-full bg-white border-2 rounded-xl py-3 px-4 transition-all focus:outline-none focus:ring-2 focus:ring-offset-2"
+                  style={{ borderColor: INK, color: INK }}
+                >
+                  {AGENCY_TYPES.map((t) => (
+                    <option key={t.value} value={t.value}>
+                      {t.label} — {t.description}
+                    </option>
+                  ))}
+                </select>
+                <p className="text-xs mt-2" style={{ color: INK, opacity: 0.7 }}>
+                  Le type d&apos;activité détermine les champs dynamiques affichés lors de l&apos;activation d&apos;un tag
+                  (ex : N° chambre pour un hôtel, N° casier pour une consigne, etc.).
+                </p>
               </div>
             </div>
 

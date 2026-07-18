@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { Button } from "@/components/ui/button";
+import QRTagsLogo from '@/components/qrtags/QRTagsLogo';
 import {
   QrCode,
   Smartphone,
@@ -26,7 +27,7 @@ function Navigation() {
         <div className="flex items-center justify-between h-16">
           {/* Logo */}
           <Link href="/" className="flex items-center gap-2">
-            <img src="/logo.png" alt="QRBag" className="h-16 w-auto object-contain brightness-0 invert" />
+            <QRTagsLogo size="md" variant="dark" />
           </Link>
 
           {/* Desktop Nav */}
@@ -219,7 +220,7 @@ function AdvantagesSection() {
         {/* Title */}
         <div className="text-center mb-12">
           <h2 className="text-3xl md:text-4xl font-bold text-white mb-4">
-            Pourquoi choisir <span className="text-[#1D4ED8]">QRBag Voyageurs ?</span>
+            Pourquoi choisir <span className="text-[#1D4ED8]">QRTags Voyageurs ?</span>
           </h2>
         </div>
 
@@ -356,13 +357,13 @@ function TestimonialsSection() {
     {
       name: "Sophie Martin",
       role: "Voyageuse fréquente",
-      content: "Simple, efficace et pas cher. J'ai utilisé QRBag pour tous mes voyages cette année. Plus de stress !",
+      content: "Simple, efficace et pas cher. J'ai utilisé QRTags pour tous mes voyages cette année. Plus de stress !",
       avatar: "👩🏻"
     },
     {
       name: "Thomas Dubois",
       role: "Business traveler",
-      content: "Je voyage souvent pour le travail. Avec QRBag, je suis tranquille. L'activation prend 30 secondes top chrono.",
+      content: "Je voyage souvent pour le travail. Avec QRTags, je suis tranquille. L'activation prend 30 secondes top chrono.",
       avatar: "👨🏻"
     }
   ];
@@ -436,7 +437,7 @@ function CTASection() {
         <p className="mt-8 text-[#e0e6f0]/70 text-sm">
           Vous êtes une agence ?{' '}
           <Link href="/devenir-partenaire" className="text-[#ffd700] font-medium hover:underline">
-            Devenez partenaire QRBag
+            Devenez partenaire QRTags
           </Link>
         </p>
       </div>
@@ -453,7 +454,7 @@ function Footer() {
           {/* Logo */}
           <div>
             <div className="flex items-center gap-2 mb-4">
-              <img src="/logo.png" alt="QRBag" className="h-16 w-auto object-contain brightness-0 invert" />
+              <QRTagsLogo size="md" variant="dark" />
             </div>
             <p className="text-[#a0a8b8] text-sm">
               Protection intelligente des bagages pour voyageurs et pèlerins.
@@ -489,7 +490,7 @@ function Footer() {
               </li>
               <li className="flex items-center gap-2">
                 <Mail className="w-4 h-4 text-[#1D4ED8]" />
-                contact@qrbag.com
+                contact@qrtags.com
               </li>
               <li className="flex items-center gap-2">
                 <MapPinned className="w-4 h-4 text-[#1D4ED8]" />
@@ -502,17 +503,17 @@ function Footer() {
         {/* Bottom Bar */}
         <div className="border-t border-[#1a2238] pt-8 flex flex-col md:flex-row justify-between items-center gap-4">
           <p className="text-[#a0a8b8] text-sm">
-            © {new Date().getFullYear()} QRBag. Tous droits réservés.
+            © {new Date().getFullYear()} QRTags. Tous droits réservés.
           </p>
 
           <div className="flex items-center gap-4">
-            <a href="https://facebook.com/qrbag" target="_blank" rel="noopener noreferrer" className="text-[#a0a8b8] hover:text-[#1D4ED8] transition-colors" aria-label="Facebook">
+            <a href="https://facebook.com/qrtags" target="_blank" rel="noopener noreferrer" className="text-[#a0a8b8] hover:text-[#1D4ED8] transition-colors" aria-label="Facebook">
               <Facebook className="w-5 h-5" aria-hidden="true" />
             </a>
-            <a href="https://instagram.com/qrbag" target="_blank" rel="noopener noreferrer" className="text-[#a0a8b8] hover:text-[#1D4ED8] transition-colors" aria-label="Instagram">
+            <a href="https://instagram.com/qrtags" target="_blank" rel="noopener noreferrer" className="text-[#a0a8b8] hover:text-[#1D4ED8] transition-colors" aria-label="Instagram">
               <Instagram className="w-5 h-5" aria-hidden="true" />
             </a>
-            <a href="https://twitter.com/qrbag" target="_blank" rel="noopener noreferrer" className="text-[#a0a8b8] hover:text-[#1D4ED8] transition-colors" aria-label="Twitter">
+            <a href="https://twitter.com/qrtags" target="_blank" rel="noopener noreferrer" className="text-[#a0a8b8] hover:text-[#1D4ED8] transition-colors" aria-label="Twitter">
               <Twitter className="w-5 h-5" aria-hidden="true" />
             </a>
           </div>

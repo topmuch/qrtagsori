@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getEmailSettings, saveEmailSettings } from '@/lib/email';
+import { getEmailSettings, saveEmailSettings, type EmailConfig } from '@/lib/email';
 
 // GET - Retrieve email settings
 export async function GET() {
@@ -63,7 +63,7 @@ export async function PUT(request: NextRequest) {
     }
     if (body.smtpEncryption) settingsData.smtpEncryption = body.smtpEncryption;
 
-    const savedSettings = await saveEmailSettings(settingsData);
+    const savedSettings = await saveEmailSettings(settingsData as Partial<EmailConfig>);
 
     if (!savedSettings) {
       return NextResponse.json(

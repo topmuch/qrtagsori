@@ -59,7 +59,7 @@ export async function GET(request: NextRequest) {
 
     // Create filename with date
     const date = new Date().toISOString().split('T')[0];
-    const filename = `qrbag-backup-${date}.json`;
+    const filename = `qrtags-backup-${date}.json`;
 
     // Return as downloadable JSON file
     return new NextResponse(JSON.stringify(backup, null, 2), {

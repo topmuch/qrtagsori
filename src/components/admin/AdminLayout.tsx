@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import QRTagsLogo from "@/components/qrtags/QRTagsLogo";
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import {
@@ -54,7 +55,6 @@ export default function AdminLayout({
     { label: "Les Étiquettes", icon: "🏷️", href: "/admin/etiquettes" },
     // 🧳 Voyageurs & Pèlerins
     { label: "VOYAGEURS & PÈLERINS", isCategory: true },
-    { label: "Pèlerins Hajj", icon: "🕋", href: "/admin/hajj" },
     { label: "Voyageurs", icon: "✈️", href: "/admin/voyageurs" },
     // 📬 Opérations
     { label: "OPÉRATIONS", isCategory: true },
@@ -89,7 +89,7 @@ export default function AdminLayout({
           <div className="p-5 border-b border-[#1a1a3a]">
             <div className="flex items-center justify-between">
               <Link href="/admin/dashboard" className="flex items-center gap-2.5">
-                <img src="/logo.png" alt="QRBag" className="h-16 w-auto object-contain brightness-0 invert" />
+                <QRTagsLogo size="md" variant="dark" />
               </Link>
               <button
                 className="lg:hidden text-[#94a3b8] hover:text-white transition-colors"

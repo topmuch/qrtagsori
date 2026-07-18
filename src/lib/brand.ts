@@ -1,20 +1,23 @@
 /**
- * QRBag — Brand color tokens (shared across pages)
+ * QRTags — Brand color tokens (shared across pages)
  *
- * Visual reference: blue background (#0047d6) + yellow cards (#fcd616),
- * black text on yellow, white text on blue. High-contrast, modern,
- * mobile-first.
+ * Charte QRTags : Noir (#111111) + Jaune Moutarde (#E3B23C).
+ * Texte clair sur fond noir, texte noir sur jaune moutarde.
+ * High-contrast, modern, mobile-first.
+ *
+ * (Hérité de QRTags mais refondu pour QRTags — bleu supprimé.)
  */
 
-export const BRAND = '#0047d6';   // Bleu vif QRBag — fonds principaux, headers, boutons primaires
-export const ACCENT = '#fcd616';  // Jaune vif QRBag — cards, blocs de contenu, badges
-export const INK = '#1a1a1a';     // Noir — texte sur jaune, bordures dashed
+export const BRAND = '#111111';   // Noir QRTags — fonds principaux, headers, boutons primaires (sur jaune)
+export const ACCENT = '#E3B23C';  // Jaune Moutarde QRTags — cards, blocs de contenu, accents, boutons (sur noir)
+export const ACCENT_HOVER = '#FFDB58'; // Variante hover plus claire
+export const INK = '#111111';     // Noir — texte sur jaune, bordures dashed
 
 export const BRAND_COLORS = {
   BRAND,
   ACCENT,
+  ACCENT_HOVER,
   INK,
-  BLUE: BRAND,
-  YELLOW: ACCENT,
   BLACK: INK,
+  MUSTARD: ACCENT,
 } as const;

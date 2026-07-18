@@ -10,9 +10,9 @@
  * - generateVerificationKey(): 8-char verification key (mixed case + digits)
  * - generateChecklistPdf(): builds a clean PDF with QR code + items
  *
- * Brand colors (harmonized with the qrbags website):
- *   BRAND = '#0047d6' (QRBag blue — primary)
- *   ACCENT = '#fcd616' (QRBag yellow — secondary)
+ * Brand colors (harmonized with the qrtags website):
+ *   BRAND = '#111111' (QRTags blue — primary)
+ *   ACCENT = '#E3B23C' (QRTags yellow — secondary)
  *   INK   = '#1a1a1a' (ink black)
  */
 
@@ -122,9 +122,9 @@ function hexToColor(hex: string, rgb: any) {
 }
 
 /**
- * Build a clean, modern PDF checklist with QRBag brand colors:
- *   - Blue header band (#0047d6) with white text
- *   - Yellow accent (#fcd616) for category headers and highlights
+ * Build a clean, modern PDF checklist with QRTags brand colors:
+ *   - Blue header band (#111111) with white text
+ *   - Yellow accent (#E3B23C) for category headers and highlights
  *   - Black ink (#1a1a1a) for body text
  *   - White background for cards and items
  *   - QR code in a clean white card with subtle border
@@ -145,7 +145,7 @@ export async function generateChecklistPdf(data: ChecklistPdfData): Promise<Buff
   }
 
   // ─── Generate QR code as PNG buffer (blue QR on white) ───
-  const qrBuffer = await QRCode.toBuffer(data.publicUrl || 'https://qrbags.com', {
+  const qrBuffer = await QRCode.toBuffer(data.publicUrl || 'https://qrtags.com', {
     type: 'png',
     width: 240,
     margin: 1,
@@ -162,7 +162,7 @@ export async function generateChecklistPdf(data: ChecklistPdfData): Promise<Buff
   }
   const { PDFDocument, rgb, StandardFonts } = pdfLib;
   const pdfDoc = await PDFDocument.create();
-  pdfDoc.setAuthor('QRBag');
+  pdfDoc.setAuthor('QRTags');
   pdfDoc.setSubject(`Checklist ${data.code}`);
   pdfDoc.setCreationDate(createdAt);
 
@@ -173,8 +173,8 @@ export async function generateChecklistPdf(data: ChecklistPdfData): Promise<Buff
   const margin = 48;
 
   // ─── Brand colors ───
-  const brand = hexToColor('#0047d6', rgb);       // QRBag blue
-  const accent = hexToColor('#fcd616', rgb);      // QRBag yellow
+  const brand = hexToColor('#111111', rgb);       // QRTags blue
+  const accent = hexToColor('#E3B23C', rgb);      // QRTags yellow
   const ink = hexToColor('#1a1a1a', rgb);         // Black
   const white = rgb(1, 1, 1);
   const gray = rgb(0.466, 0.486, 0.518);   // #777A84 — secondary text
@@ -242,7 +242,7 @@ export async function generateChecklistPdf(data: ChecklistPdfData): Promise<Buff
   });
 
   // Logo / brand name
-  page.drawText('QRBag', {
+  page.drawText('QRTags', {
     x: margin, y: PAGE_H - 48, size: 28, font: fontBold, color: white,
   });
   page.drawText('Protection intelligente des bagages', {
@@ -324,9 +324,9 @@ export async function generateChecklistPdf(data: ChecklistPdfData): Promise<Buff
     color: rgb(1, 1, 1), borderColor: brand, borderWidth: 0.5,
   });
 
-  // Top label — "CERTIFIÉ QRBag"
-  page.drawText('CERTIFIÉ QRBag', {
-    x: stampX + (stampW - fontBold.widthOfTextAtSize('CERTIFIÉ QRBag', 7.5)) / 2,
+  // Top label — "CERTIFIÉ QRTags"
+  page.drawText('CERTIFIÉ QRTags', {
+    x: stampX + (stampW - fontBold.widthOfTextAtSize('CERTIFIÉ QRTags', 7.5)) / 2,
     y: stampY + stampH - 13,
     size: 7.5, font: fontBold, color: brand,
   });
@@ -607,10 +607,10 @@ export async function generateChecklistPdf(data: ChecklistPdfData): Promise<Buff
     color: accent,
   });
 
-  page.drawText('QRBag — Protection intelligente des bagages', {
+  page.drawText('QRTags — Protection intelligente des bagages', {
     x: margin, y: 26, size: 9, font: fontBold, color: white,
   });
-  const footerRight = `qrbags.com · Réf ${data.code}`;
+  const footerRight = `qrtags.com · Réf ${data.code}`;
   const frW = fontRegular.widthOfTextAtSize(footerRight, 8);
   page.drawText(footerRight, {
     x: PAGE_W - margin - frW, y: 26, size: 8, font: fontRegular, color: rgb(0.85, 0.88, 0.98),
@@ -632,6 +632,6 @@ export async function generateChecklistPdf(data: ChecklistPdfData): Promise<Buff
  * Uses NEXT_PUBLIC_BASE_URL if set, otherwise derives from request headers.
  */
 export function buildPublicChecklistUrl(code: string, baseUrl?: string): string {
-  const base = baseUrl || process.env.NEXT_PUBLIC_BASE_URL || process.env.NEXT_PUBLIC_APP_URL || 'https://qrbags.com';
+  const base = baseUrl || process.env.NEXT_PUBLIC_BASE_URL || process.env.NEXT_PUBLIC_APP_URL || 'https://qrtags.com';
   return `${base.replace(/\/$/, '')}/checklist/${code}`;
 }

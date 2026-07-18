@@ -2,7 +2,7 @@
  * LABS — Feature F: Coordonnées utiles par destination
  *
  * Base de données des contacts d'urgence pour les principales destinations
- * des voyageurs QRBag.
+ * des voyageurs QRTags.
  *
  * Source : ambassades de France à l'étranger, numéros d'urgence locaux
  * (vérifiés sur sites officiels). À maintenir à jour périodiquement.

@@ -108,7 +108,7 @@ export function ExtendValidityModal({
         {/* Header */}
         <div className="flex items-start justify-between mb-4">
           <div className="flex items-center gap-2">
-            <Clock className="w-5 h-5 text-[#0047d6]" />
+            <Clock className="w-5 h-5 text-[#111111]" />
             <h3 className="text-lg font-bold text-slate-900">Prolonger la validité</h3>
           </div>
           <button onClick={onClose} className="text-slate-400 hover:text-slate-700">
@@ -141,8 +141,8 @@ export function ExtendValidityModal({
               onClick={() => { setSelectedDays(opt.days); setCustomDate(''); }}
               className={`py-2.5 px-3 rounded-xl text-sm font-bold border-2 transition-colors ${
                 selectedDays === opt.days && !customDate
-                  ? 'bg-[#0047d6] text-white border-[#0047d6]'
-                  : 'bg-white text-slate-700 border-slate-200 hover:border-[#0047d6]'
+                  ? 'bg-[#111111] text-white border-[#111111]'
+                  : 'bg-white text-slate-700 border-slate-200 hover:border-[#111111]'
               }`}
             >
               {opt.label}
@@ -159,15 +159,15 @@ export function ExtendValidityModal({
             value={customDate}
             min={new Date().toISOString().split('T')[0]}
             onChange={(e) => { setCustomDate(e.target.value); setSelectedDays(null); }}
-            className="w-full pl-10 pr-3 py-2.5 border-2 border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-[#0047d6] focus:border-[#0047d6]"
+            className="w-full pl-10 pr-3 py-2.5 border-2 border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-[#111111] focus:border-[#111111]"
           />
         </div>
 
         {/* New date preview */}
         {newDate && (
-          <div className="bg-[#0047d6]/10 border border-[#0047d6]/20 rounded-xl p-3 mb-4">
-            <p className="text-xs text-[#0047d6]/70 mb-1">Nouvelle expiration</p>
-            <p className="text-sm font-bold text-[#0047d6]">
+          <div className="bg-[#111111]/10 border border-[#111111]/20 rounded-xl p-3 mb-4">
+            <p className="text-xs text-[#111111]/70 mb-1">Nouvelle expiration</p>
+            <p className="text-sm font-bold text-[#111111]">
               {newDate.toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })}
             </p>
           </div>
@@ -196,7 +196,7 @@ export function ExtendValidityModal({
           <button
             onClick={handleExtend}
             disabled={loading || !newDate}
-            className="flex-1 py-3 px-4 rounded-xl font-bold text-white bg-[#0047d6] hover:bg-[#0033a8] disabled:opacity-50 transition-colors flex items-center justify-center gap-2"
+            className="flex-1 py-3 px-4 rounded-xl font-bold text-white bg-[#111111] hover:bg-[#0033a8] disabled:opacity-50 transition-colors flex items-center justify-center gap-2"
           >
             {loading ? (
               <><Loader2 className="w-4 h-4 animate-spin" /> Prolongation...</>

@@ -1,5 +1,5 @@
 /**
- * Centralized logger for QRBag monitoring.
+ * Centralized logger for QRTags monitoring.
  * Writes to console (sync) + database (async fire-and-forget).
  */
 

@@ -33,8 +33,8 @@ import {
 const LeafletMap = dynamic(() => import('@/components/LeafletMap'), { ssr: false, loading: () => <MapSkeleton /> });
 
 // ─── Brand constants ───
-const BRAND = '#0047d6';
-const ACCENT = '#fcd616';
+const BRAND = '#111111';
+const ACCENT = '#E3B23C';
 const INK = '#1a1a1a';
 
 // ─── Types imported from @/components/suivi/types ───
@@ -150,7 +150,7 @@ export default function SuiviPage() {
     }
     // BroadcastChannel for push notification
     if (typeof BroadcastChannel !== 'undefined') {
-      const bc = new BroadcastChannel('qrbag-tracking');
+      const bc = new BroadcastChannel('qrtags-tracking');
       bc.postMessage({ type: 'scan_detected', reference, message: `Votre bagage ${reference} vient d'être scanné.` });
       bc.close();
     }
@@ -181,10 +181,10 @@ export default function SuiviPage() {
   // ─── Loading ───
   if (loading) {
     return (
-      <main className="min-h-screen bg-[#0047d6] flex items-center justify-center">
+      <main className="min-h-screen bg-[#111111] flex items-center justify-center">
         <div className="text-center">
-          <Luggage className="w-16 h-16 text-[#fcd616] mx-auto mb-4 animate-bounce" />
-          <div className="animate-spin w-8 h-8 border-4 border-white/20 border-t-[#fcd616] rounded-full mx-auto mb-4" />
+          <Luggage className="w-16 h-16 text-[#E3B23C] mx-auto mb-4 animate-bounce" />
+          <div className="animate-spin w-8 h-8 border-4 border-white/20 border-t-[#E3B23C] rounded-full mx-auto mb-4" />
           <p className="text-white">Chargement du suivi...</p>
         </div>
       </main>
@@ -194,7 +194,7 @@ export default function SuiviPage() {
   // ─── Error states ───
   if (!data || data.status === 'not_found' || data.status === 'error') {
     return (
-      <main className="min-h-screen bg-[#0047d6] flex items-center justify-center p-4">
+      <main className="min-h-screen bg-[#111111] flex items-center justify-center p-4">
         <div className="bg-white border-2 border-dashed border-[#1a1a1a] rounded-2xl p-8 text-center max-w-md">
           <AlertCircle className="w-12 h-12 text-red-500 mx-auto mb-4" />
           <h1 className="text-xl font-bold mb-2" style={{ color: INK }}>Bagage introuvable</h1>
@@ -202,7 +202,7 @@ export default function SuiviPage() {
             Ce code QR n&apos;existe pas ou n&apos;est pas encore activé.
           </p>
           <p className="text-xs" style={{ color: INK, opacity: 0.5 }}>
-            Contactez le support : contact@qrbag.com
+            Contactez le support : contact@qrtags.com
           </p>
         </div>
       </main>
@@ -219,8 +219,8 @@ export default function SuiviPage() {
   const statusConfig = (() => {
     if (isDeclaredLost) return { title: '🚨 Perdu', class: 'bg-red-600 text-white animate-pulse' };
     if (isFound && hasFinderInfo) return { title: '✅ Retrouvé', class: 'bg-green-500 text-white' };
-    if (baggage.status === 'scanned') return { title: '📍 Localisé', class: 'bg-[#fcd616] text-[#1a1a1a]' };
-    return { title: '🛡️ Protégé', class: 'bg-[#1a1a1a] text-[#fcd616]' };
+    if (baggage.status === 'scanned') return { title: '📍 Localisé', class: 'bg-[#E3B23C] text-[#1a1a1a]' };
+    return { title: '🛡️ Protégé', class: 'bg-[#1a1a1a] text-[#E3B23C]' };
   })();
 
   // ─── Tab config ───
@@ -232,13 +232,13 @@ export default function SuiviPage() {
   ];
 
   return (
-    <main className="min-h-screen bg-[#0047d6] flex flex-col" dir={dir}>
+    <main className="min-h-screen bg-[#111111] flex flex-col" dir={dir}>
       {/* ═══ Header ═══ */}
-      <header className="sticky top-0 z-40 bg-[#0047d6] border-b border-[#fcd616]/30 py-3 px-4">
+      <header className="sticky top-0 z-40 bg-[#111111] border-b border-[#E3B23C]/30 py-3 px-4">
         <div className="max-w-md mx-auto flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <Luggage className="w-5 h-5 text-[#fcd616]" />
-            <span className="text-sm font-bold text-white">QRBag Suivi</span>
+            <Luggage className="w-5 h-5 text-[#E3B23C]" />
+            <span className="text-sm font-bold text-white">QRTags Suivi</span>
             {wsConnected ? <Wifi className="w-3 h-3 text-green-400" /> : <WifiOff className="w-3 h-3 text-white/40" />}
           </div>
           <div className="flex items-center gap-2">
@@ -261,7 +261,7 @@ export default function SuiviPage() {
             <select
               value={lang}
               onChange={(e) => setLang(e.target.value as 'fr' | 'en' | 'ar')}
-              className="bg-[#0047d6] text-white text-xs border border-white/20 rounded-lg px-2 py-1"
+              className="bg-[#111111] text-white text-xs border border-white/20 rounded-lg px-2 py-1"
             >
               <option value="fr">FR</option>
               <option value="en">EN</option>
@@ -273,7 +273,7 @@ export default function SuiviPage() {
 
       {/* ═══ Hero: Valise + QR ═══ */}
       <div className="max-w-md mx-auto w-full px-4 pt-4">
-        <div className="bg-[#fcd616] border-2 border-dashed border-[#1a1a1a] rounded-2xl p-4 flex items-center gap-4">
+        <div className="bg-[#E3B23C] border-2 border-dashed border-[#1a1a1a] rounded-2xl p-4 flex items-center gap-4">
           <div className="w-16 h-16 bg-white rounded-xl flex items-center justify-center flex-shrink-0 border-2 border-[#1a1a1a]">
             <Luggage className="w-8 h-8" style={{ color: INK }} />
           </div>
@@ -310,16 +310,16 @@ export default function SuiviPage() {
         <div className="max-w-md mx-auto w-full px-4 pt-3">
           <button
             onClick={promptInstall}
-            className="w-full bg-[#fcd616] border-2 border-dashed border-[#1a1a1a] rounded-2xl p-3 flex items-center gap-3 hover:bg-[#fcd616]/80 transition-colors"
+            className="w-full bg-[#E3B23C] border-2 border-dashed border-[#1a1a1a] rounded-2xl p-3 flex items-center gap-3 hover:bg-[#E3B23C]/80 transition-colors"
           >
-            <div className="w-10 h-10 rounded-xl bg-[#0047d6] flex items-center justify-center flex-shrink-0">
+            <div className="w-10 h-10 rounded-xl bg-[#111111] flex items-center justify-center flex-shrink-0">
               <Download className="w-5 h-5 text-white" />
             </div>
             <div className="flex-1 text-left">
               <p className="text-sm font-bold text-[#1a1a1a]">📱 Installer l&apos;application</p>
               <p className="text-xs text-slate-700">Recevez les notifications sur votre téléphone</p>
             </div>
-            <span className="text-xs font-bold text-[#0047d6]">Installer →</span>
+            <span className="text-xs font-bold text-[#111111]">Installer →</span>
           </button>
         </div>
       )}
@@ -378,7 +378,7 @@ export default function SuiviPage() {
                 onClick={() => setActiveTab(tab.id)}
                 className={`flex-1 flex flex-col items-center justify-center py-3 relative transition-colors ${
                   isActive
-                    ? 'bg-[#0047d6] text-white'
+                    ? 'bg-[#111111] text-white'
                     : 'bg-white text-slate-500 hover:bg-slate-50'
                 }`}
               >
@@ -390,7 +390,7 @@ export default function SuiviPage() {
                   </span>
                 ) : null}
                 {isActive && (
-                  <span className="absolute top-0 left-1/4 right-1/4 h-1 bg-[#0047d6] rounded-full" />
+                  <span className="absolute top-0 left-1/4 right-1/4 h-1 bg-[#111111] rounded-full" />
                 )}
               </button>
             );

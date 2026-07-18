@@ -62,10 +62,10 @@ export function TabOverview({
                   Date d&apos;expiration : {expiry.toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })}
                 </p>
                 <p className="text-xs text-red-600 mt-1">
-                  Contactez votre agence ou QRBag pour prolonger la validité.
+                  Contactez votre agence ou QRTags pour prolonger la validité.
                 </p>
                 <a
-                  href="mailto:contact@qrbag.com?subject=Prolongation QR Bag"
+                  href="mailto:contact@qrtags.com?subject=Prolongation QR Bag"
                   className="inline-block mt-2 bg-red-600 text-white px-4 py-2 rounded-lg text-xs font-bold hover:bg-red-700 transition-colors"
                 >
                   Demander une prolongation
@@ -163,7 +163,7 @@ export function TabOverview({
       {/* Trust note */}
       <div className="text-center text-xs text-white/60 flex items-center justify-center gap-1.5 pt-2">
         <Shield className="w-3 h-3" />
-        <span>QRBag — Suivi sécurisé</span>
+        <span>QRTags — Suivi sécurisé</span>
       </div>
     </div>
   );

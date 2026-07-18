@@ -7,10 +7,10 @@ import { useTranslation } from '@/hooks/useTranslation';
 
 /**
  * Regex de validation stricte — alignée sur isValidReferenceFormat() de src/lib/qr.ts
- * Accepte : VOL26-VABJZS, HAJJ25-ZG46J2
+ * Accepte : QRT26-VABJZS (QRTags), VOL26-VABJZS (legacy), HAJJ25-ZG46J2 (legacy)
  * Refuse : vol26-vabjzs (mais auto-uppercase le corrige), RANDOM, VOL26-ABC, etc.
  */
-const REFERENCE_REGEX = /^(HAJJ|VOL)\d{2}-[A-Z0-9]{6}$/;
+const REFERENCE_REGEX = /^(QRT|HAJJ|VOL)\d{2}-[A-Z0-9]{6}$/;
 
 export default function TrackingWidget() {
   const router = useRouter();

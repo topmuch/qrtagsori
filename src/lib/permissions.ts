@@ -1,4 +1,4 @@
-// Permissions system for QRBag
+// Permissions system for QRTags
 // Role hierarchy: superadmin > admin > agent > agency
 
 export type Role = 'superadmin' | 'admin' | 'agent' | 'agency';

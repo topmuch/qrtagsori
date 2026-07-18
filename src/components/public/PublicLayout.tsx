@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import QRTagsLogo from "@/components/qrtags/QRTagsLogo";
 import Link from 'next/link';
 import { Button } from "@/components/ui/button";
 import {
@@ -32,7 +33,7 @@ export function PublicNavigation() {
         <div className="flex items-center justify-between h-16">
           {/* Logo */}
           <Link href="/" className="flex items-center">
-            <img src="/logo.png" alt="QRBag" className="h-16 w-auto object-contain" />
+            <QRTagsLogo size="md" variant="light" />
           </Link>
 
           {/* Desktop Nav */}
@@ -100,7 +101,7 @@ export function PublicFooter() {
           {/* Logo */}
           <div>
             <div className="mb-4">
-              <img src="/logo.png" alt="QRBag" className="h-16 w-auto object-contain brightness-0 invert" />
+              <QRTagsLogo size="md" variant="dark" />
             </div>
             <p className="text-white/50 text-sm">
               Protection intelligente des bagages pour voyageurs et pèlerins.
@@ -142,7 +143,7 @@ export function PublicFooter() {
         {/* Bottom Bar */}
         <div className="border-t border-white/[0.06] pt-8 flex flex-col md:flex-row justify-between items-center gap-4">
           <p className="text-white/40 text-sm">
-            © {new Date().getFullYear()} QRBag. Tous droits réservés.
+            © {new Date().getFullYear()} QRTags. Tous droits réservés.
           </p>
 
           {/* Social Icons */}

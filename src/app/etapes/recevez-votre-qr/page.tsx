@@ -46,7 +46,7 @@ export default function RecevezVotreQRPage() {
                 <span className="bg-gradient-to-r from-blue-500 to-blue-700 bg-clip-text text-transparent">votre QR code</span>
               </h1>
               <p className="text-lg text-slate-500 leading-relaxed mb-8 max-w-lg">
-                Commandez vos QR codes QRBag en quelques clics et recevez vos autocollants directement chez vous ou à votre agence. Chaque QR code est unique, personnalisé et prêt à être activé en 30 secondes.
+                Commandez vos QR codes QRTags en quelques clics et recevez vos autocollants directement chez vous ou à votre agence. Chaque QR code est unique, personnalisé et prêt à être activé en 30 secondes.
               </p>
               <div className="flex flex-wrap gap-4">
                 <Link href="/devenir-partenaire" className="inline-flex items-center gap-2 px-7 py-3.5 rounded-full bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-semibold text-sm shadow-xl shadow-blue-500/20 hover:shadow-blue-500/30 transition-all duration-300 hover:scale-105">
@@ -64,7 +64,7 @@ export default function RecevezVotreQRPage() {
                 <div className="relative rounded-3xl overflow-hidden shadow-2xl shadow-slate-200/60 border border-slate-100 aspect-[3/4]">
                   <Image
                     src="/images/landing-v2/step-receive.jpg"
-                    alt="Recevez votre QR code - QRBag"
+                    alt="Recevez votre QR code - QRTags"
                     fill
                     className="object-cover"
                   />
@@ -80,7 +80,7 @@ export default function RecevezVotreQRPage() {
         <div className="max-w-6xl mx-auto">
           <FadeIn className="text-center mb-16">
             <h2 className="text-3xl sm:text-4xl font-extrabold text-slate-900 mb-4 tracking-[-0.02em]">Comment recevoir vos QR codes</h2>
-            <p className="text-lg text-slate-500 max-w-2xl mx-auto">Deux façons simples d&apos;obtenir vos autocollants QRBag</p>
+            <p className="text-lg text-slate-500 max-w-2xl mx-auto">Deux façons simples d&apos;obtenir vos autocollants QRTags</p>
           </FadeIn>
 
           <div className="grid md:grid-cols-2 gap-8">
@@ -107,7 +107,7 @@ export default function RecevezVotreQRPage() {
                   <Truck className="w-6 h-6 text-violet-600" />
                 </div>
                 <h3 className="text-xl font-bold text-slate-900 mb-3">Via votre agence partenaire</h3>
-                <p className="text-[15px] text-slate-500 leading-relaxed mb-6">De nombreuses agences de voyage proposent directement les QR codes QRBag lors de la réservation de votre voyage. Demandez à votre agence si elle est partenaire QRBag.</p>
+                <p className="text-[15px] text-slate-500 leading-relaxed mb-6">De nombreuses agences de voyage proposent directement les QR codes QRTags lors de la réservation de votre voyage. Demandez à votre agence si elle est partenaire QRTags.</p>
                 <ul className="space-y-2.5">
                   {['QR codes inclus dans votre forfait voyage', 'Remis en main propre le jour du départ', 'Activation assistance par l\'agence', 'Plus de 850 agences partenaires'].map((item, i) => (
                     <li key={i} className="flex items-center gap-2.5 text-sm text-slate-600">

@@ -1,49 +1,59 @@
 /**
- * Status Normalization — Central helper
+ * Status Normalization — Central helper (QRTags)
  *
- * La DB peut contenir des statuts en français (EN_ATTENTE, ACTIF)
- * ou en anglais (pending_activation, active).
+ * Statuts QRTags :
+ *   in_stock | assigned_to_agency | sold | activated | scanned | lost | found | blocked | expired
  *
- * Ce module fournit une normalisation centralisée utilisée partout.
+ * Rétrocompatibilité QRBags :
+ *   pending_activation → in_stock
+ *   active             → activated
  *
- * Format standard (english) : pending_activation | active | scanned | lost | found | blocked | expired
+ * Aliases français (legacy) :
+ *   EN_ATTENTE, ACTIF, SCANNÉ, PERDU, TROUVÉ, BLOQUÉ, EXPIRÉ
  */
 
 // ═══════════════════════════════════════════════════════
 //  TYPES
 // ═══════════════════════════════════════════════════════
 
-/** All possible standard statuses */
 export type BaggageStatus =
-  | 'pending_activation'
-  | 'active'
+  | 'in_stock'
+  | 'assigned_to_agency'
+  | 'sold'
+  | 'activated'
   | 'scanned'
   | 'lost'
   | 'found'
   | 'blocked'
-  | 'expired';
+  | 'expired'
+  // Rétrocompat (mappés vers les nouveaux)
+  | 'pending_activation'
+  | 'active';
 
 // ═══════════════════════════════════════════════════════
 //  ALIASES
 // ═══════════════════════════════════════════════════════
 
 const STATUS_ALIASES: Record<string, BaggageStatus> = {
-  // French → English
-  EN_ATTENTE: 'pending_activation',
-  ACTIF: 'active',
+  // French legacy → English
+  EN_ATTENTE: 'in_stock',
+  ACTIF: 'activated',
   SCANNÉ: 'scanned',
   PERDU: 'lost',
   TROUVÉ: 'found',
   BLOQUÉ: 'blocked',
   EXPIRÉ: 'expired',
   // Lowercase French
-  en_attente: 'pending_activation',
-  actif: 'active',
+  en_attente: 'in_stock',
+  actif: 'activated',
   scanné: 'scanned',
   perdu: 'lost',
   trouvé: 'found',
   bloqué: 'blocked',
   expiré: 'expired',
+  // QRBags → QRTags
+  pending_activation: 'in_stock',
+  active: 'activated',
 };
 
 // ═══════════════════════════════════════════════════════
@@ -51,45 +61,46 @@ const STATUS_ALIASES: Record<string, BaggageStatus> = {
 // ═══════════════════════════════════════════════════════
 
 /**
- * Normalize any status string to standard English format.
- * Returns 'pending_activation' as safe default for null/undefined.
+ * Normalize any status string to QRTags standard format.
+ * Returns 'in_stock' as safe default for null/undefined.
  */
 export function normalizeStatus(status: string | null | undefined): BaggageStatus {
-  if (!status) return 'pending_activation';
+  if (!status) return 'in_stock';
   return STATUS_ALIASES[status] || (status as BaggageStatus);
 }
 
 /**
- * Check if status is "pending" (any variant).
+ * Check if status is "pending" (tag not yet sold/activated).
  */
 export function isPending(status: string | null | undefined): boolean {
-  return normalizeStatus(status) === 'pending_activation';
+  const s = normalizeStatus(status);
+  return s === 'in_stock' || s === 'assigned_to_agency' || s === 'pending_activation';
 }
 
 /**
- * Check if status is "active" (any variant).
+ * Check if status is "activated" (or scanned — still active).
  */
 export function isActive(status: string | null | undefined): boolean {
   const s = normalizeStatus(status);
-  return s === 'active' || s === 'scanned';
+  return s === 'activated' || s === 'active' || s === 'scanned';
 }
 
 /**
- * Check if status is "scanned" (any variant).
+ * Check if status is "scanned".
  */
 export function isScanned(status: string | null | undefined): boolean {
   return normalizeStatus(status) === 'scanned';
 }
 
 /**
- * Check if status is "lost" (any variant).
+ * Check if status is "lost".
  */
 export function isLost(status: string | null | undefined): boolean {
   return normalizeStatus(status) === 'lost';
 }
 
 /**
- * Check if status is "found" (any variant).
+ * Check if status is "found".
  */
 export function isFound(status: string | null | undefined): boolean {
   return normalizeStatus(status) === 'found';

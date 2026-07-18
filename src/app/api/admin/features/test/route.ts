@@ -393,7 +393,7 @@ async function testGeolocationAPI() {
         const response = await fetch(
           'https://nominatim.openstreetmap.org/reverse?lat=48.8566&lon=2.3522&format=json',
           {
-            headers: { 'User-Agent': 'QRBag-Test/1.0' },
+            headers: { 'User-Agent': 'QRTags-Test/1.0' },
             signal: controller.signal,
           }
         );

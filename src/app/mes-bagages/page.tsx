@@ -61,7 +61,7 @@ export default function MesBagagesPage() {
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'active': return 'bg-green-500 text-white';
-      case 'scanned': return 'bg-[#fcd616] text-[#1a1a1a]';
+      case 'scanned': return 'bg-[#E3B23C] text-[#1a1a1a]';
       case 'lost': return 'bg-red-600 text-white';
       case 'found': return 'bg-green-600 text-white';
       case 'blocked': return 'bg-slate-500 text-white';
@@ -70,10 +70,10 @@ export default function MesBagagesPage() {
   };
 
   return (
-    <main className="min-h-screen bg-[#0047d6] flex flex-col">
-      <header className="bg-[#0047d6] border-b border-[#fcd616]/30 py-4 px-4">
+    <main className="min-h-screen bg-[#111111] flex flex-col">
+      <header className="bg-[#111111] border-b border-[#E3B23C]/30 py-4 px-4">
         <div className="max-w-md mx-auto flex items-center gap-2">
-          <Luggage className="w-5 h-5 text-[#fcd616]" />
+          <Luggage className="w-5 h-5 text-[#E3B23C]" />
           <h1 className="text-lg font-bold text-white">Mes bagages</h1>
         </div>
       </header>
@@ -81,7 +81,7 @@ export default function MesBagagesPage() {
       <div className="flex-1 max-w-md mx-auto w-full px-4 py-6 pb-20">
         {loading ? (
           <div className="text-center">
-            <div className="animate-spin w-8 h-8 border-4 border-white/20 border-t-[#fcd616] rounded-full mx-auto mb-3" />
+            <div className="animate-spin w-8 h-8 border-4 border-white/20 border-t-[#E3B23C] rounded-full mx-auto mb-3" />
             <p className="text-white/70 text-sm">Chargement...</p>
           </div>
         ) : baggages.length === 0 ? (
@@ -89,9 +89,9 @@ export default function MesBagagesPage() {
             <Luggage className="w-12 h-12 text-slate-300 mx-auto mb-4" />
             <h2 className="text-lg font-bold text-slate-700 mb-2">Aucun bagage enregistré</h2>
             <p className="text-sm text-slate-500 mb-6">
-              Activez un QR code QRBag pour le voir apparaître ici.
+              Activez un QR code QRTags pour le voir apparaître ici.
             </p>
-            <Link href="/inscrire" className="inline-block bg-[#0047d6] text-white px-6 py-3 rounded-xl font-bold">
+            <Link href="/inscrire" className="inline-block bg-[#111111] text-white px-6 py-3 rounded-xl font-bold">
               Activer un QR code
             </Link>
           </div>
@@ -105,7 +105,7 @@ export default function MesBagagesPage() {
                 placeholder="Rechercher (référence, nom, destination)..."
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                className="w-full pl-10 pr-4 py-3 rounded-xl bg-white border-2 border-[#1a1a1a] text-[#1a1a1a] text-sm focus:ring-2 focus:ring-[#fcd616]"
+                className="w-full pl-10 pr-4 py-3 rounded-xl bg-white border-2 border-[#1a1a1a] text-[#1a1a1a] text-sm focus:ring-2 focus:ring-[#E3B23C]"
               />
             </div>
 
@@ -115,7 +115,7 @@ export default function MesBagagesPage() {
                 <Link
                   key={baggage.reference}
                   href={`/suivi/${baggage.reference}`}
-                  className="block bg-white border-2 border-dashed border-[#1a1a1a] rounded-2xl p-4 hover:bg-[#fcd616]/10 transition-colors"
+                  className="block bg-white border-2 border-dashed border-[#1a1a1a] rounded-2xl p-4 hover:bg-[#E3B23C]/10 transition-colors"
                 >
                   <div className="flex items-center justify-between mb-2">
                     <span className="font-mono font-bold text-[#1a1a1a]">{baggage.reference}</span>
@@ -132,7 +132,7 @@ export default function MesBagagesPage() {
                     </p>
                   )}
                   <div className="flex items-center justify-end mt-2">
-                    <span className="text-xs font-bold text-[#0047d6] flex items-center gap-1">
+                    <span className="text-xs font-bold text-[#111111] flex items-center gap-1">
                       Voir le suivi <ArrowRight className="w-3 h-3" />
                     </span>
                   </div>

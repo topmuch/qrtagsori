@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import QRTagsLogo from "@/components/qrtags/QRTagsLogo";
 import { QrCode, Home, ArrowLeft } from 'lucide-react';
 
 export default function NotFound() {
@@ -9,7 +10,7 @@ export default function NotFound() {
       <div className="text-center text-white max-w-md">
         {/* Logo */}
         <div className="flex items-center justify-center mb-8">
-          <img src="/logo.png" alt="QRBag" className="h-16 w-auto object-contain" />
+          <QRTagsLogo size="md" variant="light" />
         </div>
 
         {/* 404 */}

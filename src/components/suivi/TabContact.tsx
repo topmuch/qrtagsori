@@ -41,11 +41,11 @@ export function TabContact({
           </p>
         </div>
 
-        <a href="/assistance" className="block bg-white border-2 border-[#0047d6] text-[#0047d6] text-center py-3 px-4 rounded-xl font-bold text-sm">
+        <a href="/assistance" className="block bg-white border-2 border-[#111111] text-[#111111] text-center py-3 px-4 rounded-xl font-bold text-sm">
           <HelpCircle className="w-4 h-4 inline mr-2" />Besoin d&apos;aide ?
         </a>
-        <a href="mailto:contact@qrbag.com" className="block bg-white border-2 border-slate-300 text-slate-600 text-center py-3 px-4 rounded-xl font-bold text-sm">
-          <Mail className="w-4 h-4 inline mr-2" />Contacter le support QRBag
+        <a href="mailto:contact@qrtags.com" className="block bg-white border-2 border-slate-300 text-slate-600 text-center py-3 px-4 rounded-xl font-bold text-sm">
+          <Mail className="w-4 h-4 inline mr-2" />Contacter le support QRTags
         </a>
       </div>
     );
@@ -99,7 +99,7 @@ export function TabContact({
       </div>
 
       {/* Tips */}
-      <div className="bg-[#0047d6]/40 border border-white/20 rounded-xl p-3 text-xs text-white">
+      <div className="bg-[#111111]/40 border border-white/20 rounded-xl p-3 text-xs text-white">
         <p className="font-bold mb-1">💡 Conseils :</p>
         <p>• Contactez le trouveur rapidement pour organiser la récupération</p>
         <p>• Demandez-lui un rendez-vous dans un lieu public</p>
@@ -107,13 +107,13 @@ export function TabContact({
       </div>
 
       {/* Support */}
-      <a href="mailto:contact@qrbag.com" className="block bg-white border-2 border-slate-300 text-slate-600 text-center py-3 px-4 rounded-xl font-bold text-sm">
-        <Mail className="w-4 h-4 inline mr-2" />Contacter le support QRBag
+      <a href="mailto:contact@qrtags.com" className="block bg-white border-2 border-slate-300 text-slate-600 text-center py-3 px-4 rounded-xl font-bold text-sm">
+        <Mail className="w-4 h-4 inline mr-2" />Contacter le support QRTags
       </a>
 
       <div className="text-center text-xs text-white/60 flex items-center justify-center gap-1.5 pt-2">
         <Shield className="w-3 h-3" />
-        <span>QRBag — Contact sécurisé</span>
+        <span>QRTags — Contact sécurisé</span>
       </div>
     </div>
   );

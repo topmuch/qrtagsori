@@ -22,7 +22,8 @@ export async function POST(request: NextRequest) {
       data: {
         level: 'info',
         message: `[FEEDBACK] ${validated.type} — Ref: ${validated.reference}`,
-        details: JSON.stringify({
+        source: 'feedback',
+        metadata: JSON.stringify({
           reference: validated.reference,
           type: validated.type,
           message: validated.message,

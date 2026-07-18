@@ -84,7 +84,7 @@ export async function POST(
         },
       });
 
-      const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://qrbags.com';
+      const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://qrtags.com';
       const shareUrl = `${appUrl}/share/${newToken}`;
 
       return NextResponse.json({
@@ -123,7 +123,7 @@ export async function POST(
 
     if (error instanceof z.ZodError) {
       return NextResponse.json(
-        { error: 'Données invalides', details: error.errors },
+        { error: 'Données invalides', details: error.issues },
         { status: 400 }
       );
     }
@@ -165,7 +165,7 @@ export async function GET(
       });
     }
 
-    const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://qrbags.com';
+    const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://qrtags.com';
     return NextResponse.json({
       hasShare: true,
       shareUrl: `${appUrl}/share/${baggage.shareToken}`,

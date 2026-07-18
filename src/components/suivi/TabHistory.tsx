@@ -47,8 +47,8 @@ export function TabHistory({
         <div className="divide-y divide-slate-100">
           {visibleScans.map((scan, idx) => (
             <div key={scan.id} className="p-4 flex items-start gap-3">
-              <div className="w-8 h-8 rounded-full bg-[#0047d6]/10 border border-[#0047d6]/20 flex items-center justify-center flex-shrink-0">
-                <span className="text-xs font-bold text-[#0047d6]">{idx + 1}</span>
+              <div className="w-8 h-8 rounded-full bg-[#111111]/10 border border-[#111111]/20 flex items-center justify-center flex-shrink-0">
+                <span className="text-xs font-bold text-[#111111]">{idx + 1}</span>
               </div>
               <div className="flex-1 min-w-0">
                 <p className="text-sm font-bold text-[#1a1a1a]">{formatDate(scan.scannedAt)}</p>
@@ -66,7 +66,7 @@ export function TabHistory({
                     href={`https://www.google.com/maps?q=${scan.latitude},${scan.longitude}`}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="inline-flex items-center gap-1 mt-1.5 text-xs font-bold text-[#0047d6] hover:underline"
+                    className="inline-flex items-center gap-1 mt-1.5 text-xs font-bold text-[#111111] hover:underline"
                   >
                     <MapPin className="w-3 h-3" />
                     📍 Voir sur Google Maps ({scan.latitude.toFixed(4)}, {scan.longitude.toFixed(4)})
@@ -79,7 +79,7 @@ export function TabHistory({
         {scans.length > 5 && (
           <button
             onClick={() => setShowAll(!showAll)}
-            className="w-full py-3 text-sm font-bold text-[#0047d6] bg-slate-50 hover:bg-slate-100 transition-colors flex items-center justify-center gap-1"
+            className="w-full py-3 text-sm font-bold text-[#111111] bg-slate-50 hover:bg-slate-100 transition-colors flex items-center justify-center gap-1"
           >
             {showAll ? 'Réduire' : `Voir tout (${scans.length})`}
             <ChevronDown className={`w-4 h-4 transition-transform ${showAll ? 'rotate-180' : ''}`} />

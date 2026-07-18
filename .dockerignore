@@ -1,22 +1,93 @@
-Dockerfile
-.dockerignore
+# ════════════════════════════════════════════════════════════════════
+# QRTags — .dockerignore
+# Exclut les fichiers non nécessaires au build Docker pour accélérer
+# le contexte de build (Coolify build context).
+# ════════════════════════════════════════════════════════════════════
+
+# Node
 node_modules
-npm-debug.log
-README.md
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+.npm
+.pnpm-store
+
+# Build artifacts
 .next
-.git
-package-lock.json
-yarn.lock
-pnpm-lock.yaml
-test
+out
+dist
+build
+*.tsbuildinfo
+
+# Tests
 __tests__
+*.test.ts
+*.test.tsx
+*.spec.ts
+*.spec.tsx
+coverage
+.nyc_output
+
+# IDE & OS
+.vscode
+.idea
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+
+# Git
+.git
+.gitignore
+.gitattributes
+
+# Docker
+Dockerfile
+docker-compose.yml
+.dockerignore
+
+# Docs & logs
+*.md
+!README.md
+!DEPLOYMENT.md
 *.log
-local-*
-dev-server*.log
-prisma/*.db
-prisma/*.sqlite
-db/*.db
-download/
+logs
+dev.log
+dev-server.log
+dev-server-live.log
+
+# Env files (Coolify fournit ses propres variables d'environnement)
+.env
+.env.local
+.env.development
+.env.test
+.env.production
+# Garde .env.example pour référence
+
+# Database (recréée au runtime par prisma db push)
+db/
+*.db
+*.db-journal
+*.sqlite
+*.sqlite3
+
+# Scripts de dev (test, seed, etc.) — non requis en prod
+scripts/test-*.ts
+scripts/test-*.sh
+scripts/seed-users.ts
+
+# Mini-services séparés (déployés indépendamment si besoin)
 mini-services/
+
+# Examples
 examples/
-tool-results/
+
+# CI/CD
+.github
+.gitlab-ci.yml
+
+# Misc
+worklog.md
+.start.sh
+Caddyfile

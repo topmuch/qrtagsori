@@ -63,7 +63,7 @@ export default function GenererQRPage() {
   
   // Agency form
   const [agencyForm, setAgencyForm] = useState({
-    type: 'hajj' as 'hajj' | 'voyageur',
+    type: 'voyageur' as 'hajj' | 'voyageur',
     agencyId: '',
     travelerCount: 1,
     baggagePerTraveler: 2 as 1 | 2,
@@ -190,7 +190,7 @@ export default function GenererQRPage() {
 
       // Get filename
       const contentDisposition = exportResponse.headers.get('Content-Disposition');
-      let filename = 'QRBag-export.zip';
+      let filename = 'QRTags-export.zip';
       if (contentDisposition) {
         const match = contentDisposition.match(/filename\*?=(?:UTF-8'')?([^;]+)/i) ||
                       contentDisposition.match(/filename="?([^"]+)"?/);
@@ -472,8 +472,7 @@ export default function GenererQRPage() {
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent className="bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800">
-                      <SelectItem value="hajj">Hajj (Pèlerinage)</SelectItem>
-                      <SelectItem value="voyageur">Voyageur</SelectItem>
+                      <SelectItem value="voyageur">Tag QRTags (1 objet)</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -500,7 +499,7 @@ export default function GenererQRPage() {
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label className="text-slate-700 dark:text-slate-300">
-                      {agencyForm.type === 'hajj' ? 'Nombre de pèlerins' : 'Nombre de voyageurs'}
+                      {'Nombre de clients'}
                     </Label>
                     <Input 
                       type="number"
@@ -532,7 +531,7 @@ export default function GenererQRPage() {
 
                 {agencyForm.type === 'hajj' && (
                   <div className="bg-slate-50 dark:bg-slate-800 rounded-xl p-4 text-sm text-slate-600 dark:text-slate-300">
-                    <p>ℹ️ Pour le Hajj, chaque pèlerin reçoit automatiquement 3 bagages (1 cabine + 2 soutes)</p>
+                    <p>ℹ️ QRTags : 1 tag = 1 objet. Chaque client reçoit 1 tag.</p>
                   </div>
                 )}
                 {agencyForm.type === 'voyageur' && (

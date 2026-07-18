@@ -97,11 +97,11 @@ export async function GET(
 
     // ─── Générer le PDF avec pdf-lib ───
     const pdfDoc = await PDFDocument.create();
-    pdfDoc.setTitle(`QRBag — Parcours bagage ${reference}`);
-    pdfDoc.setAuthor('QRBag');
+    pdfDoc.setTitle(`QRTags — Parcours bagage ${reference}`);
+    pdfDoc.setAuthor('QRTags');
     pdfDoc.setSubject('Historique officiel du bagage');
-    pdfDoc.setCreator('QRBag Labs');
-    pdfDoc.setProducer('QRBag');
+    pdfDoc.setCreator('QRTags Labs');
+    pdfDoc.setProducer('QRTags');
     pdfDoc.setCreationDate(new Date());
 
     const fontRegular = await pdfDoc.embedFont(StandardFonts.Helvetica);
@@ -113,7 +113,7 @@ export async function GET(
     const margin = 50;
     let y = height - margin;
 
-    // ─── Header : bandeau bleu QRBag ───
+    // ─── Header : bandeau bleu QRTags ───
     page.drawRectangle({
       x: 0,
       y: height - 80,
@@ -130,7 +130,7 @@ export async function GET(
       color: BRAND_YELLOW,
     });
 
-    page.drawText('QRBag', {
+    page.drawText('QRTags', {
       x: margin,
       y: height - 50,
       size: 24,
@@ -354,12 +354,12 @@ export async function GET(
       x: margin, y, size: 9, font: fontRegular, color: SLATE_600,
     });
     y -= 14;
-    page.drawText('QRBag — Protection intelligente des bagages', {
+    page.drawText('QRTags — Protection intelligente des bagages', {
       x: margin, y, size: 9, font: fontBold, color: BRAND_BLUE,
     });
     y -= 14;
 
-    const verifyUrl = `${process.env.NEXT_PUBLIC_APP_URL || 'https://qrbags.com'}/suivi/${reference}`;
+    const verifyUrl = `${process.env.NEXT_PUBLIC_APP_URL || 'https://qrtags.com'}/suivi/${reference}`;
     page.drawText(`URL de vérification : ${verifyUrl}`, {
       x: margin, y, size: 9, font: fontMono, color: SLATE_600,
     });
@@ -370,9 +370,9 @@ export async function GET(
 
     // ─── Renvoyer le PDF ───
     const pdfBytes = await pdfDoc.save();
-    const filename = `QRBag-parcours-${reference}-${Date.now()}.pdf`;
+    const filename = `QRTags-parcours-${reference}-${Date.now()}.pdf`;
 
-    return new NextResponse(pdfBytes, {
+    return new NextResponse(new Uint8Array(pdfBytes) as unknown as BodyInit, {
       status: 200,
       headers: {
         'Content-Type': 'application/pdf',

@@ -14,16 +14,16 @@
  *   [EMOJI_CONTEXT + TITRE_CONTEXT]
  *   🧳 [REFERENCE] • [BAG_TYPE]
  *   [TRANSPORT_ICON] [CARRIER] [VEHICLE] • [DESTINATION]
- *   👉 Voir le bagage localisé : qrbags.com/suivi/[REF]
+ *   👉 Voir le bagage localisé : qrtags.com/suivi/[REF]
  *   👤 [FINDER_NAME]
  *   📱 [FINDER_WHATSAPP]
  *   [CALL_TO_ACTION_CONTEXT]
- *   QRBag – Protégez vos bagages, en toute sérénité.
+ *   QRTags – Protégez vos bagages, en toute sérénité.
  *
  * Contraintes:
  *   - Max 400 caractères (limite wa.me pre-filled)
  *   - Formatage WhatsApp (*gras*, `monospace`)
- *   - Lien court qrbags.com/suivi/[REF]
+ *   - Lien court qrtags.com/suivi/[REF]
  *   - i18n FR/EN/AR
  *   - Fallbacks robustes (pas de crash si champ manquant)
  *   - Logging discret
@@ -135,9 +135,9 @@ const CONTEXT_EMOJIS: Record<string, string> = {
 };
 
 const SIGNATURES: Record<WhatsAppLocale, string> = {
-  fr: 'QRBag – Protégez vos bagages, en toute sérénité.',
-  en: 'QRBag – Protect your luggage with peace of mind.',
-  ar: 'QRBag – احمِ أمتعتك براحة بال.',
+  fr: 'QRTags – Protégez vos bagages, en toute sérénité.',
+  en: 'QRTags – Protect your luggage with peace of mind.',
+  ar: 'QRTags – احمِ أمتعتك براحة بال.',
 };
 
 const SEE_BAGAGE: Record<WhatsAppLocale, string> = {
@@ -262,9 +262,9 @@ function smartTruncate(message: string, maxChars: number, locale: WhatsAppLocale
 
   let truncated = false;
 
-  // Retirer signature (dernière ligne si commence par "QRBag")
+  // Retirer signature (dernière ligne si commence par "QRTags")
   for (let i = lines.length - 1; i >= 0; i--) {
-    if (lines[i].startsWith('QRBag') || lines[i].startsWith('*QRBag')) {
+    if (lines[i].startsWith('QRTags') || lines[i].startsWith('*QRTags')) {
       lines.splice(i, 1);
       truncated = true;
       break;
@@ -275,7 +275,7 @@ function smartTruncate(message: string, maxChars: number, locale: WhatsAppLocale
 
   // Retirer CTA (ligne qui commence par ⏰ ou 👉 et N'EST PAS "Voir le bagage")
   for (let i = lines.length - 1; i >= 0; i--) {
-    if ((lines[i].startsWith('⏰') || (lines[i].startsWith('👉') && !lines[i].includes('qrbags.com')))) {
+    if ((lines[i].startsWith('⏰') || (lines[i].startsWith('👉') && !lines[i].includes('qrtags.com')))) {
       lines.splice(i, 1);
       truncated = true;
       break;
@@ -374,7 +374,7 @@ export function generatePreFilledMessage(params: PreFilledMessageParams): string
   // ─── Step 5: Assemble all lines ───
   const appUrl = process.env.NEXT_PUBLIC_APP_URL
     ? process.env.NEXT_PUBLIC_APP_URL.replace(/\/$/, '')
-    : 'https://qrbags.com';
+    : 'https://qrtags.com';
   const sanitizedRef = sanitize(baggage.reference);
 
   const lines: string[] = [];

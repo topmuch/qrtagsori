@@ -17,8 +17,8 @@ import {
 } from 'lucide-react';
 
 // ─── Brand constants ───
-const BRAND = '#0047d6';
-const ACCENT = '#fcd616';
+const BRAND = '#111111';
+const ACCENT = '#E3B23C';
 const INK = '#1a1a1a';
 
 interface ShareData {
@@ -74,9 +74,9 @@ export default function SharePage() {
   // ─── Loading ───
   if (loading) {
     return (
-      <main className="min-h-screen bg-[#0047d6] flex items-center justify-center">
+      <main className="min-h-screen bg-[#111111] flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin w-12 h-12 border-4 border-white/20 border-t-[#fcd616] rounded-full mx-auto mb-4" />
+          <div className="animate-spin w-12 h-12 border-4 border-white/20 border-t-[#E3B23C] rounded-full mx-auto mb-4" />
           <p className="text-lg text-white">Chargement du suivi...</p>
         </div>
       </main>
@@ -86,7 +86,7 @@ export default function SharePage() {
   // ─── Error ───
   if (error) {
     return (
-      <main className="min-h-screen bg-[#0047d6] flex items-center justify-center p-4">
+      <main className="min-h-screen bg-[#111111] flex items-center justify-center p-4">
         <div className="max-w-md w-full bg-white border-2 border-dashed border-[#1a1a1a] rounded-2xl p-8 text-center">
           <AlertCircle className="w-12 h-12 text-red-500 mx-auto mb-4" />
           <h1 className="text-2xl font-bold mb-2" style={{ color: INK }}>Lien invalide</h1>
@@ -127,14 +127,14 @@ export default function SharePage() {
     : isFound
     ? { label: '✅ Trouvé', color: 'bg-green-600 text-white' }
     : data.lastScanDate
-    ? { label: '📍 Scanné', color: 'bg-[#fcd616] text-[#1a1a1a]' }
-    : { label: '🛡️ Protégé', color: 'bg-[#1a1a1a] text-[#fcd616]' };
+    ? { label: '📍 Scanné', color: 'bg-[#E3B23C] text-[#1a1a1a]' }
+    : { label: '🛡️ Protégé', color: 'bg-[#1a1a1a] text-[#E3B23C]' };
 
   return (
-    <main className="min-h-screen bg-[#0047d6] flex flex-col">
+    <main className="min-h-screen bg-[#111111] flex flex-col">
       {/* Header — indique que c'est une vue partagée (lecture seule) */}
       <header className="bg-[#1a1a1a] py-2 px-4">
-        <div className="max-w-md mx-auto flex items-center justify-center gap-2 text-[#fcd616] text-xs">
+        <div className="max-w-md mx-auto flex items-center justify-center gap-2 text-[#E3B23C] text-xs">
           <Eye className="w-4 h-4" />
           <span className="font-medium">Vue partagée — Lecture seule uniquement</span>
         </div>
@@ -240,7 +240,7 @@ export default function SharePage() {
             </h2>
             <div className="space-y-2">
               {data.scans.slice(0, 5).map((scan, idx) => (
-                <div key={idx} className="border-l-2 border-[#0047d6]/30 pl-3 py-1">
+                <div key={idx} className="border-l-2 border-[#111111]/30 pl-3 py-1">
                   <p className="text-xs font-bold" style={{ color: INK }}>
                     {formatDate(scan.scannedAt)}
                   </p>
@@ -256,16 +256,16 @@ export default function SharePage() {
         {/* Trust note */}
         <div className="text-center text-xs text-white/70 tracking-wide flex items-center justify-center gap-1.5 pt-2">
           <Shield className="w-4 h-4 inline" />
-          <span>Suivi QRBag — vue partagée en lecture seule</span>
+          <span>Suivi QRTags — vue partagée en lecture seule</span>
         </div>
 
-        {/* QRBag link */}
+        {/* QRTags link */}
         <div className="text-center pt-4">
           <Link
             href="/"
-            className="inline-block text-xs text-[#fcd616] hover:underline"
+            className="inline-block text-xs text-[#E3B23C] hover:underline"
           >
-            En savoir plus sur QRBag →
+            En savoir plus sur QRTags →
           </Link>
         </div>
       </div>

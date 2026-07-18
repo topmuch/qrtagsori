@@ -3,7 +3,7 @@ import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { Bot, X, Send, User, MessageCircle } from 'lucide-react';
 import { useTranslation } from '@/hooks/useTranslation';
 
-/** QRBag WhatsApp SAV */
+/** QRTags WhatsApp SAV */
 const QRBAGS_WHATSAPP_URL = 'https://wa.me/221784858226';
 const QRBAGS_WHATSAPP_URL_2 = 'https://wa.me/33745349339';
 
@@ -56,10 +56,10 @@ export default function LandingChatbotWidget() {
     : ['كيف أفعّل رمز QR الخاص بي؟', 'أين حقيبتي؟', 'ما هي الأسعار؟', 'كيف يعمل؟'];
 
   const errorMessage = lang === 'fr'
-    ? 'Je rencontre un problème technique. Contactez le SAV : info@qrbags.com'
+    ? 'Je rencontre un problème technique. Contactez le SAV : info@qrtags.com'
     : lang === 'en'
-    ? 'I am experiencing a technical issue. Contact support: info@qrbags.com'
-    : 'أواجه مشكلة تقنية. تواصل مع الدعم: info@qrbags.com';
+    ? 'I am experiencing a technical issue. Contact support: info@qrtags.com'
+    : 'أواجه مشكلة تقنية. تواصل مع الدعم: info@qrtags.com';
 
   const sendMessage = useCallback(async (text: string) => {
     if (!text.trim() || isLoading) return;
@@ -175,7 +175,7 @@ export default function LandingChatbotWidget() {
       );
     }
 
-    // Standard URLs (qrbags.com, etc.) — render text + clickable link buttons
+    // Standard URLs (qrtags.com, etc.) — render text + clickable link buttons
     let textContent = content;
     uniqueUrls.forEach(link => {
       textContent = textContent.replace(link, '');
@@ -225,7 +225,7 @@ export default function LandingChatbotWidget() {
           <div className="flex items-center justify-between px-4 py-3 bg-gradient-to-r from-[#6613e3] to-[#4b0082] border-b border-white/10">
             <div className="flex items-center gap-2">
               <Bot className="w-5 h-5 text-blue-300" />
-              <span className="text-white font-semibold text-sm">QRBag Assistant</span>
+              <span className="text-white font-semibold text-sm">QRTags Assistant</span>
             </div>
             <button
               onClick={() => setIsOpen(false)}

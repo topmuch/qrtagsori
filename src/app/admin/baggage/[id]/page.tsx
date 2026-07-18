@@ -367,7 +367,7 @@ export default function AdminBaggageDetailPage() {
           </Link>
           <button
             onClick={() => setShowExtendModal(true)}
-            className="flex-1 py-3 bg-[#0047d6] text-white rounded-lg font-medium hover:bg-[#0033a8] transition-colors flex items-center justify-center gap-2"
+            className="flex-1 py-3 bg-[#111111] text-white rounded-lg font-medium hover:bg-[#0033a8] transition-colors flex items-center justify-center gap-2"
           >
             <CalendarClock className="w-5 h-5" />
             Prolonger

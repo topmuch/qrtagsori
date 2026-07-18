@@ -44,7 +44,7 @@ export async function POST(request: NextRequest) {
     
     await sendEmail({
       to: email,
-      subject: 'QRBag - Réinitialisation de votre mot de passe',
+      subject: 'QRTags - Réinitialisation de votre mot de passe',
       html: template.html,
       text: template.text,
       type: 'password_reset',

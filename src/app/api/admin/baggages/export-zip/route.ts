@@ -112,7 +112,7 @@ export async function POST(request: NextRequest) {
     const timestamp = new Date().toISOString().slice(0, 10);
     const agencyName = baggages[0]?.agency?.name || 'export';
     const baggageType = type || 'all';
-    const zipFilename = `QRBag-${agencyName}-${baggageType}-${baggages.length}QR-${timestamp}.zip`;
+    const zipFilename = `QRTags-${agencyName}-${baggageType}-${baggages.length}QR-${timestamp}.zip`;
 
     // Group baggages by setId
     const baggagesBySetId = new Map<string, typeof baggages>();
@@ -239,7 +239,7 @@ function generatePassengerReadme(
 ): string {
   const lines: string[] = [
     '===================================',
-    '  QRBag - QR Codes Bagage',
+    '  QRTags - QR Codes Bagage',
     '===================================',
     '',
     `Set ID    : ${setId}`,
@@ -260,11 +260,11 @@ function generatePassengerReadme(
   lines.push('');
   lines.push('1. Imprimez chaque QR code sur une etiquette.');
   lines.push('2. Collez chaque etiquette sur le bagage correspondant.');
-  lines.push('3. Le voyageur active ses QR codes sur qrbags.com/activate');
+  lines.push('3. Le voyageur active ses QR codes sur qrtags.com/activate');
   lines.push('4. Si un bagage est perdu, le trouveur scanne le QR code');
   lines.push('   et le proprietaire recoit une notification WhatsApp.');
   lines.push('');
-  lines.push('QRBag - Protegez vos bagages, en toute serenite.');
+  lines.push('QRTags - Protegez vos bagages, en toute serenite.');
 
   return lines.join('\n');
 }
@@ -289,7 +289,7 @@ function generateManifest(
 ): string {
   const lines: string[] = [
     '===================================',
-    '  QRBag - Export Manifest',
+    '  QRTags - Export Manifest',
     '===================================',
     '',
     `Date d'export    : ${new Date().toLocaleString('fr-FR')}`,

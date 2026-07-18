@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, ReactNode } from 'react';
+import QRTagsLogo from "@/components/qrtags/QRTagsLogo";
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import {
@@ -79,7 +80,6 @@ export default function AdminLayout({ children, title, subtitle, unreadMessages 
     { label: "Générer QR", icon: <QrCode className="w-5 h-5" />, href: "/admin/generer" },
     { label: "Étiquettes", icon: <Layers className="w-5 h-5" />, href: "/admin/etiquettes" },
     { label: "VOYAGEURS", icon: null, isCategory: true },
-    { label: "Pèlerins Hajj", icon: <Users className="w-5 h-5" />, href: "/admin/hajj" },
     { label: "Voyageurs", icon: <Package className="w-5 h-5" />, href: "/admin/voyageurs" },
     { label: "MESSAGES", icon: null, isCategory: true },
     { label: "Messages", icon: <MessageSquare className="w-5 h-5" />, href: "/admin/messages", badge: messages },
@@ -110,7 +110,7 @@ export default function AdminLayout({ children, title, subtitle, unreadMessages 
           {/* Logo */}
           <div className="p-6 border-b border-white/10">
             <Link href="/admin/dashboard" className="flex items-center">
-              <img src="/logo.png" alt="QRBag" className="h-16 w-auto object-contain brightness-0 invert" />
+              <QRTagsLogo size="md" variant="dark" />
             </Link>
             <button
               className="lg:hidden absolute top-6 right-4 text-white/60 hover:text-white transition-colors"

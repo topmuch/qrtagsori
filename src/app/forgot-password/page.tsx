@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import QRTagsLogo from "@/components/qrtags/QRTagsLogo";
 import Link from 'next/link';
 import { Mail, ArrowLeft, Send, CheckCircle, RefreshCw, KeyRound } from 'lucide-react';
 
@@ -40,7 +41,7 @@ export default function ForgotPasswordPage() {
         {/* Logo */}
         <div className="text-center mb-8">
           <Link href="/" className="inline-flex flex-col items-center gap-3">
-            <img src="/logo.png" alt="QRBag" className="h-16 w-auto object-contain" />
+            <QRTagsLogo size="md" variant="light" />
           </Link>
           <p className="text-slate-500 mt-3 text-sm">Réinitialisation du mot de passe</p>
         </div>

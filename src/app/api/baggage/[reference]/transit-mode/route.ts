@@ -69,7 +69,6 @@ export async function POST(
       },
       select: {
         reference: true,
-        reference: true,
         transitMode: true,
         transitModeUpdatedAt: true,
       },
@@ -87,7 +86,7 @@ export async function POST(
 
     if (error instanceof z.ZodError) {
       return NextResponse.json(
-        { error: 'Données invalides', details: error.errors },
+        { error: 'Données invalides', details: error.issues },
         { status: 400 }
       );
     }

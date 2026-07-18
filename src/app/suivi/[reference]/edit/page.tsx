@@ -22,9 +22,9 @@ import CountryRegionSelect from '@/components/inscrire/CountryRegionSelect';
 import PhoneInput from '@/components/ui/PhoneInput';
 import type { TransportMode } from '@/lib/transport';
 
-// ─── Brand constants (QRBag palette) ───
-const BRAND = '#0047d6';
-const ACCENT = '#fcd616';
+// ─── Brand constants (QRTags palette) ───
+const BRAND = '#111111';
+const ACCENT = '#E3B23C';
 const INK = '#1a1a1a';
 
 interface BaggageData {
@@ -328,9 +328,9 @@ export default function EditBaggagePage() {
   // ─── Loading state ───
   if (loading) {
     return (
-      <main className="min-h-screen bg-[#0047d6] flex items-center justify-center">
+      <main className="min-h-screen bg-[#111111] flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin w-12 h-12 border-4 border-white/20 border-t-[#fcd616] rounded-full mx-auto mb-4" />
+          <div className="animate-spin w-12 h-12 border-4 border-white/20 border-t-[#E3B23C] rounded-full mx-auto mb-4" />
           <p className="text-lg text-white">Chargement...</p>
         </div>
       </main>
@@ -340,7 +340,7 @@ export default function EditBaggagePage() {
   // ─── Error state ───
   if (error && !baggage) {
     return (
-      <main className="min-h-screen bg-[#0047d6] flex items-center justify-center p-4">
+      <main className="min-h-screen bg-[#111111] flex items-center justify-center p-4">
         <div className="max-w-md w-full bg-white border-2 border-dashed border-[#1a1a1a] rounded-2xl p-8 text-center">
           <AlertCircle className="w-12 h-12 text-red-500 mx-auto mb-4" />
           <h1 className="text-2xl font-bold mb-2" style={{ color: INK }}>Erreur</h1>
@@ -360,9 +360,9 @@ export default function EditBaggagePage() {
   // ─── PIN auth gate ───
   if (!pinAuthed) {
     return (
-      <main className="min-h-screen bg-[#0047d6] flex items-center justify-center p-4" dir={dir}>
+      <main className="min-h-screen bg-[#111111] flex items-center justify-center p-4" dir={dir}>
         <div className="max-w-md w-full">
-          <div className="bg-[#fcd616] border-2 border-dashed border-[#1a1a1a] rounded-2xl p-8">
+          <div className="bg-[#E3B23C] border-2 border-dashed border-[#1a1a1a] rounded-2xl p-8">
             <div className="text-center mb-6">
               <div className="w-16 h-16 bg-white rounded-full flex items-center justify-center mx-auto mb-4 border-2 border-[#1a1a1a]">
                 <KeyRound className="w-8 h-8" style={{ color: INK }} />
@@ -383,7 +383,7 @@ export default function EditBaggagePage() {
                 placeholder="••••"
                 value={pinInput}
                 onChange={(e) => setPinInput(e.target.value.replace(/\D/g, ''))}
-                className="w-full text-center text-3xl tracking-[0.5em] bg-white border-2 border-[#1a1a1a] rounded-xl py-3 px-4 focus:outline-none focus:ring-2 focus:ring-[#0047d6]"
+                className="w-full text-center text-3xl tracking-[0.5em] bg-white border-2 border-[#1a1a1a] rounded-xl py-3 px-4 focus:outline-none focus:ring-2 focus:ring-[#111111]"
                 style={{ color: INK }}
                 autoFocus
               />
@@ -402,7 +402,7 @@ export default function EditBaggagePage() {
 
             <div className="mt-6 pt-6 border-t-2 border-dashed border-[#1a1a1a]/30 text-center">
               <p className="text-xs" style={{ color: INK, opacity: 0.6 }}>
-                PIN oublié ? Contactez le support QRBag.
+                PIN oublié ? Contactez le support QRTags.
               </p>
               <Link
                 href={`/suivi/${reference}`}
@@ -428,13 +428,13 @@ export default function EditBaggagePage() {
   ] as const;
 
   return (
-    <main className="min-h-screen bg-[#0047d6] flex flex-col px-4 sm:px-5 md:px-8 pb-8" dir={dir}>
+    <main className="min-h-screen bg-[#111111] flex flex-col px-4 sm:px-5 md:px-8 pb-8" dir={dir}>
       {/* Header */}
-      <header className="sticky top-0 z-40 bg-[#0047d6] border-b border-[#fcd616]/30 py-4">
+      <header className="sticky top-0 z-40 bg-[#111111] border-b border-[#E3B23C]/30 py-4">
         <div className="max-w-md mx-auto flex items-center justify-between">
           <Link
             href={`/suivi/${reference}`}
-            className="flex items-center gap-1 text-white hover:text-[#fcd616] transition-colors text-sm font-medium"
+            className="flex items-center gap-1 text-white hover:text-[#E3B23C] transition-colors text-sm font-medium"
           >
             <ArrowLeft className="w-4 h-4" />
             Retour au suivi
@@ -479,7 +479,7 @@ export default function EditBaggagePage() {
                     onClick={() => setFormData({ ...formData, transportMode: opt.value })}
                     className={`flex flex-col items-center justify-center p-2 rounded-xl border-2 transition-all ${
                       selected
-                        ? 'border-[#1a1a1a] bg-[#fcd616]'
+                        ? 'border-[#1a1a1a] bg-[#E3B23C]'
                         : 'border-[#1a1a1a]/30 bg-slate-50'
                     }`}
                   >
@@ -500,7 +500,7 @@ export default function EditBaggagePage() {
                 placeholder="Prénom"
                 value={formData.travelerFirstName}
                 onChange={(e) => setFormData({ ...formData, travelerFirstName: e.target.value })}
-                className="bg-slate-50 border-2 border-[#1a1a1a] rounded-lg px-3 py-2.5 text-base focus:ring-2 focus:ring-[#0047d6]"
+                className="bg-slate-50 border-2 border-[#1a1a1a] rounded-lg px-3 py-2.5 text-base focus:ring-2 focus:ring-[#111111]"
                 style={{ color: INK }}
               />
               <input
@@ -508,7 +508,7 @@ export default function EditBaggagePage() {
                 placeholder="Nom"
                 value={formData.travelerLastName}
                 onChange={(e) => setFormData({ ...formData, travelerLastName: e.target.value })}
-                className="bg-slate-50 border-2 border-[#1a1a1a] rounded-lg px-3 py-2.5 text-base focus:ring-2 focus:ring-[#0047d6]"
+                className="bg-slate-50 border-2 border-[#1a1a1a] rounded-lg px-3 py-2.5 text-base focus:ring-2 focus:ring-[#111111]"
                 style={{ color: INK }}
               />
             </div>
@@ -527,7 +527,7 @@ export default function EditBaggagePage() {
                     placeholder="Compagnie aérienne (ex: Air France)"
                     value={formData.airlineName}
                     onChange={(e) => setFormData({ ...formData, airlineName: e.target.value })}
-                    className="w-full bg-slate-50 border-2 border-[#1a1a1a] rounded-lg px-3 py-2.5 text-base focus:ring-2 focus:ring-[#0047d6]"
+                    className="w-full bg-slate-50 border-2 border-[#1a1a1a] rounded-lg px-3 py-2.5 text-base focus:ring-2 focus:ring-[#111111]"
                     style={{ color: INK }}
                   />
                   <input
@@ -535,7 +535,7 @@ export default function EditBaggagePage() {
                     placeholder="Numéro de vol (ex: AF1234)"
                     value={formData.flightNumber}
                     onChange={(e) => setFormData({ ...formData, flightNumber: e.target.value })}
-                    className="w-full bg-slate-50 border-2 border-[#1a1a1a] rounded-lg px-3 py-2.5 text-base focus:ring-2 focus:ring-[#0047d6]"
+                    className="w-full bg-slate-50 border-2 border-[#1a1a1a] rounded-lg px-3 py-2.5 text-base focus:ring-2 focus:ring-[#111111]"
                     style={{ color: INK }}
                   />
                 </>
@@ -547,7 +547,7 @@ export default function EditBaggagePage() {
                     placeholder="Compagnie (ex: SNCF)"
                     value={formData.trainCompany}
                     onChange={(e) => setFormData({ ...formData, trainCompany: e.target.value })}
-                    className="w-full bg-slate-50 border-2 border-[#1a1a1a] rounded-lg px-3 py-2.5 text-base focus:ring-2 focus:ring-[#0047d6]"
+                    className="w-full bg-slate-50 border-2 border-[#1a1a1a] rounded-lg px-3 py-2.5 text-base focus:ring-2 focus:ring-[#111111]"
                     style={{ color: INK }}
                   />
                   <input
@@ -555,7 +555,7 @@ export default function EditBaggagePage() {
                     placeholder="Numéro de train (ex: TGV 6123)"
                     value={formData.trainNumber}
                     onChange={(e) => setFormData({ ...formData, trainNumber: e.target.value })}
-                    className="w-full bg-slate-50 border-2 border-[#1a1a1a] rounded-lg px-3 py-2.5 text-base focus:ring-2 focus:ring-[#0047d6]"
+                    className="w-full bg-slate-50 border-2 border-[#1a1a1a] rounded-lg px-3 py-2.5 text-base focus:ring-2 focus:ring-[#111111]"
                     style={{ color: INK }}
                   />
                 </>
@@ -567,7 +567,7 @@ export default function EditBaggagePage() {
                     placeholder="Nom du navire (ex: MSC Fantasia)"
                     value={formData.shipName}
                     onChange={(e) => setFormData({ ...formData, shipName: e.target.value })}
-                    className="w-full bg-slate-50 border-2 border-[#1a1a1a] rounded-lg px-3 py-2.5 text-base focus:ring-2 focus:ring-[#0047d6]"
+                    className="w-full bg-slate-50 border-2 border-[#1a1a1a] rounded-lg px-3 py-2.5 text-base focus:ring-2 focus:ring-[#111111]"
                     style={{ color: INK }}
                   />
                   <input
@@ -575,7 +575,7 @@ export default function EditBaggagePage() {
                     placeholder="Cabine (ex: Pont 4, Cabine 312)"
                     value={formData.shipCabin}
                     onChange={(e) => setFormData({ ...formData, shipCabin: e.target.value })}
-                    className="w-full bg-slate-50 border-2 border-[#1a1a1a] rounded-lg px-3 py-2.5 text-base focus:ring-2 focus:ring-[#0047d6]"
+                    className="w-full bg-slate-50 border-2 border-[#1a1a1a] rounded-lg px-3 py-2.5 text-base focus:ring-2 focus:ring-[#111111]"
                     style={{ color: INK }}
                   />
                 </>
@@ -587,7 +587,7 @@ export default function EditBaggagePage() {
                     placeholder="Compagnie (ex: CTM)"
                     value={formData.busCompany}
                     onChange={(e) => setFormData({ ...formData, busCompany: e.target.value })}
-                    className="w-full bg-slate-50 border-2 border-[#1a1a1a] rounded-lg px-3 py-2.5 text-base focus:ring-2 focus:ring-[#0047d6]"
+                    className="w-full bg-slate-50 border-2 border-[#1a1a1a] rounded-lg px-3 py-2.5 text-base focus:ring-2 focus:ring-[#111111]"
                     style={{ color: INK }}
                   />
                   <input
@@ -595,7 +595,7 @@ export default function EditBaggagePage() {
                     placeholder="Ligne (ex: Casablanca → Marrakech)"
                     value={formData.busLineNumber}
                     onChange={(e) => setFormData({ ...formData, busLineNumber: e.target.value })}
-                    className="w-full bg-slate-50 border-2 border-[#1a1a1a] rounded-lg px-3 py-2.5 text-base focus:ring-2 focus:ring-[#0047d6]"
+                    className="w-full bg-slate-50 border-2 border-[#1a1a1a] rounded-lg px-3 py-2.5 text-base focus:ring-2 focus:ring-[#111111]"
                     style={{ color: INK }}
                   />
                 </>
@@ -621,14 +621,14 @@ export default function EditBaggagePage() {
                 type="date"
                 value={formData.departureDate}
                 onChange={(e) => setFormData({ ...formData, departureDate: e.target.value })}
-                className="bg-slate-50 border-2 border-[#1a1a1a] rounded-lg px-3 py-2.5 text-base focus:ring-2 focus:ring-[#0047d6]"
+                className="bg-slate-50 border-2 border-[#1a1a1a] rounded-lg px-3 py-2.5 text-base focus:ring-2 focus:ring-[#111111]"
                 style={{ color: INK }}
               />
               <input
                 type="time"
                 value={formData.departureTime}
                 onChange={(e) => setFormData({ ...formData, departureTime: e.target.value })}
-                className="bg-slate-50 border-2 border-[#1a1a1a] rounded-lg px-3 py-2.5 text-base focus:ring-2 focus:ring-[#0047d6]"
+                className="bg-slate-50 border-2 border-[#1a1a1a] rounded-lg px-3 py-2.5 text-base focus:ring-2 focus:ring-[#111111]"
                 style={{ color: INK }}
               />
             </div>
@@ -647,7 +647,7 @@ export default function EditBaggagePage() {
           </div>
 
           {/* PIN confirmation to save */}
-          <div className="bg-[#fcd616] border-2 border-dashed border-[#1a1a1a] rounded-2xl p-4">
+          <div className="bg-[#E3B23C] border-2 border-dashed border-[#1a1a1a] rounded-2xl p-4">
             <p className="text-sm font-bold mb-2" style={{ color: INK }}>
               🔐 Confirmer avec votre PIN
             </p>
@@ -661,7 +661,7 @@ export default function EditBaggagePage() {
               placeholder="••••"
               value={pinInput}
               onChange={(e) => setPinInput(e.target.value.replace(/\D/g, ''))}
-              className="w-full text-center text-2xl tracking-[0.5em] bg-white border-2 border-[#1a1a1a] rounded-xl py-2.5 px-4 focus:outline-none focus:ring-2 focus:ring-[#0047d6]"
+              className="w-full text-center text-2xl tracking-[0.5em] bg-white border-2 border-[#1a1a1a] rounded-xl py-2.5 px-4 focus:outline-none focus:ring-2 focus:ring-[#111111]"
               style={{ color: INK }}
             />
           </div>
@@ -688,7 +688,7 @@ export default function EditBaggagePage() {
                   placeholder="Nouveau PIN (4 chiffres)"
                   value={newPin}
                   onChange={(e) => setNewPin(e.target.value.replace(/\D/g, ''))}
-                  className="w-full bg-slate-50 border-2 border-[#1a1a1a] rounded-lg px-3 py-2.5 text-base focus:ring-2 focus:ring-[#0047d6]"
+                  className="w-full bg-slate-50 border-2 border-[#1a1a1a] rounded-lg px-3 py-2.5 text-base focus:ring-2 focus:ring-[#111111]"
                   style={{ color: INK }}
                 />
                 <input
@@ -698,7 +698,7 @@ export default function EditBaggagePage() {
                   placeholder="Confirmer nouveau PIN"
                   value={newPinConfirm}
                   onChange={(e) => setNewPinConfirm(e.target.value.replace(/\D/g, ''))}
-                  className="w-full bg-slate-50 border-2 border-[#1a1a1a] rounded-lg px-3 py-2.5 text-base focus:ring-2 focus:ring-[#0047d6]"
+                  className="w-full bg-slate-50 border-2 border-[#1a1a1a] rounded-lg px-3 py-2.5 text-base focus:ring-2 focus:ring-[#111111]"
                   style={{ color: INK }}
                 />
                 {newPin && newPinConfirm && newPin !== newPinConfirm && (
@@ -712,7 +712,7 @@ export default function EditBaggagePage() {
           <button
             type="submit"
             disabled={pinLoading || !pinInput}
-            className="w-full flex items-center justify-center gap-2 bg-[#0047d6] hover:bg-[#0033a8] text-white py-4 px-4 rounded-xl font-bold transition-colors text-base min-h-[56px] disabled:opacity-50"
+            className="w-full flex items-center justify-center gap-2 bg-[#111111] hover:bg-[#0033a8] text-white py-4 px-4 rounded-xl font-bold transition-colors text-base min-h-[56px] disabled:opacity-50"
           >
             {pinLoading ? (
               <>
@@ -729,7 +729,7 @@ export default function EditBaggagePage() {
         </form>
 
         {/* ═══ LABS — Feature D: Documentation de l'état du bagage ═══ */}
-        <div className="bg-[#fcd616] border-2 border-dashed border-[#1a1a1a] rounded-2xl p-5">
+        <div className="bg-[#E3B23C] border-2 border-dashed border-[#1a1a1a] rounded-2xl p-5">
           <h2 className="text-lg font-bold mb-1" style={{ color: INK }}>
             📸 Protégez votre bagage en cas de casse
           </h2>
@@ -817,7 +817,7 @@ export default function EditBaggagePage() {
               type="button"
               onClick={() => { setDamageType('before'); setDamagePhotos([]); setDamageError(''); setDamageSuccess(''); }}
               className={`flex-1 py-2 px-3 rounded-xl text-sm font-bold border-2 transition-colors ${
-                damageType === 'before' ? 'bg-[#1a1a1a] text-[#fcd616] border-[#1a1a1a]' : 'bg-white/50 text-[#1a1a1a] border-[#1a1a1a]/30'
+                damageType === 'before' ? 'bg-[#1a1a1a] text-[#E3B23C] border-[#1a1a1a]' : 'bg-white/50 text-[#1a1a1a] border-[#1a1a1a]/30'
               }`}
             >
               📦 Avant voyage
@@ -826,7 +826,7 @@ export default function EditBaggagePage() {
               type="button"
               onClick={() => { setDamageType('after'); setDamagePhotos([]); setDamageError(''); setDamageSuccess(''); }}
               className={`flex-1 py-2 px-3 rounded-xl text-sm font-bold border-2 transition-colors ${
-                damageType === 'after' ? 'bg-[#1a1a1a] text-[#fcd616] border-[#1a1a1a]' : 'bg-white/50 text-[#1a1a1a] border-[#1a1a1a]/30'
+                damageType === 'after' ? 'bg-[#1a1a1a] text-[#E3B23C] border-[#1a1a1a]' : 'bg-white/50 text-[#1a1a1a] border-[#1a1a1a]/30'
               }`}
             >
               📦 Après voyage
@@ -877,7 +877,7 @@ export default function EditBaggagePage() {
               onChange={(e) => setDamageDescription(e.target.value)}
               maxLength={1000}
               rows={3}
-              className="w-full bg-white border-2 border-[#1a1a1a] rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-[#0047d6]"
+              className="w-full bg-white border-2 border-[#1a1a1a] rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-[#111111]"
               style={{ color: INK }}
             />
           </div>
@@ -893,7 +893,7 @@ export default function EditBaggagePage() {
             type="button"
             onClick={handleSaveDamage}
             disabled={damageLoading || damagePhotos.length === 0 || !pinInput}
-            className="w-full flex items-center justify-center gap-2 bg-[#1a1a1a] hover:bg-black text-[#fcd616] py-2.5 px-4 rounded-xl font-bold transition-colors text-sm min-h-[44px] disabled:opacity-50"
+            className="w-full flex items-center justify-center gap-2 bg-[#1a1a1a] hover:bg-black text-[#E3B23C] py-2.5 px-4 rounded-xl font-bold transition-colors text-sm min-h-[44px] disabled:opacity-50"
           >
             {damageLoading ? (
               <>

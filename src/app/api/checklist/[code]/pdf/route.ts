@@ -11,7 +11,7 @@ import { rateLimit } from '@/lib/rate-limit';
  *
  * Headers:
  *   Content-Type: application/pdf
- *   Content-Disposition: inline; filename="QRBag-attestation-{code}.pdf"
+ *   Content-Disposition: inline; filename="QRTags-attestation-{code}.pdf"
  *   Cache-Control: no-store
  */
 export async function GET(
@@ -68,7 +68,7 @@ export async function GET(
 
     // ─── Build public URL for QR code in PDF ───
     const protocol = request.headers.get('x-forwarded-proto') || 'https';
-    const host = request.headers.get('host') || 'qrbags.com';
+    const host = request.headers.get('host') || 'qrtags.com';
     const publicUrl = buildPublicChecklistUrl(checklist.code, `${protocol}://${host}`);
 
     // ─── Generate PDF ───
@@ -87,7 +87,7 @@ export async function GET(
     });
 
     // ─── Stream as response ───
-    const filename = `QRBag-attestation-${checklist.code}.pdf`;
+    const filename = `QRTags-attestation-${checklist.code}.pdf`;
     return new NextResponse(new Uint8Array(pdfBuffer), {
       status: 200,
       headers: {

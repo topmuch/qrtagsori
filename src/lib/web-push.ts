@@ -12,7 +12,7 @@ const VAPID_PRIVATE_KEY = process.env.VAPID_PRIVATE_KEY || '9J8fPpwYlBSmE0eX0aGz
 
 // Configure web-push with VAPID details
 webpush.setVapidDetails(
-  'mailto:contact@qrbag.com',
+  'mailto:contact@qrtags.com',
   VAPID_PUBLIC_KEY,
   VAPID_PRIVATE_KEY
 );
@@ -57,7 +57,7 @@ export async function sendPushNotification(
       title,
       body,
       url,
-      tag: `qrbag-${reference}`,
+      tag: `qrtags-${reference}`,
     });
 
     for (const sub of matching) {

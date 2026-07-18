@@ -1,132 +1,98 @@
 {
   "common": {
-    "appName": "QRBag",
-    "tagline": "Never lose your luggage again"
+    "appName": "QRTags",
+    "tagline": "Lost & found item management for businesses",
+    "welcome": "Welcome",
+    "loading": "Loading...",
+    "back_home": "Back to home",
+    "start_activation": "Activate my tag",
+    "baggage_type": "Object type",
+    "voyageur_label": "Object",
+    "hajj_label": "Object",
+    "optional": "optional"
   },
   "landing": {
     "hero": {
-      "title": "Never lose your luggage again",
-      "subtitle": "A smart QR sticker to protect your belongings. No app. No battery. No GPS.",
-      "ctaHajj": "I am a pilgrim (Hajj)",
-      "ctaVoyageur": "I am a traveler"
+      "title": "Recover your lost items with one scan",
+      "subtitle": "QRTags — multi-business QR tags for hotels, schools, luggage lockers, car rentals and clinics. No app. No battery. No GPS.",
+      "ctaBusiness": "I am a business",
+      "ctaOwner": "I have a QRTags tag"
     },
     "howItWorks": {
-      "title": "How does it work?",
-      "hajj": {
-        "title": "Hajj Version",
-        "step1": "Agency gives you QR stickers",
-        "step2": "Activate your luggage in 30 seconds",
-        "step3": "If lost, the finder contacts you directly"
+      "title": "How it works",
+      "business": {
+        "title": "Business side",
+        "step1": "Superadmin generates batches of QR codes",
+        "step2": "Agency sells tags to its clients",
+        "step3": "Client activates their tag by scanning the QR"
       },
-      "voyageur": {
-        "title": "Traveler Version",
-        "step1": "Order your stickers online",
-        "step2": "Stick them and activate before departure",
-        "step3": "Peace of mind throughout your trip"
+      "owner": {
+        "title": "Owner side",
+        "step1": "You buy a QRTags tag from your business",
+        "step2": "You stick it on your item and activate it in 30 seconds",
+        "step3": "If lost, the finder contacts you via WhatsApp"
       }
     },
     "pricing": {
-      "title": "Simple and transparent pricing",
-      "voyageurSticker": {
-        "title": "Traveler Sticker",
-        "price": "€4",
-        "duration": "5 days",
-        "features": [
-          "1 luggage",
-          "Short-term protection",
-          "Ideal for weekend"
-        ]
-      },
-      "voyageurTag": {
-        "title": "Traveler Tag",
-        "price": "€7",
-        "duration": "1 year",
-        "features": [
-          "1 luggage",
-          "Long-term protection",
-          "Ideal for frequent travelers"
-        ]
-      },
-      "hajj": {
-        "title": "Hajj",
-        "price": "€10",
-        "duration": "2 months",
-        "features": [
-          "3 luggage included",
-          "1 cabin + 2 checked",
-          "Managed by agency"
-        ]
-      }
+      "title": "Business pricing",
+      "contact_sales": "Contact us for a quote"
     },
     "contact": {
       "title": "Contact us",
       "address": "Poissy, France",
       "phone": "+33 7 45 34 93 39",
-      "email": "contact@qrbag.com"
+      "email": "contact@qrtags.com"
     }
   },
   "scan": {
-    "title": "Baggage of {name}",
+    "title": "Object of {name}",
     "notFound": "Invalid QR code",
-    "notActivated": "This baggage has not been activated yet",
-    "expired": "This baggage has expired",
-    "blocked": "This baggage has been blocked",
-    "foundTitle": "Did you find this baggage?",
+    "notActivated": "This tag has not been activated yet",
+    "expired": "This tag has expired",
+    "blocked": "This tag has been blocked",
+    "foundTitle": "Did you find this object?",
     "foundSubtitle": "Help its owner recover it in a few clicks.",
-    "locationTitle": "Where is the baggage?",
+    "locationTitle": "Where is the object?",
     "shareLocation": "Share my location",
-    "yourName": "Your name (optional)",
+    "yourName": "Your first name (optional)",
     "message": "Message (optional)",
-    "sendButton": "Contact owner via WhatsApp",
+    "sendButton": "Contact the owner via WhatsApp",
     "locations": {
-      "jedda": "Jeddah",
-      "medina": "Medina",
-      "mecca": "Mecca",
       "airport": "Airport",
       "hotel": "Hotel",
       "trainStation": "Train station",
-      "other": "Other location"
+      "other": "Other place"
     },
-    "whatsappMessage": "Hello, I found your baggage! Here are the details:"
+    "whatsappMessage": "Hello, I found your object! Here are the details:"
   },
   "activate": {
-    "hajj": {
-      "title": "Hajj Baggage Activation",
-      "subtitle": "Activate your baggage in 30 seconds",
+    "generic": {
+      "title": "QRTags activation",
+      "subtitle": "Activate your tag in 30 seconds",
       "firstName": "First name",
       "lastName": "Last name",
-      "whatsapp": "WhatsApp number (group leader)",
-      "whatsappPlaceholder": "+221 78 485 82 26",
-      "submit": "Activate my baggage",
-      "success": "Your {count} baggage items have been successfully activated!"
-    },
-    "voyageur": {
-      "title": "Traveler Baggage Activation",
-      "subtitle": "Protect your luggage for your trip",
-      "firstName": "First name",
-      "lastName": "Last name",
-      "flightNumber": "Flight number",
-      "flightPlaceholder": "AF1234",
-      "destination": "Destination",
-      "destinationPlaceholder": "Paris, Tokyo, New York...",
       "whatsapp": "WhatsApp number",
       "whatsappPlaceholder": "+33 6 12 34 56 78",
-      "submit": "Activate my baggage",
-      "success": "Your baggage has been successfully activated!"
+      "submit": "Activate my tag",
+      "success": "Your tag has been activated successfully!"
     }
   },
   "dashboard": {
     "agency": {
       "title": "Agency Dashboard",
-      "total": "Total baggage",
+      "total": "Total tags",
       "scanned": "Scanned",
-      "pending": "Pending",
+      "pending": "In stock",
+      "sold": "Sold",
+      "activated": "Activated",
       "lost": "Lost",
       "found": "Found",
-      "searchPlaceholder": "Search for baggage...",
+      "searchPlaceholder": "Search a tag...",
       "declareLost": "Declare lost",
       "declareFound": "Declare found",
-      "addUser": "Add secondary leader"
+      "addUser": "Add a user",
+      "traceability": "QR Codes traceability",
+      "traceability_desc": "Track your tags status: in stock, sold, activated, lost, found."
     },
     "admin": {
       "title": "SuperAdmin",
@@ -135,10 +101,14 @@
       "users": "Users",
       "logs": "Scan logs",
       "settings": "Settings",
-      "pages": "CMS Pages"
+      "pages": "CMS pages"
     }
   },
   "status": {
+    "in_stock": "In stock",
+    "assigned_to_agency": "Assigned to agency",
+    "sold": "Sold",
+    "activated": "Activated",
     "pending_activation": "Pending",
     "active": "Active",
     "scanned": "Scanned",
@@ -147,61 +117,85 @@
     "blocked": "Blocked"
   },
   "finder": {
-    "ownerInfo": "Owner Information",
-    "fullName": "Full name",
-    "agency": "Agency",
-    "noAgency": "Unaffiliated",
-    "bagType": "Baggage type",
-    "tripDetails": "Travel Details",
-    "flightNum": "Flight N°",
-    "destination": "Destination",
-    "departureDate": "Departure date",
-    "notSet": "Not set",
-    "not_specified": "Not specified",
-    "shareGps": "SHARE MY GPS LOCATION",
+    "lost_title": "Object reported lost",
+    "found_title": "Object found",
+    "subtitle": "Reference: {ref}",
+    "your_position": "Your position",
+    "gps_pending": "GPS pending...",
+    "your_name": "Your name",
+    "your_name_placeholder": "Your first and last name",
+    "your_phone": "Your phone",
+    "manual_location": "Precise place (optional)",
     "locating": "Locating...",
-    "geoError": "Unable to access location. Please try again.",
-    "lost_badge": "BAGGAGE REPORTED LOST!",
-    "lost_description": "This baggage has been reported as lost. Please help find it.",
-    "found_description": "Thank you for helping locate this baggage.",
-    "gps_security_note": "Your location will be sent securely.",
-    "success_title": "Wahoo!"
+    "contact_whatsapp": "Contact owner via WhatsApp",
+    "open_maps": "Open in Google Maps",
+    "wame_only_notice": "The owner will be contacted via WhatsApp (click-to-chat). No other notification is sent.",
+    "fill_info": "Please fill in your name and phone",
+    "gps_fallback_toast": "GPS unavailable — you can enter a place manually",
+    "success_title": "Wow!",
+    "message_sent": "The owner has been notified via WhatsApp",
+    "already_contacted_title": "Owner already contacted",
+    "already_contacted_desc": "You already sent a message to the owner of this object. You may contact them again if needed.",
+    "not_specified": "Not specified"
+  },
+  "errors": {
+    "qr_not_valid": "Invalid QR code",
+    "qr_not_valid_desc": "This QR code does not exist or has been disabled.",
+    "baggage_blocked": "Tag blocked",
+    "baggage_blocked_desc": "This tag has been blocked by the administrator.",
+    "protection_expired": "Protection expired",
+    "protection_expired_desc": "The validity period of this tag has expired.",
+    "error_occurred": "An error occurred"
+  },
+  "inscrire": {
+    "subtitle": "Activate your QRTags tag"
+  },
+  "whatsapp": {
+    "found_message": "Hello {firstName}, I found your {type} (ref. {ref}). I am currently at this position: {address}. — Message sent via QRTags. Finder: {name}. Contact: {phone}.",
+    "location_not_shared": "Location not shared",
+    "gps_shared_label": "GPS location shared"
+  },
+  "agency_type": {
+    "label": "Business type",
+    "hotel": "Hotel",
+    "school": "Students / School",
+    "luggage_locker": "Luggage locker",
+    "car_rental": "Car rental",
+    "medical": "Medical / Clinic",
+    "generic": "Other / Generic"
   },
   "tracking_v2": {
     "tab_suivi": "Tracking",
     "tab_actions": "Actions",
     "tab_history": "History",
     "tab_contact": "Contact",
-    "bagage_localise": "📍 Baggage located",
+    "bagage_localise": "📍 Object located",
     "bagage_protege": "🛡️ Protected",
     "bagage_perdu": "🚨 Lost",
     "bagage_retrouve": "✅ Found",
     "mode_transit": "Transit mode",
     "qr_actif": "QR active",
     "qr_desactive": "QR disabled",
-    "modifier_profil": "Edit my travel profile",
+    "modifier_profil": "Edit my profile",
     "mon_pin": "🔐 My PIN code",
     "telecharger_pdf": "📄 Download history (PDF)",
-    "partager_suivi": "🔗 Share tracking (family)",
-    "proteger_bagage": "📷 Protect your baggage",
-    "vol_retard": "My flight is delayed",
-    "besoin_aide": "Need help? Assistance center",
-    "declarer_perdu": "Report my baggage as lost",
-    "retrouve": "I found my baggage",
-    "photos_protection": "📷 Protection photos",
-    "conseils": "💡 Tips",
+    "partager_suivi": "🔗 Share tracking",
+    "proteger_objet": "📷 Protect your object",
+    "besoin_aide": "Need help? Support center",
+    "declarer_perdu": "Declare my object lost",
+    "retrouve": "I found my object",
     "whatsapp": "WhatsApp",
     "appeler": "Call",
-    "support_qrbag": "Contact QRBag support",
+    "support_qrtags": "Contact QRTags support",
     "expire_bientot": "⏰ Your QR code expires",
     "dans_jours": "in {days} days",
     "demain": "tomorrow",
     "aujourdhui": "today",
     "installer_app": "📱 Install the app",
-    "mes_bagages": "My baggages",
-    "recovery_question": "⏰ Have you recovered your baggage?",
+    "mes_objets": "My objects",
+    "recovery_question": "⏰ Did you recover your object?",
     "oui_recupere": "✅ YES, recovered",
     "non_pas_encore": "❌ NO, not yet",
-    "contactez_qrbag": "⚠️ Contact QRBag"
+    "contactez_qrtags": "⚠️ Contact QRTags"
   }
 }

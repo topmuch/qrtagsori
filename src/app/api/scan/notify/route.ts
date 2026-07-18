@@ -242,7 +242,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
             minute: '2-digit',
           });
 
-          const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://qrbags.com';
+          const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://qrtags.com';
 
           const aiResult = await generateWhatsAppMessage({
             reference: baggage.reference,
@@ -294,7 +294,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
         minute: '2-digit',
       });
 
-      const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://qrbags.com';
+      const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://qrtags.com';
 
       // TRANSPORT-NOTIFY: Fallback statique adapté au mode de transport
       const transportEmoji = TRANSPORT_ICONS[transportMode];
@@ -311,7 +311,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       const transportLabel = transportLabels[transportMode]?.[fallbackLang] || 'vol';
 
       messageContent = [
-        `${transportEmoji} Alerte QRBag`,
+        `${transportEmoji} Alerte QRTags`,
         `Votre bagage ${baggage.reference} (${transportLabel}) a été scanné à ${location?.city || 'une localisation inconnue'} à ${scanTime}.`,
         `Suivez son statut : ${appUrl}/suivi/${baggage.reference}`,
       ].join('\n');
@@ -363,7 +363,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
           reference: baggage.reference,
           location: location?.city || baggage.destination || 'Inconnue',
           time: new Date().toLocaleTimeString(wakitLocale, { hour: '2-digit', minute: '2-digit' }),
-          link: `${process.env.NEXT_PUBLIC_APP_URL || 'https://qrbags.com'}/suivi/${baggage.reference}`,
+          link: `${process.env.NEXT_PUBLIC_APP_URL || 'https://qrtags.com'}/suivi/${baggage.reference}`,
           transport_mode: `${TRANSPORT_ICONS[transportMode]} ${transportLabelsWakit[transportMode]?.[wakitLang] || 'vol'}`,
         },
       });

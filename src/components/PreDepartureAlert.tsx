@@ -40,8 +40,8 @@ const CHECKLISTS: Record<string, { title: string; items: string[] }> = {
       'Imprimer ou télécharger le billet d\'avion',
       'Confirmer la réservation de l\'hébergement',
       'Préparer les médicaments et ordonnances',
-      'Faire une photo de votre bagage (pre-contrôle QRBag)',
-      'Activer votre QR code QRBag',
+      'Faire une photo de votre bagage (pre-contrôle QRTags)',
+      'Activer votre QR code QRTags',
     ],
   },
   soon: {
@@ -49,7 +49,7 @@ const CHECKLISTS: Record<string, { title: string; items: string[] }> = {
     items: [
       '✅ Passeport / Carte d\'identité',
       '✅ Billet d\'avion (papier ou mobile)',
-      '✅ QR code QRBag activé sur votre bagage',
+      '✅ QR code QRTags activé sur votre bagage',
       '✅ Liquides < 100ml en sachet transparent',
       '✅ Chargeur et batterie externe',
       '✅ Masque et lingettes désinfectantes',
@@ -61,7 +61,7 @@ const CHECKLISTS: Record<string, { title: string; items: string[] }> = {
     items: [
       '🚨 Êtes-vous arrivé(e) à l\'aéroport ?',
       '🚨 Enregistrez vos bagages au comptoir',
-      '🚨 Activez le mode "En transit" sur QRBag',
+      '🚨 Activez le mode "En transit" sur QRTags',
       '🚨 Vérifiez votre QR code est bien collé',
       '🚨 Passez le contrôle de sécurité',
       '🚨 Direction la porte d\'embarquement',
@@ -74,7 +74,7 @@ const CHECKLISTS: Record<string, { title: string; items: string[] }> = {
       '2. Vérifiez les autres tapis bagages',
       '3. Allez au comptoir "Bagages" de votre compagnie',
       '4. Déclarez votre bagage manquant (demandez un numéro PIR)',
-      '5. Déclarez votre bagage perdu sur QRBag',
+      '5. Déclarez votre bagage perdu sur QRTags',
       '6. Activez les alertes WhatsApp pour être notifié',
     ],
   },
@@ -198,7 +198,7 @@ export function PreDepartureAlert({ reference, departureDate, departureTime, has
       text: 'text-green-700',
       title: lang === 'fr' ? 'Préparation du voyage' : 'Trip preparation',
       message: lang === 'fr'
-        ? `✈️ Votre vol part dans ${formatCountdown()}. Pensez à préparer votre bagage et à activer votre QR code QRBag.`
+        ? `✈️ Votre vol part dans ${formatCountdown()}. Pensez à préparer votre bagage et à activer votre QR code QRTags.`
         : `✈️ Your flight departs in ${formatCountdown()}. Prepare your luggage and activate your QR code.`,
       icon: Plane,
       buttonText: lang === 'fr' ? '📋 Voir la checklist de préparation' : '📋 View preparation checklist',
@@ -224,7 +224,7 @@ export function PreDepartureAlert({ reference, departureDate, departureTime, has
       text: 'text-red-700',
       title: lang === 'fr' ? '🚨 URGENT — Vol imminent' : '🚨 URGENT — Flight soon',
       message: lang === 'fr'
-        ? `🚨 Votre vol part dans ${formatCountdown()} ! Êtes-vous à l'aéroport ? Activez le mode "En transit" sur QRBag.`
+        ? `🚨 Votre vol part dans ${formatCountdown()} ! Êtes-vous à l'aéroport ? Activez le mode "En transit" sur QRTags.`
         : `🚨 Your flight departs in ${formatCountdown()}! Are you at the airport? Activate "In transit" mode.`,
       icon: AlertTriangle,
       buttonText: lang === 'fr' ? '🚨 Checklist urgence aéroport' : '🚨 Airport emergency checklist',

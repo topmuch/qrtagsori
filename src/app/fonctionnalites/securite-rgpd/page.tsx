@@ -47,7 +47,7 @@ export default function SecuriteRGPDPage() {
                 <span className="bg-gradient-to-r from-blue-500 to-indigo-600 bg-clip-text text-transparent">RGPD</span>
               </h1>
               <p className="text-lg text-slate-500 leading-relaxed mb-8 max-w-lg">
-                Vos données personnelles sont chiffrées, protégées et conformes au Règlement Général sur la Protection des Données. QRBag ne stocke aucune donnée sensible publiquement et chaque information est traitée avec le plus haut niveau de sécurité.
+                Vos données personnelles sont chiffrées, protégées et conformes au Règlement Général sur la Protection des Données. QRTags ne stocke aucune donnée sensible publiquement et chaque information est traitée avec le plus haut niveau de sécurité.
               </p>
               <div className="flex flex-wrap gap-4">
                 <Link href="/devenir-partenaire" className="inline-flex items-center gap-2 px-7 py-3.5 rounded-full bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-semibold text-sm shadow-xl shadow-blue-500/20 hover:shadow-blue-500/30 transition-all duration-300 hover:scale-105">
@@ -65,7 +65,7 @@ export default function SecuriteRGPDPage() {
                 <div className="relative rounded-3xl overflow-hidden shadow-2xl shadow-slate-200/60 border border-slate-100">
                   <Image
                     src="/images/landing-v2/features/securise-rgpd.jpg"
-                    alt="Sécurisé RGPD - QRBag"
+                    alt="Sécurisé RGPD - QRTags"
                     width={600}
                     height={800}
                     className="w-full h-auto object-cover"
@@ -95,7 +95,7 @@ export default function SecuriteRGPDPage() {
         <div className="max-w-6xl mx-auto">
           <FadeIn className="text-center mb-16">
             <h2 className="text-3xl sm:text-4xl font-extrabold text-slate-900 mb-4 tracking-[-0.02em]">Nos engagements RGPD</h2>
-            <p className="text-lg text-slate-500 max-w-2xl mx-auto">Chaque aspect de QRBag est conçu pour respecter votre vie privée</p>
+            <p className="text-lg text-slate-500 max-w-2xl mx-auto">Chaque aspect de QRTags est conçu pour respecter votre vie privée</p>
           </FadeIn>
 
           <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">

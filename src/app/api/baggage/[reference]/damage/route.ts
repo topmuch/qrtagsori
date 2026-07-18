@@ -156,7 +156,7 @@ export async function POST(
       }
 
       report = await db.damageReport.update({
-        where: { reference: existing.reference },
+        where: { id: existing.id },
         data: {
           photos: JSON.stringify(photoPaths),
           description: validated.description || null,
@@ -165,7 +165,7 @@ export async function POST(
     } else {
       report = await db.damageReport.create({
         data: {
-          baggageId: baggage.reference,
+          baggageId: baggage.id,
           type: validated.type,
           photos: JSON.stringify(photoPaths),
           description: validated.description || null,
@@ -176,7 +176,7 @@ export async function POST(
     return NextResponse.json({
       success: true,
       report: {
-        reference: report.reference,
+        reference: report.id,
         type: report.type,
         photos: photoPaths,
         description: report.description,
@@ -191,7 +191,7 @@ export async function POST(
 
     if (error instanceof z.ZodError) {
       return NextResponse.json(
-        { error: 'Données invalides', details: error.errors },
+        { error: 'Données invalides', details: error.issues },
         { status: 400 }
       );
     }
@@ -212,7 +212,7 @@ export async function GET(
     const { reference } = await params;
     const baggage = await db.baggage.findUnique({
       where: { reference },
-      select: { reference: true },
+      select: { id: true, reference: true },
     });
 
     if (!baggage) {
@@ -223,13 +223,13 @@ export async function GET(
     }
 
     const reports = await db.damageReport.findMany({
-      where: { baggageId: baggage.reference },
+      where: { baggageId: baggage.id },
       orderBy: { createdAt: 'desc' },
     });
 
     return NextResponse.json({
       reports: reports.map((r) => ({
-        reference: r.reference,
+        id: r.id,
         type: r.type,
         photos: JSON.parse(r.photos) as string[],
         description: r.description,

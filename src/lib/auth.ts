@@ -26,8 +26,8 @@ export const authOptions: NextAuthOptions = {
         }
 
         const isPasswordValid = await bcrypt.compare(
-          credentials.password,
-          user.password
+          String(credentials.password),
+          String(user.password)
         );
 
         if (!isPasswordValid) {
@@ -72,7 +72,7 @@ export const authOptions: NextAuthOptions = {
     strategy: 'jwt',
     maxAge: 24 * 60 * 60 // 24 hours
   },
-  secret: process.env.NEXTAUTH_SECRET || 'qrbag-secret-key-change-in-production'
+  secret: process.env.NEXTAUTH_SECRET || 'qrtags-secret-key-change-in-production'
 };
 
 export const handler = NextAuth(authOptions);

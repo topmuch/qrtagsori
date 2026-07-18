@@ -75,3 +75,23 @@ Thumbs.dbdev-server-live.log
 prisma/db.sqlite
 prisma/qrbag.db
 download/
+
+# ═══ QRTags — additional ignores ═══
+# DB SQLite (ne pas committer la DB de dev)
+db/*.db
+db/*.db-journal
+*.sqlite
+*.sqlite3
+
+# Logs
+dev.log
+dev-server.log
+dev-server-live.log
+
+# Source logo (gros fichier, versionné via /public)
+public/logo-source-qrtags.jpeg
+
+# Variables d'env locales
+.env
+.env.local
+.env.*.local

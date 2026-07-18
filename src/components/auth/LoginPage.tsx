@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import QRTagsLogo from "@/components/qrtags/QRTagsLogo";
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
@@ -54,7 +55,7 @@ const CONFIGS: Record<LoginVariant, LoginConfig> = {
     type: 'agence',
     title: 'Bienvenue',
     subtitle: 'Connectez-vous à votre espace agence pour gérer vos bagages et QR codes',
-    demoEmail: 'agence@qrbag.com',
+    demoEmail: 'agence@qrtags.com',
     demoPassword: 'agence123',
     demoLabel: 'Agence',
     role: 'agency',
@@ -73,15 +74,15 @@ const CONFIGS: Record<LoginVariant, LoginConfig> = {
       { value: '99.9%', label: 'Disponibilité' },
     ],
     testimonials: [
-      { name: 'Fatou Diallo', role: 'Agence Hajj Express', text: 'QRBag a transformé notre gestion de bagages. Zéro perte depuis 2 ans.' },
+      { name: 'Fatou Diallo', role: 'Hôtel Le Royal', text: 'QRTags a transformé notre gestion dobjets perdus. Zéro objet perdu depuis 2 ans.' },
       { name: 'Moussa Koné', role: 'Voyages Sahel', text: 'Le dashboard est simple et efficace. Nos clients sont rassurés.' },
     ],
   },
   superadmin: {
     type: 'superadmin',
     title: 'Administration',
-    subtitle: 'Accès réservé aux administrateurs de la plateforme QRBag',
-    demoEmail: 'admin@qrbag.com',
+    subtitle: 'Accès réservé aux administrateurs de la plateforme QRTags',
+    demoEmail: 'admin@qrtags.com',
     demoPassword: 'admin123',
     demoLabel: 'SuperAdmin',
     role: 'superadmin',
@@ -100,7 +101,7 @@ const CONFIGS: Record<LoginVariant, LoginConfig> = {
       { value: '99.9%', label: 'Disponibilité' },
     ],
     testimonials: [
-      { name: 'Fatou Diallo', role: 'Agence Hajj Express', text: 'QRBag a transformé notre gestion de bagages. Zéro perte depuis 2 ans.' },
+      { name: 'Fatou Diallo', role: 'Hôtel Le Royal', text: 'QRTags a transformé notre gestion dobjets perdus. Zéro objet perdu depuis 2 ans.' },
       { name: 'Moussa Koné', role: 'Voyages Sahel', text: 'Le dashboard est simple et efficace. Nos clients sont rassurés.' },
     ],
   },
@@ -203,7 +204,7 @@ export default function LoginPage({ variant }: { variant: LoginVariant }) {
           <div className="flex items-center justify-between">
             <Link href="/" className="group">
               <div className="w-20 h-20 rounded-2xl bg-white/10 backdrop-blur-sm p-2 border border-white/10 flex items-center justify-center group-hover:bg-white/15 transition-all">
-                <img src="/logo.png" alt="QRBag" className="w-full h-full object-contain" />
+                <QRTagsLogo size="md" variant="light" />
               </div>
             </Link>
           </div>
@@ -285,7 +286,7 @@ export default function LoginPage({ variant }: { variant: LoginVariant }) {
           {/* Mobile Logo */}
           <div className="lg:hidden flex items-center justify-center mb-10">
             <div className="w-20 h-20 rounded-2xl bg-slate-900 p-2.5 flex items-center justify-center">
-              <img src="/logo.png" alt="QRBag" className="w-full h-full object-contain" />
+              <QRTagsLogo size="md" variant="light" />
             </div>
           </div>
 
@@ -337,7 +338,7 @@ export default function LoginPage({ variant }: { variant: LoginVariant }) {
                   onFocus={() => setFocusedField('email')}
                   onBlur={() => setFocusedField(null)}
                   className="w-full bg-transparent border-none outline-none text-slate-900 placeholder-slate-400 py-3.5 px-3 text-sm"
-                  placeholder={variant === 'agence' ? 'vous@agence.com' : 'admin@qrbag.com'}
+                  placeholder={variant === 'agence' ? 'vous@agence.com' : 'admin@qrtags.com'}
                   required
                 />
               </div>

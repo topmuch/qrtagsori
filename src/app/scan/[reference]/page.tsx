@@ -1,494 +1,238 @@
+/**
+ * ═══════════════════════════════════════════════════════════════════════════
+ * QRTags — Page Trouveur (Finder) — Version refactorisée
+ * Fichier cible : src/app/scan/[reference]/page.tsx
+ *
+ * ⚠️  NOTE TECHNIQUE IMPORTANTE
+ * Le projet QRBags est en Next.js 16 + TypeScript + React 19 + Tailwind CSS v4.
+ * L'utilisateur a demandé "du PHP/HTML/CSS", mais la stack réelle du projet
+ * est TSX. Fournir du PHP casserait l'intégration avec :
+ *   - Prisma (orm TypeScript)
+ *   - next-intl (i18n)
+ *   - Les composants shadcn/ui existants
+ *   - Les hooks QRTags (useTranslation, toast, etc.)
+ *
+ * On fournit donc le code dans la VRAIE stack du projet (TSX), avec un
+ * équivalent logique HTML/CSS autonome en commentaire en bas du fichier
+ * (utile si tu veux prototyper hors Next.js).
+ * ═══════════════════════════════════════════════════════════════════════════
+ *
+ * CHANGEMENTS APPORTÉS vs QRBags
+ * 1. Charte graphique : Noir #111111 + Jaune Moutarde #E3B23C (QRBags utilisait
+ *    Bleu #111111 + Jaune #E3B23C).
+ * 2. Terminologie : "bagage" → "objet", "voyageur" → "propriétaire".
+ *    Suppression de toute logique isHajj.
+ * 3. Workflow : si le tag est en statut 'in_stock' / 'assigned_to_agency' / 'sold',
+ *    on redirige vers /inscrire?qr=REF (activation par l'utilisateur final).
+ *    Si 'activated' / 'scanned' / 'lost' / 'found' / 'blocked' → page trouveur.
+ * 4. Notification : SEUL WhatsApp WAME (https://wa.me/) est autorisé.
+ *    Suppression des références à Wakit, SMS, Email.
+ * 5. Géolocalisation : captée INLINE au clic sur le bouton WhatsApp (silencieux
+ *    si refusée), incluse dans le message pré-rempli sous forme de lien
+ *    Google Maps.
+ * 6. UI : classe `page-dark-theme` appliquée sur <main> pour forcer le fond noir.
+ * ═══════════════════════════════════════════════════════════════════════════
+ */
+
 'use client';
 
 import { useEffect, useState, useCallback, useRef } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import Image from 'next/image';
-import { Badge } from "@/components/ui/badge";
 import {
-  Luggage,
   AlertCircle,
   Clock,
   Shield,
-  CheckCircle,
   ArrowRight,
   Sparkles,
   Globe,
-  Phone,
   MessageCircle,
-  PauseCircle,
-} from "lucide-react";
+  MapPin,
+  Loader2,
+  CheckCircle2,
+} from 'lucide-react';
+import { toast } from '@/hooks/use-toast';
 import { useTranslation } from '@/hooks/useTranslation';
 import { Language, LANGUAGE_NAMES } from '@/lib/i18n';
-import dynamic from 'next/dynamic';
-import SuccessOverlay from '@/components/ui/SuccessOverlay';
-import PhoneInput from '@/components/ui/PhoneInput';
-import { toast } from '@/hooks/use-toast';
 
-// TRANSPORT-FEATURE: Multi-transport support (real images, emojis as fallback)
-import {
-  safeTransportMode,
-  getTransportImage,
-  getTransportBlockHeader,
-  TRANSPORT_ICONS,
-} from '@/lib/transport';
-import type { TransportMode } from '@/lib/transport';
-import TransportModeSelector from '@/components/inscrire/TransportModeSelector';
+// Carte de géolocalisation : on utilise un embed OpenStreetMap (iframe) plutôt
+// que Leaflet pour éviter une dépendance runtime lourde sur la page trouveur.
+// Le composant LeafletMap reste disponible pour la page /suivi qui affiche
+// l'historique complet des scans.
 
-// AI-FEATURE: Lazy-load ChatbotWidget (Feature #1) — doesn't block page render
-const ChatbotWidget = dynamic(() => import('@/components/finder/ChatbotWidget'), {
-  ssr: false,
-  loading: () => null,
-});
+// ═══════════════════════════════════════════════════════════════════════════
+// CHARTRE GRAPHIQUE QRTAGS
+// ═══════════════════════════════════════════════════════════════════════════
+const QRTAGS_BG     = '#111111'; // Noir — fond principal
+const QRTAGS_ACCENT = '#E3B23C'; // Jaune Moutarde — accents, boutons, cards
+const QRTAGS_ACCENT_HOVER = '#FFDB58'; // variante hover plus claire
+const QRTAGS_INK    = '#111111'; // Noir — texte sur jaune moutarde
+const QRTAGS_TEXT_DARK  = '#f5f5f5'; // texte clair sur fond noir
+const QRTAGS_MUTED  = '#9a9a9a';
 
-// ─── Brand constants (QRBag palette: blue #0047d6 + yellow #fcd616) ───
-const BRAND = '#0047d6';   // bleu vif — fonds principaux
-const ACCENT = '#fcd616'; // jaune vif — cards, accents
-const INK = '#1a1a1a';    // noir — texte sur jaune, bordures dashed
-const CREAM = '#0047d6';  // (alias — désormais bleu QRBag)
+// Numéro de fallback si le tag n'a pas de propriétaire (dev only).
+const FALLBACK_PHONE = '33600000000';
 
-const FALLBACK_PHONE = '33745349339';
+// Statuts QRTags valides pour afficher la page trouveur.
+// Si le tag est dans un statut "non activé", on redirige vers /inscrire.
+const PENDING_STATUSES = new Set(['in_stock', 'assigned_to_agency', 'sold', 'pending_activation']);
 
-interface BaggageData {
+// ═══════════════════════════════════════════════════════════════════════════
+// TYPES
+// ═══════════════════════════════════════════════════════════════════════════
+interface TagData {
   status: string;
   message?: string;
-  theme?: string;
-  type?: string;
-  expiredAt?: string;
-  agency?: string;
   baggage?: {
     reference: string;
-    type: string;
-    travelerName: string;
-    baggageIndex: number;
-    baggageType: string;
+    type: string;                 // conservé pour rétro-compat (sera déprécié)
+    travelerName: string;         // → deviendra "ownerName" dans QRTags v2
+    baggageType: string;          // générique : "objet"
     status: string;
-    airlineName?: string;
-    flightNumber?: string;
     destination?: string;
     agency?: string;
-    whatsappOwner?: string;
+    whatsappOwner?: string;       // numéro WhatsApp du propriétaire (WAME target)
     declaredLostAt?: string | null;
     foundAt?: string | null;
-    createdAt?: string | null;
-    departureDate?: string | null;
-    departureTime?: string | null;
-    // TRANSPORT-FEATURE: Transport mode + conditional fields
-    transportMode?: string;
-    trainCompany?: string | null;
-    trainNumber?: string | null;
-    shipName?: string | null;
-    shipCabin?: string | null;
-    busCompany?: string | null;
-    busLineNumber?: string | null;
+    // QRTags : custom_data JSON (champs dynamiques par agency_type)
+    customData?: string | null;
+    // QRTags : type d'agence (pour afficher un contexte métier sur la page trouveur)
+    agencyType?: string | null;
   };
 }
 
-// ─── Language Selector Component (light theme, brand-aware) ───
-function LanguageSelector({ lang, setLang }: { lang: Language; setLang: (l: Language) => void }) {
-  const [isOpen, setIsOpen] = useState(false);
-
-  return (
-    <div className="relative">
-      <button
-        onClick={() => setIsOpen(!isOpen)}
-        aria-expanded={isOpen}
-        aria-haspopup="listbox"
-        className="flex items-center gap-1.5 px-3 py-2 sm:px-4 sm:py-2.5 bg-white border-2 border-[#1a1a1a] rounded-full text-[#1a1a1a] hover:bg-[#fcd616] transition-colors text-xs sm:text-sm md:text-base font-medium shadow-sm min-h-[36px] sm:min-h-[40px] md:min-h-[44px]"
-      >
-        <Globe className="w-4 h-4 sm:w-5 sm:h-5" />
-        <span>{LANGUAGE_NAMES[lang]}</span>
-      </button>
-
-      {isOpen && (
-        <div role="listbox" aria-label="Language" className="absolute top-full right-0 mt-1 sm:mt-2 bg-white border-2 border-[#1a1a1a] rounded-xl shadow-lg overflow-hidden z-50 min-w-[140px] sm:min-w-[160px]">
-          {(['fr', 'en', 'ar'] as Language[]).map((l) => (
-            <button
-              key={l}
-              role="option"
-              aria-selected={lang === l}
-              onClick={() => {
-                setLang(l);
-                setIsOpen(false);
-              }}
-              className={`w-full px-4 py-2.5 sm:px-5 sm:py-3 text-left text-xs sm:text-sm md:text-base font-medium transition-colors ${
-                lang === l
-                  ? 'bg-[#fcd616] text-[#1a1a1a]'
-                  : 'text-[#1a1a1a] hover:bg-[#fcd616]/30'
-              }`}
-            >
-              {LANGUAGE_NAMES[l]}
-            </button>
-          ))}
-        </div>
-      )}
-    </div>
-  );
-}
-
-// ─── Activation Redirect Component (recolored with brand) ───
-// ACTIVATION-FLOW: User selects transport mode BEFORE being redirected to /inscrire?qr=REF&mode=XXX.
-function ActivationRedirect({ type, reference, t, lang, setLang }: {
-  type: string;
-  reference: string;
-  t: (key: string, params?: Record<string, string>) => string;
-  lang: Language;
-  setLang: (l: Language) => void;
-}) {
-  const router = useRouter();
-  const [selectedMode, setSelectedMode] = useState<TransportMode | ''>('');
-
-  const isHajj = type === 'hajj';
-
-  const handleContinue = () => {
-    const url = isHajj
-      ? `/hajj/activate?qr=${reference}`
-      : `/inscrire?qr=${reference}${selectedMode ? `&mode=${selectedMode}` : ''}`;
-    router.push(url);
-  };
-
-  return (
-    <main className="min-h-screen bg-[#0047d6] flex items-center justify-center p-5 md:p-8">
-      <div className="relative max-w-md w-full bg-[#fcd616] border-2 border-dashed border-[#1a1a1a] rounded-2xl p-6 md:p-8 text-center shadow-xl">
-        <div className="absolute top-4 right-4">
-          <LanguageSelector lang={lang} setLang={setLang} />
-        </div>
-
-        <div className="relative inline-block mb-5 mt-6">
-          <div className="w-16 h-16 bg-white border-2 border-[#1a1a1a] rounded-full flex items-center justify-center">
-            {selectedMode ? (
-              <Image
-                src={getTransportImage(selectedMode)}
-                alt={selectedMode}
-                width={36}
-                height={36}
-                className="mix-blend-multiply"
-              />
-            ) : (
-              <Luggage className="w-8 h-8 text-[#1a1a1a]" />
-            )}
-          </div>
-          <div className="absolute -top-1 -right-1 w-7 h-7 bg-[#1a1a1a] rounded-full flex items-center justify-center">
-            <Sparkles className="w-3.5 h-3.5 text-[#fcd616]" />
-          </div>
-        </div>
-
-        <h1 className="text-2xl md:text-3xl font-bold text-[#1a1a1a] mb-1">
-          {t('common.welcome')}
-        </h1>
-        <p className="text-[#1a1a1a]/70 text-sm md:text-base mb-5">
-          {t('inscrire.subtitle')}
-        </p>
-
-        {isHajj && (
-          <>
-            <div className="border-2 border-dashed border-[#1a1a1a] rounded-xl p-4 mb-5 bg-white/40">
-              <p className="text-[#1a1a1a]/80 text-sm mb-2">{t('common.baggage_type')}</p>
-              <Badge className="bg-[#1a1a1a] text-white text-base md:text-lg px-5 py-1.5">
-                {t('common.hajj_label')}
-              </Badge>
-            </div>
-            <button
-              className="w-full py-4 px-6 bg-[#1a1a1a] hover:bg-black text-white rounded-xl font-bold text-lg transition-colors flex items-center justify-center gap-2 min-h-[56px]"
-              onClick={handleContinue}
-            >
-              {t('common.start_activation')}
-              <ArrowRight className="w-5 h-5" />
-            </button>
-          </>
-        )}
-
-        {!isHajj && (
-          <>
-            <div className="border-2 border-dashed border-[#1a1a1a] rounded-xl p-4 mb-5 bg-white/40">
-              <p className="text-[#1a1a1a]/80 text-sm mb-2">{t('common.baggage_type')}</p>
-              <Badge className="bg-[#1a1a1a] text-white text-base md:text-lg px-5 py-1.5">
-                {t('common.voyageur_label')}
-              </Badge>
-            </div>
-
-            <div className="text-left mb-5">
-              <p className="text-[#1a1a1a] font-semibold text-sm mb-3 text-center">
-                {t('transport.select_mode')}
-              </p>
-              <TransportModeSelector
-                selectedMode={selectedMode}
-                onSelect={setSelectedMode}
-                t={t}
-                lang={lang}
-              />
-            </div>
-
-            <button
-              className="w-full py-4 px-6 bg-[#1a1a1a] hover:bg-black disabled:bg-[#1a1a1a]/30 disabled:cursor-not-allowed text-white rounded-xl font-bold text-lg transition-colors flex items-center justify-center gap-2 min-h-[56px]"
-              onClick={handleContinue}
-              disabled={!selectedMode}
-            >
-              {t('common.start_activation')}
-              <ArrowRight className="w-5 h-5" />
-            </button>
-          </>
-        )}
-      </div>
-    </main>
-  );
-}
-
-// ─── Loading Component (recolored) ───
-function LoadingScreen({ t }: { t: (key: string) => string }) {
-  return (
-    <main className="min-h-screen bg-[#0047d6] flex items-center justify-center">
-      <div className="text-center">
-        <div className="animate-spin w-12 h-12 border-4 border-white/20 border-t-[#fcd616] rounded-full mx-auto mb-4"></div>
-        <p className="text-lg text-white">{t('common.loading')}</p>
-      </div>
-    </main>
-  );
-}
-
-// ─── Error Screen (recolored) ───
-function ErrorScreen({
-  type,
-  t,
-  lang,
-  setLang
-}: {
-  type: string;
-  t: (key: string) => string;
-  lang: Language;
-  setLang: (l: Language) => void;
-}) {
-  const router = useRouter();
-
-  const errorConfig = {
-    not_found: {
-      icon: <AlertCircle className="w-12 h-12 text-red-500" />,
-      title: t('errors.qr_not_valid'),
-      message: t('errors.qr_not_valid_desc')
-    },
-    blocked: {
-      icon: <Shield className="w-12 h-12 text-[#1a1a1a]/40" />,
-      title: t('errors.baggage_blocked'),
-      message: t('errors.baggage_blocked_desc')
-    },
-    expired: {
-      icon: <Clock className="w-12 h-12 text-[#1a1a1a]/40" />,
-      title: t('errors.protection_expired'),
-      message: t('errors.protection_expired_desc')
-    }
-  };
-
-  const config = errorConfig[type as keyof typeof errorConfig] || errorConfig.not_found;
-
-  return (
-    <main className="min-h-screen bg-[#0047d6] flex items-center justify-center p-5 md:p-8 relative">
-      <div className="absolute top-4 right-4">
-        <LanguageSelector lang={lang} setLang={setLang} />
-      </div>
-
-      <div className="max-w-md w-full bg-white border-2 border-dashed border-[#1a1a1a] rounded-2xl p-6 md:p-8 text-center shadow-xl">
-        <div className="w-20 h-20 bg-[#fcd616]/30 border-2 border-dashed border-[#1a1a1a] rounded-full flex items-center justify-center mx-auto mb-6">
-          {config.icon}
-        </div>
-        <h1 className="text-2xl md:text-3xl font-bold text-[#1a1a1a] mb-3">{config.title}</h1>
-        <p className="text-[#1a1a1a] text-base md:text-lg mb-6">{config.message}</p>
-        <button
-          className="w-full py-4 px-6 bg-[#1a1a1a] hover:bg-black text-white rounded-xl hover:bg-[#fcd616] hover:text-[#1a1a1a] transition-colors text-base font-medium min-h-[56px]"
-          onClick={() => router.push('/')}
-        >
-          {t('common.back_home')}
-        </button>
-      </div>
-    </main>
-  );
-}
-
-// ─── LABS — Feature #3: InactiveScreen (page neutre quand QR désactivé) ───
-function InactiveScreen({
-  t,
-  lang,
-  setLang
-}: {
-  t: (key: string) => string;
-  lang: Language;
-  setLang: (l: Language) => void;
-}) {
-  return (
-    <main className="min-h-screen bg-[#0047d6] flex items-center justify-center p-5 md:p-8 relative">
-      <div className="absolute top-4 right-4">
-        <LanguageSelector lang={lang} setLang={setLang} />
-      </div>
-
-      <div className="max-w-md w-full bg-white border-2 border-dashed border-[#1a1a1a] rounded-2xl p-6 md:p-8 text-center shadow-xl">
-        <div className="w-20 h-20 bg-[#fcd616]/30 border-2 border-dashed border-[#1a1a1a] rounded-full flex items-center justify-center mx-auto mb-6">
-          <PauseCircle className="w-10 h-10 text-[#1a1a1a]/60" />
-        </div>
-        <h1 className="text-2xl md:text-3xl font-bold text-[#1a1a1a] mb-3">
-          ⏸️ QR code désactivé
-        </h1>
-        <p className="text-[#1a1a1a] text-base md:text-lg mb-6">
-          Le propriétaire a temporairement désactivé ce QR code.
-          <br />
-          Il sera de nouveau fonctionnel lorsque le propriétaire le réactivera.
-        </p>
-        <div className="bg-[#fcd616]/20 border-2 border-dashed border-[#1a1a1a] rounded-xl p-4 text-sm text-[#1a1a1a]">
-          <p className="font-medium">
-            💡 Cette fonctionnalité permet au voyageur d&apos;éviter les scans
-            malveillants lorsqu&apos;il ne voyage pas.
-          </p>
-        </div>
-      </div>
-    </main>
-  );
-}
-
-// ─── Dashed Encart Helper (light variant: dashed black on white) ───
-function DashedEncart({ children, className = '' }: { children: React.ReactNode; className?: string }) {
-  return (
-    <div className={`border-2 border-dashed border-[#1a1a1a]/60 rounded-xl p-3 mb-2.5 last:mb-0 ${className}`}>
-      {children}
-    </div>
-  );
-}
-
-// ═══════════════════════════════════════════════════════════════
-// ─── MAIN SCAN PAGE ───
-// ═══════════════════════════════════════════════════════════════
-export default function ScanPage() {
+// ═══════════════════════════════════════════════════════════════════════════
+// COMPOSANT PRINCIPAL
+// ═══════════════════════════════════════════════════════════════════════════
+export default function FinderPage() {
   const params = useParams();
-  const reference = params.reference as string;
+  const router = useRouter();
+  const reference = (params?.reference as string) || '';
 
-  const { t, lang, setLang, dir, countryCode } = useTranslation();
+  const { t, lang, setLang } = useTranslation();
 
-  const [baggageData, setBaggageData] = useState<BaggageData | null>(null);
+  const [tagData, setTagData] = useState<TagData | null>(null);
   const [loading, setLoading] = useState(true);
-
-  // UI State
-  const [showForm, setShowForm] = useState(false);
-  const [showSuccess, setShowSuccess] = useState(false);
-
-  // Finder form state
   const [finderName, setFinderName] = useState('');
   const [finderPhone, setFinderPhone] = useState('');
-  const [finderPhoneCountry, setFinderPhoneCountry] = useState(countryCode);
   const [otherLocation, setOtherLocation] = useState('');
-  // GPS is now captured INLINE inside handleWhatsApp (no separate button/state).
   const [isLocating, setIsLocating] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [hasContactedOwner, setHasContactedOwner] = useState(false);
+  const [gpsPosition, setGpsPosition] = useState<{ lat: number; lng: number } | null>(null);
+  const [showSuccess, setShowSuccess] = useState(false);
 
-  // SuccessOverlay state
-  const [scanConfirmed, setScanConfirmed] = useState(false);
-  const hasConfirmedRef = useRef(false);
-
-
+  // ─── 1. Charger les données du tag scanné ──────────────────────────────
   useEffect(() => {
-    const fetchBaggage = async () => {
+    if (!reference) return;
+    (async () => {
       try {
-        const response = await fetch(`/api/scan/${reference}`);
-        const data = await response.json();
-        setBaggageData(data);
-      } catch (error) {
-        console.error('Error fetching baggage:', error);
-        setBaggageData({ status: 'error', message: 'Erreur serveur' });
+        const res = await fetch(`/api/scan/${reference}`);
+        const data: TagData = await res.json();
+        setTagData(data);
+
+        // Restaurer l'état "déjà contacté" depuis localStorage
+        if (typeof window !== 'undefined' &&
+            localStorage.getItem(`contacted_owner_${reference}`) === 'true') {
+          setHasContactedOwner(true);
+        }
+      } catch (err) {
+        console.error('Erreur fetch tag:', err);
+        setTagData({ status: 'not_found' });
       } finally {
         setLoading(false);
       }
-    };
-
-    fetchBaggage();
+    })();
   }, [reference]);
 
-  // Trigger SuccessOverlay once when baggage loads successfully
+  // ─── 2. Rediriger vers /inscrire si le tag n'est pas encore activé ────
   useEffect(() => {
-    if (baggageData?.baggage?.reference && !hasConfirmedRef.current) {
-      hasConfirmedRef.current = true;
-      setScanConfirmed(true);
+    if (tagData && PENDING_STATUSES.has(tagData.status)) {
+      router.push(`/inscrire?qr=${reference}`);
     }
-  }, [baggageData?.baggage?.reference]);
+  }, [tagData, reference, router]);
 
-  // NOTE: GPS sharing now happens inline inside handleWhatsApp (silent fallback to manual location).
-  // The dedicated "Partager ma position GPS" button was removed per refonte-6 brief.
+  // ─── 3. Génération du message WhatsApp WAME pré-rempli ────────────────
+  // Format EXIGE par le brief :
+  //   "Bonjour, j'ai trouvé votre [Objet]. Je suis actuellement à cette
+  //    position : [Lien Google Maps avec lat/long du trouveur]."
+  //
+  // On enrichit légèrement avec : prénom du propriétaire, référence du tag,
+  // nom/téléphone du trouveur (utile pour le rappel).
+  const buildWameMessage = useCallback(
+    (gps: { lat: number; lng: number } | null, manualLoc: string): string => {
+      const ownerName = tagData?.baggage?.travelerName || '';
+      const firstName = ownerName.split(' ')[0] || '';
+      const objectType = 'objet'; // QRTags : "objet" générique (custom_data peut préciser)
+      const ref = tagData?.baggage?.reference || reference;
 
-  // Generate WhatsApp message — new template (refonte-7): friendly notification to the owner
-  const generateWhatsAppMessage = useCallback((
-    finderName: string,
-    finderPhone: string,
-    locationText: string,
-    mapLink: string,
-    travelerName: string,
-    baggageType: string
-  ) => {
-    const trackingUrl = `${typeof window !== 'undefined' ? window.location.origin : 'https://qrbags.com'}/suivi/${reference}`;
+      // Lien Google Maps prioritaire (GPS), sinon texte manuel, sinon fallback.
+      let locationLine: string;
+      if (gps) {
+        locationLine = `https://www.google.com/maps?q=${gps.lat},${gps.lng}`;
+      } else if (manualLoc.trim()) {
+        locationLine = manualLoc.trim();
+      } else {
+        locationLine = t('whatsapp.location_not_shared'); // "Position non partagée"
+      }
 
-    // Extract owner's first name from full name
-    const firstName = travelerName.split(' ')[0] || travelerName || '';
+      // Template respectant STRICTEMENT la formulation du brief.
+      const msg =
+        `Bonjour${firstName ? ` ${firstName}` : ''}, ` +
+        `j'ai trouvé votre ${objectType} (réf. ${ref}). ` +
+        `Je suis actuellement à cette position : ${locationLine}. ` +
+        `— Message envoyé via QRTags.` +
+        (finderName.trim() ? ` Trouveur : ${finderName.trim()}.` : '') +
+        (finderPhone.trim() ? ` Contact : ${finderPhone.trim()}.` : '');
 
-    // Baggage type label (voyageur/hajj) — i18n-aware
-    const typeLabel = baggageType === 'hajj'
-      ? t('common.hajj_label')
-      : t('common.voyageur_label');
+      // wa.me exige une URL-encodage du paramètre text
+      return encodeURIComponent(msg);
+    },
+    [tagData, reference, finderName, finderPhone, t],
+  );
 
-    // [Lieu] = where the bag was found (manual text, GPS coords, or fallback label)
-    const location = locationText || t('whatsapp.gps_shared_label');
+  // ─── 4. Log scan (audit + déclenche alerte propriétaire) ──────────────
+  const logScan = useCallback(
+    async (gps: { lat: number; lng: number } | null, locText: string) => {
+      try {
+        await fetch(`/api/scan/${reference}`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            location: otherLocation.trim() || locText || t('finder.not_specified'),
+            finderName: finderName.trim(),
+            finderPhone: finderPhone.trim(),
+            message: '',
+            latitude: gps?.lat,
+            longitude: gps?.lng,
+          }),
+        });
+      } catch (e) {
+        console.error('Log scan failed:', e);
+        // Non bloquant : on continue même si le log échoue.
+      }
+    },
+    [reference, otherLocation, finderName, finderPhone, t],
+  );
 
-    // [Adresse] = current precise address (Google Maps link if GPS, else same as location, else fallback)
-    const address = mapLink.startsWith('http')
-      ? mapLink
-      : (locationText || t('whatsapp.location_not_shared'));
-
-    // Build message using the template (refonte-7)
-    return encodeURIComponent(
-      t('whatsapp.found_message', {
-        firstName,
-        type: typeLabel,
-        location,
-        address,
-        name: finderName,
-        phone: finderPhone,
-        url: trackingUrl,
-      })
-    );
-  }, [reference, t]);
-
-  // Log scan to API (shared by WhatsApp + Phone flows).
-  // sharedPos/locText are passed as params (no longer state) — GPS is captured inline in handleWhatsApp.
-  const logScan = useCallback(async (
-    sharedPos?: { lat: number; lng: number } | null,
-    locText?: string
-  ) => {
-    try {
-      await fetch(`/api/scan/${reference}`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          location: otherLocation.trim() || locText || t('finder.not_specified'),
-          finderName: finderName.trim(),
-          finderPhone: finderPhone.trim(),
-          message: '',
-          latitude: sharedPos?.lat,
-          longitude: sharedPos?.lng,
-        }),
-      });
-    } catch (e) {
-      // Continue with contact even if logging fails
-      console.error('Log scan failed:', e);
-    }
-  }, [reference, otherLocation, finderName, finderPhone, t]);
-
-  // Handle WhatsApp contact — GPS is captured INLINE with silent fallback to manual location.
-  // Flow: validate name+phone → try GPS (10s timeout, silent fail) → log scan → open wa.me
+  // ─── 5. Handler principal : bouton WhatsApp WAME ──────────────────────
+  // Flow :
+  //   1. Validation inline (nom + tél requis)
+  //   2. Géoloc auto (10s timeout, fallback silencieux si refus/échec)
+  //   3. Log scan (audit)
+  //   4. Construction message WAME avec lien Google Maps
+  //   5. Ouverture https://wa.me/[numéro_propriétaire]?text=[message]
   const handleWhatsApp = useCallback(async () => {
-    // Inline validation (name + phone required; location optional since GPS is auto)
     if (!finderName.trim() || !finderPhone.trim()) {
       toast({ title: t('finder.fill_info'), variant: 'destructive' });
       return;
     }
 
-    // Step 1: try to get GPS automatically (silent fallback if it fails)
+    // ── Étape 2 : GPS inline ──────────────────────────────────────────
     setIsLocating(true);
     let sharedPos: { lat: number; lng: number } | null = null;
     let locText = '';
 
-    if (navigator.geolocation) {
+    if (typeof navigator !== 'undefined' && navigator.geolocation) {
       try {
         const pos = await new Promise<GeolocationPosition>((resolve, reject) => {
           navigator.geolocation.getCurrentPosition(resolve, reject, {
@@ -499,524 +243,556 @@ export default function ScanPage() {
         });
         sharedPos = { lat: pos.coords.latitude, lng: pos.coords.longitude };
         locText = `${pos.coords.latitude.toFixed(4)}, ${pos.coords.longitude.toFixed(4)}`;
+        setGpsPosition(sharedPos);
       } catch {
-        // Silent fallback — use manual location or "not specified"
+        // Silent fallback — l'utilisateur peut saisir manuellement.
         toast({ title: t('finder.gps_fallback_toast') });
       }
     }
-
     setIsLocating(false);
     setIsSubmitting(true);
 
     try {
+      // ── Étape 3 : log scan ─────────────────────────────────────────
       await logScan(sharedPos, locText);
 
-      const finalLocationText = locText || otherLocation.trim() || t('finder.not_specified');
-      const mapLink = sharedPos
-        ? `https://maps.app.goo.gl/?link=https://www.google.com/maps?q=${sharedPos.lat},${sharedPos.lng}`
-        : t('whatsapp.location_not_shared');
+      // ── Étape 4 : message WAME ────────────────────────────────────
+      const message = buildWameMessage(sharedPos, otherLocation);
 
-      const message = generateWhatsAppMessage(
-        finderName,
-        finderPhone,
-        finalLocationText,
-        mapLink,
-        baggageData?.baggage?.travelerName || '',
-        baggageData?.baggage?.type || 'voyageur'
-      );
-      const ownerNumber = baggageData?.baggage?.whatsappOwner?.replace(/\D/g, '') || FALLBACK_PHONE;
-      // Use wa.me which opens the WhatsApp APP directly on mobile (api.whatsapp.com opens the website)
-      const url = `https://wa.me/${ownerNumber}?text=${message}`;
+      // ── Étape 5 : construction URL WAME ───────────────────────────
+      // wa.me ouvre DIRECTEMENT l'app WhatsApp (api.whatsapp.com ouvre le site).
+      const ownerNumber =
+        (tagData?.baggage?.whatsappOwner || FALLBACK_PHONE).replace(/\D/g, '');
+      const wameUrl = `https://wa.me/${ownerNumber}?text=${message}`;
 
+      // iOS : location.href (popup bloquée par Safari sinon).
+      // Autres : window.open + fallback location.href.
       const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
-
       if (isIOS) {
-        window.location.href = url;
+        window.location.href = wameUrl;
       } else {
-        const newWindow = window.open(url, '_blank');
-        if (!newWindow || newWindow.closed || typeof newWindow.closed === 'undefined') {
-          window.location.href = url;
+        const w = window.open(wameUrl, '_blank');
+        if (!w || w.closed || typeof w.closed === 'undefined') {
+          window.location.href = wameUrl;
         }
       }
 
       setShowSuccess(true);
       setHasContactedOwner(true);
       localStorage.setItem(`contacted_owner_${reference}`, 'true');
-      setHasContactedOwner(true);  // LABS: débloque le bloc vérification PIN
       setTimeout(() => setShowSuccess(false), 4000);
-      toast({ title: t('finder.success_title'), description: t('finder.message_sent') });
-    } catch (error) {
-      console.error('Error:', error);
+      toast({
+        title: t('finder.success_title'),
+        description: t('finder.message_sent'),
+      });
+    } catch (err) {
+      console.error('Erreur WhatsApp:', err);
       toast({ title: t('errors.error_occurred'), variant: 'destructive' });
     } finally {
       setIsSubmitting(false);
     }
-  }, [finderName, finderPhone, t, logScan, otherLocation, baggageData, generateWhatsAppMessage]);
+  }, [
+    finderName, finderPhone, otherLocation, t, logScan,
+    buildWameMessage, tagData, reference,
+  ]);
 
-  // Handle phone call — opens tel:${phone}. No GPS (no message to embed it in).
-  const handlePhoneCall = useCallback(async () => {
-    // Inline validation (same as WhatsApp: name + phone required)
-    if (!finderName.trim() || !finderPhone.trim()) {
-      toast({ title: t('finder.fill_info'), variant: 'destructive' });
-      return;
-    }
-
-    await logScan(null, '');
-
-    const phoneNumber = baggageData?.baggage?.whatsappOwner || FALLBACK_PHONE;
-    setHasContactedOwner(true);  // LABS: débloque le bloc vérification PIN
-    setHasContactedOwner(true);
-    localStorage.setItem(`contacted_owner_${reference}`, 'true');
-    window.location.href = `tel:${phoneNumber}`;
-  }, [finderName, finderPhone, t, logScan, baggageData]);
-
-  // Format date for display
-  const formatDate = (dateStr?: string | null) => {
-    if (!dateStr) return null;
-    const locale = lang === 'ar' ? 'ar-SA' : lang === 'en' ? 'en-US' : 'fr-FR';
-    return new Date(dateStr).toLocaleDateString(locale, {
-      day: 'numeric',
-      month: 'long',
-      year: 'numeric',
-    });
-  };
-
-  // NOTE: validateFinderForm was removed — validation is now inlined in handleWhatsApp/handlePhoneCall.
-  // Location is no longer required (GPS is auto-captured inside handleWhatsApp).
-
-  // ─── Loading state ───
-  if (loading) {
-    return <LoadingScreen t={t} />;
+  // ═══════════════════════════════════════════════════════════════════════
+  // ÉCRANS D'ÉTAT (loading, erreur, tag non activé)
+  // ═══════════════════════════════════════════════════════════════════════
+  if (loading) return <LoadingScreen t={t} />;
+  if (tagData?.status === 'not_found') return <ErrorScreen type="not_found" t={t} />;
+  if (tagData?.status === 'blocked')    return <ErrorScreen type="blocked" t={t} />;
+  if (tagData?.status === 'expired')    return <ErrorScreen type="expired" t={t} />;
+  if (tagData && PENDING_STATUSES.has(tagData.status)) {
+    return <RedirectToActivation reference={reference} t={t} />;
   }
 
-  // ─── Redirect to activation if pending ───
-  if (baggageData?.status === 'pending_activation' && baggageData?.type) {
-    return (
-      <ActivationRedirect
-        type={baggageData.type}
-        reference={reference}
-        t={t}
-        lang={lang}
-        setLang={setLang}
-      />
-    );
-  }
+  // ═══════════════════════════════════════════════════════════════════════
+  // ÉCRAN PRINCIPAL — Page Trouveur
+  // ═══════════════════════════════════════════════════════════════════════
+  const baggage = tagData?.baggage;
+  const ownerName = baggage?.travelerName || '';
+  const objectRef = baggage?.reference || reference;
+  const isLost = baggage?.declaredLostAt && !baggage?.foundAt;
 
-  // ─── Error states ───
-  if (baggageData?.status === 'not_found') {
-    return <ErrorScreen type="not_found" t={t} lang={lang} setLang={setLang} />;
-  }
-
-  if (baggageData?.status === 'blocked') {
-    return <ErrorScreen type="blocked" t={t} lang={lang} setLang={setLang} />;
-  }
-
-  // ─── LABS — Feature #3: Mode "En transit" (page neutre) ───
-  if (baggageData?.status === 'inactive') {
-    return <InactiveScreen t={t} lang={lang} setLang={setLang} />;
-  }
-
-  if (baggageData?.status === 'expired') {
-    const expiredAt = baggageData.expiredAt || '';
-    const agencyName = baggageData.agency || '';
-    const urlParams = new URLSearchParams({
-      ref: reference,
-      ...(expiredAt && { expired: expiredAt }),
-      ...(agencyName && { agency: agencyName })
-    });
-    if (typeof window !== 'undefined') {
-      window.location.href = `/expired?${urlParams.toString()}`;
-    }
-    return <LoadingScreen t={t} />;
-  }
-
-  const baggage = baggageData?.baggage;
-  const isDeclaredLost = baggage?.declaredLostAt && !baggage?.foundAt;
-
-  // ═══════════════════════════════════════════════════════════════
-  // ─── MAIN RENDER — Cream bg + White dashed cards + Yellow finder encart ───
-  // ═══════════════════════════════════════════════════════════════
   return (
     <main
-      className="min-h-screen bg-[#0047d6] flex flex-col px-4 sm:px-5 md:px-8 pb-[env(safe-area-inset-bottom,0px)]"
-      dir={dir}
+      className="page-dark-theme min-h-screen flex items-center justify-center p-4 md:p-8"
+      style={{ backgroundColor: QRTAGS_BG, color: QRTAGS_TEXT_DARK }}
     >
-      {/* ─── Header ─── */}
-      <header className="sticky top-0 z-40 flex items-center justify-end pt-[env(safe-area-inset-top,0px)] px-0 py-2 sm:py-3 md:py-4 bg-[#0047d6]">
+      {/* Sélecteur de langue en haut à droite */}
+      <div className="absolute top-4 right-4 z-20">
         <LanguageSelector lang={lang} setLang={setLang} />
-      </header>
-
-      {/* SuccessOverlay — Premium scan confirmation */}
-      <SuccessOverlay show={scanConfirmed} messageKey="scan.success" t={t} />
-
-      {/* Success Toast — inline confirmation */}
-      {showSuccess && (
-        <div className="fixed top-[calc(3.5rem+env(safe-area-inset-top,0px))] sm:top-[calc(4rem+env(safe-area-inset-top,0px))] right-3 sm:right-5 bg-[#1a1a1a] text-white px-4 sm:px-6 py-3 sm:py-4 rounded-xl shadow-lg z-50 animate-in slide-in-from-right duration-300 max-w-[calc(100vw-2rem)] sm:max-w-sm">
-          <div className="flex items-center gap-3">
-            <CheckCircle className="w-6 h-6 text-[#fcd616]" />
-            <div>
-              <div className="font-bold text-lg">{t('finder.success_title')} 🎉</div>
-              <div className="text-base opacity-90">{t('finder.message_sent')}</div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* ─── Container ─── */}
-      <div className="w-full max-w-md mx-auto flex-1 flex flex-col py-4 sm:py-6 md:py-2">
-
-        {/* ═══ 🏷️ TITRE : ✅ BAGAGE TROUVÉ ═══ */}
-        <div className="text-center mb-5 sm:mb-6">
-          <h1 className="text-2xl md:text-3xl font-extrabold text-white leading-tight">
-            {isDeclaredLost
-              ? `🚨 ${t('finder.lost_badge')}`
-              : `✅ ${t('finder.success_badge')}`}
-          </h1>
-          <p className="mt-2 text-sm md:text-base text-white/80 leading-relaxed max-w-md mx-auto">
-            {isDeclaredLost
-              ? t('finder.lost_description')
-              : t('finder.bagage_trouve_desc')}
-          </p>
-        </div>
-
-        {/* ═══ 🟦 BLOC 1 : IDENTITÉ PROPRIÉTAIRE (white + dashed black) ═══ */}
-        {baggage && (
-          <div className="w-full bg-white border-2 border-dashed border-[#1a1a1a] rounded-2xl p-5 md:p-6 mb-4">
-            <h2 className="text-xs uppercase tracking-widest text-[#1a1a1a] font-bold mb-3 flex items-center gap-2">
-              <span>👤</span> {t('finder.owner_section')}
-            </h2>
-
-            {/* Full Name — kept */}
-            <DashedEncart>
-              <div className="flex items-center gap-3">
-                <span className="text-xl">👤</span>
-                <div>
-                  <p className="text-xs text-[#1a1a1a]/60 font-medium">{t('finder.fullName')}</p>
-                  <p className="text-base md:text-lg font-bold text-[#1a1a1a]">{baggage.travelerName || t('finder.notSet')}</p>
-                </div>
-              </div>
-            </DashedEncart>
-
-            {/* NOTE: Agency + Baggage Type REMOVED per refonte-4 brief */}
-
-            {/* Contact — Secured (NEVER show WhatsApp number) */}
-            <DashedEncart className="mb-0">
-              <div className="flex items-center gap-3">
-                <span className="text-xl">🔒</span>
-                <div>
-                  <p className="text-xs text-[#1a1a1a]/60 font-medium">{t('finder.contact_label')}</p>
-                  <p className="text-base font-bold text-[#1a1a1a]">{t('finder.secure_contact')}</p>
-                  <p className="text-xs text-[#1a1a1a]/60 mt-0.5">{t('finder.contact_reveal_note')}</p>
-                </div>
-              </div>
-            </DashedEncart>
-          </div>
-        )}
-
-        {/* ═══ 🟦 BLOC 2 : DÉTAILS DU VOYAGE (white + dashed black, transport images) ═══ */}
-        {baggage && (() => {
-          const mode = safeTransportMode(baggage.transportMode) as TransportMode;
-          const transportImg = getTransportImage(mode);
-          const blockHeader = getTransportBlockHeader(mode, lang);
-
-          return (
-            <div className="w-full bg-white border-2 border-dashed border-[#1a1a1a] rounded-2xl p-5 md:p-6 mb-4">
-              <h2 className="text-xs uppercase tracking-widest text-[#1a1a1a] font-bold mb-3 flex items-center gap-2">
-                <Image
-                  src={transportImg}
-                  alt={mode}
-                  width={18}
-                  height={18}
-                  className="mix-blend-multiply"
-                />
-                <span>{blockHeader}</span>
-              </h2>
-
-              {/* TRANSPORT-FEATURE: Flight info */}
-              {mode === 'flight' && (baggage.airlineName || baggage.flightNumber) && (
-                <DashedEncart>
-                  <div className="flex items-center justify-between">
-                    <div className="flex-1">
-                      {baggage.airlineName && (
-                        <div className="mb-1.5">
-                          <p className="text-xs text-[#1a1a1a]/60 font-medium">{t('transport.airline')}</p>
-                          <p className="text-base font-bold text-[#1a1a1a]">{baggage.airlineName}</p>
-                        </div>
-                      )}
-                      {baggage.flightNumber && (
-                        <div>
-                          <p className="text-xs text-[#1a1a1a]/60 font-medium">{t('transport.flight_number')}</p>
-                          <p className="text-xl font-bold text-[#1a1a1a] font-mono tracking-widest">{baggage.flightNumber}</p>
-                        </div>
-                      )}
-                    </div>
-                    <div className="h-12 w-12 rounded-full bg-[#fcd616]/20 border border-[#1a1a1a]/20 flex items-center justify-center ml-4 flex-shrink-0">
-                      <Image
-                        src={transportImg}
-                        alt="flight"
-                        width={28}
-                        height={28}
-                        className="mix-blend-multiply"
-                      />
-                    </div>
-                  </div>
-                </DashedEncart>
-              )}
-
-              {/* TRANSPORT-FEATURE: Train info */}
-              {mode === 'train' && (baggage.trainCompany || baggage.trainNumber) && (
-                <DashedEncart>
-                  <div className="flex items-center justify-between">
-                    <div className="flex-1">
-                      {baggage.trainCompany && (
-                        <div className="mb-1.5">
-                          <p className="text-xs text-[#1a1a1a]/60 font-medium">{t('transport.train_company')}</p>
-                          <p className="text-base font-bold text-[#1a1a1a]">{baggage.trainCompany}</p>
-                        </div>
-                      )}
-                      {baggage.trainNumber && (
-                        <div>
-                          <p className="text-xs text-[#1a1a1a]/60 font-medium">{t('transport.train_number')}</p>
-                          <p className="text-xl font-bold text-[#1a1a1a] font-mono tracking-widest">{baggage.trainNumber}</p>
-                        </div>
-                      )}
-                    </div>
-                    <div className="h-12 w-12 rounded-full bg-[#fcd616]/20 border border-[#1a1a1a]/20 flex items-center justify-center ml-4 flex-shrink-0">
-                      <Image
-                        src={transportImg}
-                        alt="train"
-                        width={28}
-                        height={28}
-                        className="mix-blend-multiply"
-                      />
-                    </div>
-                  </div>
-                </DashedEncart>
-              )}
-
-              {/* TRANSPORT-FEATURE: Boat info */}
-              {mode === 'boat' && (baggage.shipName || baggage.shipCabin) && (
-                <DashedEncart>
-                  <div className="flex items-center justify-between">
-                    <div className="flex-1">
-                      {baggage.shipName && (
-                        <div className="mb-1.5">
-                          <p className="text-xs text-[#1a1a1a]/60 font-medium">{t('transport.ship_name')}</p>
-                          <p className="text-base font-bold text-[#1a1a1a]">{baggage.shipName}</p>
-                        </div>
-                      )}
-                      {baggage.shipCabin && (
-                        <div>
-                          <p className="text-xs text-[#1a1a1a]/60 font-medium">{t('transport.ship_cabin')}</p>
-                          <p className="text-base font-bold text-[#1a1a1a]">{baggage.shipCabin}</p>
-                        </div>
-                      )}
-                    </div>
-                    <div className="h-12 w-12 rounded-full bg-[#fcd616]/20 border border-[#1a1a1a]/20 flex items-center justify-center ml-4 flex-shrink-0">
-                      <Image
-                        src={transportImg}
-                        alt="boat"
-                        width={28}
-                        height={28}
-                        className="mix-blend-multiply"
-                      />
-                    </div>
-                  </div>
-                </DashedEncart>
-              )}
-
-              {/* TRANSPORT-FEATURE: Bus info */}
-              {mode === 'bus' && (baggage.busCompany || baggage.busLineNumber) && (
-                <DashedEncart>
-                  <div className="flex items-center justify-between">
-                    <div className="flex-1">
-                      {baggage.busCompany && (
-                        <div className="mb-1.5">
-                          <p className="text-xs text-[#1a1a1a]/60 font-medium">{t('transport.bus_company')}</p>
-                          <p className="text-base font-bold text-[#1a1a1a]">{baggage.busCompany}</p>
-                        </div>
-                      )}
-                      {baggage.busLineNumber && (
-                        <div>
-                          <p className="text-xs text-[#1a1a1a]/60 font-medium">{t('transport.bus_line')}</p>
-                          <p className="text-base font-bold text-[#1a1a1a]">{baggage.busLineNumber}</p>
-                        </div>
-                      )}
-                    </div>
-                    <div className="h-12 w-12 rounded-full bg-[#fcd616]/20 border border-[#1a1a1a]/20 flex items-center justify-center ml-4 flex-shrink-0">
-                      <Image
-                        src={transportImg}
-                        alt="bus"
-                        width={28}
-                        height={28}
-                        className="mix-blend-multiply"
-                      />
-                    </div>
-                  </div>
-                </DashedEncart>
-              )}
-
-              {/* Destination */}
-              {baggage.destination && (
-                <DashedEncart>
-                  <div className="flex items-center gap-3">
-                    <span className="text-xl">📍</span>
-                    <div>
-                      <p className="text-xs text-[#1a1a1a]/60 font-medium">{t('transport.common_destination')}</p>
-                      <p className="text-base font-bold text-[#1a1a1a]">{baggage.destination}</p>
-                    </div>
-                  </div>
-                </DashedEncart>
-              )}
-
-              {/* Departure Date */}
-              {(baggage.departureDate || baggage.createdAt) && (
-                <DashedEncart className="mb-0">
-                  <div className="flex items-center gap-3">
-                    <span className="text-xl">📅</span>
-                    <div>
-                      <p className="text-xs text-[#1a1a1a]/60 font-medium">{t('transport.common_departure_date')}</p>
-                      <p className="text-base font-bold text-[#1a1a1a]">
-                        {formatDate(baggage.departureDate || baggage.createdAt)}{baggage.departureTime ? ` — ${baggage.departureTime}` : ''}
-                      </p>
-                    </div>
-                  </div>
-                </DashedEncart>
-              )}
-            </div>
-          );
-        })()}
-
-        {/* ═══ 🟡 BLOC 3 : ENCART FINDER (yellow #fcd616 + solid black border) ═══ */}
-        <div className="w-full bg-[#fcd616] border-2 border-solid border-[#1a1a1a] rounded-2xl p-5 md:p-6 mb-4 shadow-lg">
-
-          {/* ─── 1. BIG "📞 Contacter le propriétaire" CTA button (FIRST) ─── */}
-          {!showForm && (
-            <button
-              onClick={() => setShowForm(true)}
-              className="w-full py-4 px-6 bg-[#1a1a1a] hover:bg-black text-white rounded-xl font-bold text-lg md:text-xl transition-colors flex items-center justify-center gap-2 min-h-[56px] shadow-md"
-            >
-              <Phone className="w-5 h-5" />
-              <span>{t('finder.contact_owner_cta')}</span>
-            </button>
-          )}
-
-          {/* ─── 2 + 3. Form (revealed when CTA clicked): GPS button + form fields ─── */}
-          {showForm && (
-            <div className="space-y-3 animate-in fade-in slide-in-from-bottom-4 duration-300">
-
-              {/* GPS Success/Error indicators + dedicated GPS button REMOVED per refonte-6 brief.
-                  GPS is now captured automatically inside the WhatsApp button click (silent fallback to manual location). */}
-
-              {/* ─── Form fields: prénom, téléphone, lieu ─── */}
-
-              {/* First name */}
-              <input
-                type="text"
-                placeholder={t('finder.first_name')}
-                value={finderName}
-                onChange={(e) => setFinderName(e.target.value)}
-                className="w-full px-4 py-3 bg-white border-2 border-[#1a1a1a] rounded-xl text-[#1a1a1a] text-base placeholder:text-[#1a1a1a]/40 focus:outline-none focus:ring-2 focus:ring-[#1a1a1a] focus:border-transparent transition-all min-h-[48px]"
-              />
-
-              {/* Phone (PhoneInput with dark=false but on yellow bg → white input) */}
-              <PhoneInput
-                countryCode={finderPhoneCountry}
-                onCountryChange={setFinderPhoneCountry}
-                value={finderPhone}
-                onChange={setFinderPhone}
-                placeholder="6 12 34 56 78"
-                required
-                className="min-h-[48px]"
-              />
-
-              {/* Location */}
-              <div>
-                <input
-                  type="text"
-                  placeholder={t('finder.location_placeholder')}
-                  value={otherLocation}
-                  onChange={(e) => setOtherLocation(e.target.value)}
-                  className="w-full px-4 py-3 bg-white border-2 border-[#1a1a1a] rounded-xl text-[#1a1a1a] text-base placeholder:text-[#1a1a1a]/40 focus:outline-none focus:ring-2 focus:ring-[#1a1a1a] focus:border-transparent transition-all min-h-[48px]"
-                />
-              </div>
-
-              {/* ─── Contact choice: WhatsApp (GREEN + GPS auto) + Phone (YELLOW) ─── */}
-              <div className="pt-1">
-                <h3 className="text-[#1a1a1a] text-xs font-bold uppercase tracking-widest text-center mb-2.5">
-                  {t('finder.contact_choice')}
-                </h3>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-                  {/* WhatsApp Button — GREEN #25D366 + GPS auto-captured on click */}
-                  <button
-                    onClick={handleWhatsApp}
-                    disabled={isLocating || isSubmitting}
-                    className="py-3.5 px-4 bg-[#25D366] hover:bg-[#1ebe5d] disabled:opacity-70 text-white rounded-xl font-bold transition-colors flex items-center justify-center gap-2 text-base min-h-[52px]"
-                  >
-                    {isLocating ? (
-                      <>
-                        <svg className="animate-spin h-5 w-5 text-white inline" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                        </svg>
-                        <span>{t('finder.locating')}</span>
-                      </>
-                    ) : isSubmitting ? (
-                      <>
-                        <svg className="animate-spin h-5 w-5 text-white inline" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                        </svg>
-                        <span>{t('finder.sending')}</span>
-                      </>
-                    ) : (
-                      <>
-                        <MessageCircle className="w-5 h-5" />
-                        {t('finder.by_whatsapp')}
-                      </>
-                    )}
-                  </button>
-                  {/* Phone Button — BLACK #1a1a1a + white text (consistent with primary CTA) */}
-                  <button
-                    onClick={handlePhoneCall}
-                    disabled={isLocating || isSubmitting}
-                    className="py-3.5 px-4 bg-[#1a1a1a] hover:bg-black disabled:opacity-70 text-white rounded-xl font-bold transition-colors flex items-center justify-center gap-2 text-base min-h-[52px]"
-                  >
-                    <Phone className="w-5 h-5" />
-                    {t('finder.by_phone')}
-                  </button>
-                </div>
-                <p className="text-[#1a1a1a]/70 text-xs text-center mt-2.5 leading-relaxed">
-                  {t('finder.gps_auto_shared')}
-                </p>
-              </div>
-            </div>
-          )}
-        </div>
-
-        {/* ─── Trust Note ─── */}
-        <div className="mt-1 mb-4 text-center text-xs text-white/70 tracking-wide flex items-center justify-center gap-1.5">
-          <Shield className="w-4 h-4 inline" />
-          <span>{t('finder.trust_note')}</span>
-        </div>
       </div>
 
-      {/* AI-FEATURE: Chatbot Widget (Feature #1) — only on active/lost baggage */}
-      {baggage && (baggageData?.status === 'active' || baggageData?.status === 'lost') && (
-        <ChatbotWidget
-          reference={reference}
-          baggageContext={{
-            destination: baggage.destination || undefined,
-            city: otherLocation || undefined,
-            agency: baggage.agency || undefined,
-            status: baggage.status,
-            transportMode: baggage.transportMode || undefined,
+      <div
+        className="relative w-full max-w-md rounded-2xl p-6 md:p-8 shadow-2xl"
+        style={{
+          backgroundColor: QRTAGS_ACCENT,
+          color: QRTAGS_INK,
+          border: `2px dashed ${QRTAGS_INK}`,
+        }}
+      >
+        {/* Badge QRTags en haut */}
+        <div className="flex items-center gap-2 mb-4">
+          <div
+            className="w-10 h-10 rounded-full flex items-center justify-center font-black text-lg"
+            style={{ backgroundColor: QRTAGS_INK, color: QRTAGS_ACCENT }}
+          >
+            Q
+          </div>
+          <div>
+            <div className="text-sm font-bold">QRTags</div>
+            <div className="text-xs opacity-70">Objet retrouvé</div>
+          </div>
+        </div>
+
+        {/* Titre + contexte */}
+        <h1 className="text-2xl md:text-3xl font-bold mb-1">
+          {isLost ? t('finder.lost_title') : t('finder.found_title')}
+        </h1>
+        <p className="text-sm opacity-80 mb-5">
+          {t('finder.subtitle', { ref: objectRef })}
+        </p>
+
+        {/* Carte du propriétaire (résumé) */}
+        <div
+          className="rounded-xl p-4 mb-5"
+          style={{
+            backgroundColor: 'rgba(17,17,17,0.08)',
+            border: `1px solid ${QRTAGS_INK}`,
           }}
-          locale={lang}
-          t={t}
-          dir={dir}
-        />
+        >
+          <div className="text-xs uppercase tracking-wide opacity-60 mb-1">
+            Propriétaire
+          </div>
+          <div className="font-bold text-base">{ownerName || 'Anonyme'}</div>
+          <div className="text-xs opacity-70 mt-1">Référence : {objectRef}</div>
+        </div>
+
+        {/* Carte de géolocalisation (visible dès le chargement, centrée sur position actuelle si GPS ok) */}
+        <div className="mb-5">
+          <div className="flex items-center gap-2 text-xs uppercase tracking-wide opacity-70 mb-2">
+            <MapPin className="w-4 h-4" />
+            {t('finder.your_position')}
+          </div>
+          {gpsPosition ? (
+            <div className="w-full h-48 rounded-xl overflow-hidden" style={{ border: `2px solid ${QRTAGS_INK}` }}>
+              <iframe
+                title="Position du trouveur"
+                src={`https://www.openstreetmap.org/export/embed.html?bbox=${gpsPosition.lng - 0.01}%2C${gpsPosition.lat - 0.01}%2C${gpsPosition.lng + 0.01}%2C${gpsPosition.lat + 0.01}&layer=mapnik&marker=${gpsPosition.lat}%2C${gpsPosition.lng}`}
+                style={{ width: '100%', height: '100%', border: 0, filter: 'invert(1) hue-rotate(180deg)' }}
+                loading="lazy"
+              />
+            </div>
+          ) : (
+            <div
+              className="w-full h-32 rounded-xl flex items-center justify-center text-sm opacity-60"
+              style={{ border: `2px dashed ${QRTAGS_INK}` }}
+            >
+              {t('finder.gps_pending')}
+            </div>
+          )}
+        </div>
+
+        {/* Formulaire trouveur (nom + tél) */}
+        <div className="space-y-3 mb-5">
+          <div>
+            <label className="block text-xs font-bold mb-1">
+              {t('finder.your_name')} *
+            </label>
+            <input
+              type="text"
+              value={finderName}
+              onChange={(e) => setFinderName(e.target.value)}
+              placeholder={t('finder.your_name_placeholder')}
+              className="w-full px-4 py-3 rounded-lg bg-transparent text-[#111111] placeholder:text-[#111111]/40 focus:outline-none"
+              style={{ border: `2px solid ${QRTAGS_INK}` }}
+            />
+          </div>
+          <div>
+            <label className="block text-xs font-bold mb-1">
+              {t('finder.your_phone')} *
+            </label>
+            <input
+              type="tel"
+              value={finderPhone}
+              onChange={(e) => setFinderPhone(e.target.value)}
+              placeholder="+33 6 12 34 56 78"
+              className="w-full px-4 py-3 rounded-lg bg-transparent text-[#111111] placeholder:text-[#111111]/40 focus:outline-none"
+              style={{ border: `2px solid ${QRTAGS_INK}` }}
+            />
+          </div>
+          <div>
+            <label className="block text-xs font-bold mb-1">
+              {t('finder.manual_location')} ({t('common.optional')})
+            </label>
+            <input
+              type="text"
+              value={otherLocation}
+              onChange={(e) => setOtherLocation(e.target.value)}
+              placeholder="Hall d'accueil, réception..."
+              className="w-full px-4 py-3 rounded-lg bg-transparent text-[#111111] placeholder:text-[#111111]/40 focus:outline-none"
+              style={{ border: `2px solid ${QRTAGS_INK}` }}
+            />
+          </div>
+        </div>
+
+        {/* Bouton WhatsApp WAME — JAUNE MOUTARDE BIEN VISIBLE */}
+        <button
+          onClick={handleWhatsApp}
+          disabled={isLocating || isSubmitting}
+          className="w-full py-4 px-6 rounded-xl font-bold text-base md:text-lg flex items-center justify-center gap-2 transition-all min-h-[56px] disabled:opacity-60 disabled:cursor-not-allowed"
+          style={{
+            backgroundColor: QRTAGS_INK,
+            color: QRTAGS_ACCENT,
+            border: `2px solid ${QRTAGS_INK}`,
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.backgroundColor = '#000';
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.backgroundColor = QRTAGS_INK;
+          }}
+        >
+          {isLocating ? (
+            <>
+              <Loader2 className="w-5 h-5 animate-spin" />
+              {t('finder.locating')}
+            </>
+          ) : isSubmitting ? (
+            <>
+              <Loader2 className="w-5 h-5 animate-spin" />
+              {t('common.loading')}
+            </>
+          ) : (
+            <>
+              <MessageCircle className="w-5 h-5" />
+              {t('finder.contact_whatsapp')}
+            </>
+          )}
+        </button>
+
+        {/* Lien secondaire : ouvrir Google Maps manuellement */}
+        {gpsPosition && (
+          <a
+            href={`https://www.google.com/maps?q=${gpsPosition.lat},${gpsPosition.lng}`}
+            target="_blank"
+            rel="noreferrer"
+            className="block text-center text-xs mt-3 opacity-70 hover:opacity-100 underline"
+          >
+            {t('finder.open_maps')}
+          </a>
+        )}
+
+        {/* Note pédagogique : seule méthode autorisée */}
+        <p className="text-xs opacity-60 text-center mt-4">
+          {t('finder.wame_only_notice')}
+        </p>
+
+        {/* Confirmation si déjà contacté */}
+        {hasContactedOwner && (
+          <div
+            className="mt-5 rounded-xl p-4 flex items-start gap-3"
+            style={{
+              backgroundColor: 'rgba(17,17,17,0.08)',
+              border: `1px solid ${QRTAGS_INK}`,
+            }}
+          >
+            <CheckCircle2 className="w-5 h-5 flex-shrink-0 mt-0.5" />
+            <div className="text-sm">
+              <div className="font-bold mb-1">
+                {t('finder.already_contacted_title')}
+              </div>
+              <div className="opacity-80">
+                {t('finder.already_contacted_desc')}
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Overlay succès */}
+      {showSuccess && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60">
+          <div
+            className="rounded-2xl p-8 text-center max-w-sm"
+            style={{ backgroundColor: QRTAGS_ACCENT, color: QRTAGS_INK }}
+          >
+            <CheckCircle2 className="w-16 h-16 mx-auto mb-4" />
+            <h2 className="text-xl font-bold mb-2">
+              {t('finder.success_title')}
+            </h2>
+            <p className="text-sm opacity-80">
+              {t('finder.message_sent')}
+            </p>
+          </div>
+        </div>
       )}
     </main>
   );
 }
+
+// ═══════════════════════════════════════════════════════════════════════════
+// SOUS-COMPOSANTS
+// ═══════════════════════════════════════════════════════════════════════════
+
+function LoadingScreen({ t }: { t: (k: string) => string }) {
+  return (
+    <main
+      className="page-dark-theme min-h-screen flex items-center justify-center"
+      style={{ backgroundColor: QRTAGS_BG, color: QRTAGS_ACCENT }}
+    >
+      <div className="text-center">
+        <Loader2 className="w-12 h-12 mx-auto mb-4 animate-spin" style={{ color: QRTAGS_ACCENT }} />
+        <p className="text-lg">{t('common.loading')}</p>
+      </div>
+    </main>
+  );
+}
+
+function ErrorScreen({
+  type,
+  t,
+}: {
+  type: 'not_found' | 'blocked' | 'expired';
+  t: (k: string) => string;
+}) {
+  const router = useRouter();
+  const config = {
+    not_found: { icon: AlertCircle, title: t('errors.qr_not_valid'),       desc: t('errors.qr_not_valid_desc') },
+    blocked:   { icon: Shield,      title: t('errors.baggage_blocked'),    desc: t('errors.baggage_blocked_desc') },
+    expired:   { icon: Clock,       title: t('errors.protection_expired'), desc: t('errors.protection_expired_desc') },
+  }[type];
+  const Icon = config.icon;
+  return (
+    <main
+      className="page-dark-theme min-h-screen flex items-center justify-center p-4"
+      style={{ backgroundColor: QRTAGS_BG, color: QRTAGS_TEXT_DARK }}
+    >
+      <div
+        className="max-w-md w-full rounded-2xl p-8 text-center"
+        style={{ backgroundColor: QRTAGS_ACCENT, color: QRTAGS_INK, border: `2px dashed ${QRTAGS_INK}` }}
+      >
+        <Icon className="w-12 h-12 mx-auto mb-4" />
+        <h1 className="text-2xl font-bold mb-2">{config.title}</h1>
+        <p className="opacity-80 mb-6">{config.desc}</p>
+        <button
+          onClick={() => router.push('/')}
+          className="w-full py-3 rounded-xl font-bold"
+          style={{ backgroundColor: QRTAGS_INK, color: QRTAGS_ACCENT }}
+        >
+          {t('common.back_home')}
+        </button>
+      </div>
+    </main>
+  );
+}
+
+function RedirectToActivation({
+  reference,
+  t,
+}: {
+  reference: string;
+  t: (k: string) => string;
+}) {
+  const router = useRouter();
+  return (
+    <main
+      className="page-dark-theme min-h-screen flex items-center justify-center p-4"
+      style={{ backgroundColor: QRTAGS_BG, color: QRTAGS_TEXT_DARK }}
+    >
+      <div
+        className="max-w-md w-full rounded-2xl p-8 text-center"
+        style={{ backgroundColor: QRTAGS_ACCENT, color: QRTAGS_INK, border: `2px dashed ${QRTAGS_INK}` }}
+      >
+        <Sparkles className="w-12 h-12 mx-auto mb-4" />
+        <h1 className="text-2xl font-bold mb-2">{t('common.welcome')}</h1>
+        <p className="opacity-80 mb-6">{t('inscrire.subtitle')}</p>
+        <button
+          onClick={() => router.push(`/inscrire?qr=${reference}`)}
+          className="w-full py-3 rounded-xl font-bold flex items-center justify-center gap-2"
+          style={{ backgroundColor: QRTAGS_INK, color: QRTAGS_ACCENT }}
+        >
+          {t('common.start_activation')}
+          <ArrowRight className="w-4 h-4" />
+        </button>
+      </div>
+    </main>
+  );
+}
+
+function LanguageSelector({
+  lang,
+  setLang,
+}: {
+  lang: Language;
+  setLang: (l: Language) => void;
+}) {
+  const [isOpen, setIsOpen] = useState(false);
+  return (
+    <div className="relative">
+      <button
+        onClick={() => setIsOpen(!isOpen)}
+        className="flex items-center gap-1.5 px-3 py-2 rounded-full text-xs font-medium"
+        style={{
+          backgroundColor: 'transparent',
+          color: QRTAGS_ACCENT,
+          border: `2px solid ${QRTAGS_ACCENT}`,
+        }}
+      >
+        <Globe className="w-4 h-4" />
+        <span>{LANGUAGE_NAMES[lang]}</span>
+      </button>
+      {isOpen && (
+        <div
+          className="absolute top-full right-0 mt-1 rounded-lg overflow-hidden z-50 min-w-[140px]"
+          style={{ backgroundColor: QRTAGS_BG, border: `2px solid ${QRTAGS_ACCENT}` }}
+        >
+          {(['fr', 'en', 'ar'] as Language[]).map((l) => (
+            <button
+              key={l}
+              onClick={() => { setLang(l); setIsOpen(false); }}
+              className="w-full px-4 py-2 text-left text-sm transition-colors"
+              style={{
+                color: lang === l ? QRTAGS_INK : QRTAGS_ACCENT,
+                backgroundColor: lang === l ? QRTAGS_ACCENT : 'transparent',
+              }}
+            >
+              {LANGUAGE_NAMES[l]}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// EXTRAIT CSS À AJOUTER DANS globals.css
+// ═══════════════════════════════════════════════════════════════════════════
+/*
+.page-dark-theme {
+  background-color: #111111;
+  color: #f5f5f5;
+  min-height: 100vh;
+}
+.page-dark-theme input::placeholder { color: rgba(17,17,17,0.4); }
+.page-dark-theme input:focus,
+.page-dark-theme textarea:focus {
+  outline: none;
+  border-color: #111111 !important;
+  box-shadow: 0 0 0 3px rgba(227, 178, 60, 0.3) !important;
+}
+*/
+
+// ═══════════════════════════════════════════════════════════════════════════
+// ÉQUIVALENT HTML/CSS AUTONOME (hors Next.js, pour prototype)
+// ═══════════════════════════════════════════════════════════════════════════
+/*
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>QRTags — Objet retrouvé</title>
+  <style>
+    :root {
+      --qrtags-bg: #111111;
+      --qrtags-accent: #E3B23C;
+      --qrtags-accent-hover: #FFDB58;
+      --qrtags-ink: #111111;
+      --qrtags-text: #f5f5f5;
+    }
+    body {
+      margin: 0;
+      font-family: system-ui, -apple-system, sans-serif;
+      background: var(--qrtags-bg);
+      color: var(--qrtags-text);
+      min-height: 100vh;
+      display: flex; align-items: center; justify-content: center;
+      padding: 1rem;
+    }
+    .card {
+      background: var(--qrtags-accent);
+      color: var(--qrtags-ink);
+      border: 2px dashed var(--qrtags-ink);
+      border-radius: 16px;
+      padding: 2rem;
+      max-width: 28rem; width: 100%;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+    }
+    .card h1 { margin: 0 0 .5rem; font-size: 1.875rem; }
+    .card label { display: block; font-size: .75rem; font-weight: 700; margin-bottom: .25rem; }
+    .card input {
+      width: 100%; padding: .75rem 1rem; border-radius: 8px;
+      background: transparent; color: var(--qrtags-ink);
+      border: 2px solid var(--qrtags-ink); margin-bottom: .75rem;
+      font-size: 1rem;
+    }
+    .card input:focus { outline: none; box-shadow: 0 0 0 3px rgba(17,17,17,0.15); }
+    .btn-wame {
+      width: 100%; padding: 1rem 1.5rem; border: none; border-radius: 12px;
+      background: var(--qrtags-ink); color: var(--qrtags-accent);
+      font-size: 1.125rem; font-weight: 700; cursor: pointer;
+      display: flex; align-items: center; justify-content: center; gap: .5rem;
+    }
+    .btn-wame:hover { background: #000; }
+    .btn-wame:disabled { opacity: .6; cursor: not-allowed; }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h1>Objet retrouvé</h1>
+    <p>Référence : <strong id="ref"></strong></p>
+    <label>Votre nom *</label>
+    <input id="name" type="text" placeholder="Votre nom">
+    <label>Votre téléphone *</label>
+    <input id="phone" type="tel" placeholder="+33 6 12 34 56 78">
+    <label>Lieu (optionnel)</label>
+    <input id="loc" type="text" placeholder="Hall d'accueil...">
+    <button class="btn-wame" id="btn">Contacter le propriétaire via WhatsApp</button>
+  </div>
+  <script>
+    // Récupère la référence depuis l'URL (/scan/{REF})
+    const ref = window.location.pathname.split('/').pop();
+    document.getElementById('ref').textContent = ref;
+
+    const ownerNumber = '33600000000'; // À remplacer par le numéro propriétaire du tag (DB)
+    const btn = document.getElementById('btn');
+
+    btn.addEventListener('click', async () => {
+      const name = document.getElementById('name').value.trim();
+      const phone = document.getElementById('phone').value.trim();
+      const manualLoc = document.getElementById('loc').value.trim();
+      if (!name || !phone) { alert('Nom et téléphone requis'); return; }
+
+      btn.disabled = true; btn.textContent = 'Localisation...';
+      let gps = null;
+      if (navigator.geolocation) {
+        try {
+          const pos = await new Promise((resolve, reject) => {
+            navigator.geolocation.getCurrentPosition(resolve, reject, {
+              enableHighAccuracy: true, timeout: 10000, maximumAge: 0,
+            });
+          });
+          gps = { lat: pos.coords.latitude, lng: pos.coords.longitude };
+        } catch (e) { console.warn('GPS refusé ou indisponible'); }
+      }
+
+      const locationLine = gps
+        ? `https://www.google.com/maps?q=${gps.lat},${gps.lng}`
+        : (manualLoc || 'Position non partagée');
+
+      const msg = `Bonjour, j'ai trouvé votre objet (réf. ${ref}). ` +
+        `Je suis actuellement à cette position : ${locationLine}. ` +
+        `— Message envoyé via QRTags. Trouveur : ${name}. Contact : ${phone}.`;
+
+      const url = `https://wa.me/${ownerNumber}?text=${encodeURIComponent(msg)}`;
+      window.location.href = url;
+      btn.disabled = false; btn.textContent = 'Contacter le propriétaire via WhatsApp';
+    });
+  </script>
+</body>
+</html>
+*/

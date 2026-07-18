@@ -22,14 +22,14 @@ interface BlogPost {
 const CATEGORY_ICONS: Record<string, string> = {
   actualites: '📰',
   conseils: '💡',
-  hajj: '🕋',
+  entreprise: '🏢',
   mises_a_jour: '🚀'
 };
 
 const CATEGORY_COLORS: Record<string, string> = {
   actualites: 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400',
   conseils: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-blue-500',
-  hajj: 'bg-amber-100 text-amber-700 dark:bg-blue-900/30 dark:text-blue-500',
+  entreprise: 'bg-amber-100 text-amber-700',
   mises_a_jour: 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400'
 };
 

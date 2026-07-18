@@ -17,8 +17,8 @@ import {
 } from 'lucide-react';
 import type { BaggageInfo, SuiviData } from './types';
 
-const BRAND = '#0047d6';
-const ACCENT = '#fcd616';
+const BRAND = '#111111';
+const ACCENT = '#E3B23C';
 const INK = '#1a1a1a';
 
 export function TabActions({
@@ -273,7 +273,7 @@ export function TabActions({
       </div>
 
       {/* Modifier profil */}
-      <a href={`/suivi/${reference}/edit`} className="block bg-[#0047d6] text-white text-center py-3 px-4 rounded-xl font-bold text-sm">
+      <a href={`/suivi/${reference}/edit`} className="block bg-[#111111] text-white text-center py-3 px-4 rounded-xl font-bold text-sm">
         <Edit3 className="w-4 h-4 inline mr-2" />Modifier mon profil de voyage
       </a>
 
@@ -288,7 +288,7 @@ export function TabActions({
       {/* PDF */}
       <button
         onClick={() => { setShowPdfModal(true); setPdfError(''); setPdfPin(''); }}
-        className="w-full bg-[#fcd616] text-[#1a1a1a] border-2 border-[#1a1a1a] py-3 px-4 rounded-xl font-bold text-sm flex items-center justify-center gap-2"
+        className="w-full bg-[#E3B23C] text-[#1a1a1a] border-2 border-[#1a1a1a] py-3 px-4 rounded-xl font-bold text-sm flex items-center justify-center gap-2"
       >
         <FileText className="w-4 h-4" />📄 Télécharger le parcours (PDF)
       </button>
@@ -296,7 +296,7 @@ export function TabActions({
       {/* Partage */}
       <button
         onClick={() => { setShowShareModal(true); setShareError(''); setSharePin(''); }}
-        className={`w-full border-2 border-[#1a1a1a] py-3 px-4 rounded-xl font-bold text-sm flex items-center justify-center gap-2 ${shareUrl ? 'bg-green-50 text-green-700' : 'bg-white text-[#0047d6]'}`}
+        className={`w-full border-2 border-[#1a1a1a] py-3 px-4 rounded-xl font-bold text-sm flex items-center justify-center gap-2 ${shareUrl ? 'bg-green-50 text-green-700' : 'bg-white text-[#111111]'}`}
       >
         <Share2 className="w-4 h-4" />{shareUrl ? '✅ Partage actif — Gérer' : '🔗 Partager le suivi (famille)'}
       </button>
@@ -306,7 +306,7 @@ export function TabActions({
         <div className="bg-white border-2 border-dashed border-[#1a1a1a] rounded-2xl p-4">
           <button onClick={() => setShowDamage(!showDamage)} className="w-full flex items-center justify-between text-left">
             <div className="flex items-center gap-2">
-              <Camera className="w-5 h-5 text-[#0047d6]" />
+              <Camera className="w-5 h-5 text-[#111111]" />
               <div>
                 <h3 className="text-sm font-bold text-[#1a1a1a]">📷 Photos de protection</h3>
                 <p className="text-xs text-slate-500">
@@ -319,7 +319,7 @@ export function TabActions({
           {showDamage && (
             <div className="mt-3 space-y-2">
               {damageReports.reports.map(r => (
-                <div key={r.id} className="border-l-4 border-[#0047d6] pl-3">
+                <div key={r.id} className="border-l-4 border-[#111111] pl-3">
                   <p className="text-xs font-bold">{r.type === 'before' ? '📦 Avant' : '📦 Après'} — {new Date(r.createdAt).toLocaleDateString('fr-FR')}</p>
                   <div className="flex gap-2 mt-1">
                     {r.photos.map((p, i) => <img key={i} src={p} alt="" className="w-16 h-16 object-cover rounded-lg border border-slate-200" />)}
@@ -330,11 +330,11 @@ export function TabActions({
           )}
         </div>
       ) : (
-        <div className="bg-[#fcd616] border-2 border-dashed border-[#1a1a1a] rounded-2xl p-4">
+        <div className="bg-[#E3B23C] border-2 border-dashed border-[#1a1a1a] rounded-2xl p-4">
           {!showDamageUpload ? (
             <button onClick={() => setShowDamageUpload(true)} className="w-full text-left">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-[#1a1a1a] flex items-center justify-center"><Camera className="w-5 h-5 text-[#fcd616]" /></div>
+                <div className="w-10 h-10 rounded-xl bg-[#1a1a1a] flex items-center justify-center"><Camera className="w-5 h-5 text-[#E3B23C]" /></div>
                 <div className="flex-1">
                   <h3 className="text-sm font-bold text-[#1a1a1a]">📷 Protégez votre bagage</h3>
                   <p className="text-xs text-slate-700">Photo avant le vol = dédommagement garanti en cas de casse</p>
@@ -348,8 +348,8 @@ export function TabActions({
 
               {/* Type selector */}
               <div className="flex gap-2">
-                <button onClick={() => setDamageType('before')} className={`flex-1 py-2 px-3 rounded-xl text-xs font-bold border-2 ${damageType === 'before' ? 'bg-[#1a1a1a] text-[#fcd616] border-[#1a1a1a]' : 'bg-white/50 text-[#1a1a1a] border-[#1a1a1a]/30'}`}>📦 Avant</button>
-                <button onClick={() => setDamageType('after')} className={`flex-1 py-2 px-3 rounded-xl text-xs font-bold border-2 ${damageType === 'after' ? 'bg-[#1a1a1a] text-[#fcd616] border-[#1a1a1a]' : 'bg-white/50 text-[#1a1a1a] border-[#1a1a1a]/30'}`}>📦 Après</button>
+                <button onClick={() => setDamageType('before')} className={`flex-1 py-2 px-3 rounded-xl text-xs font-bold border-2 ${damageType === 'before' ? 'bg-[#1a1a1a] text-[#E3B23C] border-[#1a1a1a]' : 'bg-white/50 text-[#1a1a1a] border-[#1a1a1a]/30'}`}>📦 Avant</button>
+                <button onClick={() => setDamageType('after')} className={`flex-1 py-2 px-3 rounded-xl text-xs font-bold border-2 ${damageType === 'after' ? 'bg-[#1a1a1a] text-[#E3B23C] border-[#1a1a1a]' : 'bg-white/50 text-[#1a1a1a] border-[#1a1a1a]/30'}`}>📦 Après</button>
               </div>
 
               {/* Photo upload */}
@@ -376,7 +376,7 @@ export function TabActions({
 
               <div className="flex gap-2">
                 <button onClick={() => { setShowDamageUpload(false); setDamagePhotos([]); setDamageError(''); }} className="flex-1 py-2 bg-slate-200 rounded-xl font-bold text-slate-700 text-sm">Annuler</button>
-                <button onClick={handleDamageSave} disabled={damageLoading || damagePhotos.length === 0} className="flex-1 py-2 bg-[#1a1a1a] text-[#fcd616] rounded-xl font-bold text-sm disabled:opacity-50">{damageLoading ? '...' : 'Enregistrer'}</button>
+                <button onClick={handleDamageSave} disabled={damageLoading || damagePhotos.length === 0} className="flex-1 py-2 bg-[#1a1a1a] text-[#E3B23C] rounded-xl font-bold text-sm disabled:opacity-50">{damageLoading ? '...' : 'Enregistrer'}</button>
               </div>
             </div>
           )}
@@ -391,12 +391,12 @@ export function TabActions({
             <h3 className="text-sm font-bold text-[#1a1a1a]">Mon vol a du retard</h3>
           </div>
           <p className="text-xs text-slate-500 mb-2">Vérifiez si votre correspondance est encore faisable.</p>
-          <a href={`/suivi/${reference}/edit`} className="text-xs font-bold text-[#0047d6]">Signaler un retard →</a>
+          <a href={`/suivi/${reference}/edit`} className="text-xs font-bold text-[#111111]">Signaler un retard →</a>
         </div>
       )}
 
       {/* Assistance */}
-      <a href="/assistance" className="block text-center bg-white border-2 border-[#0047d6] text-[#0047d6] py-3 px-4 rounded-xl font-bold text-sm">
+      <a href="/assistance" className="block text-center bg-white border-2 border-[#111111] text-[#111111] py-3 px-4 rounded-xl font-bold text-sm">
         <HelpCircle className="w-4 h-4 inline mr-2" />Besoin d&apos;aide ? Centre d&apos;assistance
       </a>
 
@@ -433,7 +433,7 @@ export function TabActions({
           {transitError && <p className="text-sm text-red-600 mb-3">{transitError}</p>}
           <div className="flex gap-2">
             <button onClick={() => { setShowTransitModal(false); setTransitPin(''); }} className="flex-1 py-3 bg-slate-100 rounded-xl font-bold text-slate-700">Annuler</button>
-            <button onClick={handleTransitToggle} disabled={transitLoading} className="flex-1 py-3 bg-[#0047d6] text-white rounded-xl font-bold disabled:opacity-50">{transitLoading ? '...' : 'Confirmer'}</button>
+            <button onClick={handleTransitToggle} disabled={transitLoading} className="flex-1 py-3 bg-[#111111] text-white rounded-xl font-bold disabled:opacity-50">{transitLoading ? '...' : 'Confirmer'}</button>
           </div>
         </Modal>
       )}
@@ -448,7 +448,7 @@ export function TabActions({
           {pdfError && <p className="text-sm text-red-600 mb-3">{pdfError}</p>}
           <div className="flex gap-2">
             <button onClick={() => { setShowPdfModal(false); setPdfPin(''); }} className="flex-1 py-3 bg-slate-100 rounded-xl font-bold text-slate-700">Annuler</button>
-            <button onClick={handleDownloadPdf} className="flex-1 py-3 bg-[#0047d6] text-white rounded-xl font-bold">Télécharger</button>
+            <button onClick={handleDownloadPdf} className="flex-1 py-3 bg-[#111111] text-white rounded-xl font-bold">Télécharger</button>
           </div>
         </Modal>
       )}
@@ -462,7 +462,7 @@ export function TabActions({
                 <p className="text-sm font-bold text-green-700 mb-1">✅ Lien actif</p>
                 <div className="bg-white border rounded-lg p-2 flex items-center gap-2">
                   <input readOnly value={shareUrl} className="flex-1 text-xs font-mono outline-none" />
-                  <button onClick={() => { navigator.clipboard.writeText(shareUrl); setShareCopied(true); setTimeout(() => setShareCopied(false), 3000); }} className="text-xs font-bold text-[#0047d6]">{shareCopied ? '✅' : 'Copier'}</button>
+                  <button onClick={() => { navigator.clipboard.writeText(shareUrl); setShareCopied(true); setTimeout(() => setShareCopied(false), 3000); }} className="text-xs font-bold text-[#111111]">{shareCopied ? '✅' : 'Copier'}</button>
                 </div>
               </div>
               <p className="text-xs text-slate-500 mb-3">Saisissez votre PIN pour révoquer :</p>
@@ -484,7 +484,7 @@ export function TabActions({
               {shareError && <p className="text-sm text-red-600 mb-3">{shareError}</p>}
               <div className="flex gap-2">
                 <button onClick={() => setShowShareModal(false)} className="flex-1 py-3 bg-slate-100 rounded-xl font-bold text-slate-700">Annuler</button>
-                <button onClick={handleShareGenerate} disabled={shareLoading || !sharePin} className="flex-1 py-3 bg-[#0047d6] text-white rounded-xl font-bold disabled:opacity-50">{shareLoading ? '...' : 'Générer'}</button>
+                <button onClick={handleShareGenerate} disabled={shareLoading || !sharePin} className="flex-1 py-3 bg-[#111111] text-white rounded-xl font-bold disabled:opacity-50">{shareLoading ? '...' : 'Générer'}</button>
               </div>
             </div>
           )}
@@ -497,16 +497,16 @@ export function TabActions({
           {pinRecoveryResult ? (
             <div className="text-center">
               <p className="text-sm text-slate-600 mb-3">Voici votre nouveau PIN. <strong>Notez-le !</strong></p>
-              <div className="bg-[#fcd616] border-2 border-dashed border-[#1a1a1a] rounded-xl py-6 mb-4">
+              <div className="bg-[#E3B23C] border-2 border-dashed border-[#1a1a1a] rounded-xl py-6 mb-4">
                 <p className="text-5xl font-mono font-bold tracking-[0.5em]" style={{ color: INK }}>{pinRecoveryResult}</p>
               </div>
-              <button onClick={() => { setShowPinModal(false); setPinRecoveryResult(null); }} className="w-full py-3 bg-[#0047d6] text-white rounded-xl font-bold">J&apos;ai noté mon PIN</button>
+              <button onClick={() => { setShowPinModal(false); setPinRecoveryResult(null); }} className="w-full py-3 bg-[#111111] text-white rounded-xl font-bold">J&apos;ai noté mon PIN</button>
             </div>
           ) : (
             <div>
               <p className="text-sm text-slate-600 mb-2">Votre PIN est hashé (non réversible). Générez-en un nouveau en saisissant votre PIN actuel.</p>
               <p className="text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-lg p-2 mb-3">
-                PIN oublié ? <a href="mailto:contact@qrbag.com" className="underline font-bold">contact@qrbag.com</a>
+                PIN oublié ? <a href="mailto:contact@qrtags.com" className="underline font-bold">contact@qrtags.com</a>
               </p>
               <input type="password" inputMode="numeric" maxLength={6} placeholder="PIN actuel" value={pinRecoveryInput}
                 onChange={(e) => setPinRecoveryInput(e.target.value.replace(/\D/g, ''))}
@@ -514,7 +514,7 @@ export function TabActions({
               {pinRecoveryError && <p className="text-sm text-red-600 mb-3">{pinRecoveryError}</p>}
               <div className="flex gap-2">
                 <button onClick={() => setShowPinModal(false)} className="flex-1 py-3 bg-slate-100 rounded-xl font-bold text-slate-700">Annuler</button>
-                <button onClick={handlePinRecovery} disabled={pinRecoveryLoading || !pinRecoveryInput} className="flex-1 py-3 bg-[#0047d6] text-white rounded-xl font-bold disabled:opacity-50">{pinRecoveryLoading ? '...' : 'Régénérer'}</button>
+                <button onClick={handlePinRecovery} disabled={pinRecoveryLoading || !pinRecoveryInput} className="flex-1 py-3 bg-[#111111] text-white rounded-xl font-bold disabled:opacity-50">{pinRecoveryLoading ? '...' : 'Régénérer'}</button>
               </div>
             </div>
           )}

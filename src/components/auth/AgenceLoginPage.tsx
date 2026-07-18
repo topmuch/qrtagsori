@@ -1,10 +1,11 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import QRTagsLogo from "@/components/qrtags/QRTagsLogo";
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useAuth } from '@/contexts/AuthContext';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion, AnimatePresence, type Variants } from 'framer-motion';
 import {
   Mail,
   Lock,
@@ -34,8 +35,8 @@ const STATS = [
 const TESTIMONIALS = [
   {
     name: 'Fatou Diallo',
-    role: 'Agence Hajj Express',
-    text: 'QRBag a transformé notre gestion de bagages. Zéro perte depuis 2 ans.',
+    role: 'Hôtel Le Royal',
+    text: 'QRTags a transformé notre gestion de bagages. Zéro perte depuis 2 ans.',
   },
   {
     name: 'Moussa Koné',
@@ -190,12 +191,12 @@ export default function AgenceLoginPage() {
   };
 
   const fillDemo = () => {
-    setEmail('agence@qrbag.com');
+    setEmail('agence@qrtags.com');
     setPassword('agence123');
   };
 
   /* ── Framer Motion Variants ── */
-  const containerVariants = {
+  const containerVariants: Variants = {
     hidden: { opacity: 0 },
     visible: {
       opacity: 1,
@@ -203,12 +204,12 @@ export default function AgenceLoginPage() {
     },
   };
 
-  const itemVariants = {
+  const itemVariants: Variants = {
     hidden: { opacity: 0, y: 18 },
     visible: {
       opacity: 1,
       y: 0,
-      transition: { duration: 0.5, ease: [0.22, 1, 0.36, 1] },
+      transition: { duration: 0.5, ease: [0.22, 1, 0.36, 1] as [number, number, number, number] },
     },
   };
 
@@ -220,7 +221,7 @@ export default function AgenceLoginPage() {
       <div className="relative hidden lg:flex lg:w-[52%] min-h-screen flex-col overflow-hidden">
         {/* Base gradient */}
         <div className="absolute inset-0">
-          <div className="absolute inset-0 bg-gradient-to-br from-[#0033a8] via-[#0047d6] to-[#0047d6]" />
+          <div className="absolute inset-0 bg-gradient-to-br from-[#0033a8] via-[#111111] to-[#111111]" />
           {/* Secondary depth gradient */}
           <div
             className="absolute inset-0 bg-gradient-to-t from-[#1a1a1a]/80 via-transparent to-[#0033a8]/60"
@@ -275,11 +276,7 @@ export default function AgenceLoginPage() {
                 animate={{ opacity: 1, scale: 1 }}
                 transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
               >
-                <img
-                  src="/logo.png"
-                  alt="QRBag"
-                  className="w-full h-full object-contain drop-shadow-lg"
-                />
+                <QRTagsLogo size="md" variant="light" />
               </motion.div>
             </Link>
           </div>
@@ -298,7 +295,7 @@ export default function AgenceLoginPage() {
               </div>
               {/* Decorative dots */}
               <div
-                className="absolute -top-2.5 -right-2.5 w-5 h-5 rounded-full bg-[#fcd616] animate-bounce"
+                className="absolute -top-2.5 -right-2.5 w-5 h-5 rounded-full bg-[#E3B23C] animate-bounce"
                 style={{ animationDelay: '0.4s' }}
               />
               <div
@@ -319,7 +316,7 @@ export default function AgenceLoginPage() {
             >
               Protégez chaque
               <br />
-              <span className="bg-gradient-to-r from-[#fcd616] via-[#fcd616] to-[#fcd616] bg-clip-text text-transparent">
+              <span className="bg-gradient-to-r from-[#E3B23C] via-[#E3B23C] to-[#E3B23C] bg-clip-text text-transparent">
                 bagage, en toute
               </span>
               <br />
@@ -387,7 +384,7 @@ export default function AgenceLoginPage() {
                   aria-label={`Témoignage ${i + 1}`}
                   className={`h-1.5 rounded-full transition-all duration-300 ${
                     i === activeTestimonial
-                      ? 'bg-[#fcd616] w-4'
+                      ? 'bg-[#E3B23C] w-4'
                       : 'bg-white/20 w-1.5 hover:bg-white/35'
                   }`}
                 />
@@ -405,7 +402,7 @@ export default function AgenceLoginPage() {
         <div
           className="absolute top-0 left-0 right-0 h-1"
           style={{
-            background: 'linear-gradient(90deg, #0047d6, #fcd616, #0047d6, #fcd616, #0047d6)',
+            background: 'linear-gradient(90deg, #111111, #E3B23C, #111111, #E3B23C, #111111)',
           }}
         />
 
@@ -421,11 +418,7 @@ export default function AgenceLoginPage() {
             variants={itemVariants}
           >
             <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-amber-700 to-emerald-900 p-2 flex items-center justify-center shadow-lg shadow-emerald-800/20">
-              <img
-                src="/logo.png"
-                alt="QRBag"
-                className="w-full h-full object-contain"
-              />
+              <QRTagsLogo size="md" variant="light" />
             </div>
           </motion.div>
 
@@ -613,7 +606,7 @@ export default function AgenceLoginPage() {
                     Compte démo
                   </p>
                   <p className="text-[10px] text-yellow-600/70 font-mono leading-relaxed">
-                    agence@qrbag.com / agence123
+                    agence@qrtags.com / agence123
                   </p>
                 </div>
               </div>

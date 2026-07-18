@@ -38,12 +38,24 @@ export async function GET(request: NextRequest) {
     const baggages = await db.baggage.findMany({
       where,
       orderBy: { createdAt: 'desc' },
+      include: {
+        agency: {
+          select: { id: true, name: true, agencyType: true },
+        },
+        lot: {
+          select: { id: true, lotNumber: true, quantity: true, status: true },
+        },
+      },
     });
 
     // Normalize statuses in response (frontend always gets English format)
     const normalizedBaggages = baggages.map(b => ({
       ...b,
       status: normalizeStatus(b.status),
+      // QRTags : exposer agencyType (depuis l'agence) au niveau racine pour faciliter le frontend
+      agencyType: b.agency?.agencyType || null,
+      // QRTags : exposer lotNumber au niveau racine pour le tableau de traçabilité
+      lotNumber: b.lot?.lotNumber || null,
     }));
 
     // Calculate stats using normalized statuses
@@ -54,6 +66,12 @@ export async function GET(request: NextRequest) {
       scanned: normalizedBaggages.filter(b => b.status === 'scanned').length,
       lost: normalizedBaggages.filter(b => b.status === 'lost').length,
       found: normalizedBaggages.filter(b => b.status === 'found').length,
+      // QRTags : stats additionnelles pour le tableau de traçabilité
+      in_stock: normalizedBaggages.filter(b => b.status === 'in_stock').length,
+      sold: normalizedBaggages.filter(b => b.status === 'sold').length,
+      activated: normalizedBaggages.filter(b => b.status === 'activated').length,
+      assigned_to_agency: normalizedBaggages.filter(b => b.status === 'assigned_to_agency').length,
+      blocked: normalizedBaggages.filter(b => b.status === 'blocked').length,
     };
 
     return NextResponse.json(

@@ -66,14 +66,14 @@ interface ApiResponse {
 const CATEGORIES = [
   { value: 'actualites', label: '📰 Actualités' },
   { value: 'conseils', label: '💡 Conseils' },
-  { value: 'hajj', label: '🕋 Hajj 2026' },
+  { value: 'entreprise', label: '🏢 Entreprise' },
   { value: 'mises_a_jour', label: '🚀 Mises à jour' }
 ];
 
 const CATEGORY_LABELS: Record<string, string> = {
   actualites: 'Actualités',
   conseils: 'Conseils',
-  hajj: 'Hajj 2026',
+  entreprise: 'Entreprise',
   mises_a_jour: 'Mises à jour'
 };
 
@@ -218,8 +218,8 @@ export default function BlogAdminPage() {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          id: post.id,
           ...post,
+          id: post.id,
           status: newStatus
         })
       });

@@ -265,8 +265,8 @@ export default function PublicitesPage() {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          id: ad.id,
           ...ad,
+          id: ad.id,
           status: newStatus
         })
       });
@@ -688,7 +688,7 @@ export default function PublicitesPage() {
                   <Input
                     value={formData.title}
                     onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-                    placeholder="Ex: Offre spéciale Hajj 2026"
+                    placeholder="Ex: Offre spéciale QRTags 2026"
                     className="mt-1 bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700"
                   />
                 </div>

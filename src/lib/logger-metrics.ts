@@ -1,5 +1,5 @@
 /**
- * Metric logger for external services (Groq, Wakit, WhatsApp, Suivi).
+ * Metric logger for QRTags services (Groq, Wakit, WhatsApp, Suivi, baggage-status, qrtags).
  * Lightweight structured logging for service metrics.
  * Separate from the main logger to avoid circular dependencies.
  */
@@ -10,7 +10,7 @@ interface MetricOptions {
 }
 
 export function logMetric(
-  service: 'groq' | 'wakit' | 'whatsapp' | 'suivi',
+  service: 'groq' | 'wakit' | 'whatsapp' | 'suivi' | 'baggage-status' | 'qrtags' | 'activate' | 'scan',
   action: string,
   latencyMs: number,
   success: boolean,

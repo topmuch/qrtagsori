@@ -1,7 +1,7 @@
 {
-  "name": "qrbag",
+  "name": "qrtags",
   "version": "1.0.0",
-  "description": "QRBag - Protection intelligente des bagages avec QR codes",
+  "description": "QRTags — SaaS de gestion d'objets perdus pour entreprises (multi-métiers)",
   "private": true,
   "scripts": {
     "dev": "next dev -p 3000 2>&1 | tee dev.log",
@@ -108,5 +108,15 @@
     "tailwindcss": "^4",
     "tw-animate-css": "^1.3.5",
     "typescript": "^5"
+  },
+  "allowScripts": {
+    "@parcel/watcher@2.5.6": true,
+    "@prisma/client@6.19.3": true,
+    "@prisma/engines@6.19.3": true,
+    "@swc/core@1.15.43": true,
+    "es5-ext@0.10.64": true,
+    "prisma@6.19.3": true,
+    "sharp@0.34.5": true,
+    "unrs-resolver@1.12.2": true
   }
 }

@@ -12,7 +12,7 @@ export function PWARegister() {
           setTimeout(() => {
             Notification.requestPermission().then((permission) => {
               if (permission === 'granted') {
-                console.log('[QRBag PWA] Notification permission granted');
+                console.log('[QRTags PWA] Notification permission granted');
               }
             });
           }, 5000); // 5s delay so user sees the app first

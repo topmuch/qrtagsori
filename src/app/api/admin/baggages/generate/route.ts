@@ -1,12 +1,38 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
-import { generateReference, generateReferencesBulk, generateSetId, calculateExpirationDate } from '@/lib/qr';
+import {
+  generateReference,
+  generateReferencesBulk,
+  generateSetId,
+  calculateExpirationDate,
+} from '@/lib/qr';
 import { db } from '@/lib/db';
 
-// Schema for individual generation
+/**
+ * QRTags — API de génération de lots de QR codes par le Superadmin
+ *
+ * Étape 1 du workflow QRTags :
+ *   Le Superadmin génère un lot de N QR codes.
+ *   Optionnellement, il l'assigne immédiatement à une agence.
+ *
+ * Body :
+ *   {
+ *     context: 'agency',
+ *     agencyId?: string,         // si fourni, le lot est assigné immédiatement
+ *     count: number,             // nombre de tags à générer
+ *     notes?: string,            // notes libres sur le lot
+ *     generatedById?: string,    // ID du superadmin (User)
+ *   }
+ *
+ * Crée :
+ *   - 1 entrée TagLot (lot_number, quantity, status, agencyId si fourni)
+ *   - N entrées Baggage (status: 'in_stock' ou 'assigned_to_agency')
+ */
+
+// ─── Schémas Zod ────────────────────────────────────────────────────
 const individualSchema = z.object({
   context: z.literal('individual'),
-  type: z.enum(['hajj', 'voyageur']),
+  type: z.enum(['hajj', 'voyageur']).optional(),
   firstName: z.string().min(2).max(50),
   lastName: z.string().min(2).max(50),
   whatsapp: z.string().min(6).max(20),
@@ -14,20 +40,17 @@ const individualSchema = z.object({
   baggageCount: z.number().min(1).max(2),
 });
 
-// Schema for agency generation
 const agencySchema = z.object({
   context: z.literal('agency'),
-  type: z.enum(['hajj', 'voyageur']),
-  agencyId: z.string().min(1),
-  count: z.number().min(1).max(2),
-  travelerCount: z.number().min(1).max(1000),
+  type: z.enum(['hajj', 'voyageur']).optional(),
+  agencyId: z.string().min(1).optional(),
+  count: z.number().min(1).max(3),
+  travelerCount: z.number().min(1).max(5000),
+  notes: z.string().max(500).optional(),
+  generatedById: z.string().optional(),
 });
 
-// Combined schema using discriminated union
-const combinedSchema = z.discriminatedUnion('context', [
-  individualSchema,
-  agencySchema
-]);
+const combinedSchema = z.discriminatedUnion('context', [individualSchema, agencySchema]);
 
 export async function POST(request: NextRequest) {
   try {
@@ -35,9 +58,8 @@ export async function POST(request: NextRequest) {
     const validatedData = combinedSchema.parse(body);
 
     if (validatedData.context === 'individual') {
-      // Generate for individual traveler
+      // ─── Génération individuelle (propriétaire direct, sans agence) ──
       const references = await generateBaggagesWithTraveler({
-        type: validatedData.type,
         firstName: validatedData.firstName,
         lastName: validatedData.lastName,
         whatsapp: validatedData.whatsapp,
@@ -48,67 +70,68 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({
         success: true,
         generated: references.length,
-        references
-      });
-    } else {
-      // Generate for agency - use batch insert for performance
-      const result = await generateBaggagesBatch({
-        type: validatedData.type,
-        agencyId: validatedData.agencyId,
-        travelerCount: validatedData.travelerCount,
-        count: validatedData.type === 'hajj' ? 3 : validatedData.count as 1 | 3,
-      });
-
-      return NextResponse.json({
-        success: true,
-        generated: result.length,
-        references: result
+        references,
       });
     }
+
+    // ─── Génération en lot pour agence (ou stock central) ──────────
+    const result = await generateLotForAgency({
+      agencyId: validatedData.agencyId,
+      travelerCount: validatedData.travelerCount,
+      count: validatedData.count as 1 | 2 | 3,
+      notes: validatedData.notes,
+      generatedById: validatedData.generatedById,
+    });
+
+    return NextResponse.json({
+      success: true,
+      generated: result.references.length,
+      references: result.references,
+      lot: result.lot,
+    });
   } catch (error) {
-    console.error('Generate QR error:', error);
-    
+    console.error('[QRTags/generate] Erreur:', error);
+
     if (error instanceof z.ZodError) {
       return NextResponse.json(
-        { error: 'Validation error', details: error.errors },
-        { status: 400 }
+        { error: 'Erreur de validation', details: error.issues },
+        { status: 400 },
       );
     }
 
     return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
+      { error: 'Erreur serveur lors de la génération' },
+      { status: 500 },
     );
   }
 }
 
-/**
- * Generate baggages for individual traveler with traveler info
- */
+// ═══════════════════════════════════════════════════════════════════
+//  HELPERS
+// ═══════════════════════════════════════════════════════════════════
+
 async function generateBaggagesWithTraveler(options: {
-  type: 'hajj' | 'voyageur';
   firstName: string;
   lastName: string;
   whatsapp: string;
   duration: '7d' | '1y';
   baggageCount: 1 | 2;
 }): Promise<string[]> {
-  const { type, firstName, lastName, whatsapp, duration, baggageCount } = options;
-  
-  const setId = generateSetId(type);
-  const expiresAt = calculateExpirationDate(type, duration === '1y' ? 'tag' : 'sticker');
+  const { firstName, lastName, whatsapp, duration, baggageCount } = options;
 
-  // Generate all references upfront
+  const setId = generateSetId();
+  const expiresAt = calculateExpirationDate('voyageur', duration === '1y' ? 'tag' : 'sticker');
+
   const references: string[] = [];
   for (let i = 0; i < baggageCount; i++) {
-    references.push(await generateReference(type));
+    references.push(await generateReference());
   }
 
-  // Batch create all baggages at once
+  // QRTags : statut 'activated' directement (génération individuelle = activation)
   await db.baggage.createMany({
     data: references.map((reference, i) => ({
       reference,
-      type,
+      type: 'voyageur',
       setId,
       agencyId: null,
       travelerFirstName: firstName,
@@ -116,7 +139,8 @@ async function generateBaggagesWithTraveler(options: {
       whatsappOwner: whatsapp,
       baggageIndex: i + 1,
       baggageType: 'soute',
-      status: 'active',
+      status: 'activated',
+      activatedAt: new Date(),
       expiresAt,
     })),
   });
@@ -124,40 +148,56 @@ async function generateBaggagesWithTraveler(options: {
   return references;
 }
 
-/**
- * Generate baggages for agency using BATCH INSERT for high performance.
- * Uses bulk reference generation and createMany to avoid thousands of sequential DB calls.
- */
-async function generateBaggagesBatch(options: {
-  type: 'hajj' | 'voyageur';
-  agencyId: string;
+async function generateLotForAgency(options: {
+  agencyId?: string;
   travelerCount: number;
-  count: 1 | 2;
-}): Promise<string[]> {
-  const { type, agencyId, travelerCount, count } = options;
+  count: 1 | 2 | 3;
+  notes?: string;
+  generatedById?: string;
+}): Promise<{ references: string[]; lot: { id: string; lotNumber: string } }> {
+  const { agencyId, travelerCount, count, notes, generatedById } = options;
   const totalBaggages = travelerCount * count;
-  
-  console.log(`[GENERATE] Starting bulk generation: ${travelerCount} travelers × ${count} bags = ${totalBaggages} QR codes`);
 
-  // Pre-generate all set IDs (no DB calls needed)
-  const setIds: string[] = [];
-  for (let t = 0; t < travelerCount; t++) {
-    setIds.push(generateSetId(type));
-  }
+  console.log(
+    `[QRTags/generate] Lot: ${travelerCount} × ${count} = ${totalBaggages} tags` +
+    (agencyId ? ` → agency ${agencyId}` : ' → stock central'),
+  );
 
-  // Generate ALL references in bulk (1-2 DB queries instead of 1800)
-  const allReferences = await generateReferencesBulk(type, totalBaggages);
+  // ─── 1. Créer le TagLot ──────────────────────────────────────
+  const lotNumber = generateSetId();
+  const lot = await db.tagLot.create({
+    data: {
+      lotNumber,
+      generatedById: generatedById || null,
+      agencyId: agencyId || null,
+      quantity: totalBaggages,
+      notes: notes || null,
+      status: agencyId ? 'assigned' : 'generated',
+      assignedAt: agencyId ? new Date() : null,
+    },
+  });
 
-  // Build all baggage data
+  // ─── 2. Générer toutes les références en bulk ────────────────
+  const allReferences = await generateReferencesBulk(null, totalBaggages);
+
+  // ─── 3. Construire les données Baggage ───────────────────────
+  const now = new Date();
   const allData: Array<{
     reference: string;
     type: string;
     setId: string;
     agencyId: string | null;
+    lotId: string;
     baggageIndex: number;
     baggageType: string;
     status: string;
+    assignedToAgencyAt: Date | null;
   }> = [];
+
+  const setIds: string[] = [];
+  for (let t = 0; t < travelerCount; t++) {
+    setIds.push(generateSetId());
+  }
 
   let refIndex = 0;
   for (let t = 0; t < travelerCount; t++) {
@@ -165,29 +205,37 @@ async function generateBaggagesBatch(options: {
     for (let i = 0; i < count; i++) {
       allData.push({
         reference: allReferences[refIndex++],
-        type,
+        type: 'voyageur',
         setId,
-        agencyId,
+        agencyId: agencyId || null,
+        lotId: lot.id,
         baggageIndex: i + 1,
         baggageType: 'soute',
-        status: 'pending_activation',
+        // QRTags : 'assigned_to_agency' si agencyId, sinon 'in_stock'
+        status: agencyId ? 'assigned_to_agency' : 'in_stock',
+        assignedToAgencyAt: agencyId ? now : null,
       });
     }
   }
 
-  // Batch insert in chunks of 200 for memory efficiency
+  // ─── 4. Batch insert par chunks de 200 ───────────────────────
   const BATCH_SIZE = 200;
   for (let i = 0; i < allData.length; i += BATCH_SIZE) {
     const batch = allData.slice(i, i + BATCH_SIZE);
     await db.baggage.createMany({ data: batch });
-    console.log(`[GENERATE] Inserted batch ${Math.floor(i / BATCH_SIZE) + 1}: ${batch.length} baggages (total: ${Math.min(i + BATCH_SIZE, allData.length)}/${allData.length})`);
+    console.log(
+      `[QRTags/generate] Batch ${Math.floor(i / BATCH_SIZE) + 1}: ${batch.length} tags` +
+      ` (total: ${Math.min(i + BATCH_SIZE, allData.length)}/${allData.length})`,
+    );
   }
 
-  console.log(`[GENERATE] Complete: ${totalBaggages} QR codes generated for ${travelerCount} travelers`);
-  return allReferences;
+  console.log(`[QRTags/generate] Lot ${lotNumber} terminé (${totalBaggages} tags)`);
+  return { references: allReferences, lot: { id: lot.id, lotNumber: lot.lotNumber } };
 }
 
-// GET - Get all baggages (for QR codes list)
+// ═══════════════════════════════════════════════════════════════════
+//  GET — Liste des baggages (admin)
+// ═══════════════════════════════════════════════════════════════════
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
@@ -197,32 +245,27 @@ export async function GET(request: NextRequest) {
     const limit = parseInt(searchParams.get('limit') || '500');
 
     const where: Record<string, unknown> = {};
-    
-    if (agencyId) {
-      where.agencyId = agencyId;
-    }
-    
-    if (type) {
-      where.type = type;
-    }
-    
-    if (status) {
-      where.status = status;
-    }
+
+    if (agencyId) where.agencyId = agencyId;
+    if (type)     where.type = type;
+    if (status)   where.status = status;
 
     const baggages = await db.baggage.findMany({
       where,
-      include: { agency: true },
+      include: {
+        agency: { select: { id: true, name: true, agencyType: true } },
+        lot:    { select: { id: true, lotNumber: true, status: true } },
+      },
       orderBy: { createdAt: 'desc' },
-      take: limit
+      take: limit,
     });
 
     return NextResponse.json({ baggages });
   } catch (error) {
-    console.error('Get baggages error:', error);
+    console.error('[QRTags/generate GET] Erreur:', error);
     return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
+      { error: 'Erreur serveur' },
+      { status: 500 },
     );
   }
 }

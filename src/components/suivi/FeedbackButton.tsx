@@ -32,7 +32,7 @@ export function FeedbackButton({ reference }: { reference: string }) {
     <>
       <button
         onClick={() => setIsOpen(true)}
-        className="fixed bottom-20 right-4 z-40 w-12 h-12 bg-[#0047d6] text-white rounded-full shadow-lg flex items-center justify-center hover:bg-[#0033a8] transition-colors"
+        className="fixed bottom-20 right-4 z-40 w-12 h-12 bg-[#111111] text-white rounded-full shadow-lg flex items-center justify-center hover:bg-[#0033a8] transition-colors"
         aria-label="Signaler un problème"
       >
         <MessageSquare className="w-5 h-5" />
@@ -58,7 +58,7 @@ export function FeedbackButton({ reference }: { reference: string }) {
                     <button
                       key={t}
                       onClick={() => setType(t)}
-                      className={`flex-1 py-2 rounded-lg text-xs font-bold ${type === t ? 'bg-[#0047d6] text-white' : 'bg-slate-100 text-slate-600'}`}
+                      className={`flex-1 py-2 rounded-lg text-xs font-bold ${type === t ? 'bg-[#111111] text-white' : 'bg-slate-100 text-slate-600'}`}
                     >
                       {label}
                     </button>
@@ -69,12 +69,12 @@ export function FeedbackButton({ reference }: { reference: string }) {
                   onChange={(e) => setMessage(e.target.value)}
                   placeholder="Décrivez votre problème ou suggestion..."
                   rows={4}
-                  className="w-full bg-slate-50 border-2 border-slate-200 rounded-xl p-3 text-sm focus:ring-2 focus:ring-[#0047d6] mb-3"
+                  className="w-full bg-slate-50 border-2 border-slate-200 rounded-xl p-3 text-sm focus:ring-2 focus:ring-[#111111] mb-3"
                 />
                 <button
                   onClick={handleSubmit}
                   disabled={loading || message.length < 5}
-                  className="w-full py-3 bg-[#0047d6] text-white rounded-xl font-bold disabled:opacity-50 flex items-center justify-center gap-2"
+                  className="w-full py-3 bg-[#111111] text-white rounded-xl font-bold disabled:opacity-50 flex items-center justify-center gap-2"
                 >
                   <Send className="w-4 h-4" />
                   {loading ? 'Envoi...' : 'Envoyer'}

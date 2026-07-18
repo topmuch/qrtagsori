@@ -1,154 +1,125 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
-import { calculateExpirationDate } from '@/lib/qr';
 import { z } from 'zod';
 import bcrypt from 'bcryptjs';
 import crypto from 'crypto';
-import { countryNameToCode } from '@/lib/country-utils';
 
-// ─── LABS — Feature #2: Generate a random 4-digit PIN for the owner ───
-// Le PIN sert à :
-//  1. Authentifier le propriétaire pour éditer son profil (/suivi/[ref]/edit)
-//  2. Vérification d'identité par le trouveur (/scan/[ref] → verify-pin)
+/**
+ * QRTags — API d'activation d'un tag
+ *
+ * Étape 3 du workflow QRTags :
+ *   L'utilisateur final scanne son QR code → arrive sur /inscrire → remplit
+ *   le formulaire (champs dynamiques selon agency_type de l'agence qui a vendu
+ *   le tag) → POST /api/activate.
+ *
+ * Le tag passe du statut 'sold' (ou 'in_stock' / 'assigned_to_agency' en
+ * rétrocompat) au statut 'activated'.
+ *
+ * Champs acceptés :
+ *   - reference (requis) : référence du tag (ex: QRT26-XXXXXX)
+ *   - travelerFirstName (requis)
+ *   - travelerLastName (requis)
+ *   - whatsappOwner (requis) : numéro WhatsApp du propriétaire (cible WAME)
+ *   - customData (optionnel) : objet JSON des champs dynamiques par métier
+ *   - destination (optionnel)
+ *   - departureDate (optionnel)
+ *   - departureTime (optionnel)
+ */
+
+// ─── Génération du PIN propriétaire (4 chiffres) ───────────────────
 function generateOwnerPin(): string {
-  // 4 chiffres aléatoires (0000-9999), 0-padded
   return String(crypto.randomInt(0, 10000)).padStart(4, '0');
 }
 
-// Validation schema for activation
+// ─── Schéma Zod (zod v4 : utilise .issues pas .errors) ─────────────
 const activateSchema = z.object({
-  reference: z.string().min(1, 'Reference is required'),
-  travelerFirstName: z.string().min(1, 'First name is required'),
-  travelerLastName: z.string().min(1, 'Last name is required'),
-  whatsappOwner: z.string().min(1, 'WhatsApp number is required'),
-  airlineName: z.string().optional(),
-  flightNumber: z.string().optional(),
+  reference: z.string().min(1, 'Référence requise'),
+  travelerFirstName: z.string().min(1, 'Prénom requis'),
+  travelerLastName: z.string().min(1, 'Nom requis'),
+  whatsappOwner: z.string().min(1, 'Numéro WhatsApp requis'),
+  customData: z.record(z.string(), z.unknown()).optional(),
+  // Champs libres optionnels (rétrocompat)
   destination: z.string().optional(),
-  departureDate: z.string().date().optional(),
+  departureDate: z.string().optional(),
   departureTime: z.string().optional(),
-  // TRANSPORT-FEATURE: Multi-transport mode support
-  transportMode: z.enum(['flight', 'train', 'boat', 'bus']).optional(),
-  trainCompany: z.string().optional(),
-  trainNumber: z.string().optional(),
-  shipName: z.string().optional(),
-  shipCabin: z.string().optional(),
-  busCompany: z.string().optional(),
-  busLineNumber: z.string().optional(),
 });
+
+// ─── Statuts considérés comme "non encore activés" ─────────────────
+const PENDING_STATUSES = new Set([
+  'in_stock',
+  'assigned_to_agency',
+  'sold',
+  'pending_activation', // rétrocompat
+]);
 
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
     const validatedData = activateSchema.parse(body);
 
-    // Find the baggage by reference
+    // ─── 1. Trouver le tag ─────────────────────────────────────
     const baggage = await db.baggage.findUnique({
       where: { reference: validatedData.reference },
-      include: { agency: true }
+      include: { agency: true, lot: true },
     });
 
     if (!baggage) {
       return NextResponse.json(
-        { error: 'Baggage not found', message: 'Code QR non valide' },
-        { status: 404 }
+        { error: 'Tag introuvable', message: 'Code QR non valide' },
+        { status: 404 },
       );
     }
 
-    if (baggage.status !== 'pending_activation') {
+    // ─── 2. Vérifier qu'il n'est pas déjà activé ──────────────
+    if (!PENDING_STATUSES.has(baggage.status)) {
       return NextResponse.json(
-        { error: 'Already activated', message: 'Ce bagage a déjà été activé' },
-        { status: 400 }
+        {
+          error: 'Tag déjà activé',
+          message: 'Ce tag a déjà été activé',
+          currentStatus: baggage.status,
+        },
+        { status: 400 },
       );
     }
 
-    // Determine subtype for expiration calculation
-    const subtype = baggage.type === 'voyageur' ? 'sticker' : undefined;
-
-    // Calculate expiration date
-    const expiresAt = calculateExpirationDate(baggage.type as 'hajj' | 'voyageur', subtype);
-
-    // ─── LABS — Feature #4: Dérive le code ISO pays depuis le nom de destination ───
-    // Pour permettre la comparaison stricte lors d'un scan (Feature #4).
-    const destinationCountry = countryNameToCode(validatedData.destination);
-
-    // ─── LABS — Feature #2: Generate owner PIN (4 digits) ───
-    // Hashé bcrypt AVANT stockage. Le PIN en clair est renvoyé une seule fois
-    // dans la réponse API pour affichage sur /success (jamais re-divulgué ensuite).
+    // ─── 3. Générer le PIN propriétaire ───────────────────────
     const ownerPinPlain = generateOwnerPin();
     const ownerPinHash = await bcrypt.hash(ownerPinPlain, 10);
 
-    // Update baggage with traveler info
+    // ─── 4. Calculer l'expiration (1 an par défaut QRTags) ────
+    const expiresAt = new Date();
+    expiresAt.setFullYear(expiresAt.getFullYear() + 1);
+
+    // ─── 5. Sérialiser customData en JSON string ──────────────
+    const customDataJson = validatedData.customData
+      ? JSON.stringify(validatedData.customData)
+      : null;
+
+    // ─── 6. Mettre à jour le tag ──────────────────────────────
     const updatedBaggage = await db.baggage.update({
       where: { id: baggage.id },
       data: {
         travelerFirstName: validatedData.travelerFirstName,
         travelerLastName: validatedData.travelerLastName,
         whatsappOwner: validatedData.whatsappOwner,
-        airlineName: validatedData.airlineName || null,
-        flightNumber: validatedData.flightNumber || null,
         destination: validatedData.destination || null,
-        departureDate: validatedData.departureDate ? new Date(validatedData.departureDate + 'T00:00:00') : null,
+        departureDate: validatedData.departureDate
+          ? new Date(validatedData.departureDate + 'T00:00:00')
+          : null,
         departureTime: validatedData.departureTime || null,
-        // TRANSPORT-FEATURE: Store transport mode + conditional fields
-        transportMode: validatedData.transportMode || 'flight',
-        trainCompany: validatedData.trainCompany || null,
-        trainNumber: validatedData.trainNumber || null,
-        shipName: validatedData.shipName || null,
-        shipCabin: validatedData.shipCabin || null,
-        busCompany: validatedData.busCompany || null,
-        busLineNumber: validatedData.busLineNumber || null,
-        status: 'active',
+        // QRTags : custom_data JSON (champs dynamiques par agency_type)
+        customData: customDataJson,
+        // QRTags : nouveau statut + timestamp
+        status: 'activated',
+        activatedAt: new Date(),
         expiresAt,
-        // LABS: PIN propriétaire (hashé)
+        // PIN propriétaire (hashé bcrypt)
         ownerPin: ownerPinHash,
         ownerPinSetAt: new Date(),
-        // LABS — Feature #4: code ISO pays destination pour détection mismatch
-        destinationCountry,
-      }
+      },
     });
 
-    // If this is part of a group (Hajj has 3 bags), activate all related baggages
-    if (baggage.type === 'hajj' && baggage.agencyId) {
-      // Find all baggages with same agency and same reference prefix (first 6 chars)
-      const prefix = baggage.reference.substring(0, 6);
-      const relatedBaggages = await db.baggage.findMany({
-        where: {
-          reference: { startsWith: prefix },
-          agencyId: baggage.agencyId,
-          status: 'pending_activation'
-        }
-      });
-
-      // Activate all related baggages
-      for (const related of relatedBaggages) {
-        if (related.id !== baggage.id) {
-          await db.baggage.update({
-            where: { id: related.id },
-            data: {
-              travelerFirstName: validatedData.travelerFirstName,
-              travelerLastName: validatedData.travelerLastName,
-              whatsappOwner: validatedData.whatsappOwner,
-              departureDate: validatedData.departureDate ? new Date(validatedData.departureDate + 'T00:00:00') : null,
-              departureTime: validatedData.departureTime || null,
-              airlineName: validatedData.airlineName || null,
-              flightNumber: validatedData.flightNumber || null,
-              destination: validatedData.destination || null,
-              // TRANSPORT-FEATURE: Force flight for hajj group, null out non-flight fields
-              transportMode: 'flight',
-              trainCompany: null,
-              trainNumber: null,
-              shipName: null,
-              shipCabin: null,
-              busCompany: null,
-              busLineNumber: null,
-              status: 'active',
-              expiresAt,
-            }
-          });
-        }
-      }
-    }
-
+    // ─── 7. Réponse ───────────────────────────────────────────
     return NextResponse.json({
       success: true,
       baggage: {
@@ -156,25 +127,26 @@ export async function POST(request: NextRequest) {
         reference: updatedBaggage.reference,
         type: updatedBaggage.type,
         status: updatedBaggage.status,
+        activatedAt: updatedBaggage.activatedAt,
         expiresAt: updatedBaggage.expiresAt,
-        // LABS — Feature #2: PIN en clair (une seule fois, pour affichage sur /success)
+        // PIN en clair (une seule fois, pour affichage sur /success)
         ownerPin: ownerPinPlain,
-      }
+      },
     });
-
   } catch (error) {
-    console.error('Activation error:', error);
-    
+    console.error('[QRTags/activate] Erreur:', error);
+
     if (error instanceof z.ZodError) {
+      // zod v4 : error.issues (pas error.issues)
       return NextResponse.json(
-        { error: 'Validation error', details: error.issues },
-        { status: 400 }
+        { error: 'Erreur de validation', details: error.issues },
+        { status: 400 },
       );
     }
 
     return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
+      { error: 'Erreur serveur lors de l\'activation' },
+      { status: 500 },
     );
   }
 }

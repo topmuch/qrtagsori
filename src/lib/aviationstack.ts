@@ -166,5 +166,10 @@ export async function getBaggagesWithConnectingFlight(): Promise<Array<{
       travelerLastName: true,
     },
   });
-  return baggages;
+  // Coerce nulls to string for type compat with callers expecting non-null flightNumber
+  return baggages.map((b) => ({
+    ...b,
+    flightNumber: b.flightNumber || '',
+    connectingFlight: b.connectingFlight || '',
+  }));
 }

@@ -1,0 +1,31 @@
+# ════════════════════════════════════════════════════════════════════
+# QRTags — nixpacks.toml (alternative au Dockerfile pour Coolify)
+#
+# Coolify peut utiliser soit ce fichier nixpacks.toml, soit le Dockerfile.
+# Le Dockerfile est recommandé (build reproductible + standalone optimisé).
+# Ce fichier nixpacks est fourni comme fallback.
+# ════════════════════════════════════════════════════════════════════
+
+[phases.setup]
+nixPkgs = ['nodejs_20', 'openssl']
+
+[phases.install]
+cmds = [
+  'npm install --legacy-peer-deps --no-audit --no-fund'
+]
+
+[phases.build]
+cmds = [
+  'npx prisma generate',
+  'npm run build'
+]
+dependsOn = ['install']
+
+[start]
+cmd = 'npx prisma db push --skip-generate --accept-data-loss && node server.js'
+
+[variables]
+NODE_ENV = 'production'
+NEXT_TELEMETRY_DISABLED = '1'
+PORT = '3000'
+HOSTNAME = '0.0.0.0'

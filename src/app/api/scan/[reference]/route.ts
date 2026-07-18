@@ -295,7 +295,7 @@ export async function POST(
             minute: '2-digit',
           });
 
-          const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://qrbags.com';
+          const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://qrtags.com';
 
           const aiResult = await generateWhatsAppMessage({
             reference: baggage.reference,
@@ -408,8 +408,8 @@ export async function POST(
       const { sendPushNotification } = await import('@/lib/web-push');
       // Email du propriétaire : email de l'agence si baggage lié à une agence,
       // sinon fallback générique pour démo (à brancher sur auth voyageur plus tard)
-      const notifEmail = baggage.agency?.email || 'proprietaire@qrbag.com';
-      const appUrlForEmail = process.env.NEXT_PUBLIC_APP_URL || 'https://qrbags.com';
+      const notifEmail = baggage.agency?.email || 'proprietaire@qrtags.com';
+      const appUrlForEmail = process.env.NEXT_PUBLIC_APP_URL || 'https://qrtags.com';
       const trackingUrlForEmail = `${appUrlForEmail}/suivi/${reference}`;
 
       const scanDate = new Date().toLocaleDateString('fr-FR');
@@ -443,7 +443,7 @@ export async function POST(
       // Envoi une notification push native au passager (même si app fermée)
       await sendPushNotification(
         baggage.reference,
-        '📍 QRBag — Bagage scanné',
+        '📍 QRTags — Bagage scanné',
         `Votre bagage ${baggage.reference} vient d'être scanné${city ? ` à ${city}` : ''}.`,
         trackingUrlForEmail
       );
@@ -509,7 +509,7 @@ export async function POST(
     // ─── refonte-7: Nouveau template de message WhatsApp envoyé au propriétaire ───
     // Le frontend construit sa propre URL wa.me via la clé i18n `whatsapp.found_message`.
     // Ce `whatsappUrl` backend est retourné pour les consommateurs API / audit.
-    const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://qrbags.com';
+    const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://qrtags.com';
     const trackingUrl = `${appUrl}/suivi/${reference}`;
 
     // [Prénom] — prénom du propriétaire
@@ -540,7 +540,7 @@ export async function POST(
       `Tu peux aussi voir tous les détails ici :\n` +
       `👉 ${trackingUrl}\n` +
       `Ne panique pas, tout va bien se passer ! 💪\n` +
-      `L'équipe QRBag`;
+      `L'équipe QRTags`;
 
     // Clean phone number
     const phone = baggage.whatsappOwner.replace(/[^0-9]/g, '');
