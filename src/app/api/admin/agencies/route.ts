@@ -93,7 +93,6 @@ export async function POST(request: NextRequest) {
         phone: validatedData.phone || null,
         address: validatedData.address || null,
         agencyType: validatedData.agencyType || 'generic',
-        agencyTypeUpdatedAt: new Date(),
       }
     });
 
@@ -156,7 +155,6 @@ export async function PUT(request: NextRequest) {
     if (data.address !== undefined) updateData.address = data.address || null;
     if (data.agencyType !== undefined) {
       updateData.agencyType = data.agencyType;
-      updateData.agencyTypeUpdatedAt = new Date();
     }
     if (active !== undefined) updateData.active = active;
 
