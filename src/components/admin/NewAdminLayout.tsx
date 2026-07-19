@@ -77,7 +77,7 @@ export default function AdminLayout({ children, title, subtitle, unreadMessages 
     { label: "Utilisateurs", icon: <Users className="w-5 h-5" />, href: "/admin/utilisateurs" },
     { label: "Agences", icon: <Building className="w-5 h-5" />, href: "/admin/agences" },
     { label: "PRODUITS", icon: null, isCategory: true },
-    { label: "Générer QR", icon: <QrCode className="w-5 h-5" />, href: "/admin/generer" },
+    { label: "Objets trouvés", icon: <QrCode className="w-5 h-5" />, href: "/admin/generer" },
     { label: "Étiquettes", icon: <Layers className="w-5 h-5" />, href: "/admin/etiquettes" },
     { label: "VOYAGEURS", icon: null, isCategory: true },
     { label: "Bagages", icon: <Package className="w-5 h-5" />, href: "/admin/voyageurs" },

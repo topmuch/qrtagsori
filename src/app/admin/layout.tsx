@@ -81,7 +81,7 @@ function Sidebar({
     { label: "PRODUITS", icon: null, isCategory: true },
 
     // Generate QR
-    { label: "Générer QR", icon: <QrCode className="w-5 h-5" />, href: "/admin/generer", permission: PERMISSIONS.GENERATE_QR },
+    { label: "Objets trouvés", icon: <QrCode className="w-5 h-5" />, href: "/admin/generer", permission: PERMISSIONS.GENERATE_QR },
 
     // Baggages
     { label: "Étiquettes", icon: <Layers className="w-5 h-5" />, href: "/admin/etiquettes", permission: PERMISSIONS.VIEW_BAGGAGES },

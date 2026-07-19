@@ -26,6 +26,7 @@ import {
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
+import { PRODUCT_TYPES } from '@/lib/agency-types';
 
 // Types
 interface Agency {
@@ -48,25 +49,25 @@ export default function GenererQRPage() {
   const [errorMessage, setErrorMessage] = useState('');
   const [lastGeneratedRefs, setLastGeneratedRefs] = useState<string[]>([]);
   const [isExporting, setIsExporting] = useState(false);
-  
+
   // Context selection
   const [context, setContext] = useState<GenerationContext>('agency');
-  
-  // Individual form
+
+  // Individual form — QRTags : duration forcée à '1y', productType remplace baggageCount
   const [individualForm, setIndividualForm] = useState({
     firstName: '',
     lastName: '',
     whatsapp: '',
-    duration: '7d' as '7d' | '1y',
-    baggageCount: 1 as 1 | 2,
+    duration: '1y' as '1y', // QRTags : 1 an uniquement (7 jours supprimé)
+    productType: 'laptop',  // QRTags : type d'objet à protéger
   });
-  
-  // Agency form
+
+  // Agency form — QRTags : productType remplace baggagePerTraveler
   const [agencyForm, setAgencyForm] = useState({
     type: 'qrtags' as 'hajj' | 'qrtags',
     agencyId: '',
     travelerCount: 1,
-    baggagePerTraveler: 2 as 1 | 2,
+    productType: 'laptop', // QRTags : type d'objet à protéger
   });
 
   useEffect(() => {
@@ -87,13 +88,12 @@ export default function GenererQRPage() {
   };
 
   // Calculate QR count for display
+  // QRTags : 1 tag par objet (plus de notion de "baggageCount" ou "baggagePerTraveler")
   const getQrCount = () => {
     if (context === 'individual') {
-      return individualForm.baggageCount;
+      return 1; // 1 tag = 1 objet
     }
-    return agencyForm.type === 'hajj' 
-      ? agencyForm.travelerCount * 3 
-      : agencyForm.travelerCount * agencyForm.baggagePerTraveler;
+    return agencyForm.travelerCount; // 1 tag par client
   };
 
   // Validate individual form
@@ -243,15 +243,15 @@ export default function GenererQRPage() {
             firstName: individualForm.firstName.trim(),
             lastName: individualForm.lastName.trim(),
             whatsapp: individualForm.whatsapp.trim(),
-            duration: individualForm.duration,
-            baggageCount: individualForm.baggageCount as 1 | 2,
+            duration: '1y', // QRTags : 1 an uniquement
+            baggageCount: 1, // 1 tag = 1 objet
           }
         : {
             context: 'agency',
             type: agencyForm.type,
             agencyId: agencyForm.agencyId,
             travelerCount: agencyForm.travelerCount,
-            count: agencyForm.type === 'hajj' ? 3 : agencyForm.baggagePerTraveler,
+            count: 1, // QRTags : 1 tag par client (1 objet)
           };
       
       const response = await fetch('/api/admin/baggages/generate', {
@@ -263,7 +263,7 @@ export default function GenererQRPage() {
       const data = await response.json();
       
       if (response.ok) {
-        setSuccessMessage(`${data.generated} codes QR générés avec succès !`);
+        setSuccessMessage(`${data.generated} tag(s) QRTags généré(s) avec succès !`);
         setLastGeneratedRefs(data.references || []);
         // Reset individual form
         if (context === 'individual') {
@@ -271,8 +271,8 @@ export default function GenererQRPage() {
             firstName: '',
             lastName: '',
             whatsapp: '',
-            duration: '7d',
-            baggageCount: 1,
+            duration: '1y', // QRTags : 1 an par défaut
+            productType: 'laptop',
           });
         }
         setTimeout(() => {
@@ -294,8 +294,8 @@ export default function GenererQRPage() {
     <div className="max-w-4xl mx-auto">
       {/* Page Header */}
       <div className="mb-8">
-        <h1 className="text-2xl font-bold text-slate-800 dark:text-white">Génération de QR Codes</h1>
-        <p className="text-slate-500 dark:text-slate-400 mt-1">Créez des tags QRTags pour vos objets</p>
+        <h1 className="text-2xl font-bold text-slate-800 dark:text-white">Objets trouvés — Génération de tags QRTags</h1>
+        <p className="text-slate-500 dark:text-slate-400 mt-1">Générez des tags QRTags pour retrouver vos objets perdus</p>
       </div>
 
       {/* Success Message */}
@@ -367,7 +367,7 @@ export default function GenererQRPage() {
             <Building2 className="w-5 h-5" />
             <div className="text-left">
               <p className="font-medium">Agence partenaire</p>
-              <p className="text-xs opacity-80">Génération en masse pour agence</p>
+              <p className="text-xs opacity-80">Lot de tags pour entreprise</p>
             </div>
           </button>
         </div>
@@ -379,7 +379,7 @@ export default function GenererQRPage() {
           <CardHeader>
             <CardTitle className="text-slate-800 dark:text-white flex items-center gap-2">
               <QrCode className="w-5 h-5 text-blue-600" />
-              {context === 'individual' ? 'Tag individuel' : 'Génération agence'}
+              {context === 'individual' ? 'Tag individuel' : 'Lot pour entreprise'}
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
@@ -419,44 +419,43 @@ export default function GenererQRPage() {
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label className="text-slate-700 dark:text-slate-300">Durée</Label>
-                    <Select 
-                      value={individualForm.duration} 
-                      onValueChange={(v) => setIndividualForm({ ...individualForm, duration: v as '7d' | '1y' })}
-                    >
+                    <Label className="text-slate-700 dark:text-slate-300">Durée de validité</Label>
+                    <Select value={individualForm.duration} onValueChange={(v) => setIndividualForm({ ...individualForm, duration: v as '1y' })}>
                       <SelectTrigger className="bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-800 dark:text-white">
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent className="bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800">
-                        <SelectItem value="7d">7 jours</SelectItem>
                         <SelectItem value="1y">1 an</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
                   <div className="space-y-2">
-                    <Label className="text-slate-700 dark:text-slate-300">Bagages</Label>
-                    <Select 
-                      value={String(individualForm.baggageCount)} 
-                      onValueChange={(v) => setIndividualForm({ ...individualForm, baggageCount: parseInt(v) as 1 | 2 })}
+                    <Label className="text-slate-700 dark:text-slate-300">Objet à protéger</Label>
+                    <Select
+                      value={individualForm.productType}
+                      onValueChange={(v) => setIndividualForm({ ...individualForm, productType: v })}
                     >
                       <SelectTrigger className="bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-800 dark:text-white">
                         <SelectValue />
                       </SelectTrigger>
-                      <SelectContent className="bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800">
-                        <SelectItem value="1">1 bagage</SelectItem>
-                        <SelectItem value="2">2 bagages</SelectItem>
+                      <SelectContent className="bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 max-h-72 overflow-y-auto">
+                        {PRODUCT_TYPES.map((p) => (
+                          <SelectItem key={p.value} value={p.value}>
+                            {p.icon} {p.label}
+                          </SelectItem>
+                        ))}
                       </SelectContent>
                     </Select>
                   </div>
                 </div>
 
                 <div className="bg-amber-50 dark:bg-blue-600/10 border border-amber-200 dark:border-amber-800 rounded-xl p-4 text-sm text-amber-700 dark:text-blue-500">
-                  <p className="font-medium">ℹ️ Le QR sera actif immédiatement avec les informations du client.</p>
+                  <p className="font-medium">ℹ️ Le tag sera actif immédiatement avec les informations du client.</p>
                 </div>
 
                 <div className="bg-slate-50 dark:bg-slate-800 rounded-xl p-4 text-sm text-slate-600 dark:text-slate-300">
                   <p><strong>Statut :</strong> Actif immédiatement • les infos client sont pré-remplies.</p>
-                  <p><strong>Expiration :</strong> {individualForm.duration === '7d' ? '7 jours' : '1 an'} à partir de la génération</p>
+                  <p><strong>Expiration :</strong> 1 an à partir de la génération</p>
                 </div>
               </>
             ) : (
@@ -512,17 +511,20 @@ export default function GenererQRPage() {
                   </div>
                   {agencyForm.type === 'qrtags' && (
                     <div className="space-y-2">
-                      <Label className="text-slate-700 dark:text-slate-300">Tags par client</Label>
-                      <Select 
-                        value={String(agencyForm.baggagePerTraveler)} 
-                        onValueChange={(v) => setAgencyForm({ ...agencyForm, baggagePerTraveler: parseInt(v) as 1 | 2 })}
+                      <Label className="text-slate-700 dark:text-slate-300">Objet à protéger</Label>
+                      <Select
+                        value={agencyForm.productType}
+                        onValueChange={(v) => setAgencyForm({ ...agencyForm, productType: v })}
                       >
                         <SelectTrigger className="bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-800 dark:text-white">
                           <SelectValue />
                         </SelectTrigger>
-                        <SelectContent className="bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800">
-                          <SelectItem value="1">1 bagage</SelectItem>
-                          <SelectItem value="2">2 bagages</SelectItem>
+                        <SelectContent className="bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 max-h-72 overflow-y-auto">
+                          {PRODUCT_TYPES.map((p) => (
+                            <SelectItem key={p.value} value={p.value}>
+                              {p.icon} {p.label}
+                            </SelectItem>
+                          ))}
                         </SelectContent>
                       </Select>
                     </div>
@@ -531,12 +533,12 @@ export default function GenererQRPage() {
 
                 {agencyForm.type === 'hajj' && (
                   <div className="bg-slate-50 dark:bg-slate-800 rounded-xl p-4 text-sm text-slate-600 dark:text-slate-300">
-                    <p>ℹ️ QRTags : 1 tag = 1 objet. Chaque client reçoit 1 tag.</p>
+                    <p>ℹ️ Type legacy — utilisez QRTags pour la génération actuelle.</p>
                   </div>
                 )}
                 {agencyForm.type === 'qrtags' && (
                   <div className="bg-slate-50 dark:bg-slate-800 rounded-xl p-4 text-sm text-slate-600 dark:text-slate-300">
-                    <p>ℹ️ Chaque client reçoit {agencyForm.baggagePerTraveler} tag(s) QRTags</p>
+                    <p>ℹ️ Chaque client reçoit 1 tag QRTags (1 objet à protéger par tag).</p>
                   </div>
                 )}
               </>
@@ -555,7 +557,7 @@ export default function GenererQRPage() {
               disabled={qrGenerating}
             >
               <RefreshCw className={cn("w-4 h-4 mr-2", qrGenerating ? 'animate-spin' : '')} />
-              {qrGenerating ? 'Génération en cours...' : `Générer ${getQrCount()} codes QR`}
+              {qrGenerating ? 'Génération en cours...' : `Générer ${getQrCount()} tag(s) QRTags`}
             </Button>
           </CardContent>
         </Card>
@@ -577,9 +579,9 @@ export default function GenererQRPage() {
                 </Badge>
               </div>
               <div className="text-sm text-slate-500 dark:text-slate-400">
-                {context === 'individual' 
-                  ? `${individualForm.duration === '7d' ? '7 jours' : '1 an'} de validité • Activation immédiate`
-                  : `${agencyForm.type === 'hajj' ? agencyForm.travelerCount * 3 : agencyForm.travelerCount * agencyForm.baggagePerTraveler} QR • En attente d'attribution`
+                {context === 'individual'
+                  ? `1 an de validité • Activation immédiate • 1 tag`
+                  : `${agencyForm.travelerCount} tag(s) QRTags • En attente d'attribution`
                 }
               </div>
             </div>
@@ -613,11 +615,11 @@ export default function GenererQRPage() {
                 <div>
                   <p className="text-slate-500 dark:text-slate-400">Expiration</p>
                   <p className="text-slate-800 dark:text-white font-medium">
-                    {context === 'individual' 
-                      ? individualForm.duration === '7d' ? '7 jours' : '1 an'
-                      : agencyForm.type === 'hajj' 
-                        ? '60 jours'
-                        : '5 jours'
+                    {context === 'individual'
+                      ? '1 an'
+                      : agencyForm.type === 'hajj'
+                        ? '60 jours (legacy)'
+                        : '1 an'
                     }
                   </p>
                 </div>

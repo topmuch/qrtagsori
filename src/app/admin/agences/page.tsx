@@ -157,10 +157,15 @@ export default function AgencesPage() {
 
       if (!userResponse.ok) {
         const userErr = await userResponse.json();
-        // L'agence est créée mais l'utilisateur a échoué
-        setSuccessMessage(`Agence créée. ⚠️ Utilisateur non créé : ${userErr.error || 'erreur'}. Créez-le manuellement dans l'onglet Utilisateurs.`);
+        const errMsg = userErr.error || 'erreur inconnue';
+        if (errMsg.includes('email') || errMsg.includes('déjà utilisé')) {
+          // Cas courant : l'utilisateur a re-cliqué, l'agence ET l'utilisateur existent déjà
+          setSuccessMessage(`Agence "${agencyForm.name}" déjà créée. L'utilisateur "${agencyForm.email}" existe déjà.`);
+        } else {
+          setSuccessMessage(`Agence créée. ⚠️ Utilisateur non créé : ${errMsg}. Créez-le manuellement dans l'onglet Utilisateurs.`);
+        }
       } else {
-        setSuccessMessage(`Agence "${agencyForm.name}" créée avec succès !`);
+        setSuccessMessage(`✅ Agence "${agencyForm.name}" créée avec succès ! Utilisateur "${agencyForm.email}" associé.`);
       }
 
       fetchAgencies();

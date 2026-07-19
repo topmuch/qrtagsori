@@ -58,6 +58,7 @@ export default function UtilisateursPage() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+  const [creating, setCreating] = useState(false);
   
   const [userForm, setUserForm] = useState({
     email: '',
@@ -100,7 +101,21 @@ export default function UtilisateursPage() {
   };
 
   const handleCreateUser = async () => {
+    // Anti-double-clic
+    if (creating) return;
+
+    // Validation frontend
     setError('');
+    if (!userForm.email.trim()) {
+      setError('L\'email est obligatoire');
+      return;
+    }
+    if (!userForm.password || userForm.password.length < 6) {
+      setError('Le mot de passe doit contenir au moins 6 caractères');
+      return;
+    }
+
+    setCreating(true);
     try {
       const response = await fetch('/api/admin/users', {
         method: 'POST',
@@ -111,17 +126,21 @@ export default function UtilisateursPage() {
       const data = await response.json();
 
       if (response.ok) {
-        fetchUsers();
-        setDialogOpen(false);
+        // Reset formulaire + fermer dialog + refresh liste
         setUserForm({ email: '', name: '', password: '', role: 'agent', agencyId: '' });
+        setDialogOpen(false);
+        setError(''); // Clear toute erreur précédente
         setSuccess(`Utilisateur "${data.user?.email}" créé avec succès.`);
         setTimeout(() => setSuccess(''), 5000);
+        await fetchUsers(); // Refresh liste (avec no-store)
       } else {
         setError(data.error || 'Erreur lors de la création de l\'utilisateur');
       }
     } catch (error) {
       console.error('Error creating user:', error);
       setError('Erreur réseau lors de la création de l\'utilisateur');
+    } finally {
+      setCreating(false);
     }
   };
 
@@ -251,11 +270,19 @@ export default function UtilisateursPage() {
                   </Select>
                 </div>
               )}
-              <Button 
-                className="w-full bg-blue-600 hover:bg-blue-700 text-white rounded-xl" 
+              <Button
+                className="w-full bg-blue-600 hover:bg-blue-700 text-white rounded-xl disabled:opacity-60 disabled:cursor-not-allowed"
                 onClick={handleCreateUser}
+                disabled={creating}
               >
-                Créer l&apos;utilisateur
+                {creating ? (
+                  <span className="flex items-center justify-center gap-2">
+                    <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                    Création en cours...
+                  </span>
+                ) : (
+                  'Créer l\'utilisateur'
+                )}
               </Button>
             </div>
           </DialogContent>

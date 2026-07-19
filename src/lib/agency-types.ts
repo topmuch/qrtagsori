@@ -134,3 +134,38 @@ export function validateCustomData(
   }
   return { valid: Object.keys(errors).length === 0, errors };
 }
+
+// ═══════════════════════════════════════════════════════════════════
+// QRTags — Liste des produits/objets à protéger
+// Utilisé dans le sélecteur de la page /admin/generer
+// ═══════════════════════════════════════════════════════════════════
+
+export interface ProductType {
+  value: string;
+  label: string;
+  icon?: string;
+}
+
+export const PRODUCT_TYPES: ProductType[] = [
+  { value: 'laptop',         label: 'Ordinateur portable',  icon: '💻' },
+  { value: 'phone',          label: 'Téléphone',            icon: '📱' },
+  { value: 'tablet',         label: 'Tablette',             icon: '📲' },
+  { value: 'luggage',        label: 'Bagage / Valise',      icon: '🧳' },
+  { value: 'keys',           label: 'Clés',                 icon: '🔑' },
+  { value: 'wallet',         label: 'Portefeuille',         icon: '👛' },
+  { value: 'watch',          label: 'Montre',               icon: '⌚' },
+  { value: 'camera',         label: 'Appareil photo',       icon: '📷' },
+  { value: 'headphones',     label: 'Écouteurs / Casque',   icon: '🎧' },
+  { value: 'documents',      label: 'Documents',            icon: '📄' },
+  { value: 'medication',     label: 'Médicaments',          icon: '💊' },
+  { value: 'glasses',        label: 'Lunettes',             icon: '👓' },
+  { value: 'jewelry',        label: 'Bijoux',               icon: '💍' },
+  { value: 'tool',           label: 'Outil',                icon: '🔧' },
+  { value: 'clothing',       label: 'Vêtement',             icon: '👕' },
+  { value: 'other',          label: 'Autre objet',          icon: '📦' },
+];
+
+export function getProductLabel(value: string): string {
+  return PRODUCT_TYPES.find((p) => p.value === value)?.label || value;
+}
+

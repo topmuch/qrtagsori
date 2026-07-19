@@ -51,7 +51,7 @@ export default function AdminLayout({
     { label: "Agences", icon: "🏢", href: "/admin/agences" },
     // 🧾 Produits & QR
     { label: "PRODUITS & QR", isCategory: true },
-    { label: "Générer QR", icon: "🔢", href: "/admin/generer" },
+    { label: "Objets trouvés", icon: "🔍", href: "/admin/generer" },
     { label: "Les Étiquettes", icon: "🏷️", href: "/admin/etiquettes" },
     // 🧳 Bagages
     { label: "VOYAGEURS & PÈLERINS", isCategory: true },
