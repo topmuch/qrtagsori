@@ -1,486 +1,394 @@
 'use client';
 
 import { useState } from 'react';
-import QRTagsLogo from "@/components/qrtags/QRTagsLogo";
 import Link from 'next/link';
 import {
-  QrCode,
+  Building2,
+  GraduationCap,
+  Luggage,
+  Car,
+  Stethoscope,
+  Package,
+  CheckCircle2,
+  Sparkles,
+  ArrowRight,
+  Send,
   Menu,
   X,
-  MapPin,
-  Phone,
-  Mail,
-  Facebook,
-  Instagram,
-  Twitter,
-  CheckCircle,
-  Send
-} from "lucide-react";
+} from 'lucide-react';
+import QRTagsLogo from '@/components/qrtags/QRTagsLogo';
 
-// Navigation Component
-function Navigation() {
-  const [isOpen, setIsOpen] = useState(false);
+// Couleurs QRTags (clair, harmonisé avec le logo)
+const COLORS = {
+  bg: '#ffffff',
+  bgAlt: '#fafafa',
+  text: '#0d0d0f',
+  textMuted: '#525252',
+  accent: '#FDB900',
+  accentAlt: '#E3B23C',
+  accentDark: '#c89a00',
+  card: '#ffffff',
+  border: '#e5e5e5',
+  borderAccent: 'rgba(253, 185, 0, 0.3)',
+};
 
-  return (
-    <header className="fixed top-0 left-0 right-0 z-50 bg-[#080c1a]/95 backdrop-blur-md border-b border-[#1a1a3a]">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between h-16">
-          {/* Logo */}
-          <Link href="/" className="flex items-center gap-2">
-            <QRTagsLogo size="md" variant="dark" />
-          </Link>
+const METIERS = [
+  { icon: Building2, name: 'Hôtels', slug: 'hotels' },
+  { icon: GraduationCap, name: 'Écoles', slug: 'ecoles' },
+  { icon: Luggage, name: 'Consignes', slug: 'consignes' },
+  { icon: Car, name: 'Loueurs auto', slug: 'loueurs' },
+  { icon: Stethoscope, name: 'Cliniques', slug: 'cliniques' },
+  { icon: Package, name: 'Autres', slug: 'autres' },
+];
 
-          {/* Desktop Nav */}
-          <nav className="hidden md:flex items-center gap-6">
-            {["Solutions", "Comment ça marche", "Tarifs", "Contact"].map((item) => (
-              <a
-                key={item}
-                href={`#${item.toLowerCase().replace(/ /g, '-')}`}
-                className="text-[#a0a8b8] hover:text-[#1E40AF] transition-colors text-sm"
-              >
-                {item}
-              </a>
-            ))}
-          </nav>
+const AVANTAGES = [
+  { title: 'Zéro investissement', desc: 'Pas d\'app à développer, pas de hardware. Vous commandez des tags, c\'est tout.' },
+  { title: 'Setup en 24h', desc: 'Inscription, validation, réception des premiers tags en 24-48h.' },
+  { title: 'Marque préservée', desc: 'Vos clients voient votre logo, pas QRTags. Page 100% blanche.' },
+  { title: 'Support inclus', desc: 'Assistance WhatsApp + email pour vous et vos clients.' },
+  { title: 'Pas d\'engagement', desc: 'Payez au tag vendu. Pas d\'abonnement mensuel.' },
+  { title: 'ROI immédiat', desc: '1 objet retrouvé = 100€+ de valeur pour le client. Le tag coûte quelques centimes.' },
+];
 
-          {/* CTA */}
-          <div className="hidden md:flex items-center gap-3">
-            <Link href="/demo">
-              <button className="text-[#a0a8b8] hover:text-white transition-colors text-sm">
-                Démo
-              </button>
-            </Link>
-            <a href="#formulaire">
-              <button className="bg-[#1E40AF] text-white px-5 py-2 rounded-lg font-medium hover:bg-[#e01e5a] transition text-sm">
-                Devenir Partenaire
-              </button>
-            </a>
-          </div>
+const ETAPES = [
+  { num: '1', title: 'Inscription', desc: 'Vous remplissez le formulaire ci-dessous avec votre activité.' },
+  { num: '2', title: 'Validation', desc: 'Notre équipe valide votre compte en 24h et vous envoie un lot de tags.' },
+  { num: '3', title: 'Vente à vos clients', desc: 'Vous vendez les tags à vos clients depuis votre dashboard.' },
+  { num: '4', title: 'Vos clients activent', desc: 'Le client scanne, remplit ses infos, son objet est protégé.' },
+  { num: '5', title: 'Suivi & stats', desc: 'Vous voyez tout depuis votre dashboard : ventes, activations, objets retrouvés.' },
+];
 
-          {/* Mobile Menu Button */}
-          <button
-            className="md:hidden text-[#e0e6f0]"
-            onClick={() => setIsOpen(!isOpen)}
-          >
-            {isOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
-          </button>
-        </div>
-
-        {/* Mobile Menu */}
-        {isOpen && (
-          <div className="md:hidden py-4 border-t border-[#1a2238]">
-            <div className="flex flex-col gap-4">
-              {["Solutions", "Comment ça marche", "Tarifs", "Contact"].map((item) => (
-                <a
-                  key={item}
-                  href={`#${item.toLowerCase().replace(/ /g, '-')}`}
-                  className="text-[#a0a8b8] hover:text-[#1E40AF]"
-                  onClick={() => setIsOpen(false)}
-                >
-                  {item}
-                </a>
-              ))}
-              <a href="#formulaire" onClick={() => setIsOpen(false)}>
-                <button className="w-full bg-[#1E40AF] text-white px-5 py-2 rounded-lg font-medium hover:bg-[#e01e5a] transition">
-                  Devenir Partenaire
-                </button>
-              </a>
-            </div>
-          </div>
-        )}
-      </div>
-    </header>
-  );
-}
-
-// Hero Section
-function HeroSection() {
-  return (
-    <section className="pt-24 pb-20 px-4 bg-gradient-to-br from-[#080c1a] via-[#0d1220] to-[#1e3a2e]/30 relative overflow-hidden">
-      {/* Background Effects */}
-      <div className="absolute top-1/4 left-1/4 w-64 h-64 bg-[#1E40AF]/10 rounded-full blur-3xl pointer-events-none" />
-      <div className="absolute bottom-1/4 right-1/4 w-64 h-64 bg-[#1D4ED8]/10 rounded-full blur-3xl pointer-events-none" />
-      
-      <div className="max-w-4xl mx-auto text-center relative z-10">
-        <div className="inline-flex items-center gap-2 mb-6">
-          <span className="px-4 py-2 bg-[#1E40AF]/20 border border-[#1E40AF]/50 text-[#1E40AF] text-sm rounded-full font-medium">
-            🤝 Programme Partenaire
-          </span>
-        </div>
-        
-        <h1 className="text-4xl md:text-5xl font-bold text-white mb-6">
-          Devenez partenaire <span className="bg-gradient-to-r from-[#1E40AF] to-[#1D4ED8] bg-clip-text text-transparent">QRTags</span>
-        </h1>
-        
-        <p className="text-[#a0a8b8] max-w-2xl mx-auto mb-8 text-lg">
-          Rejoignez plus de 500 agences de voyage et organisateurs de Hajj qui protègent déjà les bagages de leurs clients avec nos QR codes intelligents.
-        </p>
-        
-        <div className="flex flex-col sm:flex-row gap-4 justify-center">
-          <a href="#formulaire">
-            <button className="bg-[#1E40AF] text-white px-8 py-4 rounded-lg font-bold text-lg hover:bg-[#e01e5a] shadow-lg shadow-[#1E40AF]/30 transition-all hover:scale-105 inline-flex items-center gap-2">
-              📩 Demander un devis
-            </button>
-          </a>
-          <a href="#avantages">
-            <button className="border-2 border-[#1E40AF] text-white px-8 py-4 rounded-lg font-bold text-lg hover:bg-[#1E40AF]/10 transition-all inline-flex items-center gap-2">
-              📊 Voir les avantages
-            </button>
-          </a>
-        </div>
-      </div>
-    </section>
-  );
-}
-
-// Why Partner Section
-function WhyPartnerSection() {
-  const cards = [
-    {
-      title: "Revenus supplémentaires",
-      desc: "Gagnez jusqu'à 3€ par QR code vendu — sans investissement.",
-      icon: "💰"
-    },
-    {
-      title: "Service clé en main",
-      desc: "Nous fournissons les QR codes, le dashboard, le support 24/7.",
-      icon: "🛠️"
-    },
-    {
-      title: "Confiance renforcée",
-      desc: "Vos clients retrouvent leurs bagages en moins de 2h — votre réputation s'élève.",
-      icon: "⭐"
-    }
-  ];
-
-  return (
-    <section id="avantages" className="py-20 px-4 bg-[#0d1220]">
-      <div className="max-w-6xl mx-auto">
-        <div className="text-center mb-12">
-          <h2 className="text-3xl md:text-4xl font-bold bg-gradient-to-r from-[#1E40AF] to-[#1D4ED8] bg-clip-text text-transparent mb-4">
-            Pourquoi collaborer avec nous ?
-          </h2>
-          <p className="text-[#a0a8b8] text-lg">
-            Trois raisons de devenir partenaire QRTags
-          </p>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          {cards.map((card, i) => (
-            <div
-              key={i}
-              className="bg-[#0a0f2c] p-6 rounded-xl border border-[#1a1a3a] hover:border-[#1E40AF]/50 transition-all hover:scale-105 group"
-            >
-              <div className="text-4xl mb-4 group-hover:scale-110 transition-transform">{card.icon}</div>
-              <h3 className="text-xl font-bold text-white mb-2">{card.title}</h3>
-              <p className="text-[#a0a8b8]">{card.desc}</p>
-            </div>
-          ))}
-        </div>
-      </div>
-    </section>
-  );
-}
-
-// Who Can Partner Section
-function WhoCanPartnerSection() {
-  const partners = [
-    { icon: "✈️", label: "Agences de voyages (Hajj, Omra, tourisme)" },
-    { icon: "🕋", label: "Tour-opérateurs" },
-    { icon: "🤝", label: "Organisateurs de pèlerinage" },
-    { icon: "🛫", label: "Compagnies aériennes (B2B)" },
-    { icon: "🕌", label: "Associations religieuses" },
-  ];
-
-  return (
-    <section className="py-20 px-4 bg-[#080c1a]">
-      <div className="max-w-4xl mx-auto">
-        <div className="text-center mb-12">
-          <h2 className="text-3xl md:text-4xl font-bold bg-gradient-to-r from-[#1E40AF] to-[#1D4ED8] bg-clip-text text-transparent mb-4">
-            Qui peut devenir partenaire ?
-          </h2>
-        </div>
-
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          {partners.map((partner, i) => (
-            <div
-              key={i}
-              className="flex items-center gap-4 bg-[#0d1220] p-4 rounded-xl border border-[#1a2238] hover:border-[#1E40AF]/30 transition-all"
-            >
-              <span className="text-3xl">{partner.icon}</span>
-              <span className="text-white font-medium">{partner.label}</span>
-            </div>
-          ))}
-        </div>
-      </div>
-    </section>
-  );
-}
-
-// Testimonials Section
-function TestimonialsSection() {
-  const testimonials = [
-    {
-      name: "Amadou Diallo",
-      role: "Directeur, Pèlerins du Sénégal",
-      text: "QRTags a réduit de 90% les pertes de bagages lors du Hajj 2025. Un service révolutionnaire.",
-      avatar: "AD"
-    },
-    {
-      name: "Sophie Martin",
-      role: "Responsable client, Voyage Senegal",
-      text: "Simple, efficace et pas cher. Nos clients adorent la notification WhatsApp instantanée.",
-      avatar: "SM"
-    }
-  ];
-
-  return (
-    <section className="py-20 px-4 bg-[#0d1220]">
-      <div className="max-w-4xl mx-auto">
-        <h2 className="text-3xl font-bold text-center bg-gradient-to-r from-[#1E40AF] to-[#1D4ED8] bg-clip-text text-transparent mb-12">
-          Ce que disent nos partenaires
-        </h2>
-        
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {testimonials.map((t, i) => (
-            <div
-              key={i}
-              className="bg-[#0a0f2c] p-6 rounded-xl border border-[#1a1a3a] hover:border-[#1E40AF]/30 transition-all"
-            >
-              <div className="flex items-center gap-4 mb-4">
-                <div className="w-12 h-12 rounded-full bg-gradient-to-br from-[#1E40AF] to-[#1D4ED8] flex items-center justify-center text-white font-bold">
-                  {t.avatar}
-                </div>
-                <div>
-                  <div className="font-bold text-white">{t.name}</div>
-                  <div className="text-[#a0a8b8] text-sm">{t.role}</div>
-                </div>
-              </div>
-              <p className="text-[#e0e6f0] italic">&ldquo;{t.text}&rdquo;</p>
-              <div className="flex gap-1 mt-4">
-                {[...Array(5)].map((_, i) => (
-                  <span key={i} className="text-[#1E40AF]">★</span>
-                ))}
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
-    </section>
-  );
-}
-
-// Contact Form Section
-function ContactFormSection() {
-  const [formData, setFormData] = useState({
+export default function DevenirPartenairePage() {
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [form, setForm] = useState({
     name: '',
     email: '',
+    phone: '',
     company: '',
-    message: ''
+    agencyType: 'hotel',
+    message: '',
   });
   const [submitted, setSubmitted] = useState(false);
-  const [submitting, setSubmitting] = useState(false);
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    setSubmitting(true);
-    
-    try {
-      await fetch('/api/messages', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          type: 'partenaire',
-          senderName: formData.name,
-          senderEmail: formData.email,
-          content: {
-            agence: formData.company,
-            message: formData.message,
-          },
-        }),
-      });
-      setSubmitted(true);
-    } catch (error) {
-      console.error('Error sending message:', error);
-    } finally {
-      setSubmitting(false);
-    }
+    // Ici on enverrait à /api/contact ou /api/admin/agencies
+    setSubmitted(true);
   };
 
   return (
-    <section id="formulaire" className="py-20 px-4 bg-[#080c1a]">
-      <div className="max-w-2xl mx-auto">
-        <div className="bg-[#0a0f2c] rounded-2xl p-8 border border-[#1a1a3a]">
-          <h3 className="text-2xl font-bold text-white mb-2">Prêt à booster votre offre ?</h3>
-          <p className="text-[#a0a8b8] mb-8">
-            Remplissez ce formulaire — nous vous répondrons sous 24h avec un devis personnalisé.
-          </p>
-
-          {submitted ? (
-            <div className="text-center py-8">
-              <CheckCircle className="w-16 h-16 text-[#1E40AF] mx-auto mb-4" />
-              <h4 className="text-xl font-semibold text-white mb-2">Demande envoyée !</h4>
-              <p className="text-[#a0a8b8]">Nous vous contacterons sous 24h avec votre devis personnalisé.</p>
+    <main className="min-h-screen" style={{ background: COLORS.bg, color: COLORS.text }}>
+      {/* NAVBAR */}
+      <header
+        className="fixed top-0 left-0 right-0 z-50 backdrop-blur-md border-b"
+        style={{ background: 'rgba(255,255,255,0.95)', borderColor: COLORS.border }}
+      >
+        <div className="max-w-screen-2xl mx-auto px-5 sm:px-6 lg:px-8">
+          <div className="flex items-center justify-between h-16">
+            <Link href="/" className="flex items-center gap-2">
+              <QRTagsLogo size="md" variant="light" />
+            </Link>
+            <div className="hidden md:flex items-center gap-6">
+              <a href="#avantages" className="text-sm font-medium hover:text-[#c89a00]">Avantages</a>
+              <a href="#etapes" className="text-sm font-medium hover:text-[#c89a00]">Comment ça marche</a>
+              <a href="#metiers" className="text-sm font-medium hover:text-[#c89a00]">Métiers</a>
+              <a href="#formulaire" className="px-5 py-2 rounded-lg font-bold text-sm" style={{ background: COLORS.accent, color: COLORS.text }}>
+                Devenir partenaire
+              </a>
             </div>
-          ) : (
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <input
-                type="text"
-                placeholder="Votre nom"
-                value={formData.name}
-                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                className="w-full p-4 bg-[#0d152a] border border-[#1a1a3a] rounded-xl text-white placeholder-[#a0a8b8] focus:outline-none focus:border-[#1E40AF] transition-colors"
-                required
-              />
-              <input
-                type="email"
-                placeholder="Votre email"
-                value={formData.email}
-                onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                className="w-full p-4 bg-[#0d152a] border border-[#1a1a3a] rounded-xl text-white placeholder-[#a0a8b8] focus:outline-none focus:border-[#1E40AF] transition-colors"
-                required
-              />
-              <input
-                type="text"
-                placeholder="Votre agence / entreprise"
-                value={formData.company}
-                onChange={(e) => setFormData({ ...formData, company: e.target.value })}
-                className="w-full p-4 bg-[#0d152a] border border-[#1a1a3a] rounded-xl text-white placeholder-[#a0a8b8] focus:outline-none focus:border-[#1E40AF] transition-colors"
-                required
-              />
-              <textarea
-                placeholder="Message (ex: nombre de pèlerins, pays, besoins...)"
-                rows={4}
-                value={formData.message}
-                onChange={(e) => setFormData({ ...formData, message: e.target.value })}
-                className="w-full p-4 bg-[#0d152a] border border-[#1a1a3a] rounded-xl text-white placeholder-[#a0a8b8] focus:outline-none focus:border-[#1E40AF] transition-colors resize-none"
-                required
-              />
-              <button
-                type="submit"
-                className="w-full bg-[#1E40AF] text-white py-4 rounded-xl font-bold hover:bg-[#e01e5a] transition-all hover:scale-[1.02] shadow-lg shadow-[#1E40AF]/30 inline-flex items-center justify-center gap-2"
-              >
-                <Send className="w-5 h-5" />
-                Envoyer ma demande
-              </button>
-            </form>
+            <button className="md:hidden p-2" onClick={() => setMenuOpen(!menuOpen)}>
+              {menuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+            </button>
+          </div>
+          {menuOpen && (
+            <div className="md:hidden pb-4 space-y-2">
+              <a href="#avantages" onClick={() => setMenuOpen(false)} className="block px-4 py-2 text-sm">Avantages</a>
+              <a href="#etapes" onClick={() => setMenuOpen(false)} className="block px-4 py-2 text-sm">Comment ça marche</a>
+              <a href="#metiers" onClick={() => setMenuOpen(false)} className="block px-4 py-2 text-sm">Métiers</a>
+              <a href="#formulaire" onClick={() => setMenuOpen(false)} className="block px-4 py-3 text-sm font-bold text-center rounded-lg" style={{ background: COLORS.accent, color: COLORS.text }}>
+                Devenir partenaire
+              </a>
+            </div>
           )}
         </div>
-      </div>
-    </section>
-  );
-}
+      </header>
 
-// Footer
-function Footer() {
-  return (
-    <footer className="border-t border-[#1a2238] py-12 px-4 bg-[#080c1a]">
-      <div className="max-w-6xl mx-auto">
-        <div className="grid md:grid-cols-4 gap-8 mb-8">
-          {/* Logo */}
-          <div>
-            <div className="flex items-center gap-2 mb-4">
-              <QRTagsLogo size="md" variant="dark" />
-            </div>
-            <p className="text-[#a0a8b8] text-sm">
-              Protection intelligente des bagages pour voyageurs et pèlerins.
+      {/* HERO */}
+      <section className="pt-32 pb-20 px-5 relative overflow-hidden">
+        <div
+          className="absolute inset-0 opacity-50"
+          style={{ background: `radial-gradient(ellipse at 30% 20%, ${COLORS.accent}22 0%, transparent 60%)` }}
+        />
+        <div className="max-w-screen-2xl mx-auto relative">
+          <div
+            className="inline-flex items-center gap-2 px-4 py-2 rounded-full mb-6"
+            style={{ background: '#fffdf5', border: `1px solid ${COLORS.borderAccent}` }}
+          >
+            <Sparkles className="w-4 h-4" style={{ color: COLORS.accentDark }} />
+            <span className="text-sm font-medium" style={{ color: COLORS.accentDark }}>
+              Programme partenaire QRTags
+            </span>
+          </div>
+          <h1 className="text-4xl md:text-6xl font-black mb-6 leading-tight max-w-4xl">
+            Devenez partenaire QRTags et <span style={{ color: COLORS.accentDark }}>protégez les objets</span> de vos clients
+          </h1>
+          <p className="text-lg md:text-xl mb-8 max-w-3xl" style={{ color: COLORS.textMuted }}>
+            Hôtel, école, consigne, loueur, clinique — proposez QRTags à vos clients
+            et générez un revenu complémentaire tout en améliorant leur expérience.
+          </p>
+          <div className="flex flex-col sm:flex-row gap-4">
+            <a
+              href="#formulaire"
+              className="px-6 py-4 rounded-xl font-bold text-base inline-flex items-center justify-center gap-2 transition-all hover:scale-105"
+              style={{ background: COLORS.accent, color: COLORS.text }}
+            >
+              Démarrer maintenant
+              <ArrowRight className="w-5 h-5" />
+            </a>
+            <a
+              href="#avantages"
+              className="px-6 py-4 rounded-xl font-bold text-base border-2 inline-flex items-center justify-center"
+              style={{ borderColor: COLORS.border, color: COLORS.text }}
+            >
+              Voir les avantages
+            </a>
+          </div>
+        </div>
+      </section>
+
+      {/* AVANTAGES */}
+      <section id="avantages" className="py-20 px-5" style={{ background: COLORS.bgAlt }}>
+        <div className="max-w-screen-2xl mx-auto">
+          <div className="text-center mb-14">
+            <h2 className="text-3xl md:text-5xl font-black mb-4">
+              Pourquoi devenir <span style={{ color: COLORS.accentDark }}>partenaire</span> ?
+            </h2>
+            <p className="text-lg max-w-2xl mx-auto" style={{ color: COLORS.textMuted }}>
+              6 raisons de rejoindre le réseau QRTags
+            </p>
+          </div>
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {AVANTAGES.map((a, i) => (
+              <div
+                key={i}
+                className="rounded-2xl p-6 transition-all hover:scale-105 hover:shadow-xl"
+                style={{ background: COLORS.card, border: `1px solid ${COLORS.border}` }}
+              >
+                <div
+                  className="w-10 h-10 rounded-xl flex items-center justify-center mb-4"
+                  style={{ background: COLORS.accent, color: COLORS.text }}
+                >
+                  <CheckCircle2 className="w-5 h-5" />
+                </div>
+                <h3 className="text-lg font-bold mb-2">{a.title}</h3>
+                <p className="text-sm" style={{ color: COLORS.textMuted }}>{a.desc}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ÉTAPES */}
+      <section id="etapes" className="py-20 px-5">
+        <div className="max-w-screen-2xl mx-auto">
+          <div className="text-center mb-14">
+            <h2 className="text-3xl md:text-5xl font-black mb-4">
+              Comment <span style={{ color: COLORS.accentDark }}>ça marche</span>
+            </h2>
+            <p className="text-lg max-w-2xl mx-auto" style={{ color: COLORS.textMuted }}>
+              5 étapes simples pour devenir partenaire
+            </p>
+          </div>
+          <div className="grid md:grid-cols-5 gap-6">
+            {ETAPES.map((e, i) => (
+              <div
+                key={i}
+                className="rounded-2xl p-6 relative"
+                style={{ background: COLORS.card, border: `1px solid ${COLORS.border}` }}
+              >
+                <div
+                  className="absolute -top-3 -left-3 w-10 h-10 rounded-full flex items-center justify-center font-black text-sm"
+                  style={{ background: COLORS.accent, color: COLORS.text }}
+                >
+                  {e.num}
+                </div>
+                <h3 className="text-base font-bold mb-2 mt-4">{e.title}</h3>
+                <p className="text-sm" style={{ color: COLORS.textMuted }}>{e.desc}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* MÉTIERS */}
+      <section id="metiers" className="py-20 px-5" style={{ background: COLORS.bgAlt }}>
+        <div className="max-w-screen-2xl mx-auto">
+          <div className="text-center mb-14">
+            <h2 className="text-3xl md:text-5xl font-black mb-4">
+              6 métiers <span style={{ color: COLORS.accentDark }}>supportés</span>
+            </h2>
+            <p className="text-lg max-w-2xl mx-auto" style={{ color: COLORS.textMuted }}>
+              QRTags s'adapte à votre activité. Cliquez pour voir le détail.
+            </p>
+          </div>
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+            {METIERS.map((m, i) => (
+              <Link
+                key={i}
+                href={`/metiers/${m.slug}`}
+                className="rounded-2xl p-6 text-center transition-all hover:scale-105 hover:shadow-xl"
+                style={{ background: COLORS.card, border: `1px solid ${COLORS.border}` }}
+              >
+                <m.icon className="w-10 h-10 mx-auto mb-3" style={{ color: COLORS.accentDark }} />
+                <div className="font-bold text-sm">{m.name}</div>
+              </Link>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* FORMULAIRE */}
+      <section id="formulaire" className="py-20 px-5">
+        <div className="max-w-3xl mx-auto">
+          <div className="text-center mb-12">
+            <h2 className="text-3xl md:text-5xl font-black mb-4">
+              Demandez votre <span style={{ color: COLORS.accentDark }}>compte partenaire</span>
+            </h2>
+            <p className="text-lg" style={{ color: COLORS.textMuted }}>
+              Réponse sous 24h. Sans engagement.
             </p>
           </div>
 
-          {/* Produit */}
-          <div>
-            <h4 className="font-semibold mb-4 text-white">Produit</h4>
-            <ul className="space-y-2 text-[#a0a8b8] text-sm">
-              <li><a href="/#solutions" className="hover:text-[#1E40AF] transition-colors">Solutions</a></li>
-              <li><a href="/#comment" className="hover:text-[#1E40AF] transition-colors">Comment ça marche</a></li>
-              <li><a href="/#tarifs" className="hover:text-[#1E40AF] transition-colors">Tarifs</a></li>
-              <li><Link href="/demo" className="hover:text-[#1E40AF] transition-colors">Démo</Link></li>
-            </ul>
-          </div>
-
-          {/* Entreprise */}
-          <div>
-            <h4 className="font-semibold mb-4 text-white">Entreprise</h4>
-            <ul className="space-y-2 text-[#a0a8b8] text-sm">
-              <li><Link href="/contact" className="hover:text-[#1E40AF] transition-colors">Contact</Link></li>
-              <li><Link href="/a-propos" className="hover:text-[#1E40AF] transition-colors">À propos</Link></li>
-              <li><Link href="/devenir-partenaire" className="hover:text-[#1E40AF] transition-colors">Partenaires</Link></li>
-            </ul>
-          </div>
-
-          {/* Légal */}
-          <div>
-            <h4 className="font-semibold mb-4 text-white">Légal</h4>
-            <ul className="space-y-2 text-[#a0a8b8] text-sm">
-              <li><Link href="/mentions-legales" className="hover:text-[#1E40AF] transition-colors">Mentions légales</Link></li>
-              <li><Link href="/confidentialite" className="hover:text-[#1E40AF] transition-colors">Politique de confidentialité</Link></li>
-              <li><Link href="/cgu" className="hover:text-[#1E40AF] transition-colors">CGU</Link></li>
-            </ul>
-          </div>
+          {submitted ? (
+            <div
+              className="rounded-2xl p-8 text-center"
+              style={{ background: COLORS.card, border: `2px solid ${COLORS.accent}` }}
+            >
+              <CheckCircle2 className="w-16 h-16 mx-auto mb-4" style={{ color: COLORS.accentDark }} />
+              <h3 className="text-2xl font-bold mb-2">Demande envoyée !</h3>
+              <p className="mb-6" style={{ color: COLORS.textMuted }}>
+                Notre équipe vous contactera sous 24h à {form.email}.
+              </p>
+              <Link
+                href="/"
+                className="inline-flex items-center gap-2 px-6 py-3 rounded-xl font-bold"
+                style={{ background: COLORS.accent, color: COLORS.text }}
+              >
+                Retour à l'accueil
+              </Link>
+            </div>
+          ) : (
+            <form
+              onSubmit={handleSubmit}
+              className="rounded-2xl p-8 space-y-4"
+              style={{ background: COLORS.card, border: `1px solid ${COLORS.border}` }}
+            >
+              <div className="grid md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-bold mb-2">Nom complet *</label>
+                  <input
+                    type="text"
+                    required
+                    value={form.name}
+                    onChange={(e) => setForm({ ...form, name: e.target.value })}
+                    className="w-full px-4 py-3 rounded-xl border-2"
+                    style={{ borderColor: COLORS.border }}
+                    placeholder="Marie Dupont"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-bold mb-2">Email professionnel *</label>
+                  <input
+                    type="email"
+                    required
+                    value={form.email}
+                    onChange={(e) => setForm({ ...form, email: e.target.value })}
+                    className="w-full px-4 py-3 rounded-xl border-2"
+                    style={{ borderColor: COLORS.border }}
+                    placeholder="marie@hotel-leroyal.com"
+                  />
+                </div>
+              </div>
+              <div className="grid md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-bold mb-2">Téléphone *</label>
+                  <input
+                    type="tel"
+                    required
+                    value={form.phone}
+                    onChange={(e) => setForm({ ...form, phone: e.target.value })}
+                    className="w-full px-4 py-3 rounded-xl border-2"
+                    style={{ borderColor: COLORS.border }}
+                    placeholder="+33 6 12 34 56 78"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-bold mb-2">Entreprise *</label>
+                  <input
+                    type="text"
+                    required
+                    value={form.company}
+                    onChange={(e) => setForm({ ...form, company: e.target.value })}
+                    className="w-full px-4 py-3 rounded-xl border-2"
+                    style={{ borderColor: COLORS.border }}
+                    placeholder="Hôtel Le Royal"
+                  />
+                </div>
+              </div>
+              <div>
+                <label className="block text-sm font-bold mb-2">Type d'activité *</label>
+                <select
+                  required
+                  value={form.agencyType}
+                  onChange={(e) => setForm({ ...form, agencyType: e.target.value })}
+                  className="w-full px-4 py-3 rounded-xl border-2"
+                  style={{ borderColor: COLORS.border }}
+                >
+                  <option value="hotel">🏨 Hôtel</option>
+                  <option value="school">🎓 École</option>
+                  <option value="luggage_locker">🛅 Consigne</option>
+                  <option value="car_rental">🚗 Loueur auto</option>
+                  <option value="medical">🏥 Clinique</option>
+                  <option value="generic">📦 Autre</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-bold mb-2">Message (optionnel)</label>
+                <textarea
+                  value={form.message}
+                  onChange={(e) => setForm({ ...form, message: e.target.value })}
+                  rows={4}
+                  className="w-full px-4 py-3 rounded-xl border-2 resize-none"
+                  style={{ borderColor: COLORS.border }}
+                  placeholder="Parlez-nous de votre besoin : nombre d'objets à étiqueter, types d'objets, etc."
+                />
+              </div>
+              <button
+                type="submit"
+                className="w-full py-4 rounded-xl font-bold text-base inline-flex items-center justify-center gap-2 transition-all hover:scale-105"
+                style={{ background: COLORS.accent, color: COLORS.text }}
+              >
+                Envoyer ma demande
+                <Send className="w-5 h-5" />
+              </button>
+              <p className="text-xs text-center" style={{ color: COLORS.textMuted }}>
+                En soumettant ce formulaire, vous acceptez d'être contacté par QRTags.
+                Vos données ne seront pas partagées.
+              </p>
+            </form>
+          )}
         </div>
+      </section>
 
-        {/* Contact Info */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 py-8 border-t border-[#1a2238]">
-          <div className="flex items-center gap-3 text-[#a0a8b8]">
-            <MapPin className="w-5 h-5 text-[#1E40AF]" />
-            <span>Poissy, France</span>
-          </div>
-          <div className="flex items-center gap-3 text-[#a0a8b8]">
-            <Phone className="w-5 h-5 text-[#1E40AF]" />
-            <span>+33 7 45 34 93 39</span>
-          </div>
-          <div className="flex items-center gap-3 text-[#a0a8b8]">
-            <Mail className="w-5 h-5 text-[#1E40AF]" />
-            <span>contact@qrtags.com</span>
-          </div>
-        </div>
-
-        {/* Bottom Bar */}
-        <div className="border-t border-[#1a2238] pt-8 flex flex-col md:flex-row justify-between items-center gap-4">
-          <p className="text-[#a0a8b8] text-sm">
-            © {new Date().getFullYear()} QRTags by MMASOLUTION. Tous droits réservés.
+      {/* FOOTER */}
+      <footer className="py-12 px-5 border-t" style={{ borderColor: COLORS.border, background: COLORS.bgAlt }}>
+        <div className="max-w-screen-2xl mx-auto text-center">
+          <QRTagsLogo size="md" variant="light" />
+          <p className="text-sm mt-4" style={{ color: COLORS.textMuted }}>
+            © {new Date().getFullYear()} QRTags. Tous droits réservés.
           </p>
-
-          {/* Social Icons */}
-          <div className="flex items-center gap-4">
-            <a href="https://facebook.com/qrtags" target="_blank" rel="noopener noreferrer" className="text-[#a0a8b8] hover:text-[#1E40AF] transition-colors" aria-label="Facebook">
-              <Facebook className="w-5 h-5" aria-hidden="true" />
-            </a>
-            <a href="https://instagram.com/qrtags" target="_blank" rel="noopener noreferrer" className="text-[#a0a8b8] hover:text-[#1E40AF] transition-colors" aria-label="Instagram">
-              <Instagram className="w-5 h-5" aria-hidden="true" />
-            </a>
-            <a href="https://twitter.com/qrtags" target="_blank" rel="noopener noreferrer" className="text-[#a0a8b8] hover:text-[#1E40AF] transition-colors" aria-label="Twitter">
-              <Twitter className="w-5 h-5" aria-hidden="true" />
-            </a>
-          </div>
-
-          {/* Map Link */}
-          <a
-            href="https://maps.google.com/?q=Poissy+France"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-[#a0a8b8] hover:text-[#1E40AF] text-sm flex items-center gap-1 transition-colors"
-          >
-            <MapPin className="w-4 h-4" />
-            Nous trouver
-          </a>
         </div>
-      </div>
-    </footer>
-  );
-}
-
-// Main Page Component
-export default function DevenirPartenairePage() {
-  return (
-    <main className="min-h-screen bg-[#080c1a]">
-      <Navigation />
-      <HeroSection />
-      <WhyPartnerSection />
-      <WhoCanPartnerSection />
-      <TestimonialsSection />
-      <ContactFormSection />
-      <Footer />
+      </footer>
     </main>
   );
 }

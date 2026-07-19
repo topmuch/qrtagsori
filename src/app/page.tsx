@@ -58,28 +58,28 @@ const COLORS = {
 // DONNÉES MÉTIER QRTags — Multi-métiers
 // ════════════════════════════════════════════════════════════════════
 const AGENCY_TYPES = [
-  { icon: Building2, name: 'Hôtels', desc: 'Effets personnels clients (valises, électronique).', color: COLORS.accent },
-  { icon: GraduationCap, name: 'Écoles', desc: 'Cartables, uniformes, instruments de musique.', color: COLORS.accentAlt },
-  { icon: Luggage, name: 'Consignes', desc: 'Bagages en gare, aéroport, gare routière.', color: COLORS.accent },
-  { icon: Car, name: 'Loueurs auto', desc: 'Clés, documents, sièges enfant, GPS.', color: COLORS.accentAlt },
-  { icon: Stethoscope, name: 'Cliniques', desc: 'Effets personnels patients, dossiers, prothèses.', color: COLORS.accent },
-  { icon: Package, name: 'Autres', desc: 'Bibliothèques, événementiel, logistique.', color: COLORS.accentAlt },
+  { icon: Building2, name: 'Hôtels', desc: 'Effets personnels clients (valises, électronique).', color: COLORS.accent, slug: 'hotels' },
+  { icon: GraduationCap, name: 'Écoles', desc: 'Cartables, uniformes, instruments de musique.', color: COLORS.accentAlt, slug: 'ecoles' },
+  { icon: Luggage, name: 'Consignes', desc: 'Bagages en gare, aéroport, gare routière.', color: COLORS.accent, slug: 'consignes' },
+  { icon: Car, name: 'Loueurs auto', desc: 'Clés, documents, sièges enfant, GPS.', color: COLORS.accentAlt, slug: 'loueurs' },
+  { icon: Stethoscope, name: 'Cliniques', desc: 'Effets personnels patients, dossiers, prothèses.', color: COLORS.accent, slug: 'cliniques' },
+  { icon: Package, name: 'Autres', desc: 'Bibliothèques, événementiel, logistique.', color: COLORS.accentAlt, slug: 'autres' },
 ];
 
 const WORKFLOW_STEPS = [
-  { num: '01', icon: QrCode, title: 'Génération QR', desc: 'Le Superadmin génère des lots de QR codes uniques et les assigne aux entreprises partenaires.' },
-  { num: '02', icon: Package, title: 'Vente au client', desc: 'L\'entreprise vend les tags QRTags à ses clients finaux et trace chaque vente dans son dashboard.' },
-  { num: '03', icon: Smartphone, title: 'Activation', desc: 'Le client scanne son QR code, remplit ses infos et l\'associe à son objet. Le tag est désormais protégé.' },
-  { num: '04', icon: MessageCircle, title: 'Perte & trouvaille', desc: 'Un trouveur scanne le QR → la page WAME s\'ouvre avec sa géoloc → le propriétaire est contacté instantanément.' },
+  { num: '01', icon: QrCode, title: 'Génération QR', desc: 'Le Superadmin génère des lots de QR codes uniques et les assigne aux entreprises partenaires.', slug: '1-generation' },
+  { num: '02', icon: Package, title: 'Vente au client', desc: 'L\'entreprise vend les tags QRTags à ses clients finaux et trace chaque vente dans son dashboard.', slug: '2-vente' },
+  { num: '03', icon: Smartphone, title: 'Activation', desc: 'Le client scanne son QR code, remplit ses infos et l\'associe à son objet. Le tag est désormais protégé.', slug: '3-activation' },
+  { num: '04', icon: MessageCircle, title: 'Perte & trouvaille', desc: 'Un trouveur scanne le QR → la page WAME s\'ouvre avec sa géoloc → le propriétaire est contacté instantanément.', slug: '4-perte-trouvaille' },
 ];
 
 const FEATURES = [
-  { icon: Zap, title: 'Contact instantané', desc: 'WhatsApp WAME (click-to-chat) pré-rempli avec la géolocalisation du trouveur. Aucune app à installer.' },
-  { icon: MapPin, title: 'Géolocalisation GPS', desc: 'Position précise du trouveur envoyée automatiquement au propriétaire via Google Maps.' },
-  { icon: Shield, title: 'Aucune donnée sensible', desc: 'Le trouveur ne voit que le prénom du propriétaire et la référence. Le numéro WhatsApp n\'est révélé qu\'au clic.' },
-  { icon: Globe, title: 'Multilingue', desc: 'La page trouveur s\'adapte automatiquement en FR / EN / AR selon la langue du navigateur.' },
-  { icon: Bell, title: 'Traçabilité complète', desc: 'Chaque scan est journalisé (position, heure, contexte). L\'entreprise voit tout depuis son dashboard.' },
-  { icon: Building2, title: 'Multi-métiers', desc: 'Hôtels, écoles, consignes, loueurs, cliniques — champs dynamiques selon votre activité.' },
+  { icon: Zap, title: 'Contact instantané', desc: 'WhatsApp WAME (click-to-chat) pré-rempli avec la géolocalisation du trouveur. Aucune app à installer.', slug: 'contact' },
+  { icon: MapPin, title: 'Géolocalisation GPS', desc: 'Position précise du trouveur envoyée automatiquement au propriétaire via Google Maps.', slug: 'geoloc' },
+  { icon: Shield, title: 'Aucune donnée sensible', desc: 'Le trouveur ne voit que le prénom du propriétaire et la référence. Le numéro WhatsApp n\'est révélé qu\'au clic.', slug: 'rgpd' },
+  { icon: Globe, title: 'Multilingue', desc: 'La page trouveur s\'adapte automatiquement en FR / EN / AR selon la langue du navigateur.', slug: 'multilingue' },
+  { icon: Bell, title: 'Traçabilité complète', desc: 'Chaque scan est journalisé (position, heure, contexte). L\'entreprise voit tout depuis son dashboard.', slug: 'tracabilite' },
+  { icon: Building2, title: 'Multi-métiers', desc: 'Hôtels, écoles, consignes, loueurs, cliniques — champs dynamiques selon votre activité.', slug: 'multi-metiers' },
 ];
 
 const STATS = [
@@ -124,7 +124,7 @@ export default function HomePage() {
           transition: 'all 0.3s',
         }}
       >
-        <div className="max-w-7xl mx-auto px-5 sm:px-6 lg:px-8">
+        <div className="max-w-screen-2xl mx-auto px-5 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16 lg:h-20">
             <Link href="/" className="flex items-center gap-2 group">
               <QRTagsLogo size="md" variant="light" withHover />
@@ -179,7 +179,7 @@ export default function HomePage() {
             background: `radial-gradient(ellipse at 30% 20%, ${COLORS.accent}22 0%, transparent 60%), radial-gradient(ellipse at 80% 80%, ${COLORS.accentAlt}11 0%, transparent 50%)`,
           }}
         />
-        <div className="max-w-7xl mx-auto relative grid lg:grid-cols-2 gap-12 items-center">
+        <div className="max-w-screen-2xl mx-auto relative grid lg:grid-cols-2 gap-12 items-center">
           <motion.div
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
@@ -324,7 +324,7 @@ export default function HomePage() {
 
       {/* ═══ MÉTIERS ═══ */}
       <section id="metiers" className="py-20 lg:py-28 px-5" style={{ background: COLORS.bgAlt }}>
-        <div className="max-w-7xl mx-auto">
+        <div className="max-w-screen-2xl mx-auto">
           <div className="text-center mb-14">
             <div
               className="inline-block px-4 py-1.5 rounded-full text-sm font-bold mb-4"
@@ -349,17 +349,24 @@ export default function HomePage() {
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
                 transition={{ delay: i * 0.05 }}
-                className="rounded-2xl p-6 transition-all hover:scale-105 hover:shadow-xl cursor-default"
-                style={{ background: COLORS.card, border: `1px solid ${COLORS.border}` }}
               >
-                <div
-                  className="w-12 h-12 rounded-xl flex items-center justify-center mb-4"
-                  style={{ background: t.color, color: COLORS.text }}
+                <Link
+                  href={`/metiers/${t.slug}`}
+                  className="block rounded-2xl p-6 transition-all hover:scale-105 hover:shadow-xl h-full"
+                  style={{ background: COLORS.card, border: `1px solid ${COLORS.border}` }}
                 >
-                  <t.icon className="w-6 h-6" />
-                </div>
-                <h3 className="text-xl font-bold mb-2" style={{ color: COLORS.text }}>{t.name}</h3>
-                <p className="text-sm" style={{ color: COLORS.textMuted }}>{t.desc}</p>
+                  <div
+                    className="w-12 h-12 rounded-xl flex items-center justify-center mb-4"
+                    style={{ background: t.color, color: COLORS.text }}
+                  >
+                    <t.icon className="w-6 h-6" />
+                  </div>
+                  <h3 className="text-xl font-bold mb-2" style={{ color: COLORS.text }}>{t.name}</h3>
+                  <p className="text-sm mb-3" style={{ color: COLORS.textMuted }}>{t.desc}</p>
+                  <span className="text-xs font-bold inline-flex items-center gap-1" style={{ color: COLORS.accentDark }}>
+                    En savoir plus →
+                  </span>
+                </Link>
               </motion.div>
             ))}
           </div>
@@ -368,7 +375,7 @@ export default function HomePage() {
 
       {/* ═══ WORKFLOW ═══ */}
       <section id="workflow" className="py-20 lg:py-28 px-5" style={{ background: COLORS.bg }}>
-        <div className="max-w-7xl mx-auto">
+        <div className="max-w-screen-2xl mx-auto">
           <div className="text-center mb-14">
             <div
               className="inline-block px-4 py-1.5 rounded-full text-sm font-bold mb-4"
@@ -392,18 +399,25 @@ export default function HomePage() {
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
                 transition={{ delay: i * 0.1 }}
-                className="relative rounded-2xl p-6"
-                style={{ background: COLORS.card, border: `1px solid ${COLORS.border}` }}
               >
-                <div
-                  className="absolute -top-3 -right-3 w-10 h-10 rounded-full flex items-center justify-center text-xs font-black"
-                  style={{ background: COLORS.accent, color: COLORS.text }}
+                <Link
+                  href={`/workflow/${step.slug}`}
+                  className="block relative rounded-2xl p-6 transition-all hover:scale-105 hover:shadow-xl h-full"
+                  style={{ background: COLORS.card, border: `1px solid ${COLORS.border}` }}
                 >
-                  {step.num}
-                </div>
-                <step.icon className="w-8 h-8 mb-4" style={{ color: COLORS.accentDark }} />
-                <h3 className="text-lg font-bold mb-2" style={{ color: COLORS.text }}>{step.title}</h3>
-                <p className="text-sm" style={{ color: COLORS.textMuted }}>{step.desc}</p>
+                  <div
+                    className="absolute -top-3 -right-3 w-10 h-10 rounded-full flex items-center justify-center text-xs font-black"
+                    style={{ background: COLORS.accent, color: COLORS.text }}
+                  >
+                    {step.num}
+                  </div>
+                  <step.icon className="w-8 h-8 mb-4" style={{ color: COLORS.accentDark }} />
+                  <h3 className="text-lg font-bold mb-2" style={{ color: COLORS.text }}>{step.title}</h3>
+                  <p className="text-sm mb-3" style={{ color: COLORS.textMuted }}>{step.desc}</p>
+                  <span className="text-xs font-bold" style={{ color: COLORS.accentDark }}>
+                    Voir le détail →
+                  </span>
+                </Link>
               </motion.div>
             ))}
           </div>
@@ -423,7 +437,7 @@ export default function HomePage() {
 
       {/* ═══ FEATURES ═══ */}
       <section id="features" className="py-20 lg:py-28 px-5" style={{ background: COLORS.bgAlt }}>
-        <div className="max-w-7xl mx-auto">
+        <div className="max-w-screen-2xl mx-auto">
           <div className="text-center mb-14">
             <div
               className="inline-block px-4 py-1.5 rounded-full text-sm font-bold mb-4"
@@ -447,12 +461,19 @@ export default function HomePage() {
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
                 transition={{ delay: i * 0.05 }}
-                className="rounded-2xl p-6"
-                style={{ background: COLORS.card, border: `1px solid ${COLORS.border}` }}
               >
-                <f.icon className="w-7 h-7 mb-3" style={{ color: COLORS.accentDark }} />
-                <h3 className="text-lg font-bold mb-2" style={{ color: COLORS.text }}>{f.title}</h3>
-                <p className="text-sm" style={{ color: COLORS.textMuted }}>{f.desc}</p>
+                <Link
+                  href={`/features/${f.slug}`}
+                  className="block rounded-2xl p-6 transition-all hover:scale-105 hover:shadow-xl h-full"
+                  style={{ background: COLORS.card, border: `1px solid ${COLORS.border}` }}
+                >
+                  <f.icon className="w-7 h-7 mb-3" style={{ color: COLORS.accentDark }} />
+                  <h3 className="text-lg font-bold mb-2" style={{ color: COLORS.text }}>{f.title}</h3>
+                  <p className="text-sm mb-3" style={{ color: COLORS.textMuted }}>{f.desc}</p>
+                  <span className="text-xs font-bold" style={{ color: COLORS.accentDark }}>
+                    En savoir plus →
+                  </span>
+                </Link>
               </motion.div>
             ))}
           </div>
@@ -461,7 +482,7 @@ export default function HomePage() {
 
       {/* ═══ TÉMOIGNAGES ═══ */}
       <section id="temoignages" className="py-20 lg:py-28 px-5" style={{ background: COLORS.bg }}>
-        <div className="max-w-7xl mx-auto">
+        <div className="max-w-screen-2xl mx-auto">
           <div className="text-center mb-14">
             <div
               className="inline-block px-4 py-1.5 rounded-full text-sm font-bold mb-4"
@@ -544,7 +565,7 @@ export default function HomePage() {
 
       {/* ═══ FOOTER ═══ */}
       <footer className="py-12 px-5 border-t" style={{ borderColor: COLORS.border, background: COLORS.bg }}>
-        <div className="max-w-7xl mx-auto">
+        <div className="max-w-screen-2xl mx-auto">
           <div className="grid md:grid-cols-4 gap-8 mb-8">
             <div className="md:col-span-2">
               <QRTagsLogo size="md" variant="light" />
