@@ -139,14 +139,14 @@ export default function HomePage() {
 
             <div className="hidden md:flex items-center gap-3">
               <Link href="/agence/connexion" className="px-4 py-2 text-sm font-medium hover:text-[#c89a00] transition-colors">
-                Espace agence
+                Connexion
               </Link>
               <Link
-                href="/devenir-partenaire"
+                href="/inscription"
                 className="px-5 py-2.5 rounded-lg text-sm font-bold transition-all hover:scale-105"
                 style={{ background: COLORS.accent, color: COLORS.text }}
               >
-                Devenir partenaire
+                S'inscrire
               </Link>
             </div>
 
@@ -161,9 +161,9 @@ export default function HomePage() {
               <a href="#workflow" onClick={() => setMenuOpen(false)} className="block px-4 py-2 text-sm">Comment ça marche</a>
               <a href="#features" onClick={() => setMenuOpen(false)} className="block px-4 py-2 text-sm">Fonctionnalités</a>
               <a href="#temoignages" onClick={() => setMenuOpen(false)} className="block px-4 py-2 text-sm">Témoignages</a>
-              <Link href="/agence/connexion" className="block px-4 py-2 text-sm text-[#c89a00]">Espace agence →</Link>
-              <Link href="/devenir-partenaire" className="block px-4 py-3 text-sm font-bold text-center rounded-lg" style={{ background: COLORS.accent, color: COLORS.text }}>
-                Devenir partenaire
+              <Link href="/agence/connexion" className="block px-4 py-2 text-sm text-[#c89a00]">Connexion →</Link>
+              <Link href="/inscription" className="block px-4 py-3 text-sm font-bold text-center rounded-lg" style={{ background: COLORS.accent, color: COLORS.text }}>
+                S'inscrire
               </Link>
             </div>
           )}
@@ -209,21 +209,27 @@ export default function HomePage() {
 
             <div className="flex flex-col sm:flex-row gap-4 mb-10">
               <Link
-                href="/devenir-partenaire"
+                href="/inscription"
                 className="px-6 py-4 rounded-xl font-bold text-base flex items-center justify-center gap-2 transition-all hover:scale-105"
                 style={{ background: COLORS.accent, color: COLORS.text }}
               >
-                Devenir partenaire
+                S'inscrire — Hôtel, Loueur, École...
                 <ArrowRight className="w-5 h-5" />
               </Link>
               <Link
-                href="#workflow"
+                href="/devenir-partenaire"
                 className="px-6 py-4 rounded-xl font-bold text-base flex items-center justify-center gap-2 border-2 transition-all hover:bg-[#fffdf5]"
                 style={{ borderColor: COLORS.border, color: COLORS.text }}
               >
-                Voir comment ça marche
+                En savoir plus
               </Link>
             </div>
+            <p className="text-sm mb-8" style={{ color: COLORS.textMuted }}>
+              💡 Inscription en 3 étapes — compte créé immédiatement. Déjà un compte ?{' '}
+              <Link href="/agence/connexion" className="font-bold" style={{ color: COLORS.accentDark }}>
+                Connectez-vous
+              </Link>
+            </p>
 
             {/* Stats inline */}
             <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
