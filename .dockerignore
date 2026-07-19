@@ -1,7 +1,6 @@
 # ════════════════════════════════════════════════════════════════════
 # QRTags — .dockerignore
-# Exclut les fichiers non nécessaires au build Docker pour accélérer
-# le contexte de build (Coolify build context).
+# Exclut les fichiers non nécessaires au build Docker.
 # ════════════════════════════════════════════════════════════════════
 
 # Node
@@ -13,7 +12,7 @@ pnpm-debug.log*
 .npm
 .pnpm-store
 
-# Build artifacts
+# Build artifacts (seront reconstruits dans Docker)
 .next
 out
 dist
@@ -42,7 +41,7 @@ Thumbs.db
 .gitignore
 .gitattributes
 
-# Docker
+# Docker (éviter récursion)
 Dockerfile
 docker-compose.yml
 .dockerignore
@@ -57,27 +56,26 @@ dev.log
 dev-server.log
 dev-server-live.log
 
-# Env files (Coolify fournit ses propres variables d'environnement)
+# Env files (Coolify fournit ses propres variables)
 .env
 .env.local
 .env.development
 .env.test
 .env.production
-# Garde .env.example pour référence
 
-# Database (recréée au runtime par prisma db push)
+# Database (recréée au runtime)
 db/
 *.db
 *.db-journal
 *.sqlite
 *.sqlite3
 
-# Scripts de dev (test, seed, etc.) — non requis en prod
+# Scripts de dev (non requis en prod)
 scripts/test-*.ts
 scripts/test-*.sh
 scripts/seed-users.ts
 
-# Mini-services séparés (déployés indépendamment si besoin)
+# Mini-services séparés
 mini-services/
 
 # Examples
@@ -91,3 +89,4 @@ examples/
 worklog.md
 .start.sh
 Caddyfile
+nixpacks.toml
