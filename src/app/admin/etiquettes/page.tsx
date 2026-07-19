@@ -92,8 +92,9 @@ export default function EtiquettesPage() {
         activationStatus: getActivationStatus(set.status)
       }));
 
-      // Filter to only show sets matching the active tab type
-      const filteredSets = setsWithStatus.filter((set: QRSet) => set.type === activeTab);
+      // QRTags : ne plus filtrer par type côté frontend (l'API gère déjà le filtre)
+      // Afficher tous les sets retournés par l'API
+      const filteredSets = setsWithStatus;
       
       setSets(filteredSets);
       setStats(data.stats);

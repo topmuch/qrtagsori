@@ -65,6 +65,8 @@ COPY --from=builder --chown=nextjs:nodejs /app/node_modules/.prisma ./node_modul
 COPY --from=builder --chown=nextjs:nodejs /app/node_modules/@prisma ./node_modules/@prisma
 COPY --from=builder --chown=nextjs:nodejs /app/node_modules/prisma ./node_modules/prisma
 COPY --from=builder --chown=nextjs:nodejs /app/package.json ./package.json
+# QRTags : copier scripts/create-admin.cjs (requis par docker-entrypoint.sh)
+COPY --from=builder --chown=nextjs:nodejs /app/scripts ./scripts
 
 # Créer les répertoires de données + uploads
 RUN mkdir -p /app/data /app/data/backups /app/public/uploads/damage && \

@@ -11,9 +11,16 @@ export async function GET(request: NextRequest) {
 
     // Build where clause
     const where: Record<string, unknown> = {};
-    
+
+    // QRTags : 'qrtags' = tous les tags (voyageur + qrtags + legacy hajj exclu)
+    // On exclut juste 'hajj' (legacy) pour ne pas polluer l'onglet QRTags
     if (type && type !== 'all') {
-      where.type = type;
+      if (type === 'qrtags') {
+        // QRTags : afficher tous les tags sauf 'hajj' (legacy)
+        where.NOT = { type: 'hajj' };
+      } else {
+        where.type = type;
+      }
     }
     
     if (agencyId) {
