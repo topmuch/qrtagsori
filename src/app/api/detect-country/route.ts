@@ -82,8 +82,7 @@ export async function GET(request: NextRequest) {
     });
 
   } catch (error) {
-    console.error('Country detection error:', error);
-
+    // QRTags : erreur silencieuse (l'API IP peut être indisponible, non bloquant)
     // Return default French on error
     return NextResponse.json({
       countryCode: 'FR',
