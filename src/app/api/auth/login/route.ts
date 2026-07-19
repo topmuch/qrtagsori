@@ -6,6 +6,9 @@ import { createSession, logLoginAttempt } from '@/lib/session';
 export async function POST(request: NextRequest) {
   const { email, password, role } = await request.json();
 
+  // QRTags : logs détaillés pour diagnostiquer les échecs de connexion
+  console.log('[LOGIN] Tentative:', { email, role, hasPassword: !!password });
+
   try {
     if (!email || !password) {
       return NextResponse.json(
@@ -22,6 +25,8 @@ export async function POST(request: NextRequest) {
       },
     });
 
+    console.log('[LOGIN] User trouvé:', user ? `${user.email} (${user.role})` : 'AUCUN');
+
     if (!user) {
       // Log failed attempt - user not found
       await logLoginAttempt({
@@ -37,7 +42,15 @@ export async function POST(request: NextRequest) {
     }
 
     // Vérifier le mot de passe
+    console.log('[LOGIN] Vérification mot de passe...', { 
+      inputPasswordLength: password.length, 
+      dbPasswordLength: user.password?.length,
+      dbPasswordStartsWith: user.password?.substring(0, 7)
+    });
+    
     const isValidPassword = user.password ? await bcrypt.compare(password, user.password) : false;
+    console.log('[LOGIN] Mot de passe valide:', isValidPassword);
+    
     if (!isValidPassword) {
       // Log failed attempt - wrong password
       await logLoginAttempt({
