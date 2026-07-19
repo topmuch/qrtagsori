@@ -96,7 +96,7 @@ function AgencyCard({
           <div>
             <h3 className="text-lg font-semibold text-slate-800 dark:text-white">{agency.name}</h3>
             <p className="text-sm text-slate-500 dark:text-slate-400">
-              {agency.travelerCount} voyageur{agency.travelerCount > 1 ? 's' : ''} • {agency.baggages.length} bagage{agency.baggages.length > 1 ? 's' : ''}
+              {agency.baggages.length} objet(s) trouvé(s)
             </p>
           </div>
         </div>
@@ -136,7 +136,7 @@ function AgencyCard({
               <TableHeader>
                 <TableRow className="bg-slate-50 dark:bg-slate-700/50 hover:bg-transparent">
                   <TableHead className="text-slate-500 dark:text-slate-400 font-medium">Référence</TableHead>
-                  <TableHead className="text-slate-500 dark:text-slate-400 font-medium">Voyageur</TableHead>
+                  <TableHead className="text-slate-500 dark:text-slate-400 font-medium">Objet</TableHead>
                   <TableHead className="text-slate-500 dark:text-slate-400 font-medium hidden md:table-cell">Type</TableHead>
                   <TableHead className="text-slate-500 dark:text-slate-400 font-medium hidden lg:table-cell">WhatsApp</TableHead>
                   <TableHead className="text-slate-500 dark:text-slate-400 font-medium">Statut</TableHead>
@@ -301,7 +301,7 @@ export default function VoyageursAdminPage() {
       {/* Page Header */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
         <div>
-          <h1 className="text-2xl font-bold text-slate-800 dark:text-white">Voyageurs</h1>
+          <h1 className="text-2xl font-bold text-slate-800 dark:text-white">Objets trouvés</h1>
           <p className="text-slate-500 dark:text-slate-400 mt-1">QR codes organisés par agence</p>
         </div>
         <Button
@@ -335,7 +335,7 @@ export default function VoyageursAdminPage() {
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-slate-500 dark:text-slate-400 text-sm">Total voyageurs</p>
+                <p className="text-slate-500 dark:text-slate-400 text-sm">Total objets</p>
                 <p className="text-3xl font-bold text-slate-800 dark:text-white">{totalTravelers}</p>
               </div>
               <div className="w-12 h-12 bg-blue-100 dark:bg-blue-900/30 rounded-xl flex items-center justify-center">
@@ -379,7 +379,7 @@ export default function VoyageursAdminPage() {
         <div className="relative flex-1">
           <input
             type="text"
-            placeholder="Rechercher par agence, voyageur ou référence..."
+            placeholder="Rechercher par agence, objet ou référence..."
             value={searchFilter}
             onChange={(e) => setSearchFilter(e.target.value)}
             className="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl py-3 px-4 text-slate-700 dark:text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-[#2563EB]/20 focus:border-[#2563EB] transition-all"
@@ -413,9 +413,9 @@ export default function VoyageursAdminPage() {
             <div className="w-16 h-16 bg-slate-100 dark:bg-slate-700 rounded-full flex items-center justify-center mx-auto mb-4">
               <Package className="w-8 h-8 text-slate-400" />
             </div>
-            <p className="text-slate-500 dark:text-slate-400">Aucun voyageur trouvé</p>
+            <p className="text-slate-500 dark:text-slate-400">Aucun objet trouvé</p>
             <p className="text-sm text-slate-400 dark:text-slate-500 mt-2">
-              {searchFilter ? 'Modifiez vos critères de recherche' : 'Les voyageurs apparaîtront ici une fois les QR codes générés'}
+              {searchFilter ? 'Modifiez vos critères de recherche' : 'Les objets apparaîtront ici une fois les QR codes générés'}
             </p>
           </CardContent>
         </Card>

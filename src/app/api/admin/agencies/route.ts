@@ -117,8 +117,10 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // QRTags : retourner le VRAI message d'erreur Prisma au lieu du générique
+    const errMsg = error instanceof Error ? error.message : 'Erreur inconnue';
     return NextResponse.json(
-      { error: 'Erreur serveur lors de la création de l\'agence' },
+      { error: `Erreur serveur : ${errMsg}` },
       { status: 500 }
     );
   }

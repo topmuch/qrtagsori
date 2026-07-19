@@ -64,7 +64,7 @@ export default function EtiquettesPage() {
   });
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
-  const [activeTab, setActiveTab] = useState<'qrtags' | 'hajj'>('qrtags');
+  const [activeTab, setActiveTab] = useState<'qrtags'>('qrtags');
 
   // Modals
   const [showDetailModal, setShowDetailModal] = useState(false);
@@ -199,7 +199,7 @@ export default function EtiquettesPage() {
       ctx.fillRect(0, 0, canvas.width, canvas.height);
 
       // Header
-      ctx.fillStyle = set.type === 'hajj' ? '#1D4ED8' : '#f59e0b';
+      ctx.fillStyle = '#f59e0b';
       ctx.fillRect(0, 0, canvas.width, headerHeight);
 
       ctx.fillStyle = '#ffffff';
@@ -208,7 +208,7 @@ export default function EtiquettesPage() {
       ctx.fillText('QRTags - Étiquettes', canvas.width / 2, 35);
 
       ctx.font = '16px Arial';
-      ctx.fillText(`${set.setId} | ${set.type === 'hajj' ? 'Legacy' : 'QRTags'} | ${set.qrCount} QR`, canvas.width / 2, 65);
+      ctx.fillText(`${set.setId} | ${'QRTags'} | ${set.qrCount} QR`, canvas.width / 2, 65);
       if (set.agencyName) {
         ctx.font = '14px Arial';
         ctx.fillText(`Agence: ${set.agencyName}`, canvas.width / 2, 85);
@@ -226,12 +226,12 @@ export default function EtiquettesPage() {
 
         const qrUrl = `${window.location.origin}/scan/${set.references[i]}`;
         const svgElement = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-        const qrSvg = <QRCodeSVG value={qrUrl} size={qrSize - 40} level="H" fgColor={set.type === 'hajj' ? '#1D4ED8' : '#f59e0b'} />;
+        const qrSvg = <QRCodeSVG value={qrUrl} size={qrSize - 40} level="H" fgColor={'#f59e0b'} />;
 
         // Use a promise-based approach to render SVG to canvas
         const svgString = `<svg xmlns="http://www.w3.org/2000/svg" width="${qrSize - 40}" height="${qrSize - 40}">
           <rect width="100%" height="100%" fill="white"/>
-          ${generateQRPath(qrUrl, qrSize - 40, set.type === 'hajj' ? '#1D4ED8' : '#f59e0b')}
+          ${generateQRPath(qrUrl, qrSize - 40, '#f59e0b')}
         </svg>`;
 
         const img = new Image();
@@ -369,25 +369,6 @@ export default function EtiquettesPage() {
             {stats.qrtagsSets}
           </span>
         </button>
-
-        <button
-          onClick={() => setActiveTab('hajj')}
-          className={`flex items-center gap-2 px-6 py-3 rounded-xl font-medium transition-all ${
-            activeTab === 'hajj'
-              ? 'bg-blue-700 text-white shadow-lg shadow-blue-700/30'
-              : 'bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700'
-          }`}
-        >
-          <Luggage className="w-5 h-5" />
-          Hajj
-          <span className={`px-2 py-0.5 rounded-full text-xs ${
-            activeTab === 'hajj' 
-              ? 'bg-white/20 text-white' 
-              : 'bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-400'
-          }`}>
-            {stats.hajjSets}
-          </span>
-        </button>
       </div>
 
       {/* Content */}
@@ -397,17 +378,11 @@ export default function EtiquettesPage() {
         </div>
       ) : agencyGroups.length === 0 ? (
         <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 p-12 text-center">
-          <div className={`w-16 h-16 mx-auto mb-4 rounded-2xl flex items-center justify-center ${
-            activeTab === 'hajj' ? 'bg-emerald-100 dark:bg-blue-600/20' : 'bg-amber-100 dark:bg-blue-600/20'
-          }`}>
-            {activeTab === 'hajj' ? (
-              <Luggage className="w-8 h-8 text-blue-700" />
-            ) : (
-              <Plane className="w-8 h-8 text-amber-600" />
-            )}
+          <div className="w-16 h-16 mx-auto mb-4 rounded-2xl flex items-center justify-center bg-amber-100 dark:bg-blue-600/20">
+            <Plane className="w-8 h-8 text-amber-600" />
           </div>
           <h3 className="text-lg font-semibold text-slate-800 dark:text-white mb-2">
-            Aucun QR code {activeTab === 'hajj' ? 'Legacy' : 'QRTags'}
+            Aucun tag QRTags
           </h3>
           <p className="text-slate-500 dark:text-slate-400 mb-4">
             {search ? 'Aucun résultat pour votre recherche' : 'Commencez par générer des QR codes'}
@@ -436,12 +411,12 @@ export default function EtiquettesPage() {
               >
                 <div className="flex items-center gap-3">
                   <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${
-                    activeTab === 'hajj' 
+                    false 
                       ? 'bg-emerald-100 dark:bg-blue-600/20' 
                       : 'bg-amber-100 dark:bg-blue-600/20'
                   }`}>
                     <Building2 className={`w-5 h-5 ${
-                      activeTab === 'hajj' ? 'text-blue-700' : 'text-amber-600'
+                      false ? 'text-blue-700' : 'text-amber-600'
                     }`} />
                   </div>
                   <div className="text-left">
@@ -470,12 +445,12 @@ export default function EtiquettesPage() {
                         <div className="flex items-center gap-4">
                           {/* QR Icon */}
                           <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${
-                            activeTab === 'hajj'
+                            false
                               ? 'bg-emerald-100 dark:bg-blue-600/20'
                               : 'bg-amber-100 dark:bg-blue-600/20'
                           }`}>
                             <QrCode className={`w-6 h-6 ${
-                              activeTab === 'hajj' ? 'text-blue-700' : 'text-amber-600'
+                              false ? 'text-blue-700' : 'text-amber-600'
                             }`} />
                           </div>
 
@@ -560,7 +535,7 @@ export default function EtiquettesPage() {
               <div>
                 <h2 className="text-lg font-bold text-slate-800 dark:text-white">{selectedSet.setId}</h2>
                 <p className="text-slate-500 dark:text-slate-400 text-sm">
-                  {selectedSet.type === 'hajj' ? 'Legacy' : 'QRTags'} • {selectedSet.qrCount} QR codes
+                  {'QRTags'} • {selectedSet.qrCount} QR codes
                   {selectedSet.agencyName && ` • ${selectedSet.agencyName}`}
                 </p>
               </div>
@@ -591,13 +566,13 @@ export default function EtiquettesPage() {
                       level="H"
                       includeMargin={true}
                       bgColor="#f8fafc"
-                      fgColor={selectedSet.type === 'hajj' ? '#1D4ED8' : '#f59e0b'}
+                      fgColor={'#f59e0b'}
                     />
                     <p className="text-slate-800 dark:text-white font-mono font-bold mt-2 text-sm">
                       {ref}
                     </p>
                     <p className="text-slate-500 dark:text-slate-400 text-xs">
-                      {selectedSet.type === 'hajj' 
+                      {false 
                         ? (index === 0 ? 'Cabine' : `Soute #${index}`)
                         : `Bagage #${index + 1}`
                       }

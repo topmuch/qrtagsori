@@ -51,11 +51,11 @@ export default function AdminLayout({
     { label: "Agences", icon: "🏢", href: "/admin/agences" },
     // 🧾 Produits & QR
     { label: "PRODUITS & QR", isCategory: true },
-    { label: "Objets trouvés", icon: "🔍", href: "/admin/generer" },
+    { label: "Génération QRTags", icon: "🔢", href: "/admin/generer" },
     { label: "Les Étiquettes", icon: "🏷️", href: "/admin/etiquettes" },
     // 🧳 Bagages
     { label: "VOYAGEURS & PÈLERINS", isCategory: true },
-    { label: "Bagages", icon: "🧳", href: "/admin/voyageurs" },
+    { label: "Objets trouvés", icon: "📦", href: "/admin/voyageurs" },
     // 📬 Opérations
     { label: "OPÉRATIONS", isCategory: true },
     { label: "Messages", icon: "📩", href: "/admin/messages", badge: unreadMessages },

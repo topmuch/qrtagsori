@@ -168,7 +168,8 @@ export default function AgencesPage() {
         setSuccessMessage(`✅ Agence "${agencyForm.name}" créée avec succès ! Utilisateur "${agencyForm.email}" associé.`);
       }
 
-      fetchAgencies();
+      // QRTags : refresh liste EN PREMIER, avant de fermer le dialog/reset form
+      await fetchAgencies(true);
       setDialogOpen(false);
       setAgencyForm({ name: '', slug: '', email: '', phone: '', password: '', confirmPassword: '' });
       setTimeout(() => setSuccessMessage(''), 6000);

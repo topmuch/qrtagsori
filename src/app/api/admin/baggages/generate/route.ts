@@ -32,17 +32,18 @@ import { db } from '@/lib/db';
 // ─── Schémas Zod ────────────────────────────────────────────────────
 const individualSchema = z.object({
   context: z.literal('individual'),
-  type: z.enum(['hajj', 'voyageur']).optional(),
-  firstName: z.string().min(2).max(50),
-  lastName: z.string().min(2).max(50),
-  whatsapp: z.string().min(6).max(20),
+  // QRTags : accepte 'qrtags' (nouveau) + 'hajj'/'voyageur' (legacy)
+  type: z.enum(['hajj', 'voyageur', 'qrtags']).optional(),
+  firstName: z.string().min(1, 'Le prénom est requis').max(50),
+  lastName: z.string().min(1, 'Le nom est requis').max(50),
+  whatsapp: z.string().min(6, 'Le numéro WhatsApp est requis').max(20),
   duration: z.enum(['7d', '1y']),
   baggageCount: z.number().min(1).max(2),
 });
 
 const agencySchema = z.object({
   context: z.literal('agency'),
-  type: z.enum(['hajj', 'voyageur']).optional(),
+  type: z.enum(['hajj', 'voyageur', 'qrtags']).optional(),
   // QRTags : agencyId peut être vide (stock central) ou un ID valide
   // On accepte explicitement "" et on nettoie côté code
   agencyId: z.union([z.string().min(1), z.literal('')]).optional(),

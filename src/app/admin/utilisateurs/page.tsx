@@ -126,13 +126,15 @@ export default function UtilisateursPage() {
       const data = await response.json();
 
       if (response.ok) {
-        // Reset formulaire + fermer dialog + refresh liste
+        // QRTags : refresh liste EN PREMIER (avant de fermer le dialog/reset form)
+        // pour garantir que le nouveau user s'affiche
+        await fetchUsers(true);
+        // Reset formulaire + fermer dialog APRÈS le refresh
         setUserForm({ email: '', name: '', password: '', role: 'agent', agencyId: '' });
         setDialogOpen(false);
         setError(''); // Clear toute erreur précédente
         setSuccess(`Utilisateur "${data.user?.email}" créé avec succès.`);
         setTimeout(() => setSuccess(''), 5000);
-        await fetchUsers(); // Refresh liste (avec no-store)
       } else {
         setError(data.error || 'Erreur lors de la création de l\'utilisateur');
       }
