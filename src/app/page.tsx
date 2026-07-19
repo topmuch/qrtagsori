@@ -58,19 +58,19 @@ const COLORS = {
 // DONNÉES MÉTIER QRTags — Multi-métiers
 // ════════════════════════════════════════════════════════════════════
 const AGENCY_TYPES = [
-  { icon: Building2, name: 'Hôtels', desc: 'Effets personnels clients (valises, électronique).', color: COLORS.accent, slug: 'hotels', image: '/images/metiers/hotels.png' },
-  { icon: GraduationCap, name: 'Écoles', desc: 'Cartables, uniformes, instruments de musique.', color: COLORS.accentAlt, slug: 'ecoles', image: '/images/metiers/ecoles.png' },
-  { icon: Luggage, name: 'Consignes', desc: 'Bagages en gare, aéroport, gare routière.', color: COLORS.accent, slug: 'consignes', image: '/images/metiers/consignes.png' },
-  { icon: Car, name: 'Loueurs auto', desc: 'Clés, documents, sièges enfant, GPS.', color: COLORS.accentAlt, slug: 'loueurs', image: '/images/metiers/loueurs.png' },
-  { icon: Stethoscope, name: 'Cliniques', desc: 'Effets personnels patients, dossiers, prothèses.', color: COLORS.accent, slug: 'cliniques', image: '/images/metiers/cliniques.png' },
-  { icon: Package, name: 'Autres', desc: 'Bibliothèques, événementiel, logistique.', color: COLORS.accentAlt, slug: 'autres', image: '/images/metiers/autres.png' },
+  { icon: Building2, name: 'Hôtels', desc: 'Effets personnels clients (valises, électronique).', color: COLORS.accent, slug: 'hotels', image: '/images/metiers/hotels.png', imageMobile: '/images/metiers/mobile/hotels.png' },
+  { icon: GraduationCap, name: 'Écoles', desc: 'Cartables, uniformes, instruments de musique.', color: COLORS.accentAlt, slug: 'ecoles', image: '/images/metiers/ecoles.png', imageMobile: '/images/metiers/mobile/ecoles.png' },
+  { icon: Luggage, name: 'Consignes', desc: 'Bagages en gare, aéroport, gare routière.', color: COLORS.accent, slug: 'consignes', image: '/images/metiers/consignes.png', imageMobile: '/images/metiers/mobile/consignes.png' },
+  { icon: Car, name: 'Loueurs auto', desc: 'Clés, documents, sièges enfant, GPS.', color: COLORS.accentAlt, slug: 'loueurs', image: '/images/metiers/loueurs.png', imageMobile: '/images/metiers/mobile/loueurs.png' },
+  { icon: Stethoscope, name: 'Cliniques', desc: 'Effets personnels patients, dossiers, prothèses.', color: COLORS.accent, slug: 'cliniques', image: '/images/metiers/cliniques.png', imageMobile: '/images/metiers/mobile/cliniques.png' },
+  { icon: Package, name: 'Autres', desc: 'Bibliothèques, événementiel, logistique.', color: COLORS.accentAlt, slug: 'autres', image: '/images/metiers/autres.png', imageMobile: '/images/metiers/mobile/autres.png' },
 ];
 
 const WORKFLOW_STEPS = [
-  { num: '01', icon: QrCode, title: 'Génération QR', desc: 'Le Superadmin génère des lots de QR codes uniques et les assigne aux entreprises partenaires.', slug: '1-generation', image: '/images/workflow/1-generation.png' },
-  { num: '02', icon: Package, title: 'Vente au client', desc: 'L\'entreprise vend les tags QRTags à ses clients finaux et trace chaque vente dans son dashboard.', slug: '2-vente', image: '/images/workflow/2-vente.png' },
-  { num: '03', icon: Smartphone, title: 'Activation', desc: 'Le client scanne son QR code, remplit ses infos et l\'associe à son objet. Le tag est désormais protégé.', slug: '3-activation', image: '/images/workflow/3-activation.png' },
-  { num: '04', icon: MessageCircle, title: 'Perte & trouvaille', desc: 'Un trouveur scanne le QR → la page WAME s\'ouvre avec sa géoloc → le propriétaire est contacté instantanément.', slug: '4-perte-trouvaille', image: '/images/workflow/4-perte-trouvaille.png' },
+  { num: '01', icon: QrCode, title: 'Génération QR', desc: 'Le Superadmin génère des lots de QR codes uniques et les assigne aux entreprises partenaires.', slug: '1-generation', image: '/images/workflow/1-generation.png', imageMobile: '/images/workflow/mobile/1-generation.png' },
+  { num: '02', icon: Package, title: 'Vente au client', desc: 'L\'entreprise vend les tags QRTags à ses clients finaux et trace chaque vente dans son dashboard.', slug: '2-vente', image: '/images/workflow/2-vente.png', imageMobile: '/images/workflow/mobile/2-vente.png' },
+  { num: '03', icon: Smartphone, title: 'Activation', desc: 'Le client scanne son QR code, remplit ses infos et l\'associe à son objet. Le tag est désormais protégé.', slug: '3-activation', image: '/images/workflow/3-activation.png', imageMobile: '/images/workflow/mobile/3-activation.png' },
+  { num: '04', icon: MessageCircle, title: 'Perte & trouvaille', desc: 'Un trouveur scanne le QR → la page WAME s\'ouvre avec sa géoloc → le propriétaire est contacté instantanément.', slug: '4-perte-trouvaille', image: '/images/workflow/4-perte-trouvaille.png', imageMobile: '/images/workflow/mobile/4-perte-trouvaille.png' },
 ];
 
 const FEATURES = [
@@ -361,17 +361,26 @@ export default function HomePage() {
                   className="group block rounded-2xl overflow-hidden transition-all hover:scale-105 hover:shadow-xl h-full"
                   style={{ background: COLORS.card, border: `1px solid ${COLORS.border}` }}
                 >
-                  {/* Image réelle (remplace l'icône) */}
-                  <div className="relative h-48 overflow-hidden">
+                  {/* Image 9:16 sur mobile (portrait téléphone), 4:3 sur desktop */}
+                  <div className="relative aspect-[9/16] md:aspect-[4/3] overflow-hidden">
+                    {/* Image mobile (9:16 portrait) */}
+                    <Image
+                      src={t.imageMobile}
+                      alt={t.name}
+                      fill
+                      className="object-cover transition-transform duration-300 group-hover:scale-110 md:hidden"
+                      sizes="(max-width: 768px) 100vw"
+                    />
+                    {/* Image desktop (4:3 paysage) */}
                     <Image
                       src={t.image}
                       alt={t.name}
                       fill
-                      className="object-cover transition-transform duration-300 group-hover:scale-110"
-                      sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+                      className="hidden md:block object-cover transition-transform duration-300 group-hover:scale-110"
+                      sizes="(min-width: 768px) 33vw"
                     />
                     <div
-                      className="absolute top-3 right-3 w-10 h-10 rounded-xl flex items-center justify-center shadow-lg"
+                      className="absolute top-3 right-3 w-10 h-10 rounded-xl flex items-center justify-center shadow-lg z-10"
                       style={{ background: t.color, color: COLORS.text }}
                     >
                       <t.icon className="w-5 h-5" />
@@ -423,17 +432,26 @@ export default function HomePage() {
                   className="group block relative rounded-2xl overflow-hidden transition-all hover:scale-105 hover:shadow-xl h-full"
                   style={{ background: COLORS.card, border: `1px solid ${COLORS.border}` }}
                 >
-                  {/* Image réelle (remplace l'icône) */}
-                  <div className="relative h-40 overflow-hidden">
+                  {/* Image 9:16 sur mobile (portrait), 4:3 sur desktop */}
+                  <div className="relative aspect-[9/16] md:aspect-[4/3] overflow-hidden">
+                    {/* Image mobile (9:16 portrait) */}
+                    <Image
+                      src={step.imageMobile}
+                      alt={step.title}
+                      fill
+                      className="object-cover transition-transform duration-300 group-hover:scale-110 md:hidden"
+                      sizes="(max-width: 768px) 100vw"
+                    />
+                    {/* Image desktop (4:3 paysage) */}
                     <Image
                       src={step.image}
                       alt={step.title}
                       fill
-                      className="object-cover transition-transform duration-300 group-hover:scale-110"
-                      sizes="(max-width: 768px) 100vw, 25vw"
+                      className="hidden md:block object-cover transition-transform duration-300 group-hover:scale-110"
+                      sizes="(min-width: 768px) 25vw"
                     />
                     <div
-                      className="absolute -top-3 -right-3 w-12 h-12 rounded-full flex items-center justify-center text-sm font-black shadow-lg"
+                      className="absolute w-12 h-12 rounded-full flex items-center justify-center text-sm font-black shadow-lg z-10"
                       style={{ background: COLORS.accent, color: COLORS.text, top: '12px', right: '12px' }}
                     >
                       {step.num}
