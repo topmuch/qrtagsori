@@ -31,6 +31,11 @@ ENV NODE_ENV=production
 # DATABASE_URL de build (sera écrasée au runtime par Coolify)
 ENV DATABASE_URL="file:/tmp/build.db"
 
+# QRTags : Cache buster — force Coolify à rebuild from scratch
+# (évite d'utiliser un build en cache avec anciennes colonnes QRBags)
+ARG CACHE_BUST=2026-07-19-v2
+RUN echo "Build ${CACHE_BUST}"
+
 # Générer le client Prisma
 RUN npx prisma generate
 
