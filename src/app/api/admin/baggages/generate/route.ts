@@ -105,7 +105,7 @@ export async function POST(request: NextRequest) {
       lot: result.lot,
     });
   } catch (error) {
-    console.error('[QRTags/generate] Erreur:', error);
+    console.error('[QRTags/generate] Erreur détaillée:', error);
 
     if (error instanceof z.ZodError) {
       return NextResponse.json(
@@ -114,8 +114,10 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // QRTags : retourner le VRAI message d'erreur pour diagnostiquer
+    const errMsg = error instanceof Error ? error.message : 'Erreur inconnue';
     return NextResponse.json(
-      { error: 'Erreur serveur lors de la génération' },
+      { error: `Erreur génération: ${errMsg}` },
       { status: 500 },
     );
   }
@@ -197,19 +199,26 @@ async function generateLotForAgency(options: {
     );
   }
 
-  // ─── 1. Créer le TagLot ──────────────────────────────────────
+  // ─── 1. Créer le TagLot (avec fallback si table n'existe pas) ──
   const lotNumber = generateSetId();
-  const lot = await db.tagLot.create({
-    data: {
-      lotNumber,
-      generatedById: generatedById || null,
-      agencyId: agencyId || null,
-      quantity: totalBaggages,
-      notes: notes || null,
-      status: agencyId ? 'assigned' : 'generated',
-      assignedAt: agencyId ? new Date() : null,
-    },
-  });
+  let lotId: string | null = null;
+  try {
+    const lot = await db.tagLot.create({
+      data: {
+        lotNumber,
+        generatedById: generatedById || null,
+        agencyId: agencyId || null,
+        quantity: totalBaggages,
+        notes: notes || null,
+        status: agencyId ? 'assigned' : 'generated',
+        assignedAt: agencyId ? new Date() : null,
+      },
+    });
+    lotId = lot.id;
+    console.log(`[QRTags/generate] Lot créé: ${lotNumber} (ID: ${lotId})`);
+  } catch (lotErr) {
+    console.warn(`[QRTags/generate] TagLot.create échoué — génération sans lot:`, lotErr instanceof Error ? lotErr.message : lotErr);
+  }
 
   // ─── 2. Générer toutes les références en bulk ────────────────
   const allReferences = await generateReferencesBulk(null, totalBaggages);
@@ -221,7 +230,7 @@ async function generateLotForAgency(options: {
     type: string;
     setId: string;
     agencyId: string | null;
-    lotId: string;
+    lotId: string | null;
     baggageIndex: number;
     baggageType: string;
     status: string;
@@ -233,6 +242,7 @@ async function generateLotForAgency(options: {
     setIds.push(generateSetId());
   }
 
+  const now2 = new Date();
   let refIndex = 0;
   for (let t = 0; t < travelerCount; t++) {
     const setId = setIds[t];
@@ -242,12 +252,12 @@ async function generateLotForAgency(options: {
         type: 'voyageur',
         setId,
         agencyId: agencyId || null,
-        lotId: lot.id,
+        lotId: lotId,
         baggageIndex: i + 1,
         baggageType: 'soute',
         // QRTags : 'assigned_to_agency' si agencyId, sinon 'in_stock'
         status: agencyId ? 'assigned_to_agency' : 'in_stock',
-        assignedToAgencyAt: agencyId ? now : null,
+        assignedToAgencyAt: agencyId ? now2 : null,
       });
     }
   }
@@ -264,7 +274,7 @@ async function generateLotForAgency(options: {
   }
 
   console.log(`[QRTags/generate] Lot ${lotNumber} terminé (${totalBaggages} tags)`);
-  return { references: allReferences, lot: { id: lot.id, lotNumber: lot.lotNumber } };
+  return { references: allReferences, lot: { id: lotId || '', lotNumber } };
 }
 
 // ═══════════════════════════════════════════════════════════════════
