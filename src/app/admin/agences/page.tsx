@@ -33,6 +33,7 @@ interface Agency {
   slug: string;
   email: string | null;
   phone: string | null;
+  agencyType: string | null;
   active: boolean;
   createdAt: string;
   _count?: {
@@ -71,6 +72,7 @@ export default function AgencesPage() {
     slug: '',
     email: '',
     phone: '',
+    agencyType: 'generic',
     password: '',
     confirmPassword: '',
   });
@@ -132,6 +134,7 @@ export default function AgencesPage() {
           slug: agencyForm.slug || undefined, // API auto-génère si vide
           email: agencyForm.email,
           phone: agencyForm.phone,
+          agencyType: agencyForm.agencyType,
         }),
       });
 
@@ -171,7 +174,7 @@ export default function AgencesPage() {
       // QRTags : refresh liste EN PREMIER, avant de fermer le dialog/reset form
       await fetchAgencies(true);
       setDialogOpen(false);
-      setAgencyForm({ name: '', slug: '', email: '', phone: '', password: '', confirmPassword: '' });
+      setAgencyForm({ name: '', slug: '', email: '', phone: '', agencyType: 'generic', password: '', confirmPassword: '' });
       setTimeout(() => setSuccessMessage(''), 6000);
     } catch (error) {
       console.error('Error creating agency:', error);
@@ -417,6 +420,27 @@ export default function AgencesPage() {
                     />
                   </div>
                 </div>
+
+                {/* QRTags : Sélecteur de type d'agence (multi-métiers) */}
+                <div className="space-y-2">
+                  <Label className="text-slate-700 dark:text-slate-300">Type d&apos;activité *</Label>
+                  <select
+                    value={agencyForm.agencyType}
+                    onChange={(e) => setAgencyForm({ ...agencyForm, agencyType: e.target.value })}
+                    className="w-full px-3 py-2 rounded-lg border bg-white dark:bg-slate-700 border-slate-200 dark:border-slate-600 text-slate-800 dark:text-white"
+                  >
+                    <option value="hotel">🏨 Hôtel — Champs : nom client, N° chambre, dates séjour</option>
+                    <option value="school">🎓 École — Champs : nom élève, classe, parent</option>
+                    <option value="luggage_locker">🛅 Consigne — Champs : N° casier, description bagage</option>
+                    <option value="car_rental">🚗 Loueur auto — Champs : N° contrat, modèle, immatriculation</option>
+                    <option value="medical">🏥 Clinique — Champs : nom patient, N° dossier, chambre</option>
+                    <option value="generic">📦 Autre / Générique</option>
+                  </select>
+                  <p className="text-xs text-slate-500 dark:text-slate-400">
+                    Détermine les champs dynamiques affichés lors de l&apos;activation d&apos;un tag par le client final.
+                  </p>
+                </div>
+
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label className="text-slate-700 dark:text-slate-300">Mot de passe *</Label>
@@ -671,9 +695,29 @@ export default function AgencesPage() {
                 </div>
               </div>
 
-              {/* Name + Slug */}
+              {/* Name + Slug + Type */}
               <h3 className="font-semibold text-slate-800 dark:text-white text-lg">{agency.name}</h3>
-              <p className="text-sm text-slate-400 font-mono mb-4">@{agency.slug}</p>
+              <div className="flex items-center gap-2 mb-2">
+                <p className="text-sm text-slate-400 font-mono">@{agency.slug}</p>
+                {agency.agencyType && agency.agencyType !== 'generic' && (
+                  <Badge className="bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400 text-xs">
+                    {agency.agencyType === 'hotel' ? '🏨 Hôtel' :
+                     agency.agencyType === 'school' ? '🎓 École' :
+                     agency.agencyType === 'luggage_locker' ? '🛅 Consigne' :
+                     agency.agencyType === 'car_rental' ? '🚗 Loueur' :
+                     agency.agencyType === 'medical' ? '🏥 Clinique' :
+                     agency.agencyType}
+                  </Badge>
+                )}
+              </div>
+              <p className="text-xs text-slate-400 mb-4">
+                {agency.agencyType === 'hotel' ? 'Champs : nom client, N° chambre, dates séjour, téléphone' :
+                 agency.agencyType === 'school' ? 'Champs : nom élève, classe, parent, téléphone' :
+                 agency.agencyType === 'luggage_locker' ? 'Champs : N° casier, description, heure, téléphone' :
+                 agency.agencyType === 'car_rental' ? 'Champs : nom locataire, N° contrat, modèle, immat.' :
+                 agency.agencyType === 'medical' ? 'Champs : nom patient, N° dossier, chambre, urgence' :
+                 'Champs génériques : nom, description, téléphone'}
+              </p>
 
               {/* Contact */}
               <div className="space-y-2 mb-4">
