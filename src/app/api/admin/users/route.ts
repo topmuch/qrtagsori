@@ -52,9 +52,27 @@ export async function POST(request: NextRequest) {
 
     if (existing) {
       return NextResponse.json(
-        { error: 'Email already exists' },
+        { error: 'Cet email est déjà utilisé' },
         { status: 400 }
       );
+    }
+
+    // QRTags : gérer agencyId vide / invalide proprement (FK violation sinon)
+    let agencyId: string | null = null;
+    const rawAgencyId = validatedData.agencyId;
+    if (rawAgencyId && rawAgencyId.trim() !== '') {
+      // Vérifier que l'agence existe vraiment
+      const agency = await db.agency.findUnique({
+        where: { id: rawAgencyId },
+        select: { id: true },
+      });
+      if (!agency) {
+        return NextResponse.json(
+          { error: 'L\'agence sélectionnée n\'existe pas' },
+          { status: 400 }
+        );
+      }
+      agencyId = rawAgencyId;
     }
 
     const hashedPassword = await hashPassword(validatedData.password);
@@ -64,7 +82,7 @@ export async function POST(request: NextRequest) {
         name: validatedData.name || null,
         password: hashedPassword,
         role: validatedData.role,
-        agencyId: validatedData.agencyId || null,
+        agencyId,
       }
     });
 
@@ -75,16 +93,16 @@ export async function POST(request: NextRequest) {
 
   } catch (error) {
     console.error('Create user error:', error);
-    
+
     if (error instanceof z.ZodError) {
       return NextResponse.json(
-        { error: 'Validation error', details: error.issues },
+        { error: 'Erreur de validation', details: error.issues },
         { status: 400 }
       );
     }
 
     return NextResponse.json(
-      { error: 'Internal server error' },
+      { error: 'Erreur serveur lors de la création de l\'utilisateur' },
       { status: 500 }
     );
   }

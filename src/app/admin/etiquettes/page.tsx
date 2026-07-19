@@ -48,7 +48,7 @@ interface Stats {
   totalSets: number;
   totalQr: number;
   hajjSets: number;
-  voyageurSets: number;
+  qrtagsSets: number;
 }
 
 export default function EtiquettesPage() {
@@ -60,11 +60,11 @@ export default function EtiquettesPage() {
     totalSets: 0,
     totalQr: 0,
     hajjSets: 0,
-    voyageurSets: 0,
+    qrtagsSets: 0,
   });
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
-  const [activeTab, setActiveTab] = useState<'voyageur' | 'hajj'>('voyageur');
+  const [activeTab, setActiveTab] = useState<'qrtags' | 'hajj'>('qrtags');
 
   // Modals
   const [showDetailModal, setShowDetailModal] = useState(false);
@@ -208,7 +208,7 @@ export default function EtiquettesPage() {
       ctx.fillText('QRTags - Étiquettes', canvas.width / 2, 35);
 
       ctx.font = '16px Arial';
-      ctx.fillText(`${set.setId} | ${set.type === 'hajj' ? 'Hajj 2026' : 'Voyageur'} | ${set.qrCount} QR`, canvas.width / 2, 65);
+      ctx.fillText(`${set.setId} | ${set.type === 'hajj' ? 'Legacy' : 'QRTags'} | ${set.qrCount} QR`, canvas.width / 2, 65);
       if (set.agencyName) {
         ctx.font = '14px Arial';
         ctx.fillText(`Agence: ${set.agencyName}`, canvas.width / 2, 85);
@@ -352,9 +352,9 @@ export default function EtiquettesPage() {
       {/* Tabs */}
       <div className="flex gap-2 mb-6">
         <button
-          onClick={() => setActiveTab('voyageur')}
+          onClick={() => setActiveTab('qrtags')}
           className={`flex items-center gap-2 px-6 py-3 rounded-xl font-medium transition-all ${
-            activeTab === 'voyageur'
+            activeTab === 'qrtags'
               ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/30'
               : 'bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700'
           }`}
@@ -362,11 +362,11 @@ export default function EtiquettesPage() {
           <Plane className="w-5 h-5" />
           Voyageurs
           <span className={`px-2 py-0.5 rounded-full text-xs ${
-            activeTab === 'voyageur' 
+            activeTab === 'qrtags' 
               ? 'bg-white/20 text-white' 
               : 'bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-400'
           }`}>
-            {stats.voyageurSets}
+            {stats.qrtagsSets}
           </span>
         </button>
 
@@ -407,7 +407,7 @@ export default function EtiquettesPage() {
             )}
           </div>
           <h3 className="text-lg font-semibold text-slate-800 dark:text-white mb-2">
-            Aucun QR code {activeTab === 'hajj' ? 'Hajj' : 'Voyageur'}
+            Aucun QR code {activeTab === 'hajj' ? 'Legacy' : 'QRTags'}
           </h3>
           <p className="text-slate-500 dark:text-slate-400 mb-4">
             {search ? 'Aucun résultat pour votre recherche' : 'Commencez par générer des QR codes'}
@@ -560,7 +560,7 @@ export default function EtiquettesPage() {
               <div>
                 <h2 className="text-lg font-bold text-slate-800 dark:text-white">{selectedSet.setId}</h2>
                 <p className="text-slate-500 dark:text-slate-400 text-sm">
-                  {selectedSet.type === 'hajj' ? 'Hajj 2026' : 'Voyageur'} • {selectedSet.qrCount} QR codes
+                  {selectedSet.type === 'hajj' ? 'Legacy' : 'QRTags'} • {selectedSet.qrCount} QR codes
                   {selectedSet.agencyName && ` • ${selectedSet.agencyName}`}
                 </p>
               </div>

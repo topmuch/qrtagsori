@@ -63,7 +63,7 @@ export default function GenererQRPage() {
   
   // Agency form
   const [agencyForm, setAgencyForm] = useState({
-    type: 'voyageur' as 'hajj' | 'voyageur',
+    type: 'qrtags' as 'hajj' | 'qrtags',
     agencyId: '',
     travelerCount: 1,
     baggagePerTraveler: 2 as 1 | 2,
@@ -239,7 +239,7 @@ export default function GenererQRPage() {
       const payload = context === 'individual' 
         ? {
             context: 'individual',
-            type: 'voyageur' as const,
+            type: 'qrtags' as const,
             firstName: individualForm.firstName.trim(),
             lastName: individualForm.lastName.trim(),
             whatsapp: individualForm.whatsapp.trim(),
@@ -466,7 +466,7 @@ export default function GenererQRPage() {
                   <Label className="text-slate-700 dark:text-slate-300">Type de voyage</Label>
                   <Select 
                     value={agencyForm.type} 
-                    onValueChange={(v) => setAgencyForm({ ...agencyForm, type: v as 'hajj' | 'voyageur' })}
+                    onValueChange={(v) => setAgencyForm({ ...agencyForm, type: v as 'hajj' | 'qrtags' })}
                   >
                     <SelectTrigger className="bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-800 dark:text-white">
                       <SelectValue />
@@ -510,7 +510,7 @@ export default function GenererQRPage() {
                       className="bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-800 dark:text-white"
                     />
                   </div>
-                  {agencyForm.type === 'voyageur' && (
+                  {agencyForm.type === 'qrtags' && (
                     <div className="space-y-2">
                       <Label className="text-slate-700 dark:text-slate-300">Bagages par voyageur</Label>
                       <Select 
@@ -534,7 +534,7 @@ export default function GenererQRPage() {
                     <p>ℹ️ QRTags : 1 tag = 1 objet. Chaque client reçoit 1 tag.</p>
                   </div>
                 )}
-                {agencyForm.type === 'voyageur' && (
+                {agencyForm.type === 'qrtags' && (
                   <div className="bg-slate-50 dark:bg-slate-800 rounded-xl p-4 text-sm text-slate-600 dark:text-slate-300">
                     <p>ℹ️ Chaque voyageur reçoit {agencyForm.baggagePerTraveler} bagage(s) soute</p>
                   </div>

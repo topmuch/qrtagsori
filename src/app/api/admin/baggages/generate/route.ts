@@ -155,13 +155,32 @@ async function generateLotForAgency(options: {
   notes?: string;
   generatedById?: string;
 }): Promise<{ references: string[]; lot: { id: string; lotNumber: string } }> {
-  const { agencyId, travelerCount, count, notes, generatedById } = options;
+  const { travelerCount, count, notes, generatedById } = options;
   const totalBaggages = travelerCount * count;
 
-  console.log(
-    `[QRTags/generate] Lot: ${travelerCount} × ${count} = ${totalBaggages} tags` +
-    (agencyId ? ` → agency ${agencyId}` : ' → stock central'),
-  );
+  // QRTags : vérifier que l'agencyId existe AVANT de créer le TagLot
+  // (sinon FK violation). Si l'agence n'existe pas, on crée le lot en stock central.
+  let agencyId = options.agencyId;
+  if (agencyId) {
+    const agency = await db.agency.findUnique({
+      where: { id: agencyId },
+      select: { id: true, name: true },
+    });
+    if (!agency) {
+      console.warn(
+        `[QRTags/generate] AgencyId "${agencyId}" introuvable — création du lot en stock central`,
+      );
+      agencyId = undefined;
+    } else {
+      console.log(
+        `[QRTags/generate] Lot: ${travelerCount} × ${count} = ${totalBaggages} tags → agency "${agency.name}"`,
+      );
+    }
+  } else {
+    console.log(
+      `[QRTags/generate] Lot: ${travelerCount} × ${count} = ${totalBaggages} tags → stock central`,
+    );
+  }
 
   // ─── 1. Créer le TagLot ──────────────────────────────────────
   const lotNumber = generateSetId();

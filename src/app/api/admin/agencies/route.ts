@@ -1,16 +1,44 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { z } from 'zod';
-import { sendEmail, getEmailSettings, getNewAgencyEmailTemplate } from '@/lib/email';
 
-// Validation schema
+/**
+ * QRTags — API de gestion des agences
+ *
+ * QRTags v1 : notifications Email/SMS/Wakit désactivées (règle WAME-only).
+ * On garde les in-app notifications (Notification table) pour le Superadmin.
+ */
+
+// Validation schema — slug est OPTIONNEL (auto-généré depuis le name si absent)
 const agencySchema = z.object({
-  name: z.string().min(1, 'Name is required'),
-  slug: z.string().min(1, 'Slug is required'),
+  name: z.string().min(1, 'Le nom est requis'),
+  slug: z.string().optional(),
   email: z.string().email().optional().or(z.literal('')),
   phone: z.string().optional(),
   address: z.string().optional(),
+  agencyType: z.enum(['hotel', 'school', 'luggage_locker', 'car_rental', 'medical', 'generic']).optional(),
 });
+
+// ─── Helper : génère un slug unique depuis le nom ──────────────────
+function slugify(name: string): string {
+  return name
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '') // accents
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '')
+    .slice(0, 50);
+}
+
+async function generateUniqueSlug(name: string): Promise<string> {
+  const base = slugify(name) || `agence-${Date.now()}`;
+  let slug = base;
+  let i = 1;
+  while (await db.agency.findUnique({ where: { slug } })) {
+    slug = `${base}-${i++}`;
+  }
+  return slug;
+}
 
 // GET - List all agencies
 export async function GET() {
@@ -41,56 +69,34 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const validatedData = agencySchema.parse(body);
 
-    // Check if slug already exists
-    const existing = await db.agency.findUnique({
-      where: { slug: validatedData.slug }
-    });
-
-    if (existing) {
-      return NextResponse.json(
-        { error: 'Slug already exists' },
-        { status: 400 }
-      );
+    // QRTags : auto-générer le slug si non fourni
+    let slug = validatedData.slug?.trim();
+    if (!slug) {
+      slug = await generateUniqueSlug(validatedData.name);
+    } else {
+      // Check slug uniqueness si fourni
+      const existing = await db.agency.findUnique({ where: { slug } });
+      if (existing) {
+        return NextResponse.json(
+          { error: 'Ce slug est déjà utilisé', field: 'slug' },
+          { status: 400 }
+        );
+      }
     }
 
     const agency = await db.agency.create({
       data: {
         name: validatedData.name,
-        slug: validatedData.slug,
+        slug,
         email: validatedData.email || null,
         phone: validatedData.phone || null,
         address: validatedData.address || null,
+        agencyType: validatedData.agencyType || 'generic',
+        agencyTypeUpdatedAt: new Date(),
       }
     });
 
-    // 📧 Send email notification to superadmin
-    try {
-      const emailSettings = await getEmailSettings();
-      if (emailSettings) {
-        const recipientEmail = emailSettings.recipientEmail || emailSettings.fromEmail;
-        if (recipientEmail) {
-          const template = getNewAgencyEmailTemplate({
-            name: agency.name,
-            email: agency.email || undefined,
-            phone: agency.phone || undefined,
-            address: agency.address || undefined,
-          });
-
-          await sendEmail({
-            to: recipientEmail,
-            subject: `🏢 Nouvelle agence créée — ${agency.name}`,
-            html: template.html,
-            text: template.text,
-            type: 'new_agency',
-          });
-          console.log(`📧 New agency notification sent for ${agency.name} to ${recipientEmail}`);
-        }
-      }
-    } catch (emailError) {
-      console.error('Failed to send new agency email:', emailError);
-    }
-
-    // 🔔 Create in-app notification for SuperAdmin
+    // QRTags v1 : pas d'email (WAME-only). In-app notification conservée.
     await db.notification.create({
       data: {
         type: 'new_agency',
@@ -103,16 +109,16 @@ export async function POST(request: NextRequest) {
 
   } catch (error) {
     console.error('Create agency error:', error);
-    
+
     if (error instanceof z.ZodError) {
       return NextResponse.json(
-        { error: 'Validation error', details: error.issues },
+        { error: 'Erreur de validation', details: error.issues },
         { status: 400 }
       );
     }
 
     return NextResponse.json(
-      { error: 'Internal server error' },
+      { error: 'Erreur serveur lors de la création de l\'agence' },
       { status: 500 }
     );
   }
@@ -139,6 +145,10 @@ export async function PUT(request: NextRequest) {
     if (data.email !== undefined) updateData.email = data.email || null;
     if (data.phone !== undefined) updateData.phone = data.phone || null;
     if (data.address !== undefined) updateData.address = data.address || null;
+    if (data.agencyType !== undefined) {
+      updateData.agencyType = data.agencyType;
+      updateData.agencyTypeUpdatedAt = new Date();
+    }
     if (active !== undefined) updateData.active = active;
 
     // Check slug uniqueness if slug is being updated
