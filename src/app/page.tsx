@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import dynamic from 'next/dynamic';
+import Image from 'next/image';
 import { motion } from 'framer-motion';
 import {
   QrCode,
@@ -34,122 +35,51 @@ const LandingChatbotWidget = dynamic(
 );
 
 // ════════════════════════════════════════════════════════════════════
-// QRTags — Couleurs harmonisées avec le logo
-// Logo : Jaune doré #fdb900 / #ffb706 sur fond noir #0d0d0f
-// Charte QRTags : Noir #111111 + Jaune moutarde/doré #E3B23C / #FDB900
+// QRTags — Version CLAIRE
+// Logo en couleurs d'origine (variant="light") sur fond blanc/crème
+// Accents : Jaune doré #FDB900 (logo) + Noir #0d0d0f (texte)
 // ════════════════════════════════════════════════════════════════════
 const COLORS = {
-  bg: '#0d0d0f',          // Noir profond (logo)
-  bgAlt: '#111111',       // Noir QRTags
-  accent: '#FDB900',      // Jaune doré (logo)
-  accentAlt: '#E3B23C',   // Jaune moutarde (charte QRTags)
-  accentHover: '#FFB706', // Variante hover
-  text: '#fdfdfd',        // Blanc (logo)
-  textMuted: 'rgba(253, 253, 253, 0.7)',
-  card: 'rgba(253, 185, 0, 0.08)',
-  border: 'rgba(253, 185, 0, 0.2)',
+  bg: '#ffffff',           // Fond blanc
+  bgAlt: '#fafafa',        // Fond légèrement gris (alternance sections)
+  bgCream: '#fffdf5',      // Crème très subtil (warm tint)
+  text: '#0d0d0f',         // Noir (logo) pour le texte
+  textMuted: '#525252',    // Gris foncé
+  accent: '#FDB900',       // Jaune doré (logo)
+  accentAlt: '#E3B23C',    // Jaune moutarde
+  accentDark: '#c89a00',   // Jaune doré foncé (hover)
+  card: '#ffffff',         // Cards blanches
+  cardAlt: '#fffdf5',      // Cards crème
+  border: '#e5e5e5',       // Bordures gris clair
+  borderAccent: 'rgba(253, 185, 0, 0.3)', // Bordure jaune translucide
 };
 
 // ════════════════════════════════════════════════════════════════════
 // DONNÉES MÉTIER QRTags — Multi-métiers
 // ════════════════════════════════════════════════════════════════════
 const AGENCY_TYPES = [
-  {
-    icon: Building2,
-    name: 'Hôtels',
-    desc: 'Effets personnels clients (valises, poches, électronique).',
-    color: COLORS.accent,
-  },
-  {
-    icon: GraduationCap,
-    name: 'Écoles',
-    desc: 'Cartables, uniformes, instruments de musique.',
-    color: COLORS.accentAlt,
-  },
-  {
-    icon: Luggage,
-    name: 'Consignes',
-    desc: 'Bagages en gare, aéroport, gare routière.',
-    color: COLORS.accent,
-  },
-  {
-    icon: Car,
-    name: 'Loueurs auto',
-    desc: 'Clés, documents, sièges enfant, GPS.',
-    color: COLORS.accentAlt,
-  },
-  {
-    icon: Stethoscope,
-    name: 'Cliniques',
-    desc: 'Effets personnels patients, dossiers, prothèses.',
-    color: COLORS.accent,
-  },
-  {
-    icon: Package,
-    name: 'Autres',
-    desc: 'Bibliothèques, événementiel, logistique.',
-    color: COLORS.accentAlt,
-  },
+  { icon: Building2, name: 'Hôtels', desc: 'Effets personnels clients (valises, électronique).', color: COLORS.accent },
+  { icon: GraduationCap, name: 'Écoles', desc: 'Cartables, uniformes, instruments de musique.', color: COLORS.accentAlt },
+  { icon: Luggage, name: 'Consignes', desc: 'Bagages en gare, aéroport, gare routière.', color: COLORS.accent },
+  { icon: Car, name: 'Loueurs auto', desc: 'Clés, documents, sièges enfant, GPS.', color: COLORS.accentAlt },
+  { icon: Stethoscope, name: 'Cliniques', desc: 'Effets personnels patients, dossiers, prothèses.', color: COLORS.accent },
+  { icon: Package, name: 'Autres', desc: 'Bibliothèques, événementiel, logistique.', color: COLORS.accentAlt },
 ];
 
 const WORKFLOW_STEPS = [
-  {
-    num: '01',
-    icon: QrCode,
-    title: 'Génération QR',
-    desc: 'Le Superadmin génère des lots de QR codes uniques et les assigne aux entreprises partenaires.',
-  },
-  {
-    num: '02',
-    icon: Package,
-    title: 'Vente au client',
-    desc: 'L\'entreprise vend les tags QRTags à ses clients finaux et trace chaque vente dans son dashboard.',
-  },
-  {
-    num: '03',
-    icon: Smartphone,
-    title: 'Activation',
-    desc: 'Le client scanne son QR code, remplit ses infos et l\'associe à son objet. Le tag est désormais protégé.',
-  },
-  {
-    num: '04',
-    icon: MessageCircle,
-    title: 'Perte & trouvaille',
-    desc: 'Un trouveur scanne le QR → la page WAME s\'ouvre avec sa géoloc → le propriétaire est contacté instantanément.',
-  },
+  { num: '01', icon: QrCode, title: 'Génération QR', desc: 'Le Superadmin génère des lots de QR codes uniques et les assigne aux entreprises partenaires.' },
+  { num: '02', icon: Package, title: 'Vente au client', desc: 'L\'entreprise vend les tags QRTags à ses clients finaux et trace chaque vente dans son dashboard.' },
+  { num: '03', icon: Smartphone, title: 'Activation', desc: 'Le client scanne son QR code, remplit ses infos et l\'associe à son objet. Le tag est désormais protégé.' },
+  { num: '04', icon: MessageCircle, title: 'Perte & trouvaille', desc: 'Un trouveur scanne le QR → la page WAME s\'ouvre avec sa géoloc → le propriétaire est contacté instantanément.' },
 ];
 
 const FEATURES = [
-  {
-    icon: Zap,
-    title: 'Contact instantané',
-    desc: 'WhatsApp WAME (click-to-chat) pré-rempli avec la géolocalisation du trouveur. Aucune app à installer.',
-  },
-  {
-    icon: MapPin,
-    title: 'Géolocalisation GPS',
-    desc: 'Position précise du trouveur envoyée automatiquement au propriétaire via Google Maps.',
-  },
-  {
-    icon: Shield,
-    title: 'Aucune donnée sensible',
-    desc: 'Le trouveur ne voit que le prénom du propriétaire et la référence. Le numéro WhatsApp n\'est révélé qu\'au clic.',
-  },
-  {
-    icon: Globe,
-    title: 'Multilingue',
-    desc: 'La page trouveur s\'adapte automatiquement en FR / EN / AR selon la langue du navigateur.',
-  },
-  {
-    icon: Bell,
-    title: 'Traçabilité complète',
-    desc: 'Chaque scan est journalisé (position, heure, contexte). L\'entreprise voit tout depuis son dashboard.',
-  },
-  {
-    icon: Building2,
-    title: 'Multi-métiers',
-    desc: 'Hôtels, écoles, consignes, loueurs, cliniques — champs dynamiques selon votre activité.',
-  },
+  { icon: Zap, title: 'Contact instantané', desc: 'WhatsApp WAME (click-to-chat) pré-rempli avec la géolocalisation du trouveur. Aucune app à installer.' },
+  { icon: MapPin, title: 'Géolocalisation GPS', desc: 'Position précise du trouveur envoyée automatiquement au propriétaire via Google Maps.' },
+  { icon: Shield, title: 'Aucune donnée sensible', desc: 'Le trouveur ne voit que le prénom du propriétaire et la référence. Le numéro WhatsApp n\'est révélé qu\'au clic.' },
+  { icon: Globe, title: 'Multilingue', desc: 'La page trouveur s\'adapte automatiquement en FR / EN / AR selon la langue du navigateur.' },
+  { icon: Bell, title: 'Traçabilité complète', desc: 'Chaque scan est journalisé (position, heure, contexte). L\'entreprise voit tout depuis son dashboard.' },
+  { icon: Building2, title: 'Multi-métiers', desc: 'Hôtels, écoles, consignes, loueurs, cliniques — champs dynamiques selon votre activité.' },
 ];
 
 const STATS = [
@@ -160,24 +90,9 @@ const STATS = [
 ];
 
 const TESTIMONIALS = [
-  {
-    name: 'Sophie Martin',
-    role: 'Directrice, Hôtel Le Royal',
-    text: 'QRTags a transformé notre gestion des objets perdus. Les clients récupèrent leurs affaires en moins de 2h. Le ROI est immédiat.',
-    avatar: 'SM',
-  },
-  {
-    name: 'Karim Benali',
-    role: 'Responsable consigne, Gare de Lyon',
-    text: 'Plus aucun bagage égaré depuis qu\'on a étiqueté tous nos casiers. Le système WAME est bluffant de simplicité.',
-    avatar: 'KB',
-  },
-  {
-    name: 'Dr. Élise Fournier',
-    role: 'Clinique Saint-Antoine',
-    text: 'Adieu lunettes et prothèses perdues. Les patients sont rassurés et notre réception est désengorgée.',
-    avatar: 'EF',
-  },
+  { name: 'Sophie Martin', role: 'Directrice, Hôtel Le Royal', text: 'QRTags a transformé notre gestion des objets perdus. Les clients récupèrent leurs affaires en moins de 2h. Le ROI est immédiat.', avatar: 'SM' },
+  { name: 'Karim Benali', role: 'Responsable consigne, Gare de Lyon', text: 'Plus aucun bagage égaré depuis qu\'on a étiqueté tous nos casiers. Le système WAME est bluffant de simplicité.', avatar: 'KB' },
+  { name: 'Dr. Élise Fournier', role: 'Clinique Saint-Antoine', text: 'Adieu lunettes et prothèses perdues. Les patients sont rassurés et notre réception est désengorgée.', avatar: 'EF' },
 ];
 
 // ════════════════════════════════════════════════════════════════════
@@ -194,13 +109,7 @@ export default function HomePage() {
   }, []);
 
   return (
-    <main
-      style={{
-        background: `linear-gradient(180deg, ${COLORS.bg} 0%, ${COLORS.bgAlt} 100%)`,
-        color: COLORS.text,
-        minHeight: '100vh',
-      }}
-    >
+    <main style={{ background: COLORS.bg, color: COLORS.text, minHeight: '100vh' }}>
       {/* ═══ NAVBAR ═══ */}
       <nav
         style={{
@@ -209,8 +118,8 @@ export default function HomePage() {
           left: 0,
           right: 0,
           zIndex: 50,
-          background: scrolled ? `${COLORS.bg}ee` : 'transparent',
-          backdropFilter: scrolled ? 'blur(12px)' : 'none',
+          background: scrolled ? 'rgba(255,255,255,0.95)' : 'rgba(255,255,255,0.7)',
+          backdropFilter: scrolled ? 'blur(12px)' : 'blur(6px)',
           borderBottom: scrolled ? `1px solid ${COLORS.border}` : '1px solid transparent',
           transition: 'all 0.3s',
         }}
@@ -218,60 +127,42 @@ export default function HomePage() {
         <div className="max-w-7xl mx-auto px-5 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16 lg:h-20">
             <Link href="/" className="flex items-center gap-2 group">
-              <QRTagsLogo size="md" variant="dark" withHover />
+              <QRTagsLogo size="md" variant="light" withHover />
             </Link>
 
             <div className="hidden md:flex items-center gap-1">
-              <a href="#metiers" className="px-4 py-2 text-sm font-medium hover:text-[#FDB900] transition-colors">
-                Métiers
-              </a>
-              <a href="#workflow" className="px-4 py-2 text-sm font-medium hover:text-[#FDB900] transition-colors">
-                Comment ça marche
-              </a>
-              <a href="#features" className="px-4 py-2 text-sm font-medium hover:text-[#FDB900] transition-colors">
-                Fonctionnalités
-              </a>
-              <a href="#temoignages" className="px-4 py-2 text-sm font-medium hover:text-[#FDB900] transition-colors">
-                Témoignages
-              </a>
+              <a href="#metiers" className="px-4 py-2 text-sm font-medium hover:text-[#c89a00] transition-colors">Métiers</a>
+              <a href="#workflow" className="px-4 py-2 text-sm font-medium hover:text-[#c89a00] transition-colors">Comment ça marche</a>
+              <a href="#features" className="px-4 py-2 text-sm font-medium hover:text-[#c89a00] transition-colors">Fonctionnalités</a>
+              <a href="#temoignages" className="px-4 py-2 text-sm font-medium hover:text-[#c89a00] transition-colors">Témoignages</a>
             </div>
 
             <div className="hidden md:flex items-center gap-3">
-              <Link
-                href="/agence/connexion"
-                className="px-4 py-2 text-sm font-medium text-white/80 hover:text-[#FDB900] transition-colors"
-              >
+              <Link href="/agence/connexion" className="px-4 py-2 text-sm font-medium hover:text-[#c89a00] transition-colors">
                 Espace agence
               </Link>
               <Link
                 href="/devenir-partenaire"
                 className="px-5 py-2.5 rounded-lg text-sm font-bold transition-all hover:scale-105"
-                style={{
-                  background: COLORS.accent,
-                  color: COLORS.bg,
-                }}
+                style={{ background: COLORS.accent, color: COLORS.text }}
               >
                 Devenir partenaire
               </Link>
             </div>
 
-            <button
-              className="md:hidden p-2"
-              onClick={() => setMenuOpen(!menuOpen)}
-              aria-label="Menu"
-            >
+            <button className="md:hidden p-2" onClick={() => setMenuOpen(!menuOpen)} aria-label="Menu">
               {menuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
             </button>
           </div>
 
           {menuOpen && (
             <div className="md:hidden pb-4 space-y-2">
-              <a href="#metiers" onClick={() => setMenuOpen(false)} className="block px-4 py-2 text-sm text-white/80">Métiers</a>
-              <a href="#workflow" onClick={() => setMenuOpen(false)} className="block px-4 py-2 text-sm text-white/80">Comment ça marche</a>
-              <a href="#features" onClick={() => setMenuOpen(false)} className="block px-4 py-2 text-sm text-white/80">Fonctionnalités</a>
-              <a href="#temoignages" onClick={() => setMenuOpen(false)} className="block px-4 py-2 text-sm text-white/80">Témoignages</a>
-              <Link href="/agence/connexion" className="block px-4 py-2 text-sm text-[#FDB900]">Espace agence →</Link>
-              <Link href="/devenir-partenaire" className="block px-4 py-3 text-sm font-bold text-center rounded-lg" style={{ background: COLORS.accent, color: COLORS.bg }}>
+              <a href="#metiers" onClick={() => setMenuOpen(false)} className="block px-4 py-2 text-sm">Métiers</a>
+              <a href="#workflow" onClick={() => setMenuOpen(false)} className="block px-4 py-2 text-sm">Comment ça marche</a>
+              <a href="#features" onClick={() => setMenuOpen(false)} className="block px-4 py-2 text-sm">Fonctionnalités</a>
+              <a href="#temoignages" onClick={() => setMenuOpen(false)} className="block px-4 py-2 text-sm">Témoignages</a>
+              <Link href="/agence/connexion" className="block px-4 py-2 text-sm text-[#c89a00]">Espace agence →</Link>
+              <Link href="/devenir-partenaire" className="block px-4 py-3 text-sm font-bold text-center rounded-lg" style={{ background: COLORS.accent, color: COLORS.text }}>
                 Devenir partenaire
               </Link>
             </div>
@@ -281,8 +172,9 @@ export default function HomePage() {
 
       {/* ═══ HERO ═══ */}
       <section className="pt-32 pb-20 lg:pt-40 lg:pb-32 px-5 relative overflow-hidden">
+        {/* Décor jaune subtil en background */}
         <div
-          className="absolute inset-0 opacity-30"
+          className="absolute inset-0 opacity-50"
           style={{
             background: `radial-gradient(ellipse at 30% 20%, ${COLORS.accent}22 0%, transparent 60%), radial-gradient(ellipse at 80% 80%, ${COLORS.accentAlt}11 0%, transparent 50%)`,
           }}
@@ -295,20 +187,17 @@ export default function HomePage() {
           >
             <div
               className="inline-flex items-center gap-2 px-4 py-2 rounded-full mb-6"
-              style={{
-                background: COLORS.card,
-                border: `1px solid ${COLORS.border}`,
-              }}
+              style={{ background: COLORS.cardAlt, border: `1px solid ${COLORS.borderAccent}` }}
             >
-              <Sparkles className="w-4 h-4" style={{ color: COLORS.accent }} />
-              <span className="text-sm font-medium" style={{ color: COLORS.accent }}>
+              <Sparkles className="w-4 h-4" style={{ color: COLORS.accentDark }} />
+              <span className="text-sm font-medium" style={{ color: COLORS.accentDark }}>
                 SaaS multi-métiers pour entreprises
               </span>
             </div>
 
-            <h1 className="text-4xl md:text-5xl lg:text-6xl font-black leading-tight mb-6">
+            <h1 className="text-4xl md:text-5xl lg:text-6xl font-black leading-tight mb-6" style={{ color: COLORS.text }}>
               Retrouvez vos{' '}
-              <span style={{ color: COLORS.accent }}>objets perdus</span>{' '}
+              <span style={{ color: COLORS.accentDark }}>objets perdus</span>{' '}
               en un scan
             </h1>
 
@@ -322,17 +211,14 @@ export default function HomePage() {
               <Link
                 href="/devenir-partenaire"
                 className="px-6 py-4 rounded-xl font-bold text-base flex items-center justify-center gap-2 transition-all hover:scale-105"
-                style={{
-                  background: COLORS.accent,
-                  color: COLORS.bg,
-                }}
+                style={{ background: COLORS.accent, color: COLORS.text }}
               >
                 Devenir partenaire
                 <ArrowRight className="w-5 h-5" />
               </Link>
               <Link
                 href="#workflow"
-                className="px-6 py-4 rounded-xl font-bold text-base flex items-center justify-center gap-2 border-2 transition-all hover:bg-white/5"
+                className="px-6 py-4 rounded-xl font-bold text-base flex items-center justify-center gap-2 border-2 transition-all hover:bg-[#fffdf5]"
                 style={{ borderColor: COLORS.border, color: COLORS.text }}
               >
                 Voir comment ça marche
@@ -348,7 +234,7 @@ export default function HomePage() {
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: 0.2 + i * 0.1 }}
                 >
-                  <div className="text-2xl md:text-3xl font-black" style={{ color: COLORS.accent }}>
+                  <div className="text-2xl md:text-3xl font-black" style={{ color: COLORS.accentDark }}>
                     {s.value}
                   </div>
                   <div className="text-xs md:text-sm" style={{ color: COLORS.textMuted }}>
@@ -359,39 +245,50 @@ export default function HomePage() {
             </div>
           </motion.div>
 
-          {/* Tracking widget card */}
+          {/* Hero : Image + Tracking widget en dessous */}
           <motion.div
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ duration: 0.7, delay: 0.3 }}
-            className="relative"
+            className="relative space-y-6"
           >
+            {/* Image hero générée */}
             <div
-              className="rounded-3xl p-8 shadow-2xl"
-              style={{
-                background: `linear-gradient(145deg, ${COLORS.bgAlt}, #1a1a1a)`,
-                border: `1px solid ${COLORS.border}`,
-              }}
+              className="rounded-3xl overflow-hidden shadow-2xl"
+              style={{ border: `1px solid ${COLORS.border}` }}
             >
-              <div className="mb-6">
-                <div className="flex items-center gap-2 mb-2">
-                  <QrCode className="w-5 h-5" style={{ color: COLORS.accent }} />
-                  <span className="text-sm font-bold" style={{ color: COLORS.accent }}>
-                    Suivre un objet
-                  </span>
-                </div>
-                <p className="text-sm" style={{ color: COLORS.textMuted }}>
-                  Entrez votre référence QRTags pour voir le suivi
-                </p>
+              <Image
+                src="/hero-illustration.png"
+                alt="QRTags — un smartphone scanne un QR code sur une valise, une notification WhatsApp avec localisation apparaît"
+                width={1344}
+                height={768}
+                className="w-full h-auto"
+                priority
+              />
+            </div>
+
+            {/* Tracking widget */}
+            <div
+              className="rounded-2xl p-6 shadow-lg"
+              style={{ background: COLORS.card, border: `1px solid ${COLORS.border}` }}
+            >
+              <div className="flex items-center gap-2 mb-3">
+                <QrCode className="w-5 h-5" style={{ color: COLORS.accentDark }} />
+                <span className="text-sm font-bold" style={{ color: COLORS.text }}>
+                  Suivre un objet
+                </span>
               </div>
+              <p className="text-xs mb-4" style={{ color: COLORS.textMuted }}>
+                Entrez votre référence QRTags (ex: QRT26-XXXXXX)
+              </p>
               <TrackingWidget />
 
               {/* Mini "objet trouvé" preview */}
-              <div className="mt-6 pt-6 border-t" style={{ borderColor: COLORS.border }}>
-                <div className="flex items-center gap-3 mb-3">
+              <div className="mt-5 pt-5 border-t" style={{ borderColor: COLORS.border }}>
+                <div className="flex items-center gap-3 mb-2">
                   <div
-                    className="w-10 h-10 rounded-full flex items-center justify-center"
-                    style={{ background: COLORS.accent, color: COLORS.bg }}
+                    className="w-9 h-9 rounded-full flex items-center justify-center"
+                    style={{ background: COLORS.accent, color: COLORS.text }}
                   >
                     <CheckCircle2 className="w-5 h-5" />
                   </div>
@@ -404,9 +301,8 @@ export default function HomePage() {
                     </div>
                   </div>
                 </div>
-                <p className="text-xs" style={{ color: COLORS.textMuted }}>
-                  « Bonjour Marie, j'ai trouvé votre objet (réf. QRT26-MLQGY7).
-                  Je suis à la réception. — Sophie, réceptionniste »
+                <p className="text-xs italic" style={{ color: COLORS.textMuted }}>
+                  « Bonjour Marie, j'ai trouvé votre objet (réf. QRT26-MLQGY7). Je suis à la réception. — Sophie »
                 </p>
               </div>
             </div>
@@ -417,10 +313,7 @@ export default function HomePage() {
               animate={{ opacity: 1, x: 0 }}
               transition={{ delay: 0.8 }}
               className="absolute -bottom-4 -right-4 rounded-2xl px-4 py-3 shadow-xl flex items-center gap-2"
-              style={{
-                background: '#25D366',
-                color: 'white',
-              }}
+              style={{ background: '#25D366', color: 'white' }}
             >
               <MessageCircle className="w-5 h-5" />
               <span className="text-sm font-bold">Contact WhatsApp</span>
@@ -430,17 +323,17 @@ export default function HomePage() {
       </section>
 
       {/* ═══ MÉTIERS ═══ */}
-      <section id="metiers" className="py-20 lg:py-28 px-5">
+      <section id="metiers" className="py-20 lg:py-28 px-5" style={{ background: COLORS.bgAlt }}>
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-14">
             <div
               className="inline-block px-4 py-1.5 rounded-full text-sm font-bold mb-4"
-              style={{ background: COLORS.card, color: COLORS.accent, border: `1px solid ${COLORS.border}` }}
+              style={{ background: COLORS.cardAlt, color: COLORS.accentDark, border: `1px solid ${COLORS.borderAccent}` }}
             >
               MULTI-MÉTIERS
             </div>
-            <h2 className="text-3xl md:text-5xl font-black mb-4">
-              Un tag QR pour <span style={{ color: COLORS.accent }}>chaque métier</span>
+            <h2 className="text-3xl md:text-5xl font-black mb-4" style={{ color: COLORS.text }}>
+              Un tag QR pour <span style={{ color: COLORS.accentDark }}>chaque métier</span>
             </h2>
             <p className="text-lg max-w-2xl mx-auto" style={{ color: COLORS.textMuted }}>
               Chaque type d'entreprise a ses propres champs dynamiques.
@@ -456,19 +349,16 @@ export default function HomePage() {
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
                 transition={{ delay: i * 0.05 }}
-                className="rounded-2xl p-6 transition-all hover:scale-105 cursor-default"
-                style={{
-                  background: COLORS.card,
-                  border: `1px solid ${COLORS.border}`,
-                }}
+                className="rounded-2xl p-6 transition-all hover:scale-105 hover:shadow-xl cursor-default"
+                style={{ background: COLORS.card, border: `1px solid ${COLORS.border}` }}
               >
                 <div
                   className="w-12 h-12 rounded-xl flex items-center justify-center mb-4"
-                  style={{ background: t.color, color: COLORS.bg }}
+                  style={{ background: t.color, color: COLORS.text }}
                 >
                   <t.icon className="w-6 h-6" />
                 </div>
-                <h3 className="text-xl font-bold mb-2">{t.name}</h3>
+                <h3 className="text-xl font-bold mb-2" style={{ color: COLORS.text }}>{t.name}</h3>
                 <p className="text-sm" style={{ color: COLORS.textMuted }}>{t.desc}</p>
               </motion.div>
             ))}
@@ -482,12 +372,12 @@ export default function HomePage() {
           <div className="text-center mb-14">
             <div
               className="inline-block px-4 py-1.5 rounded-full text-sm font-bold mb-4"
-              style={{ background: COLORS.card, color: COLORS.accent, border: `1px solid ${COLORS.border}` }}
+              style={{ background: COLORS.cardAlt, color: COLORS.accentDark, border: `1px solid ${COLORS.borderAccent}` }}
             >
               WORKFLOW QRTAGS
             </div>
-            <h2 className="text-3xl md:text-5xl font-black mb-4">
-              4 étapes vers la <span style={{ color: COLORS.accent }}>retrouvaille</span>
+            <h2 className="text-3xl md:text-5xl font-black mb-4" style={{ color: COLORS.text }}>
+              4 étapes vers la <span style={{ color: COLORS.accentDark }}>retrouvaille</span>
             </h2>
             <p className="text-lg max-w-2xl mx-auto" style={{ color: COLORS.textMuted }}>
               Du génération du QR code jusqu'au contact WhatsApp du trouveur
@@ -503,19 +393,16 @@ export default function HomePage() {
                 viewport={{ once: true }}
                 transition={{ delay: i * 0.1 }}
                 className="relative rounded-2xl p-6"
-                style={{
-                  background: COLORS.card,
-                  border: `1px solid ${COLORS.border}`,
-                }}
+                style={{ background: COLORS.card, border: `1px solid ${COLORS.border}` }}
               >
                 <div
                   className="absolute -top-3 -right-3 w-10 h-10 rounded-full flex items-center justify-center text-xs font-black"
-                  style={{ background: COLORS.accent, color: COLORS.bg }}
+                  style={{ background: COLORS.accent, color: COLORS.text }}
                 >
                   {step.num}
                 </div>
-                <step.icon className="w-8 h-8 mb-4" style={{ color: COLORS.accent }} />
-                <h3 className="text-lg font-bold mb-2">{step.title}</h3>
+                <step.icon className="w-8 h-8 mb-4" style={{ color: COLORS.accentDark }} />
+                <h3 className="text-lg font-bold mb-2" style={{ color: COLORS.text }}>{step.title}</h3>
                 <p className="text-sm" style={{ color: COLORS.textMuted }}>{step.desc}</p>
               </motion.div>
             ))}
@@ -525,7 +412,7 @@ export default function HomePage() {
             <Link
               href="/devenir-partenaire"
               className="inline-flex items-center gap-2 px-6 py-4 rounded-xl font-bold transition-all hover:scale-105"
-              style={{ background: COLORS.accent, color: COLORS.bg }}
+              style={{ background: COLORS.accent, color: COLORS.text }}
             >
               Démarrer avec QRTags
               <ArrowRight className="w-5 h-5" />
@@ -535,17 +422,17 @@ export default function HomePage() {
       </section>
 
       {/* ═══ FEATURES ═══ */}
-      <section id="features" className="py-20 lg:py-28 px-5">
+      <section id="features" className="py-20 lg:py-28 px-5" style={{ background: COLORS.bgAlt }}>
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-14">
             <div
               className="inline-block px-4 py-1.5 rounded-full text-sm font-bold mb-4"
-              style={{ background: COLORS.card, color: COLORS.accent, border: `1px solid ${COLORS.border}` }}
+              style={{ background: COLORS.cardAlt, color: COLORS.accentDark, border: `1px solid ${COLORS.borderAccent}` }}
             >
               FONCTIONNALITÉS
             </div>
-            <h2 className="text-3xl md:text-5xl font-black mb-4">
-              Pensé pour la <span style={{ color: COLORS.accent }}>retrouvaille</span>
+            <h2 className="text-3xl md:text-5xl font-black mb-4" style={{ color: COLORS.text }}>
+              Pensé pour la <span style={{ color: COLORS.accentDark }}>retrouvaille</span>
             </h2>
             <p className="text-lg max-w-2xl mx-auto" style={{ color: COLORS.textMuted }}>
               Tout ce qu'il faut pour que vos objets reviennent à leur propriétaire
@@ -563,8 +450,8 @@ export default function HomePage() {
                 className="rounded-2xl p-6"
                 style={{ background: COLORS.card, border: `1px solid ${COLORS.border}` }}
               >
-                <f.icon className="w-7 h-7 mb-3" style={{ color: COLORS.accent }} />
-                <h3 className="text-lg font-bold mb-2">{f.title}</h3>
+                <f.icon className="w-7 h-7 mb-3" style={{ color: COLORS.accentDark }} />
+                <h3 className="text-lg font-bold mb-2" style={{ color: COLORS.text }}>{f.title}</h3>
                 <p className="text-sm" style={{ color: COLORS.textMuted }}>{f.desc}</p>
               </motion.div>
             ))}
@@ -578,12 +465,12 @@ export default function HomePage() {
           <div className="text-center mb-14">
             <div
               className="inline-block px-4 py-1.5 rounded-full text-sm font-bold mb-4"
-              style={{ background: COLORS.card, color: COLORS.accent, border: `1px solid ${COLORS.border}` }}
+              style={{ background: COLORS.cardAlt, color: COLORS.accentDark, border: `1px solid ${COLORS.borderAccent}` }}
             >
               TÉMOIGNAGES
             </div>
-            <h2 className="text-3xl md:text-5xl font-black mb-4">
-              Ils ont <span style={{ color: COLORS.accent }}>récupéré</span> leurs objets
+            <h2 className="text-3xl md:text-5xl font-black mb-4" style={{ color: COLORS.text }}>
+              Ils ont <span style={{ color: COLORS.accentDark }}>récupéré</span> leurs objets
             </h2>
           </div>
 
@@ -603,12 +490,12 @@ export default function HomePage() {
                 <div className="flex items-center gap-3">
                   <div
                     className="w-10 h-10 rounded-full flex items-center justify-center font-bold text-sm"
-                    style={{ background: COLORS.accent, color: COLORS.bg }}
+                    style={{ background: COLORS.accent, color: COLORS.text }}
                   >
                     {t.avatar}
                   </div>
                   <div>
-                    <div className="text-sm font-bold">{t.name}</div>
+                    <div className="text-sm font-bold" style={{ color: COLORS.text }}>{t.name}</div>
                     <div className="text-xs" style={{ color: COLORS.textMuted }}>{t.role}</div>
                   </div>
                 </div>
@@ -619,17 +506,14 @@ export default function HomePage() {
       </section>
 
       {/* ═══ CTA FINAL ═══ */}
-      <section className="py-20 lg:py-28 px-5">
+      <section className="py-20 lg:py-28 px-5" style={{ background: COLORS.bgAlt }}>
         <div className="max-w-4xl mx-auto text-center">
           <motion.div
             initial={{ opacity: 0, scale: 0.95 }}
             whileInView={{ opacity: 1, scale: 1 }}
             viewport={{ once: true }}
-            className="rounded-3xl p-12"
-            style={{
-              background: `linear-gradient(145deg, ${COLORS.accent}, ${COLORS.accentAlt})`,
-              color: COLORS.bg,
-            }}
+            className="rounded-3xl p-12 shadow-2xl"
+            style={{ background: `linear-gradient(145deg, ${COLORS.accent}, ${COLORS.accentAlt})`, color: COLORS.text }}
           >
             <h2 className="text-3xl md:text-5xl font-black mb-4">
               Prêt à ne plus jamais rien perdre ?
@@ -641,15 +525,15 @@ export default function HomePage() {
               <Link
                 href="/devenir-partenaire"
                 className="px-8 py-4 rounded-xl font-black text-base inline-flex items-center justify-center gap-2 transition-all hover:scale-105"
-                style={{ background: COLORS.bg, color: COLORS.accent }}
+                style={{ background: COLORS.text, color: COLORS.accent }}
               >
                 Devenir partenaire
                 <ArrowRight className="w-5 h-5" />
               </Link>
               <Link
                 href="/agence/connexion"
-                className="px-8 py-4 rounded-xl font-bold text-base inline-flex items-center justify-center gap-2 border-2 transition-all hover:bg-black/10"
-                style={{ borderColor: COLORS.bg, color: COLORS.bg }}
+                className="px-8 py-4 rounded-xl font-bold text-base inline-flex items-center justify-center gap-2 border-2 transition-all hover:bg-black/5"
+                style={{ borderColor: COLORS.text, color: COLORS.text }}
               >
                 J'ai déjà un compte
               </Link>
@@ -663,14 +547,14 @@ export default function HomePage() {
         <div className="max-w-7xl mx-auto">
           <div className="grid md:grid-cols-4 gap-8 mb-8">
             <div className="md:col-span-2">
-              <QRTagsLogo size="md" variant="dark" />
+              <QRTagsLogo size="md" variant="light" />
               <p className="text-sm mt-4 max-w-md" style={{ color: COLORS.textMuted }}>
                 QRTags — SaaS de gestion d'objets perdus pour entreprises.
                 Hôtels, écoles, consignes, loueurs, cliniques. Multi-métiers.
               </p>
             </div>
             <div>
-              <h4 className="font-bold mb-3 text-sm" style={{ color: COLORS.accent }}>Produit</h4>
+              <h4 className="font-bold mb-3 text-sm" style={{ color: COLORS.accentDark }}>Produit</h4>
               <ul className="space-y-2 text-sm">
                 <li><a href="#metiers" style={{ color: COLORS.textMuted }}>Métiers</a></li>
                 <li><a href="#workflow" style={{ color: COLORS.textMuted }}>Workflow</a></li>
@@ -679,7 +563,7 @@ export default function HomePage() {
               </ul>
             </div>
             <div>
-              <h4 className="font-bold mb-3 text-sm" style={{ color: COLORS.accent }}>Compte</h4>
+              <h4 className="font-bold mb-3 text-sm" style={{ color: COLORS.accentDark }}>Compte</h4>
               <ul className="space-y-2 text-sm">
                 <li><Link href="/agence/connexion" style={{ color: COLORS.textMuted }}>Espace agence</Link></li>
                 <li><Link href="/admin/connexion" style={{ color: COLORS.textMuted }}>Espace admin</Link></li>
