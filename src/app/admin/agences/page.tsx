@@ -76,19 +76,23 @@ export default function AgencesPage() {
   });
 
   useEffect(() => {
-    fetchAgencies();
+    fetchAgencies(true);
   }, []);
 
-  const fetchAgencies = async () => {
-    setLoading(true);
+  const fetchAgencies = async (showLoading = false) => {
+    if (showLoading) setLoading(true);
     try {
-      const res = await fetch('/api/admin/agencies');
+      // QRTags : no-store pour toujours voir les nouvelles agences créées
+      const res = await fetch('/api/admin/agencies', {
+        cache: 'no-store',
+        headers: { 'Cache-Control': 'no-cache' },
+      });
       const data = await res.json();
       setAgencies(data.agencies || []);
     } catch (error) {
       console.error('Error fetching agencies:', error);
     } finally {
-      setLoading(false);
+      if (showLoading) setLoading(false);
     }
   };
 
@@ -116,6 +120,7 @@ export default function AgencesPage() {
 
     setAgencyCreating(true);
     setErrorMessage('');
+    setSuccessMessage('');
 
     try {
       // ─── 1. Créer l'agence ──────────────────────────────────
@@ -336,7 +341,7 @@ export default function AgencesPage() {
         </div>
         <div className="flex items-center gap-3">
           <Button
-            onClick={fetchAgencies}
+            onClick={() => fetchAgencies(true)}
             variant="outline"
             className="border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 rounded-xl"
           >

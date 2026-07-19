@@ -68,20 +68,24 @@ export default function UtilisateursPage() {
   });
 
   useEffect(() => {
-    fetchUsers();
+    fetchUsers(true);
     fetchAgencies();
   }, []);
 
-  const fetchUsers = async () => {
-    setLoading(true);
+  const fetchUsers = async (showLoading = false) => {
+    if (showLoading) setLoading(true);
     try {
-      const res = await fetch('/api/admin/users');
+      // QRTags : cache: 'no-store' pour toujours voir les nouveaux utilisateurs créés
+      const res = await fetch('/api/admin/users', {
+        cache: 'no-store',
+        headers: { 'Cache-Control': 'no-cache' },
+      });
       const data = await res.json();
       setUsers(data.users || []);
     } catch (error) {
       console.error('Error fetching users:', error);
     } finally {
-      setLoading(false);
+      if (showLoading) setLoading(false);
     }
   };
 

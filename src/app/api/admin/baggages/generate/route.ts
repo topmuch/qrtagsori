@@ -43,7 +43,9 @@ const individualSchema = z.object({
 const agencySchema = z.object({
   context: z.literal('agency'),
   type: z.enum(['hajj', 'voyageur']).optional(),
-  agencyId: z.string().min(1).optional(),
+  // QRTags : agencyId peut être vide (stock central) ou un ID valide
+  // On accepte explicitement "" et on nettoie côté code
+  agencyId: z.union([z.string().min(1), z.literal('')]).optional(),
   count: z.number().min(1).max(3),
   travelerCount: z.number().min(1).max(5000),
   notes: z.string().max(500).optional(),
@@ -75,8 +77,12 @@ export async function POST(request: NextRequest) {
     }
 
     // ─── Génération en lot pour agence (ou stock central) ──────────
+    // QRTags : si agencyId est "" ou undefined → stock central (null)
+    const rawAgencyId = validatedData.agencyId;
+    const agencyId = rawAgencyId && rawAgencyId.trim() !== '' ? rawAgencyId : undefined;
+
     const result = await generateLotForAgency({
-      agencyId: validatedData.agencyId,
+      agencyId,
       travelerCount: validatedData.travelerCount,
       count: validatedData.count as 1 | 2 | 3,
       notes: validatedData.notes,
