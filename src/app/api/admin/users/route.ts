@@ -159,6 +159,9 @@ export async function DELETE(request: NextRequest) {
       where: { id }
     });
 
+    // QRTags : forcer le refresh du cache Next.js après suppression
+    revalidatePath('/admin/utilisateurs');
+
     return NextResponse.json({ success: true });
 
   } catch (error) {

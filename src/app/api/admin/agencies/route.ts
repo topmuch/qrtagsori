@@ -178,6 +178,9 @@ export async function PUT(request: NextRequest) {
       data: updateData,
     });
 
+    // QRTags : forcer le refresh du cache Next.js après update
+    revalidatePath('/admin/agences');
+
     return NextResponse.json({ agency });
 
   } catch (error) {
@@ -205,6 +208,9 @@ export async function DELETE(request: NextRequest) {
     await db.agency.delete({
       where: { id }
     });
+
+    // QRTags : forcer le refresh du cache Next.js après suppression
+    revalidatePath('/admin/agences');
 
     return NextResponse.json({ success: true });
 
