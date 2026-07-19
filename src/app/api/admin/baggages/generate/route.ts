@@ -7,6 +7,7 @@ import {
   calculateExpirationDate,
 } from '@/lib/qr';
 import { db } from '@/lib/db';
+import { revalidatePath } from 'next/cache';
 
 /**
  * QRTags — API de génération de lots de QR codes par le Superadmin
@@ -76,6 +77,9 @@ export async function POST(request: NextRequest) {
         references,
       });
     }
+    // QRTags : forcer le refresh des pages étiquettes/qrcodes
+    revalidatePath('/admin/etiquettes');
+    revalidatePath('/admin/qrcodes');
 
     // ─── Génération en lot pour agence (ou stock central) ──────────
     // QRTags : si agencyId est "" ou undefined → stock central (null)
@@ -89,6 +93,10 @@ export async function POST(request: NextRequest) {
       notes: validatedData.notes,
       generatedById: validatedData.generatedById,
     });
+
+    // QRTags : forcer le refresh des pages étiquettes/qrcodes après génération
+    revalidatePath('/admin/etiquettes');
+    revalidatePath('/admin/qrcodes');
 
     return NextResponse.json({
       success: true,

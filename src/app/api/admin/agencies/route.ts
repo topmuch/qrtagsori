@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { z } from 'zod';
+import { revalidatePath } from 'next/cache';
 
 /**
  * QRTags — API de gestion des agences
@@ -105,6 +106,9 @@ export async function POST(request: NextRequest) {
       }
     });
 
+    // QRTags : forcer le refresh du cache Next.js
+    revalidatePath('/admin/agences');
+
     return NextResponse.json({ agency });
 
   } catch (error) {
@@ -125,6 +129,9 @@ export async function POST(request: NextRequest) {
     );
   }
 }
+
+// QRTags : revalider le cache après création d'agence
+// (appelé depuis le POST ci-dessus via revalidatePath)
 
 // PUT - Update agency
 export async function PUT(request: NextRequest) {

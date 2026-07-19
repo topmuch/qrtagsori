@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { z } from 'zod';
 import bcrypt from 'bcryptjs';
+import { revalidatePath } from 'next/cache';
 
 // Validation schema
 const userSchema = z.object({
@@ -88,6 +89,9 @@ export async function POST(request: NextRequest) {
 
     // Remove password from response
     const { password, ...safeUser } = user;
+
+    // QRTags : forcer le refresh du cache Next.js pour que la liste se mette à jour
+    revalidatePath('/admin/utilisateurs');
 
     return NextResponse.json({ user: safeUser });
 
