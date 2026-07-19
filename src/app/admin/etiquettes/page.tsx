@@ -314,7 +314,7 @@ export default function EtiquettesPage() {
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
         <div>
-          <h1 className="text-2xl font-bold text-slate-800 dark:text-white">Étiquettes QR</h1>
+          <h1 className="text-2xl font-bold text-slate-800 dark:text-white">Tags QRTags</h1>
           <p className="text-slate-500 dark:text-slate-400 text-sm">
             {stats.totalSets} sets • {stats.totalQr} QR codes
           </p>
@@ -360,10 +360,10 @@ export default function EtiquettesPage() {
           }`}
         >
           <Plane className="w-5 h-5" />
-          Voyageurs
+          Tags QRTags
           <span className={`px-2 py-0.5 rounded-full text-xs ${
-            activeTab === 'qrtags' 
-              ? 'bg-white/20 text-white' 
+            activeTab === 'qrtags'
+              ? 'bg-white/20 text-white'
               : 'bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-400'
           }`}>
             {stats.qrtagsSets}

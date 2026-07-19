@@ -169,7 +169,7 @@ export default function GenererQRPage() {
       } catch (fetchError) {
         clearTimeout(timeoutId);
         if (fetchError instanceof DOMException && fetchError.name === 'AbortError') {
-          throw new Error('Délai d\'attente dépassé. L\'export est trop volumineux. Essayez de filtrer par type (hajj/voyageur).');
+          throw new Error('Délai d\'attente dépassé. L\'export est trop volumineux. Essayez de filtrer par type.');
         }
         throw fetchError;
       }
@@ -295,7 +295,7 @@ export default function GenererQRPage() {
       {/* Page Header */}
       <div className="mb-8">
         <h1 className="text-2xl font-bold text-slate-800 dark:text-white">Génération de QR Codes</h1>
-        <p className="text-slate-500 dark:text-slate-400 mt-1">Créez des QR codes anti-fraude pour vos voyageurs</p>
+        <p className="text-slate-500 dark:text-slate-400 mt-1">Créez des tags QRTags pour vos objets</p>
       </div>
 
       {/* Success Message */}
@@ -351,8 +351,8 @@ export default function GenererQRPage() {
           >
             <User className="w-5 h-5" />
             <div className="text-left">
-              <p className="font-medium">Voyageur individuel</p>
-              <p className="text-xs opacity-80">1 voyageur, sans agence</p>
+              <p className="font-medium">Tag individuel</p>
+              <p className="text-xs opacity-80">1 tag, sans entreprise</p>
             </div>
           </button>
           <button
@@ -379,7 +379,7 @@ export default function GenererQRPage() {
           <CardHeader>
             <CardTitle className="text-slate-800 dark:text-white flex items-center gap-2">
               <QrCode className="w-5 h-5 text-blue-600" />
-              {context === 'individual' ? 'Voyageur individuel' : 'Génération agence'}
+              {context === 'individual' ? 'Tag individuel' : 'Génération agence'}
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
@@ -451,11 +451,11 @@ export default function GenererQRPage() {
                 </div>
 
                 <div className="bg-amber-50 dark:bg-blue-600/10 border border-amber-200 dark:border-amber-800 rounded-xl p-4 text-sm text-amber-700 dark:text-blue-500">
-                  <p className="font-medium">ℹ️ Le QR sera actif immédiatement avec les informations du voyageur.</p>
+                  <p className="font-medium">ℹ️ Le QR sera actif immédiatement avec les informations du client.</p>
                 </div>
 
                 <div className="bg-slate-50 dark:bg-slate-800 rounded-xl p-4 text-sm text-slate-600 dark:text-slate-300">
-                  <p><strong>Statut :</strong> Actif immédiatement • les infos voyageur sont pré-remplies.</p>
+                  <p><strong>Statut :</strong> Actif immédiatement • les infos client sont pré-remplies.</p>
                   <p><strong>Expiration :</strong> {individualForm.duration === '7d' ? '7 jours' : '1 an'} à partir de la génération</p>
                 </div>
               </>
@@ -512,7 +512,7 @@ export default function GenererQRPage() {
                   </div>
                   {agencyForm.type === 'qrtags' && (
                     <div className="space-y-2">
-                      <Label className="text-slate-700 dark:text-slate-300">Bagages par voyageur</Label>
+                      <Label className="text-slate-700 dark:text-slate-300">Tags par client</Label>
                       <Select 
                         value={String(agencyForm.baggagePerTraveler)} 
                         onValueChange={(v) => setAgencyForm({ ...agencyForm, baggagePerTraveler: parseInt(v) as 1 | 2 })}
@@ -536,7 +536,7 @@ export default function GenererQRPage() {
                 )}
                 {agencyForm.type === 'qrtags' && (
                   <div className="bg-slate-50 dark:bg-slate-800 rounded-xl p-4 text-sm text-slate-600 dark:text-slate-300">
-                    <p>ℹ️ Chaque voyageur reçoit {agencyForm.baggagePerTraveler} bagage(s) soute</p>
+                    <p>ℹ️ Chaque client reçoit {agencyForm.baggagePerTraveler} tag(s) QRTags</p>
                   </div>
                 )}
               </>
@@ -590,7 +590,7 @@ export default function GenererQRPage() {
                 <div>
                   <p className="text-slate-500 dark:text-slate-400">Type</p>
                   <p className="text-slate-800 dark:text-white font-medium">
-                    {context === 'individual' ? 'Individuel' : agencyForm.type === 'hajj' ? 'Hajj' : 'Voyageur'}
+                    {context === 'individual' ? 'Individuel' : agencyForm.type === 'hajj' ? 'Legacy' : 'QRTags'}
                   </p>
                 </div>
                 <div>

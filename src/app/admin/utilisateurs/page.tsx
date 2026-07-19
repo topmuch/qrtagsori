@@ -56,6 +56,8 @@ export default function UtilisateursPage() {
   const [agencies, setAgencies] = useState<Agency[]>([]);
   const [loading, setLoading] = useState(true);
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
   
   const [userForm, setUserForm] = useState({
     email: '',
@@ -94,20 +96,28 @@ export default function UtilisateursPage() {
   };
 
   const handleCreateUser = async () => {
+    setError('');
     try {
       const response = await fetch('/api/admin/users', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(userForm),
       });
-      
+
+      const data = await response.json();
+
       if (response.ok) {
         fetchUsers();
         setDialogOpen(false);
         setUserForm({ email: '', name: '', password: '', role: 'agent', agencyId: '' });
+        setSuccess(`Utilisateur "${data.user?.email}" créé avec succès.`);
+        setTimeout(() => setSuccess(''), 5000);
+      } else {
+        setError(data.error || 'Erreur lors de la création de l\'utilisateur');
       }
     } catch (error) {
       console.error('Error creating user:', error);
+      setError('Erreur réseau lors de la création de l\'utilisateur');
     }
   };
 
@@ -145,6 +155,18 @@ export default function UtilisateursPage() {
         <h1 className="text-2xl font-bold text-slate-800 dark:text-white">Utilisateurs</h1>
         <p className="text-slate-500 dark:text-slate-400 mt-1">Gérez les utilisateurs et leurs accès</p>
       </div>
+
+      {/* Bannières erreur/succès */}
+      {error && (
+        <div className="mb-4 p-3 rounded-lg bg-red-50 border border-red-200 text-red-700 text-sm">
+          ⚠️ {error}
+        </div>
+      )}
+      {success && (
+        <div className="mb-4 p-3 rounded-lg bg-green-50 border border-green-200 text-green-700 text-sm">
+          ✅ {success}
+        </div>
+      )}
 
       <div className="flex items-center justify-end mb-6">
         <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>

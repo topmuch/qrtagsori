@@ -53,9 +53,9 @@ export default function AdminLayout({
     { label: "PRODUITS & QR", isCategory: true },
     { label: "Générer QR", icon: "🔢", href: "/admin/generer" },
     { label: "Les Étiquettes", icon: "🏷️", href: "/admin/etiquettes" },
-    // 🧳 Voyageurs & Pèlerins
+    // 🧳 Bagages
     { label: "VOYAGEURS & PÈLERINS", isCategory: true },
-    { label: "Voyageurs", icon: "✈️", href: "/admin/voyageurs" },
+    { label: "Bagages", icon: "🧳", href: "/admin/voyageurs" },
     // 📬 Opérations
     { label: "OPÉRATIONS", isCategory: true },
     { label: "Messages", icon: "📩", href: "/admin/messages", badge: unreadMessages },

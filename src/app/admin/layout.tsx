@@ -90,8 +90,8 @@ function Sidebar({
     { label: "VOYAGEURS", icon: null, isCategory: true },
 
 
-    // Voyageurs
-    { label: "Voyageurs", icon: <Users className="w-5 h-5" />, href: "/admin/voyageurs", permission: PERMISSIONS.VIEW_BAGGAGES },
+    // Bagages
+    { label: "Bagages", icon: <Users className="w-5 h-5" />, href: "/admin/voyageurs", permission: PERMISSIONS.VIEW_BAGGAGES },
 
     // Messages Category
     { label: "MESSAGES", icon: null, isCategory: true },

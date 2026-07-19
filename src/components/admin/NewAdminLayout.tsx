@@ -80,7 +80,7 @@ export default function AdminLayout({ children, title, subtitle, unreadMessages 
     { label: "Générer QR", icon: <QrCode className="w-5 h-5" />, href: "/admin/generer" },
     { label: "Étiquettes", icon: <Layers className="w-5 h-5" />, href: "/admin/etiquettes" },
     { label: "VOYAGEURS", icon: null, isCategory: true },
-    { label: "Voyageurs", icon: <Package className="w-5 h-5" />, href: "/admin/voyageurs" },
+    { label: "Bagages", icon: <Package className="w-5 h-5" />, href: "/admin/voyageurs" },
     { label: "MESSAGES", icon: null, isCategory: true },
     { label: "Messages", icon: <MessageSquare className="w-5 h-5" />, href: "/admin/messages", badge: messages },
     { label: "Trouvailles", icon: <Scan className="w-5 h-5" />, href: "/admin/trouvailles" },

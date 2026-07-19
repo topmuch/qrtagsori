@@ -118,41 +118,50 @@ export default function AgencesPage() {
     setErrorMessage('');
 
     try {
+      // ─── 1. Créer l'agence ──────────────────────────────────
       const agencyResponse = await fetch('/api/admin/agencies', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           name: agencyForm.name,
-          slug: agencyForm.slug,
+          slug: agencyForm.slug || undefined, // API auto-génère si vide
           email: agencyForm.email,
           phone: agencyForm.phone,
         }),
       });
 
-      if (agencyResponse.ok) {
-        const agencyData = await agencyResponse.json();
+      const agencyData = await agencyResponse.json();
 
-        await fetch('/api/admin/users', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            email: agencyForm.email,
-            name: agencyForm.name,
-            password: agencyForm.password,
-            role: 'agency',
-            agencyId: agencyData.agency.id,
-          }),
-        });
-
-        setSuccessMessage(`Agence "${agencyForm.name}" créée avec succès !`);
-        fetchAgencies();
-        setDialogOpen(false);
-        setAgencyForm({ name: '', slug: '', email: '', phone: '', password: '', confirmPassword: '' });
-        setTimeout(() => setSuccessMessage(''), 5000);
-      } else {
-        const error = await agencyResponse.json();
-        setErrorMessage(error.error || 'Erreur lors de la création');
+      if (!agencyResponse.ok) {
+        setErrorMessage(agencyData.error || 'Erreur lors de la création de l\'agence');
+        return;
       }
+
+      // ─── 2. Créer l'utilisateur lié (avec gestion d'erreur) ──
+      const userResponse = await fetch('/api/admin/users', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          email: agencyForm.email,
+          name: agencyForm.name,
+          password: agencyForm.password,
+          role: 'agency',
+          agencyId: agencyData.agency.id,
+        }),
+      });
+
+      if (!userResponse.ok) {
+        const userErr = await userResponse.json();
+        // L'agence est créée mais l'utilisateur a échoué
+        setSuccessMessage(`Agence créée. ⚠️ Utilisateur non créé : ${userErr.error || 'erreur'}. Créez-le manuellement dans l'onglet Utilisateurs.`);
+      } else {
+        setSuccessMessage(`Agence "${agencyForm.name}" créée avec succès !`);
+      }
+
+      fetchAgencies();
+      setDialogOpen(false);
+      setAgencyForm({ name: '', slug: '', email: '', phone: '', password: '', confirmPassword: '' });
+      setTimeout(() => setSuccessMessage(''), 6000);
     } catch (error) {
       console.error('Error creating agency:', error);
       setErrorMessage("Erreur lors de la création de l'agence");
