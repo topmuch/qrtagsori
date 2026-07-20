@@ -120,14 +120,19 @@ function InscrireContent() {
   const missingReference = !formData.reference;
   const selectedCat = selectedCategory ? getObjectCategory(selectedCategory) : null;
 
-  const canSubmitStep2 =
+  // Étape 1 : valide dès qu'une catégorie d'objet est sélectionnée
+  const canSubmitStep1 = !!selectedCategory;
+
+  // Étape 2 : valide quand tous les champs obligatoires sont remplis + consentements cochés
+  const canSubmitStep2 = Boolean(
     formData.firstName.trim() &&
     formData.lastName.trim() &&
     formData.whatsapp.trim() &&
     formData.objectName.trim() &&
     formData.objectDescription.trim() &&
     acceptTerms &&
-    acceptPrivacy;
+    acceptPrivacy
+  );
 
   const doSubmit = async () => {
     if (!canSubmitStep2) return;
