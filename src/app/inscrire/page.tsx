@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, Suspense } from 'react';
+import { useState, useEffect, useRef, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import {
   ArrowRight,
@@ -81,6 +81,19 @@ function InscrireContent() {
   });
 
   const [categoryData, setCategoryData] = useState<Record<string, string>>({});
+  const [photoPreview, setPhotoPreview] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const handlePhotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setPhotoPreview(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
 
   // Sauvegarde auto en localStorage
   useEffect(() => {
@@ -131,6 +144,7 @@ function InscrireContent() {
         reward: formData.reward,
         message_to_finder: formData.messageToFinder,
         email: formData.email,
+        photo: photoPreview || undefined,
       };
 
       const response = await fetch('/api/activate', {
@@ -267,8 +281,8 @@ function InscrireContent() {
                   type="text"
                   value={formData.reference}
                   onChange={(e) => setFormData({ ...formData, reference: e.target.value.toUpperCase() })}
-                  className="w-full px-4 py-3 rounded-lg bg-transparent focus:outline-none border-2"
-                  style={{ borderColor: QRTAGS_INK, color: QRTAGS_INK }}
+                  className="w-full px-4 py-3 rounded-lg bg-white focus:outline-none border-2 text-gray-900 placeholder:text-gray-400"
+                  style={{ borderColor: QRTAGS_INK }}
                   readOnly={!!qrFromUrl}
                 />
               </div>
@@ -284,8 +298,8 @@ function InscrireContent() {
                       value={formData.firstName}
                       onChange={(e) => setFormData({ ...formData, firstName: e.target.value })}
                       placeholder="Marie"
-                      className="w-full px-3 py-2.5 rounded-lg bg-transparent focus:outline-none border-2"
-                      style={{ borderColor: QRTAGS_INK, color: QRTAGS_INK }}
+                      className="w-full px-3 py-2.5 rounded-lg bg-white focus:outline-none border-2 text-gray-900 placeholder:text-gray-400"
+                      style={{ borderColor: QRTAGS_INK }}
                     />
                   </div>
                   <div>
@@ -295,8 +309,8 @@ function InscrireContent() {
                       value={formData.lastName}
                       onChange={(e) => setFormData({ ...formData, lastName: e.target.value })}
                       placeholder="Dupont"
-                      className="w-full px-3 py-2.5 rounded-lg bg-transparent focus:outline-none border-2"
-                      style={{ borderColor: QRTAGS_INK, color: QRTAGS_INK }}
+                      className="w-full px-3 py-2.5 rounded-lg bg-white focus:outline-none border-2 text-gray-900 placeholder:text-gray-400"
+                      style={{ borderColor: QRTAGS_INK }}
                     />
                   </div>
                 </div>
@@ -307,8 +321,8 @@ function InscrireContent() {
                     value={formData.whatsapp}
                     onChange={(e) => setFormData({ ...formData, whatsapp: e.target.value })}
                     placeholder="+33 6 12 34 56 78"
-                    className="w-full px-3 py-2.5 rounded-lg bg-transparent focus:outline-none border-2"
-                    style={{ borderColor: QRTAGS_INK, color: QRTAGS_INK }}
+                    className="w-full px-3 py-2.5 rounded-lg bg-white focus:outline-none border-2 text-gray-900 placeholder:text-gray-400"
+                    style={{ borderColor: QRTAGS_INK }}
                   />
                   <p className="text-xs mt-1" style={{ color: QRTAGS_INK, opacity: 0.6 }}>
                     ⚠️ Le numéro WhatsApp est essentiel pour être contacté en cas de perte.
@@ -321,8 +335,8 @@ function InscrireContent() {
                     value={formData.email}
                     onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                     placeholder="marie@email.com"
-                    className="w-full px-3 py-2.5 rounded-lg bg-transparent focus:outline-none border-2"
-                    style={{ borderColor: QRTAGS_INK, color: QRTAGS_INK }}
+                    className="w-full px-3 py-2.5 rounded-lg bg-white focus:outline-none border-2 text-gray-900 placeholder:text-gray-400"
+                    style={{ borderColor: QRTAGS_INK }}
                   />
                 </div>
               </div>
@@ -339,8 +353,8 @@ function InscrireContent() {
                     value={formData.objectName}
                     onChange={(e) => setFormData({ ...formData, objectName: e.target.value })}
                     placeholder="Ex: Mon iPhone 14"
-                    className="w-full px-3 py-2.5 rounded-lg bg-transparent focus:outline-none border-2"
-                    style={{ borderColor: QRTAGS_INK, color: QRTAGS_INK }}
+                    className="w-full px-3 py-2.5 rounded-lg bg-white focus:outline-none border-2 text-gray-900 placeholder:text-gray-400"
+                    style={{ borderColor: QRTAGS_INK }}
                   />
                 </div>
 
@@ -353,8 +367,8 @@ function InscrireContent() {
                       value={categoryData[field.key] || ''}
                       onChange={(e) => setCategoryData({ ...categoryData, [field.key]: e.target.value })}
                       placeholder={field.placeholder}
-                      className="w-full px-3 py-2.5 rounded-lg bg-transparent focus:outline-none border-2"
-                      style={{ borderColor: QRTAGS_INK, color: QRTAGS_INK }}
+                      className="w-full px-3 py-2.5 rounded-lg bg-white focus:outline-none border-2 text-gray-900 placeholder:text-gray-400"
+                      style={{ borderColor: QRTAGS_INK }}
                     />
                   </div>
                 ))}
@@ -366,21 +380,42 @@ function InscrireContent() {
                     onChange={(e) => setFormData({ ...formData, objectDescription: e.target.value })}
                     placeholder="Caractéristiques distinctives, autocollants, rayures, contenu..."
                     rows={3}
-                    className="w-full px-3 py-2.5 rounded-lg bg-transparent focus:outline-none border-2 resize-none"
-                    style={{ borderColor: QRTAGS_INK, color: QRTAGS_INK }}
+                    className="w-full px-3 py-2.5 rounded-lg bg-white focus:outline-none border-2 text-gray-900 placeholder:text-gray-400 resize-none"
+                    style={{ borderColor: QRTAGS_INK }}
                   />
                 </div>
 
                 <div>
                   <label className="block text-xs font-bold mb-1" style={{ color: QRTAGS_INK }}>📸 Photo de l'objet (optionnel)</label>
-                  <button
-                    type="button"
-                    className="w-full py-3 rounded-lg border-2 border-dashed flex items-center justify-center gap-2 text-sm"
-                    style={{ borderColor: QRTAGS_INK, color: QRTAGS_INK }}
-                  >
-                    <Camera className="w-4 h-4" />
-                    Ajouter une photo
-                  </button>
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept="image/*"
+                    onChange={handlePhotoChange}
+                    className="hidden"
+                  />
+                  {photoPreview ? (
+                    <div className="relative">
+                      <img src={photoPreview} alt="Aperçu" className="w-full h-32 object-cover rounded-lg border-2" style={{ borderColor: QRTAGS_INK }} />
+                      <button
+                        type="button"
+                        onClick={() => { setPhotoPreview(null); if (fileInputRef.current) fileInputRef.current.value = ''; }}
+                        className="absolute top-1 right-1 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs"
+                      >
+                        ✕
+                      </button>
+                    </div>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={() => fileInputRef.current?.click()}
+                      className="w-full py-3 rounded-lg border-2 border-dashed flex items-center justify-center gap-2 text-sm bg-white text-gray-700 hover:bg-gray-50"
+                      style={{ borderColor: QRTAGS_INK }}
+                    >
+                      <Camera className="w-4 h-4" />
+                      Ajouter une photo
+                    </button>
+                  )}
                 </div>
               </div>
 
@@ -395,8 +430,8 @@ function InscrireContent() {
                       value={formData.city}
                       onChange={(e) => setFormData({ ...formData, city: e.target.value })}
                       placeholder="Dakar"
-                      className="w-full px-3 py-2.5 rounded-lg bg-transparent focus:outline-none border-2"
-                      style={{ borderColor: QRTAGS_INK, color: QRTAGS_INK }}
+                      className="w-full px-3 py-2.5 rounded-lg bg-white focus:outline-none border-2 text-gray-900 placeholder:text-gray-400"
+                      style={{ borderColor: QRTAGS_INK }}
                     />
                   </div>
                   <div>
@@ -406,8 +441,8 @@ function InscrireContent() {
                       value={formData.country}
                       onChange={(e) => setFormData({ ...formData, country: e.target.value })}
                       placeholder="Sénégal"
-                      className="w-full px-3 py-2.5 rounded-lg bg-transparent focus:outline-none border-2"
-                      style={{ borderColor: QRTAGS_INK, color: QRTAGS_INK }}
+                      className="w-full px-3 py-2.5 rounded-lg bg-white focus:outline-none border-2 text-gray-900 placeholder:text-gray-400"
+                      style={{ borderColor: QRTAGS_INK }}
                     />
                   </div>
                 </div>
@@ -420,8 +455,8 @@ function InscrireContent() {
                     value={formData.reward}
                     onChange={(e) => setFormData({ ...formData, reward: e.target.value })}
                     placeholder="Ex: 5000 FCFA"
-                    className="w-full px-3 py-2.5 rounded-lg bg-transparent focus:outline-none border-2"
-                    style={{ borderColor: QRTAGS_INK, color: QRTAGS_INK }}
+                    className="w-full px-3 py-2.5 rounded-lg bg-white focus:outline-none border-2 text-gray-900 placeholder:text-gray-400"
+                    style={{ borderColor: QRTAGS_INK }}
                   />
                 </div>
                 <div>
@@ -433,8 +468,8 @@ function InscrireContent() {
                     onChange={(e) => setFormData({ ...formData, messageToFinder: e.target.value })}
                     placeholder="Merci de me contacter, je récompenserai généreusement !"
                     rows={2}
-                    className="w-full px-3 py-2.5 rounded-lg bg-transparent focus:outline-none border-2 resize-none"
-                    style={{ borderColor: QRTAGS_INK, color: QRTAGS_INK }}
+                    className="w-full px-3 py-2.5 rounded-lg bg-white focus:outline-none border-2 text-gray-900 placeholder:text-gray-400 resize-none"
+                    style={{ borderColor: QRTAGS_INK }}
                   />
                 </div>
               </div>
