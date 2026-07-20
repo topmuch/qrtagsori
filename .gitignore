@@ -95,3 +95,5 @@ public/logo-source-qrtags.jpeg
 .env
 .env.local
 .env.*.local
+prisma/db/
+db/

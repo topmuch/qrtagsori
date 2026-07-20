@@ -9,11 +9,17 @@ interface BaggageItem {
   type: string;
   status: string;
   travelerName: string;
-  destination: string | null;
-  flightNumber: string | null;
   lastScanDate: string | null;
   lastLocation: string | null;
+  lastScanLocation: string | null;
+  scanCount: number;
+  trackingToken: string | null;
   expiresAt: string | null;
+  objectInfo?: {
+    object_name?: string | null;
+    category_label?: string | null;
+    color?: string | null;
+  } | null;
 }
 
 export default function MesBagagesPage() {
@@ -25,6 +31,7 @@ export default function MesBagagesPage() {
   useEffect(() => {
     const refs = JSON.parse(localStorage.getItem('qrbag_my_references') || '[]');
     if (refs.length === 0) {
+      setLoading(false);
       return;
     }
     // Fetch all baggages
@@ -33,18 +40,20 @@ export default function MesBagagesPage() {
         fetch(`/api/suivi/${ref}`).then(r => r.ok ? r.json() : null).catch(() => null)
       )
     ).then(results => {
-      const valid = results
+      const valid: BaggageItem[] = results
         .filter(r => r && r.baggage)
         .map(r => ({
           reference: r.baggage.reference,
           type: r.baggage.type,
           status: r.baggage.status,
           travelerName: r.baggage.travelerName,
-          destination: r.baggage.destination,
-          flightNumber: r.baggage.flightNumber,
           lastScanDate: r.baggage.lastScanDate,
           lastLocation: r.baggage.lastLocation,
+          lastScanLocation: r.baggage.lastScanLocation,
+          scanCount: r.baggage.scanCount || 0,
+          trackingToken: r.baggage.trackingToken || null,
           expiresAt: r.baggage.expiresAt,
+          objectInfo: r.baggage.objectInfo || null,
         }));
       setBaggages(valid);
     }).finally(() => {
@@ -55,17 +64,32 @@ export default function MesBagagesPage() {
   const filtered = baggages.filter(b =>
     b.reference.toLowerCase().includes(search.toLowerCase()) ||
     b.travelerName.toLowerCase().includes(search.toLowerCase()) ||
-    (b.destination || '').toLowerCase().includes(search.toLowerCase())
+    (b.objectInfo?.object_name || '').toLowerCase().includes(search.toLowerCase()) ||
+    (b.lastScanLocation || '').toLowerCase().includes(search.toLowerCase())
   );
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'active': return 'bg-green-500 text-white';
+      case 'active':
+      case 'activated':
+        return 'bg-green-500 text-white';
       case 'scanned': return 'bg-[#E3B23C] text-[#1a1a1a]';
       case 'lost': return 'bg-red-600 text-white';
       case 'found': return 'bg-green-600 text-white';
       case 'blocked': return 'bg-slate-500 text-white';
       default: return 'bg-slate-300 text-slate-700';
+    }
+  };
+
+  const getStatusLabel = (status: string) => {
+    switch (status) {
+      case 'active':
+      case 'activated':
+        return '🛡️ Actif';
+      case 'lost': return '🚨 Perdu';
+      case 'found': return '✅ Trouvé';
+      case 'scanned': return '📍 Scanné';
+      default: return status;
     }
   };
 
@@ -111,33 +135,52 @@ export default function MesBagagesPage() {
 
             {/* Baggage list */}
             <div className="space-y-3">
-              {filtered.map((baggage) => (
-                <Link
-                  key={baggage.reference}
-                  href={`/suivi/${baggage.reference}`}
-                  className="block bg-white border-2 border-dashed border-[#1a1a1a] rounded-2xl p-4 hover:bg-[#E3B23C]/10 transition-colors"
-                >
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="font-mono font-bold text-[#1a1a1a]">{baggage.reference}</span>
-                    <span className={`px-2 py-0.5 rounded-full text-xs font-bold ${getStatusColor(baggage.status)}`}>
-                      {baggage.status === 'active' ? '🛡️ Actif' : baggage.status === 'lost' ? '🚨 Perdu' : baggage.status === 'found' ? '✅ Trouvé' : baggage.status === 'scanned' ? '📍 Scanné' : baggage.status}
-                    </span>
-                  </div>
-                  <p className="text-sm text-slate-600 mb-1">{baggage.travelerName}</p>
-                  {baggage.flightNumber && <p className="text-xs text-slate-500">✈️ {baggage.flightNumber}</p>}
-                  {baggage.destination && <p className="text-xs text-slate-500">📍 {baggage.destination}</p>}
-                  {baggage.lastScanDate && (
-                    <p className="text-xs text-slate-400 mt-1 flex items-center gap-1">
-                      <Clock className="w-3 h-3" /> Dernier scan: {new Date(baggage.lastScanDate).toLocaleDateString('fr-FR')}
-                    </p>
-                  )}
-                  <div className="flex items-center justify-end mt-2">
-                    <span className="text-xs font-bold text-[#111111] flex items-center gap-1">
-                      Voir le suivi <ArrowRight className="w-3 h-3" />
-                    </span>
-                  </div>
-                </Link>
-              ))}
+              {filtered.map((baggage) => {
+                // Si l'utilisateur a un trackingToken, on privilégie /track/[token]
+                // (page de suivi propriétaire). Sinon, fallback /suivi/[reference].
+                const trackHref = baggage.trackingToken
+                  ? `/track/${baggage.trackingToken}`
+                  : `/suivi/${baggage.reference}`;
+                return (
+                  <Link
+                    key={baggage.reference}
+                    href={trackHref}
+                    className="block bg-white border-2 border-dashed border-[#1a1a1a] rounded-2xl p-4 hover:bg-[#E3B23C]/10 transition-colors"
+                  >
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="font-mono font-bold text-[#1a1a1a]">{baggage.reference}</span>
+                      <span className={`px-2 py-0.5 rounded-full text-xs font-bold ${getStatusColor(baggage.status)}`}>
+                        {getStatusLabel(baggage.status)}
+                      </span>
+                    </div>
+                    <p className="text-sm text-slate-600 mb-1">{baggage.travelerName}</p>
+                    {baggage.objectInfo?.object_name && (
+                      <p className="text-xs text-slate-700 font-semibold">
+                        📦 {baggage.objectInfo.object_name}
+                        {baggage.objectInfo.color ? ` · ${baggage.objectInfo.color}` : ''}
+                      </p>
+                    )}
+                    {baggage.lastScanLocation && (
+                      <p className="text-xs text-slate-500">📍 {baggage.lastScanLocation}</p>
+                    )}
+                    {baggage.scanCount > 0 && (
+                      <p className="text-xs text-slate-500 mt-1">
+                        👁️ {baggage.scanCount} scan{baggage.scanCount > 1 ? 's' : ''}
+                      </p>
+                    )}
+                    {baggage.lastScanDate && (
+                      <p className="text-xs text-slate-400 mt-1 flex items-center gap-1">
+                        <Clock className="w-3 h-3" /> Dernier scan: {new Date(baggage.lastScanDate).toLocaleDateString('fr-FR')}
+                      </p>
+                    )}
+                    <div className="flex items-center justify-end mt-2">
+                      <span className="text-xs font-bold text-[#111111] flex items-center gap-1">
+                        Voir le suivi <ArrowRight className="w-3 h-3" />
+                      </span>
+                    </div>
+                  </Link>
+                );
+              })}
             </div>
           </>
         )}

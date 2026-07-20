@@ -7,11 +7,12 @@ import { db } from '@/lib/db';
 //   Renvoie les informations de suivi (LECTURE SEULE) pour la page
 //   /share/[token]. Aucun PIN requis — le token lui-même est l'auth.
 //
+// Note QRTags: la colonne `shareToken` a été supprimée du schéma lors
+// des fix précédents. Cette route est gardée pour compatibilité mais
+// renvoie 404 (le partage se fait désormais via /track/[trackingToken]).
+//
 // Sécurité :
-//  - Le token est un secret partagé (128 bits d'entropie)
-//  - Aucune info sensible renvoyée (pas de PIN, pas de phone, pas d'email)
-//  - Le propriétaire peut révoquer le token à tout moment
-//  - Seuls les 5 derniers scans sont renvoyés (pas l'historique complet)
+//  - Aucune info sensible renvoyée (pas de phone, pas d'email)
 
 export async function GET(
   _request: NextRequest,
@@ -27,9 +28,11 @@ export async function GET(
       );
     }
 
-    // Récupérer le baggage par son shareToken
+    // QRTags: la colonne shareToken n'existe plus.
+    // Le partage se fait maintenant via /track/[trackingToken].
+    // On essaie quand même avec trackingToken pour rétro-compatibilité.
     const baggage = await db.baggage.findUnique({
-      where: { shareToken: token },
+      where: { trackingToken: token },
       include: {
         scanLogs: {
           orderBy: { createdAt: 'desc' },
@@ -59,30 +62,16 @@ export async function GET(
       );
     }
 
-    if (baggage.transitMode === 'inactive') {
-      return NextResponse.json(
-        { error: 'Le propriétaire a temporairement désactivé ce QR code' },
-        { status: 400 }
-      );
-    }
-
     // Construire la réponse — SANS données sensibles
     return NextResponse.json({
       reference: baggage.reference,
       travelerName: `${baggage.travelerFirstName || ''} ${baggage.travelerLastName || ''}`.trim() || 'Voyageur',
       type: baggage.type,
-      transportMode: baggage.transportMode,
-      flightNumber: baggage.flightNumber,
-      airlineName: baggage.airlineName,
-      trainNumber: baggage.trainNumber,
-      trainCompany: baggage.trainCompany,
-      shipName: baggage.shipName,
-      busCompany: baggage.busCompany,
-      busLineNumber: baggage.busLineNumber,
-      destination: baggage.destination,
       status: baggage.status,
       lastScanDate: baggage.lastScanDate?.toISOString() || null,
       lastLocation: baggage.lastLocation,
+      lastScanLocation: baggage.lastScanLocation,
+      scanCount: baggage.scanCount || 0,
       declaredLostAt: baggage.declaredLostAt?.toISOString() || null,
       foundAt: baggage.foundAt?.toISOString() || null,
       expiresAt: baggage.expiresAt?.toISOString() || null,

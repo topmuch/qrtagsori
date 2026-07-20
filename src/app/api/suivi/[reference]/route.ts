@@ -130,13 +130,35 @@ export async function GET(
       (s) => s.finderName || s.finderPhone
     );
 
+    // ─── Parser customData pour afficher les infos objet ───
+    let objectInfo: Record<string, unknown> | null = null;
+    if (baggage.customData) {
+      try {
+        const parsed = JSON.parse(baggage.customData) as Record<string, unknown>;
+        objectInfo = {
+          category: parsed.category || null,
+          category_label: parsed.category_label || null,
+          object_name: parsed.object_name || null,
+          object_description: parsed.object_description || null,
+          brand: parsed.brand || null,
+          model: parsed.model || null,
+          color: parsed.color || null,
+          reward: parsed.reward || null,
+          message_to_finder: parsed.message_to_finder || null,
+          city: parsed.city || null,
+          country: parsed.country || null,
+        };
+      } catch {
+        objectInfo = null;
+      }
+    }
+
     // ─── Construire la réponse ───
     const isDeclaredLost = baggage.declaredLostAt && !baggage.foundAt;
     const isExpired = baggage.expiresAt && new Date() > baggage.expiresAt;
 
     const response = {
       status: isExpired ? 'expired' : isDeclaredLost ? 'lost' : 'active',
-      // TRANSPORT-FEATURE: Include transportMode + conditional fields
       baggage: {
         reference: baggage.reference,
         type: baggage.type,
@@ -144,26 +166,17 @@ export async function GET(
         baggageIndex: baggage.baggageIndex,
         baggageType: baggage.baggageType,
         status: baggage.status,
-        transportMode: baggage.transportMode || 'flight',
-        airlineName: baggage.airlineName || null,
-        flightNumber: baggage.flightNumber || null,
-        trainCompany: baggage.trainCompany || null,
-        trainNumber: baggage.trainNumber || null,
-        shipName: baggage.shipName || null,
-        shipCabin: baggage.shipCabin || null,
-        busCompany: baggage.busCompany || null,
-        busLineNumber: baggage.busLineNumber || null,
-        destination: baggage.destination || null,
-        destinationCountry: baggage.destinationCountry || null,
-        departureDate: baggage.departureDate?.toISOString() || null,
-        departureTime: baggage.departureTime || null,
         agency: baggage.agency?.name || null,
         createdAt: baggage.createdAt?.toISOString() || null,
         lastScanDate: baggage.lastScanDate?.toISOString() || null,
         lastLocation: baggage.lastLocation || null,
+        lastScanLocation: baggage.lastScanLocation || null,
+        scanCount: baggage.scanCount || 0,
         declaredLostAt: baggage.declaredLostAt?.toISOString() || null,
         foundAt: baggage.foundAt?.toISOString() || null,
         expiresAt: baggage.expiresAt?.toISOString() || null,
+        trackingToken: baggage.trackingToken || null,
+        objectInfo,
       },
       // Dernier trouveur (nom + téléphone EN ENTIER)
       lastFinder: lastScanWithFinder

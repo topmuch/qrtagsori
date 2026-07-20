@@ -185,6 +185,22 @@ function InscrireContent() {
           expiresAt: data.baggage?.expiresAt,
           trackingToken: data.baggage?.trackingToken,
         }));
+
+        // ─── Stocker la référence dans localStorage pour /mes-bagages ───
+        // Permet à l'utilisateur de retrouver ses objets activés sans compte.
+        if (typeof window !== 'undefined') {
+          try {
+            const KEY = 'qrbag_my_references';
+            const refs: string[] = JSON.parse(localStorage.getItem(KEY) || '[]');
+            if (!refs.includes(formData.reference)) {
+              refs.push(formData.reference);
+              localStorage.setItem(KEY, JSON.stringify(refs));
+            }
+          } catch {
+            // Silent fail — pas bloquant
+          }
+        }
+
         localStorage.removeItem('qrtags_draft');
         router.push('/success?type=voyageur');
       } else {
