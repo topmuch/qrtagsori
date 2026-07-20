@@ -438,24 +438,7 @@ function DetailModal({ tag, onClose }: { tag: TagRow; onClose: () => void }) {
           )}
 
           {/* Champs dynamiques (custom_data) */}
-            <section>
-              <h3 className="text-sm font-bold uppercase tracking-wide text-muted-foreground mb-3 flex items-center gap-1">
-                <Package className="w-4 h-4" />
-                Données métier ({typeDef?.label || agencyType})
-              </h3>
-              <div className="grid grid-cols-2 gap-3 text-sm">
-                  const field = typeDef?.customFields.find((f) => f.key === k);
-                  return (
-                    <Field
-                      key={k}
-                      label={field?.label || k}
-                      value={String(v) || '—'}
-                    />
-                  );
-                })}
-              </div>
-            </section>
-          )}
+          {/* Champs dynamiques supprimés (customData non disponible) */}
 
           {/* Dernière position connue */}
           {tag.lastLocation && (
