@@ -1,405 +1,488 @@
 'use client';
 
-import { useState, useEffect, useCallback, useRef } from 'react';
-import { useParams } from 'next/navigation';
-import dynamic from 'next/dynamic';
-import { useTrackingSocket } from '@/hooks/useTrackingSocket';
-import { useTranslation } from '@/hooks/useTranslation';
-import { useAudioAlert, POLL_INTERVAL_MS } from '@/hooks/useAudioAlert';
-import { usePWAInstallPrompt } from '@/hooks/usePWAInstallPrompt';
-import { usePushNotification } from '@/hooks/usePushNotification';
-import { PreDepartureAlert } from '@/components/PreDepartureAlert';
-import { FeedbackButton } from '@/components/suivi/FeedbackButton';
+import { useState, useEffect } from 'react';
+import { useParams, useRouter } from 'next/navigation';
 import {
-  Luggage,
-  Plane,
-  Settings,
-  Camera,
-  Phone,
-  Shield,
-  Clock,
-  Wifi,
-  WifiOff,
-  Volume2,
-  VolumeX,
-  RefreshCw,
-  Globe,
-  AlertCircle,
-  Download,
-  Bell,
+  Loader2, AlertCircle, Clock, MapPin, Eye,
+  CheckCircle2, ArrowLeft, MessageCircle, Navigation,
 } from 'lucide-react';
+import QRTagsLogo from '@/components/qrtags/QRTagsLogo';
 
-// Dynamic imports
-const LeafletMap = dynamic(() => import('@/components/LeafletMap'), { ssr: false, loading: () => <MapSkeleton /> });
+// ─── Design tokens QRTags (fond jaune moutarde + cartes blanches) ───
+const QRTAGS_BG       = '#E3B23C';
+const QRTAGS_INK      = '#111111';
+const QRTAGS_RED      = '#DC2626';
+const QRTAGS_GREEN    = '#16A34A';
+const CARD_CLASS      = 'bg-white rounded-xl p-6 shadow-xl border-2 border-black';
 
-// ─── Brand constants ───
-const BRAND = '#111111';
-const ACCENT = '#E3B23C';
-const INK = '#1a1a1a';
-
-// ─── Types imported from @/components/suivi/types ───
-
-function MapSkeleton() {
-  return <div className="w-full h-44 sm:h-48 md:h-56 bg-slate-200 animate-pulse rounded-xl" />;
+interface ObjectInfo {
+  category?: string | null;
+  category_label?: string | null;
+  object_name?: string | null;
+  object_description?: string | null;
+  brand?: string | null;
+  model?: string | null;
+  color?: string | null;
+  reward?: string | null;
+  message_to_finder?: string | null;
+  city?: string | null;
+  country?: string | null;
 }
 
-// ═══════════════════════════════════════════════════════════════
-// TAB COMPONENTS (imported from separate files)
-// ═══════════════════════════════════════════════════════════════
-import { TabOverview } from '@/components/suivi/TabOverview';
-import { TabActions } from '@/components/suivi/TabActions';
-import { TabHistory } from '@/components/suivi/TabHistory';
-import { TabContact } from '@/components/suivi/TabContact';
+interface SuiviScan {
+  id?: string;
+  location: string | null;
+  city: string | null;
+  country: string | null;
+  finderName: string | null;
+  finderPhone: string | null;
+  message: string | null;
+  scannedAt: string;
+  hasMap?: boolean;
+  latitude?: number | null;
+  longitude?: number | null;
+}
 
-// Shared types
-import type { BaggageInfo, ScanEntry, LastPosition, SuiviData } from '@/components/suivi/types';
+interface SuiviData {
+  status: string;
+  message?: string;
+  baggage?: {
+    reference: string;
+    type: string;
+    travelerName: string;
+    status: string;
+    agency?: string | null;
+    createdAt?: string | null;
+    lastScanDate?: string | null;
+    lastLocation?: string | null;
+    lastScanLocation?: string | null;
+    scanCount?: number;
+    declaredLostAt?: string | null;
+    foundAt?: string | null;
+    expiresAt?: string | null;
+    trackingToken?: string | null;
+    objectInfo?: ObjectInfo | null;
+  };
+  lastFinder?: { name: string | null; phone: string | null } | null;
+  scans?: SuiviScan[];
+  lastPosition?: {
+    latitude: number | null;
+    longitude: number | null;
+    address: string | null;
+    hasCoordinates: boolean;
+  } | null;
+}
 
-// ═══════════════════════════════════════════════════════════════
-// MAIN PAGE
-// ═══════════════════════════════════════════════════════════════
-
-type TabId = 'overview' | 'actions' | 'history' | 'contact';
+function formatDate(iso: string | null | undefined): string {
+  if (!iso) return '—';
+  try {
+    return new Date(iso).toLocaleString('fr-FR', {
+      dateStyle: 'long',
+      timeStyle: 'short',
+    });
+  } catch {
+    return '—';
+  }
+}
 
 export default function SuiviPage() {
   const params = useParams();
-  const reference = params.reference as string;
-  const { t, lang, setLang, dir, countryCode } = useTranslation();
+  const router = useRouter();
+  const reference = (params?.reference as string) || '';
 
-  // ─── State ───
   const [data, setData] = useState<SuiviData | null>(null);
   const [loading, setLoading] = useState(true);
-  const [isRefreshing, setIsRefreshing] = useState(false);
-  const [refreshToast, setRefreshToast] = useState(false);
-  const [activeTab, setActiveTab] = useState<TabId>('overview');
-  const [statusToast, setStatusToast] = useState(false);
-  const [isTogglingStatus, setIsTogglingStatus] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  // Audio alert
-  const { audioEnabled, enableAudio, toggleAudio } = useAudioAlert(lang);
-  const { canInstall, promptInstall } = usePWAInstallPrompt();
-  const { isSubscribed: pushSubscribed, subscribe: pushSubscribe, supported: pushSupported } = usePushNotification(reference);
-
-  // WebSocket
-  const { isConnected: wsConnected, lastEvent } = useTrackingSocket(reference);
-
-  // Store last reference for PWA redirect + multi-bagages
+  // Stocker la référence dans localStorage pour /mes-bagages
   useEffect(() => {
-    if (reference) {
-      localStorage.setItem('qrbag_last_reference', reference);
-      // Ajouter à la liste des bagages consultés (multi-bagages)
-      const refs = JSON.parse(localStorage.getItem('qrbag_my_references') || '[]');
+    if (!reference) return;
+    if (typeof window === 'undefined') return;
+    try {
+      const KEY = 'qrbag_my_references';
+      const refs: string[] = JSON.parse(localStorage.getItem(KEY) || '[]');
       if (!refs.includes(reference)) {
         refs.unshift(reference);
-        // Garder max 20 références
-        localStorage.setItem('qrbag_my_references', JSON.stringify(refs.slice(0, 20)));
+        localStorage.setItem(KEY, JSON.stringify(refs.slice(0, 20)));
       }
-    }
-  }, [reference]);
-
-  // ─── Fetch tracking data ───
-  const fetchSuivi = useCallback(async (isRefresh = false, isSilent = false) => {
-    if (isRefresh && !isSilent) setIsRefreshing(true);
-    try {
-      const res = await fetch(`/api/suivi/${reference}`);
-      if (!res.ok) throw new Error('Failed');
-      const d = await res.json();
-      setData(d);
     } catch {
       // silent
-    } finally {
-      setLoading(false);
-      if (isRefresh && !isSilent) {
-        setIsRefreshing(false);
-        setRefreshToast(true);
-        setTimeout(() => setRefreshToast(false), 2000);
-      }
     }
   }, [reference]);
 
-  // Initial fetch
   useEffect(() => {
-    fetchSuivi(false);
-  }, [fetchSuivi]);
-
-  // Polling when audio enabled
-  useEffect(() => {
-    if (!audioEnabled) return;
-    const interval = setInterval(() => fetchSuivi(false, true), POLL_INTERVAL_MS);
-    return () => clearInterval(interval);
-  }, [audioEnabled, fetchSuivi]);
-
-  // WebSocket real-time alerts
-  useEffect(() => {
-    if (!lastEvent) return;
-    fetchSuivi(true, true);
-    setRefreshToast(true);
-    setTimeout(() => setRefreshToast(false), 5000);
-    if (audioEnabled) {
+    if (!reference) return;
+    (async () => {
       try {
-        const audioCtx = new (window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext)();
-        const osc = audioCtx.createOscillator();
-        const gain = audioCtx.createGain();
-        osc.connect(gain);
-        gain.connect(audioCtx.destination);
-        osc.frequency.value = 880;
-        gain.gain.setValueAtTime(0.3, audioCtx.currentTime);
-        gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.5);
-        osc.start();
-        osc.stop(audioCtx.currentTime + 0.5);
-      } catch { /* silent */ }
-    }
-    // BroadcastChannel for push notification
-    if (typeof BroadcastChannel !== 'undefined') {
-      const bc = new BroadcastChannel('qrtags-tracking');
-      bc.postMessage({ type: 'scan_detected', reference, message: `Votre bagage ${reference} vient d'être scanné.` });
-      bc.close();
-    }
-  }, [lastEvent, fetchSuivi, audioEnabled, reference]);
+        const res = await fetch(`/api/suivi/${reference}`, { cache: 'no-store' });
+        if (!res.ok) {
+          setError('Erreur lors du chargement');
+          return;
+        }
+        const d: SuiviData = await res.json();
+        setData(d);
+      } catch (err) {
+        console.error('[suivi] error:', err);
+        setError('Erreur réseau');
+      } finally {
+        setLoading(false);
+      }
+    })();
+  }, [reference]);
 
-  const handleRefresh = useCallback(async () => {
-    await fetchSuivi(true);
-  }, [fetchSuivi]);
+  // Auto-refresh toutes les 30s
+  useEffect(() => {
+    if (!reference || loading || error) return;
+    const interval = setInterval(async () => {
+      try {
+        const res = await fetch(`/api/suivi/${reference}`, { cache: 'no-store' });
+        if (res.ok) {
+          const d: SuiviData = await res.json();
+          setData(d);
+        }
+      } catch {
+        // silent
+      }
+    }, 30000);
+    return () => clearInterval(interval);
+  }, [reference, loading, error]);
 
-  const handleStatusToggle = useCallback(async (action: 'mark-lost' | 'mark-found') => {
-    if (action === 'mark-lost') {
-      const confirmed = window.confirm(t('tracking.declare_lost_confirm'));
-      if (!confirmed) return;
-    }
-    setIsTogglingStatus(true);
-    try {
-      await fetch(`/api/baggage/${reference}/declare-lost`, { method: 'PUT' });
-      await fetchSuivi(true, true);
-      setStatusToast(true);
-      setTimeout(() => setStatusToast(false), 3000);
-    } catch {
-      // silent
-    } finally {
-      setIsTogglingStatus(false);
-    }
-  }, [reference, t, fetchSuivi]);
-
-  // ─── Loading ───
+  // ─── Loading ────────────────────────────────────────────────────
   if (loading) {
     return (
-      <main className="min-h-screen bg-[#111111] flex items-center justify-center">
+      <main className="min-h-screen flex items-center justify-center" style={{ backgroundColor: QRTAGS_BG }}>
         <div className="text-center">
-          <Luggage className="w-16 h-16 text-[#E3B23C] mx-auto mb-4 animate-bounce" />
-          <div className="animate-spin w-8 h-8 border-4 border-white/20 border-t-[#E3B23C] rounded-full mx-auto mb-4" />
-          <p className="text-white">Chargement du suivi...</p>
+          <Loader2 className="w-12 h-12 mx-auto mb-4 animate-spin text-black" />
+          <p className="text-lg font-bold text-black">Chargement du suivi...</p>
         </div>
       </main>
     );
   }
 
-  // ─── Error states ───
-  if (!data || data.status === 'not_found' || data.status === 'error') {
+  // ─── Error ──────────────────────────────────────────────────────
+  if (error || !data || !data.baggage) {
     return (
-      <main className="min-h-screen bg-[#111111] flex items-center justify-center p-4">
-        <div className="bg-white border-2 border-dashed border-[#1a1a1a] rounded-2xl p-8 text-center max-w-md">
-          <AlertCircle className="w-12 h-12 text-red-500 mx-auto mb-4" />
-          <h1 className="text-xl font-bold mb-2" style={{ color: INK }}>Bagage introuvable</h1>
-          <p className="text-sm mb-4" style={{ color: INK, opacity: 0.7 }}>
-            Ce code QR n&apos;existe pas ou n&apos;est pas encore activé.
+      <main className="min-h-screen flex items-center justify-center p-4" style={{ backgroundColor: QRTAGS_BG }}>
+        <div className={`${CARD_CLASS} max-w-md w-full text-center`}>
+          <AlertCircle className="w-12 h-12 mx-auto mb-4" style={{ color: QRTAGS_RED }} />
+          <h1 className="text-2xl font-black text-black mb-3">Suivi indisponible</h1>
+          <p className="text-black/70 mb-6">
+            {error || data?.message || 'Ce tag n\'existe pas ou n\'est pas encore activé.'}
           </p>
-          <p className="text-xs" style={{ color: INK, opacity: 0.5 }}>
-            Contactez le support : contact@qrtags.com
-          </p>
+          <a href="/" className="inline-block px-6 py-3 rounded-lg bg-black text-[#E3B23C] font-bold">
+            Retour à l'accueil
+          </a>
+        </div>
+      </main>
+    );
+  }
+
+  // ─── Pending activation ─────────────────────────────────────────
+  if (data.status === 'pending_activation') {
+    return (
+      <main className="min-h-screen flex items-center justify-center p-4" style={{ backgroundColor: QRTAGS_BG }}>
+        <div className={`${CARD_CLASS} max-w-md w-full text-center`}>
+          <Clock className="w-12 h-12 mx-auto mb-4" style={{ color: QRTAGS_INK }} />
+          <h1 className="text-2xl font-black text-black mb-3">Tag non activé</h1>
+          <p className="text-black/70 mb-6">Ce QR code n'a pas encore été activé par son propriétaire.</p>
+          <a href={`/inscrire?qr=${reference}`} className="inline-block px-6 py-3 rounded-lg bg-black text-[#E3B23C] font-bold">
+            L'activer maintenant
+          </a>
+        </div>
+      </main>
+    );
+  }
+
+  // ─── Expired ────────────────────────────────────────────────────
+  if (data.status === 'expired') {
+    return (
+      <main className="min-h-screen flex items-center justify-center p-4" style={{ backgroundColor: QRTAGS_BG }}>
+        <div className={`${CARD_CLASS} max-w-md w-full text-center`}>
+          <Clock className="w-12 h-12 mx-auto mb-4" style={{ color: QRTAGS_RED }} />
+          <h1 className="text-2xl font-black text-black mb-3">Tag expiré</h1>
+          <p className="text-black/70 mb-6">La période de validité de ce tag est terminée.</p>
+          <a href="/" className="inline-block px-6 py-3 rounded-lg bg-black text-[#E3B23C] font-bold">
+            Retour à l'accueil
+          </a>
+        </div>
+      </main>
+    );
+  }
+
+  // ─── Blocked ────────────────────────────────────────────────────
+  if (data.status === 'blocked') {
+    return (
+      <main className="min-h-screen flex items-center justify-center p-4" style={{ backgroundColor: QRTAGS_BG }}>
+        <div className={`${CARD_CLASS} max-w-md w-full text-center`}>
+          <AlertCircle className="w-12 h-12 mx-auto mb-4" style={{ color: QRTAGS_RED }} />
+          <h1 className="text-2xl font-black text-black mb-3">Tag bloqué</h1>
+          <a href="/" className="inline-block px-6 py-3 rounded-lg bg-black text-[#E3B23C] font-bold">
+            Retour à l'accueil
+          </a>
         </div>
       </main>
     );
   }
 
   const baggage = data.baggage;
-  const isDeclaredLost = !!baggage?.declaredLostAt && !baggage?.foundAt;
-  const hasFinderInfo = !!(data.lastFinder?.name || data.lastFinder?.phone);
-  const isFound = !!baggage?.foundAt || hasFinderInfo;
-  const hasFinderPhone = !!(data.lastFinder?.phone);
-
-  // ─── Status badge config ───
-  const statusConfig = (() => {
-    if (isDeclaredLost) return { title: '🚨 Perdu', class: 'bg-red-600 text-white animate-pulse' };
-    if (isFound && hasFinderInfo) return { title: '✅ Retrouvé', class: 'bg-green-500 text-white' };
-    if (baggage.status === 'scanned') return { title: '📍 Localisé', class: 'bg-[#E3B23C] text-[#1a1a1a]' };
-    return { title: '🛡️ Protégé', class: 'bg-[#1a1a1a] text-[#E3B23C]' };
-  })();
-
-  // ─── Tab config ───
-  const tabs: { id: TabId; label: string; icon: typeof Plane; badge?: number }[] = [
-    { id: 'overview', label: 'Suivi', icon: Luggage },
-    { id: 'actions', label: 'Actions', icon: Settings },
-    { id: 'history', label: 'Historique', icon: Clock, badge: data.scans.length || undefined },
-    { id: 'contact', label: 'Contact', icon: Phone },
-  ];
+  const objInfo = baggage.objectInfo;
+  const isLost = data.status === 'lost' || Boolean(baggage.declaredLostAt && !baggage.foundAt);
+  const scans = data.scans || [];
+  const lastFinder = data.lastFinder;
+  const hasTrackingToken = Boolean(baggage.trackingToken);
 
   return (
-    <main className="min-h-screen bg-[#111111] flex flex-col" dir={dir}>
-      {/* ═══ Header ═══ */}
-      <header className="sticky top-0 z-40 bg-[#111111] border-b border-[#E3B23C]/30 py-3 px-4">
-        <div className="max-w-md mx-auto flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <Luggage className="w-5 h-5 text-[#E3B23C]" />
-            <span className="text-sm font-bold text-white">QRTags Suivi</span>
-            {wsConnected ? <Wifi className="w-3 h-3 text-green-400" /> : <WifiOff className="w-3 h-3 text-white/40" />}
+    <main className="min-h-screen py-8 px-4" style={{ backgroundColor: QRTAGS_BG, color: QRTAGS_INK }}>
+      <div className="max-w-2xl mx-auto">
+        {/* Header */}
+        <div className="text-center mb-8">
+          <div className="bg-white inline-block px-6 py-3 rounded-lg mb-4 shadow-lg border-2 border-black">
+            <QRTagsLogo size="md" variant="light" />
           </div>
-          <div className="flex items-center gap-2">
-            {pushSupported && !pushSubscribed && (
-              <button onClick={pushSubscribe} className="p-2 text-white/70 hover:text-white" aria-label="Activer les notifications push">
-                <Bell className="w-4 h-4" />
-              </button>
-            )}
-            {pushSubscribed && (
-              <span className="text-green-400" title="Notifications push activées">
-                <Bell className="w-4 h-4" />
-              </span>
-            )}
-            <button onClick={toggleAudio} className="p-2 text-white/70 hover:text-white" aria-label="Audio">
-              {audioEnabled ? <Volume2 className="w-4 h-4" /> : <VolumeX className="w-4 h-4" />}
-            </button>
-            <button onClick={handleRefresh} disabled={isRefreshing} className="p-2 text-white/70 hover:text-white" aria-label="Refresh">
-              <RefreshCw className={`w-4 h-4 ${isRefreshing ? 'animate-spin' : ''}`} />
-            </button>
-            <select
-              value={lang}
-              onChange={(e) => setLang(e.target.value as 'fr' | 'en' | 'ar')}
-              className="bg-[#111111] text-white text-xs border border-white/20 rounded-lg px-2 py-1"
-            >
-              <option value="fr">FR</option>
-              <option value="en">EN</option>
-              <option value="ar">AR</option>
-            </select>
-          </div>
-        </div>
-      </header>
-
-      {/* ═══ Hero: Valise + QR ═══ */}
-      <div className="max-w-md mx-auto w-full px-4 pt-4">
-        <div className="bg-[#E3B23C] border-2 border-dashed border-[#1a1a1a] rounded-2xl p-4 flex items-center gap-4">
-          <div className="w-16 h-16 bg-white rounded-xl flex items-center justify-center flex-shrink-0 border-2 border-[#1a1a1a]">
-            <Luggage className="w-8 h-8" style={{ color: INK }} />
-          </div>
-          <div className="flex-1 min-w-0">
-            <p className="text-xs font-medium" style={{ color: INK, opacity: 0.7 }}>Référence</p>
-            <p className="text-lg font-mono font-bold truncate" style={{ color: INK }}>{reference}</p>
-            <span className={`inline-block mt-1 px-3 py-0.5 rounded-full text-xs font-bold ${statusConfig.class}`}>
-              {statusConfig.title}
+          <div className="inline-flex items-center gap-2 bg-white px-4 py-2 rounded-full mb-4 border-2 border-black">
+            <div
+              className="w-3 h-3 rounded-full animate-pulse"
+              style={{ backgroundColor: isLost ? QRTAGS_RED : QRTAGS_GREEN }}
+            />
+            <span className="text-black font-bold text-sm">
+              {isLost ? 'Objet signalé perdu' : 'Objet suivi'}
             </span>
           </div>
+          <h1 className="text-3xl font-black text-black mb-2">📍 SUIVI DE L'OBJET</h1>
+          <p className="text-black/80">
+            Référence : <span className="font-bold text-black">{baggage.reference}</span>
+          </p>
         </div>
-      </div>
 
-      {/* ═══ Pre-departure alert ═══ */}
-      <div className="max-w-md mx-auto w-full px-4 pt-3">
-        <PreDepartureAlert
-          reference={reference}
-          departureDate={baggage.departureDate}
-          departureTime={baggage.departureTime}
-          hasScans={data.scans.length > 0}
-          lang={lang}
-        />
-      </div>
-
-      {/* ═══ Refresh toast ═══ */}
-      {refreshToast && (
-        <div className="fixed top-20 left-1/2 -translate-x-1/2 bg-green-600 text-white px-4 py-2 rounded-xl shadow-lg z-50 text-sm font-medium">
-          ✅ Données rafraîchies
-        </div>
-      )}
-
-      {/* ═══ PWA Install Banner ═══ */}
-      {canInstall && (
-        <div className="max-w-md mx-auto w-full px-4 pt-3">
-          <button
-            onClick={promptInstall}
-            className="w-full bg-[#E3B23C] border-2 border-dashed border-[#1a1a1a] rounded-2xl p-3 flex items-center gap-3 hover:bg-[#E3B23C]/80 transition-colors"
-          >
-            <div className="w-10 h-10 rounded-xl bg-[#111111] flex items-center justify-center flex-shrink-0">
-              <Download className="w-5 h-5 text-white" />
+        {/* Si l'utilisateur est le propriétaire et a un trackingToken,
+            proposer le lien vers /track/[token] (page propriétaire avec actions) */}
+        {hasTrackingToken && (
+          <div className={`${CARD_CLASS} mb-6`}>
+            <div className="flex items-start gap-3">
+              <CheckCircle2 className="w-5 h-5 flex-shrink-0 mt-0.5" style={{ color: QRTAGS_GREEN }} />
+              <div className="flex-1">
+                <p className="font-bold text-black mb-1">Vous êtes le propriétaire de cet objet ?</p>
+                <p className="text-sm text-black/70 mb-3">
+                  Accédez à votre page de suivi propriétaire pour signaler une perte, partager le lien
+                  sur WhatsApp, ou voir les statistiques détaillées.
+                </p>
+                <button
+                  type="button"
+                  onClick={() => router.push(`/track/${baggage.trackingToken}`)}
+                  className="inline-block px-5 py-2 rounded-lg font-bold text-sm bg-black text-[#E3B23C] hover:bg-gray-900 transition"
+                >
+                  Ouvrir ma page de suivi →
+                </button>
+              </div>
             </div>
-            <div className="flex-1 text-left">
-              <p className="text-sm font-bold text-[#1a1a1a]">📱 Installer l&apos;application</p>
-              <p className="text-xs text-slate-700">Recevez les notifications sur votre téléphone</p>
+          </div>
+        )}
+
+        {/* Carte : infos objet */}
+        <div className={`${CARD_CLASS} mb-6`}>
+          <h3 className="text-lg font-bold text-black mb-4">📦 INFORMATIONS</h3>
+          <div className="bg-gray-50 rounded-lg p-4 border-2 border-black">
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <p className="text-xs text-black/60 uppercase font-bold">Propriétaire</p>
+                <p className="text-black font-bold">{baggage.travelerName || 'Anonyme'}</p>
+              </div>
+              <div>
+                <p className="text-xs text-black/60 uppercase font-bold">Statut</p>
+                <p className="font-bold" style={{ color: isLost ? QRTAGS_RED : QRTAGS_GREEN }}>
+                  {isLost ? '🚨 Perdu' : '✅ Actif'}
+                </p>
+              </div>
+              {objInfo?.object_name && (
+                <div>
+                  <p className="text-xs text-black/60 uppercase font-bold">Objet</p>
+                  <p className="text-black font-bold">{objInfo.object_name}</p>
+                </div>
+              )}
+              {objInfo?.category_label && (
+                <div>
+                  <p className="text-xs text-black/60 uppercase font-bold">Catégorie</p>
+                  <p className="text-black font-bold">{objInfo.category_label}</p>
+                </div>
+              )}
+              {objInfo?.color && (
+                <div>
+                  <p className="text-xs text-black/60 uppercase font-bold">Couleur</p>
+                  <p className="text-black font-bold">{objInfo.color}</p>
+                </div>
+              )}
+              {objInfo?.brand && (
+                <div>
+                  <p className="text-xs text-black/60 uppercase font-bold">Marque</p>
+                  <p className="text-black font-bold">{objInfo.brand}</p>
+                </div>
+              )}
+              {baggage.agency && (
+                <div>
+                  <p className="text-xs text-black/60 uppercase font-bold">Agence</p>
+                  <p className="text-black font-bold">{baggage.agency}</p>
+                </div>
+              )}
+              {baggage.expiresAt && (
+                <div>
+                  <p className="text-xs text-black/60 uppercase font-bold">Expire le</p>
+                  <p className="text-black font-bold">{formatDate(baggage.expiresAt)}</p>
+                </div>
+              )}
             </div>
-            <span className="text-xs font-bold text-[#111111]">Installer →</span>
-          </button>
-        </div>
-      )}
 
-      {/* ═══ Tab content ═══ */}
-      <div className="flex-1 max-w-md mx-auto w-full px-4 py-4 pb-24">
-        {activeTab === 'overview' && (
-          <TabOverview
-            data={data}
-            baggage={baggage}
-            lang={lang}
-            t={t}
-          />
+            {objInfo?.object_description && (
+              <div className="mt-4 pt-4 border-t-2 border-gray-200">
+                <p className="text-xs text-black/60 uppercase font-bold mb-1">Description</p>
+                <p className="text-black text-sm">{objInfo.object_description}</p>
+              </div>
+            )}
+
+            {objInfo?.message_to_finder && (
+              <div className="mt-4 p-3 rounded-lg" style={{ backgroundColor: '#FEF3C7', border: '2px solid #111' }}>
+                <p className="text-xs text-black/60 uppercase font-bold mb-1">💬 Message du propriétaire</p>
+                <p className="text-black text-sm italic">"{objInfo.message_to_finder}"</p>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Carte : statistiques */}
+        <div className={`${CARD_CLASS} mb-6`}>
+          <h3 className="text-lg font-bold text-black mb-4">📊 STATISTIQUES</h3>
+          <div className="grid grid-cols-3 gap-4">
+            <div className="text-center p-4 bg-gray-50 rounded-lg border border-gray-200">
+              <Eye className="w-5 h-5 mx-auto mb-1" style={{ color: QRTAGS_INK }} />
+              <p className="text-3xl font-black text-black">{baggage.scanCount || 0}</p>
+              <p className="text-xs text-black/70 mt-1">Scans</p>
+            </div>
+            <div className="text-center p-4 bg-gray-50 rounded-lg border border-gray-200">
+              <Clock className="w-5 h-5 mx-auto mb-1" style={{ color: QRTAGS_INK }} />
+              <p className="text-3xl font-black text-black">{scans.length}</p>
+              <p className="text-xs text-black/70 mt-1">Activités</p>
+            </div>
+            <div className="text-center p-4 bg-gray-50 rounded-lg border border-gray-200">
+              {isLost ? (
+                <>
+                  <AlertCircle className="w-5 h-5 mx-auto mb-1" style={{ color: QRTAGS_RED }} />
+                  <p className="text-3xl font-black" style={{ color: QRTAGS_RED }}>🚨</p>
+                  <p className="text-xs text-black/70 mt-1">Perdu</p>
+                </>
+              ) : (
+                <>
+                  <CheckCircle2 className="w-5 h-5 mx-auto mb-1" style={{ color: QRTAGS_GREEN }} />
+                  <p className="text-3xl font-black" style={{ color: QRTAGS_GREEN }}>✅</p>
+                  <p className="text-xs text-black/70 mt-1">Sûr</p>
+                </>
+              )}
+            </div>
+          </div>
+
+          <div className="mt-4 pt-4 border-t-2 border-gray-200">
+            <p className="text-sm text-black/60 flex items-center gap-1">
+              <Clock className="w-4 h-4" /> Dernière activité
+            </p>
+            <p className="text-black font-bold">{formatDate(baggage.lastScanDate)}</p>
+            {baggage.lastScanLocation && (
+              <>
+                <p className="text-sm text-black/60 mt-2 flex items-center gap-1">
+                  <MapPin className="w-4 h-4" /> Dernière position connue
+                </p>
+                <p className="text-black font-bold">📍 {baggage.lastScanLocation}</p>
+              </>
+            )}
+          </div>
+        </div>
+
+        {/* Carte : dernier trouveur */}
+        {lastFinder && (lastFinder.name || lastFinder.phone) && (
+          <div className={`${CARD_CLASS} mb-6`}>
+            <h3 className="text-lg font-bold text-black mb-4">👤 DERNIER TROUVEUR</h3>
+            <div className="bg-gray-50 rounded-lg p-4 border-2 border-black">
+              {lastFinder.name && (
+                <p className="text-sm">
+                  <span className="text-black/60">Nom :</span>{' '}
+                  <span className="font-bold text-black">{lastFinder.name}</span>
+                </p>
+              )}
+              {lastFinder.phone && (
+                <p className="text-sm mt-1">
+                  <span className="text-black/60">Téléphone :</span>{' '}
+                  <span className="font-bold text-black">{lastFinder.phone}</span>
+                </p>
+              )}
+            </div>
+          </div>
         )}
-        {activeTab === 'actions' && (
-          <TabActions
-            reference={reference}
-            baggage={baggage}
-            data={data}
-            isDeclaredLost={isDeclaredLost}
-            isTogglingStatus={isTogglingStatus}
-            onStatusToggle={handleStatusToggle}
-            lang={lang}
-            t={t}
-          />
-        )}
-        {activeTab === 'history' && (
-          <TabHistory
-            scans={data.scans}
-            lang={lang}
-            t={t}
-          />
-        )}
-        {activeTab === 'contact' && (
-          <TabContact
-            reference={reference}
-            baggage={baggage}
-            lastFinder={data.lastFinder}
-            hasFinderPhone={hasFinderPhone}
-            isDeclaredLost={isDeclaredLost}
-            lang={lang}
-            t={t}
-          />
-        )}
+
+        {/* Carte : historique des scans */}
+        <div className={`${CARD_CLASS} mb-6`}>
+          <h3 className="text-lg font-bold text-black mb-4">📜 HISTORIQUE DES SCANS</h3>
+          {scans.length === 0 ? (
+            <div className="text-center py-8">
+              <p className="text-4xl mb-2">👁️</p>
+              <p className="text-black font-bold">Aucun scan pour le moment</p>
+              <p className="text-sm text-black/70 mt-2">
+                Si quelqu'un trouve cet objet et scanne le QR code, vous verrez l'activité ici.
+              </p>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {scans.map((scan, idx) => (
+                <div
+                  key={scan.id || idx}
+                  className="p-4 bg-gray-50 rounded-lg border-l-4"
+                  style={{ borderColor: QRTAGS_INK }}
+                >
+                  <div className="flex items-center justify-between mb-2 gap-2 flex-wrap">
+                    <p className="text-sm font-bold text-black flex items-center gap-1">
+                      📅 {formatDate(scan.scannedAt)}
+                    </p>
+                    <span className="text-xs bg-black text-[#E3B23C] px-2 py-1 rounded-full font-bold">
+                      Scan #{scans.length - idx}
+                    </span>
+                  </div>
+                  {(scan.location || scan.city) && (
+                    <p className="text-sm text-black/80 flex items-center gap-1">
+                      <MapPin className="w-3 h-3" /> {scan.location || scan.city}
+                    </p>
+                  )}
+                  {scan.finderName && (
+                    <p className="text-sm text-black/80 mt-1">
+                      👤 Trouveur : {scan.finderName}
+                      {scan.finderPhone ? ` • ${scan.finderPhone}` : ''}
+                    </p>
+                  )}
+                  {scan.message && (
+                    <p className="text-sm text-black/80 mt-2 italic">💬 "{scan.message}"</p>
+                  )}
+                  {scan.latitude && scan.longitude && (
+                    <a
+                      href={`https://www.google.com/maps?q=${scan.latitude},${scan.longitude}`}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="text-xs underline mt-2 inline-block"
+                      style={{ color: QRTAGS_INK }}
+                    >
+                      🗺️ Voir sur Google Maps
+                    </a>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* Footer */}
+        <div className="text-center mb-8">
+          <a href="/" className="inline-flex items-center gap-2 text-black/70 hover:text-black text-sm">
+            <ArrowLeft className="w-4 h-4" /> Retour à l'accueil
+          </a>
+          <p className="text-black/70 text-sm mt-2">
+            Propulsé par <span className="font-bold text-black">QRTags</span>
+          </p>
+        </div>
       </div>
-
-      {/* ═══ Bottom tab bar ═══ */}
-      <nav className="fixed bottom-0 left-0 right-0 bg-white border-t-2 border-[#1a1a1a] z-50">
-        <div className="max-w-md mx-auto flex">
-          {tabs.map((tab) => {
-            const Icon = tab.icon;
-            const isActive = activeTab === tab.id;
-            return (
-              <button
-                key={tab.id}
-                onClick={() => setActiveTab(tab.id)}
-                className={`flex-1 flex flex-col items-center justify-center py-3 relative transition-colors ${
-                  isActive
-                    ? 'bg-[#111111] text-white'
-                    : 'bg-white text-slate-500 hover:bg-slate-50'
-                }`}
-              >
-                <Icon className="w-5 h-5 mb-0.5" />
-                <span className="text-[10px] font-bold">{tab.label}</span>
-                {tab.badge ? (
-                  <span className="absolute top-1.5 right-1/4 bg-red-500 text-white text-[9px] px-1.5 py-0.5 rounded-full font-bold">
-                    {tab.badge}
-                  </span>
-                ) : null}
-                {isActive && (
-                  <span className="absolute top-0 left-1/4 right-1/4 h-1 bg-[#111111] rounded-full" />
-                )}
-              </button>
-            );
-          })}
-        </div>
-      </nav>
-
-      {/* Feedback button */}
-      <FeedbackButton reference={reference} />
     </main>
   );
 }
