@@ -91,6 +91,8 @@ export async function POST(request: NextRequest) {
 
     revalidatePath('/admin/etiquettes');
     revalidatePath('/admin/qrcodes');
+    revalidatePath('/agence/baggages');
+    revalidatePath('/agence/tableau-de-bord');
 
     return NextResponse.json({
       success: true,
