@@ -28,6 +28,16 @@ export async function GET(
       });
     }
 
+    // QRTags : Si le tag n'a PAS de whatsappOwner, il n'est pas vraiment activé
+    // → rediriger vers /inscrire pour l'activation
+    // (même si le statut est 'activated' à cause d'un ancien bug de génération)
+    if (!baggage.whatsappOwner || baggage.whatsappOwner.trim() === '') {
+      return NextResponse.json({
+        status: 'pending_activation',
+        message: 'Ce tag n\'est pas encore activé',
+      });
+    }
+
     // Check expiration
     if (baggage.expiresAt && new Date() > baggage.expiresAt) {
       return NextResponse.json({
