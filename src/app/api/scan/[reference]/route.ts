@@ -11,7 +11,7 @@ export async function GET(
 
     const baggage = await prisma.baggage.findUnique({
       where: { reference },
-      include: { agency: true },
+      include: { agency: { select: { id: true, name: true } } },
     });
 
     if (!baggage) {
@@ -62,8 +62,8 @@ export async function GET(
         reference: baggage.reference,
         type: baggage.type,
         travelerName: `${baggage.travelerFirstName} ${baggage.travelerLastName}`,
-        baggageIndex: baggage.baggageIndex,
-        baggageType: baggage.baggageType,
+        
+        
         status: baggage.status,
         agency: baggage.agency?.name || null,
         whatsappOwner: baggage.whatsappOwner || null,
