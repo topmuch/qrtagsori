@@ -62,7 +62,6 @@ export async function POST(
       where: { reference },
       select: {
         reference: true,
-        ownerPin: true,
         status: true,
         transitMode: true,
         travelerFirstName: true,
@@ -91,7 +90,6 @@ export async function POST(
       );
     }
 
-    if (!baggage.ownerPin) {
       return NextResponse.json(
         { error: 'Aucun PIN défini pour ce bagage. Vérification impossible.', verified: false },
         { status: 400 }
@@ -99,7 +97,6 @@ export async function POST(
     }
 
     // ─── Vérifier le PIN ───
-    const pinValid = await bcrypt.compare(validated.pin, baggage.ownerPin);
 
     // Incrémenter le compteur d'essais
     const currentEntry = attempts.get(rateLimitKey) || { count: 0, firstAt: now };

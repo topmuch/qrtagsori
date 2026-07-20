@@ -68,10 +68,8 @@ function SuccessContent() {
                 <div className="text-xs font-bold opacity-60" style={{ color: QRTAGS_INK }}>RÉFÉRENCE</div>
                 <div className="font-mono font-bold text-sm" style={{ color: QRTAGS_INK }}>{activationData.reference}</div>
               </div>
-              {activationData.ownerPin && (
                 <div>
                   <div className="text-xs font-bold opacity-60" style={{ color: QRTAGS_INK }}>CODE PIN</div>
-                  <div className="font-mono font-bold text-sm" style={{ color: QRTAGS_INK }}>{activationData.ownerPin}</div>
                 </div>
               )}
               {activationData.expiresAt && (

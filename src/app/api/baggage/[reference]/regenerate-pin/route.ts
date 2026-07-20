@@ -8,7 +8,6 @@ import { db } from '@/lib/db';
 //
 // POST /api/baggage/[reference]/regenerate-pin
 //   Body: { pin: "1234" }  ← current PIN to verify ownership
-//   Returns: { ownerPin: "5678" }  ← new PIN (shown once)
 //
 // If the owner forgot their PIN, they cannot use this endpoint.
 // In that case, they must contact support (mailto link on /suivi).
@@ -35,7 +34,6 @@ export async function POST(
       where: { reference },
       select: {
         id: true,
-        ownerPin: true,
         status: true,
         travelerFirstName: true,
         travelerLastName: true,
@@ -56,7 +54,6 @@ export async function POST(
       );
     }
 
-    if (!baggage.ownerPin) {
       return NextResponse.json(
         { error: 'Aucun PIN défini pour ce bagage' },
         { status: 400 }
@@ -64,7 +61,6 @@ export async function POST(
     }
 
     // Verify current PIN
-    const pinValid = await bcrypt.compare(validated.pin, baggage.ownerPin);
     if (!pinValid) {
       return NextResponse.json(
         { error: 'PIN actuel incorrect' },
@@ -79,14 +75,11 @@ export async function POST(
     await db.baggage.update({
       where: { id: baggage.id },
       data: {
-        ownerPin: newPinHash,
-        ownerPinSetAt: new Date(),
       },
     });
 
     return NextResponse.json({
       success: true,
-      ownerPin: newPinPlain,  // Returned once in clear
       message: 'Nouveau PIN généré. Notez-le précieusement, il ne sera plus affiché.',
     });
   } catch (error) {

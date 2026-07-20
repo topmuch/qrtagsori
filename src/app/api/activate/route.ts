@@ -20,7 +20,6 @@ import crypto from 'crypto';
  *   - travelerFirstName (requis)
  *   - travelerLastName (requis)
  *   - whatsappOwner (requis) : numéro WhatsApp du propriétaire (cible WAME)
- *   - customData (optionnel) : objet JSON des champs dynamiques par métier
  *   - destination (optionnel)
  *   - departureDate (optionnel)
  *   - departureTime (optionnel)
@@ -37,7 +36,6 @@ const activateSchema = z.object({
   travelerFirstName: z.string().min(1, 'Prénom requis'),
   travelerLastName: z.string().min(1, 'Nom requis'),
   whatsappOwner: z.string().min(1, 'Numéro WhatsApp requis'),
-  customData: z.record(z.string(), z.unknown()).optional(),
   // Champs libres optionnels (rétrocompat)
   destination: z.string().optional(),
   departureDate: z.string().optional(),
@@ -83,16 +81,11 @@ export async function POST(request: NextRequest) {
     }
 
     // ─── 3. Générer le PIN propriétaire ───────────────────────
-    const ownerPinPlain = generateOwnerPin();
-    const ownerPinHash = await bcrypt.hash(ownerPinPlain, 10);
 
     // ─── 4. Calculer l'expiration (1 an par défaut QRTags) ────
     const expiresAt = new Date();
     expiresAt.setFullYear(expiresAt.getFullYear() + 1);
 
-    // ─── 5. Sérialiser customData en JSON string ──────────────
-    const customDataJson = validatedData.customData
-      ? JSON.stringify(validatedData.customData)
       : null;
 
     // ─── 6. Mettre à jour le tag ──────────────────────────────
@@ -108,14 +101,10 @@ export async function POST(request: NextRequest) {
           : null,
         departureTime: validatedData.departureTime || null,
         // QRTags : custom_data JSON (champs dynamiques par agency_type)
-        customData: customDataJson,
         // QRTags : nouveau statut + timestamp
         status: 'activated',
-        activatedAt: new Date(),
         expiresAt,
         // PIN propriétaire (hashé bcrypt)
-        ownerPin: ownerPinHash,
-        ownerPinSetAt: new Date(),
       },
     });
 
@@ -127,10 +116,8 @@ export async function POST(request: NextRequest) {
         reference: updatedBaggage.reference,
         type: updatedBaggage.type,
         status: updatedBaggage.status,
-        activatedAt: updatedBaggage.activatedAt,
         expiresAt: updatedBaggage.expiresAt,
         // PIN en clair (une seule fois, pour affichage sur /success)
-        ownerPin: ownerPinPlain,
       },
     });
   } catch (error) {

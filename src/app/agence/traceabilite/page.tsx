@@ -51,12 +51,10 @@ interface TagRow {
   travelerFirstName: string | null;
   travelerLastName: string | null;
   whatsappOwner: string | null;
-  customData: string | null;
   lotId: string | null;
   createdAt: string;
   assignedToAgencyAt: string | null;
   soldAt: string | null;
-  activatedAt: string | null;
   lastScanDate: string | null;
   lastLocation: string | null;
   agency?: { id: string; name: string; agencyType: string | null } | null;
@@ -288,7 +286,6 @@ export default function TraceabilitePage() {
                       {formatDate(tag.soldAt)}
                     </td>
                     <td className="px-4 py-3 text-muted-foreground">
-                      {formatDate(tag.activatedAt)}
                     </td>
                     <td className="px-4 py-3 text-right">
                       <div className="flex items-center justify-end gap-2">
@@ -381,10 +378,7 @@ function StatusBadge({ status }: { status: string }) {
 }
 
 function DetailModal({ tag, onClose }: { tag: TagRow; onClose: () => void }) {
-  // Parse customData si présent
-  let customData: Record<string, string> = {};
   try {
-    if (tag.customData) customData = JSON.parse(tag.customData);
   } catch { /* ignore */ }
 
   const agencyType = tag.agency?.agencyType || 'generic';
@@ -425,7 +419,6 @@ function DetailModal({ tag, onClose }: { tag: TagRow; onClose: () => void }) {
               <Field label="Type métier"   value={typeDef?.label || agencyType} />
               <Field label="Reçu le"       value={formatDate(tag.assignedToAgencyAt)} />
               <Field label="Vendu le"      value={formatDate(tag.soldAt)} />
-              <Field label="Activé le"     value={formatDate(tag.activatedAt)} />
               <Field label="Dernier scan"  value={formatDate(tag.lastScanDate)} />
             </div>
           </section>
@@ -445,14 +438,12 @@ function DetailModal({ tag, onClose }: { tag: TagRow; onClose: () => void }) {
           )}
 
           {/* Champs dynamiques (custom_data) */}
-          {Object.keys(customData).length > 0 && (
             <section>
               <h3 className="text-sm font-bold uppercase tracking-wide text-muted-foreground mb-3 flex items-center gap-1">
                 <Package className="w-4 h-4" />
                 Données métier ({typeDef?.label || agencyType})
               </h3>
               <div className="grid grid-cols-2 gap-3 text-sm">
-                {Object.entries(customData).map(([k, v]) => {
                   const field = typeDef?.customFields.find((f) => f.key === k);
                   return (
                     <Field

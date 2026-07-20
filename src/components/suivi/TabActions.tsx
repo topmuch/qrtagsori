@@ -168,7 +168,7 @@ export function TabActions({
         body: JSON.stringify({ pin: pinRecoveryInput }),
       });
       const d = await res.json();
-      if (res.ok) { setPinRecoveryResult(d.ownerPin); setPinRecoveryInput(''); }
+      if (res.ok) { setPinRecoveryResult(""); setPinRecoveryInput(''); }
       else setPinRecoveryError(d.error || 'Erreur');
     } catch { setPinRecoveryError('Erreur réseau'); }
     finally { setPinRecoveryLoading(false); }

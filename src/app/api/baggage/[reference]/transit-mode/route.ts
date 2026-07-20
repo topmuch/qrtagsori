@@ -23,7 +23,6 @@ export async function POST(
       where: { reference },
       select: {
         reference: true,
-        ownerPin: true,
         transitMode: true,
         status: true,
       },
@@ -45,14 +44,12 @@ export async function POST(
     }
 
     // Vérifier le PIN
-    if (!baggage.ownerPin) {
       return NextResponse.json(
         { error: 'Aucun PIN défini. Veuillez définir un PIN d\'abord.' },
         { status: 400 }
       );
     }
 
-    const pinValid = await bcrypt.compare(validated.pin, baggage.ownerPin);
     if (!pinValid) {
       return NextResponse.json(
         { error: 'PIN incorrect' },
@@ -110,7 +107,6 @@ export async function GET(
       select: {
         transitMode: true,
         transitModeUpdatedAt: true,
-        ownerPin: true,
       },
     });
 
@@ -124,7 +120,6 @@ export async function GET(
     return NextResponse.json({
       transitMode: baggage.transitMode,
       transitModeUpdatedAt: baggage.transitModeUpdatedAt,
-      hasPin: !!baggage.ownerPin,
     });
   } catch (error) {
     console.error('[transit-mode GET] Error:', error);

@@ -38,7 +38,6 @@ export async function POST(
       where: { reference },
       select: {
         reference: true,
-        ownerPin: true,
         status: true,
         shareToken: true,
       },
@@ -58,14 +57,12 @@ export async function POST(
       );
     }
 
-    if (!baggage.ownerPin) {
       return NextResponse.json(
         { error: 'Aucun PIN défini pour ce bagage' },
         { status: 400 }
       );
     }
 
-    const pinValid = await bcrypt.compare(validated.pin, baggage.ownerPin);
     if (!pinValid) {
       return NextResponse.json(
         { error: 'PIN incorrect' },

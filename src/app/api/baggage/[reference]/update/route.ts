@@ -44,7 +44,6 @@ export async function POST(
       where: { reference },
       select: {
         reference: true,
-        ownerPin: true,
         status: true,
       },
     });
@@ -64,14 +63,12 @@ export async function POST(
     }
 
     // Vérifier le PIN
-    if (!baggage.ownerPin) {
       return NextResponse.json(
         { error: 'Aucun PIN défini pour ce bagage. Contactez le support.' },
         { status: 400 }
       );
     }
 
-    const pinValid = await bcrypt.compare(validated.pin, baggage.ownerPin);
     if (!pinValid) {
       return NextResponse.json(
         { error: 'PIN incorrect' },
@@ -108,8 +105,6 @@ export async function POST(
 
     // Si l'utilisateur veut changer son PIN
     if (validated.newPin) {
-      updateData.ownerPin = await bcrypt.hash(validated.newPin, 10);
-      updateData.ownerPinSetAt = new Date();
     }
 
     if (Object.keys(updateData).length === 0) {
@@ -195,7 +190,6 @@ export async function GET(
         departureTime: true,
         transportMode: true,
         status: true,
-        ownerPin: true,
       },
     });
 
@@ -216,8 +210,6 @@ export async function GET(
     return NextResponse.json({
       baggage: {
         ...baggage,
-        hasPin: !!baggage.ownerPin,
-        ownerPin: undefined, // Ne jamais exposer le hash
       },
     });
   } catch (error) {

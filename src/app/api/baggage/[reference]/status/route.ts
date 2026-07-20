@@ -41,7 +41,6 @@ async function updateTagStatus(
     const updateData: Record<string, unknown> = { status };
     if (status === 'sold') updateData.founderName = buyerName || null;
     if (status === 'sold') updateData.founderPhone = buyerPhone || null;
-    if (status === 'activated') updateData.activatedAt = new Date();
     if (status === 'lost') updateData.declaredLostAt = new Date();
     if (status === 'found') updateData.foundAt = new Date();
 

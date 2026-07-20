@@ -101,12 +101,6 @@ model Baggage {
   founderPhone      String?
   founderAt         DateTime?
 
-  // QRTags : workflow + champs dynamiques
-  activatedAt       DateTime?
-  customData        String?
-  ownerPin          String?
-  ownerPinSetAt     DateTime?
-
   agency            Agency?   @relation(fields: [agencyId], references: [id], onDelete: SetNull)
   scanLogs          ScanLog[]
   damageReports     DamageReport[]

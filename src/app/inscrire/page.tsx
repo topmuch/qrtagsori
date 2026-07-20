@@ -133,7 +133,6 @@ function InscrireContent() {
     if (!canSubmitStep2) return;
     setLoading(true);
     try {
-      const customData = {
         ...categoryData,
         category: selectedCategory,
         category_label: selectedCat?.label,
@@ -155,7 +154,6 @@ function InscrireContent() {
           travelerFirstName: formData.firstName,
           travelerLastName: formData.lastName,
           whatsappOwner: formData.whatsapp,
-          customData,
         }),
       });
 
@@ -169,9 +167,7 @@ function InscrireContent() {
           objectName: formData.objectName,
           category: selectedCat?.label,
           type: 'voyageur',
-          activatedAt: new Date().toISOString(),
           expiresAt: data.baggage?.expiresAt,
-          ownerPin: data.baggage?.ownerPin,
         }));
         localStorage.removeItem('qrtags_draft');
         router.push('/success?type=voyageur');

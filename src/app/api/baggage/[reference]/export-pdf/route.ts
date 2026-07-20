@@ -80,14 +80,12 @@ export async function GET(
     }
 
     // Vérifier le PIN
-    if (!baggage.ownerPin) {
       return NextResponse.json(
         { error: 'Aucun PIN défini pour ce bagage' },
         { status: 400 }
       );
     }
 
-    const pinValid = await bcrypt.compare(pin, baggage.ownerPin);
     if (!pinValid) {
       return NextResponse.json(
         { error: 'PIN incorrect' },
