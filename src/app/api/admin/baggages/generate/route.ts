@@ -70,20 +70,20 @@ export async function POST(request: NextRequest) {
             travelerFirstName: data.firstName,
             travelerLastName: data.lastName,
             whatsappOwner: data.whatsapp,
-            status: 'activated',
+            status: 'in_stock',
             expiresAt: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000),
           },
         });
       }
     } else {
-      // Agence : créer en stock
+      // Agence : créer en stock ou assigné à l'agence (PAS activated)
       for (const ref of references) {
         await db.baggage.create({
           data: {
             reference: ref,
             type: 'voyageur',
             agencyId: agencyId,
-            status: agencyId ? 'activated' : 'in_stock',
+            status: agencyId ? 'assigned_to_agency' : 'in_stock',
           },
         });
       }
