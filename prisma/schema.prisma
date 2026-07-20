@@ -25,52 +25,15 @@ model User {
   observations    Observation[]
   dailyReports    DailyReport[]
   blogPosts       BlogPost[]
-  generatedLots   TagLot[]      @relation("GeneratedLots") // lots créés par ce superadmin
   createdAt       DateTime      @default(now())
   updatedAt       DateTime      @updatedAt
 }
 
 // ════════════════════════════════════════════════════════════════
-// QRTags — TagLot : lots de QR codes générés par le Superadmin
 // ════════════════════════════════════════════════════════════════
-model TagLot {
-  id            String    @id @default(cuid())
-  lotNumber     String    @unique
-  generatedById String?
-  generatedBy   User?     @relation("GeneratedLots", fields: [generatedById], references: [id], onDelete: SetNull)
-  agencyId      String?
-  agency        Agency?   @relation(fields: [agencyId], references: [id], onDelete: SetNull)
-  quantity      Int       @default(0)
-  notes         String?
-  status        String    @default("generated") // generated | assigned | partially_sold | sold_out
-  createdAt     DateTime  @default(now())
-  assignedAt    DateTime?
-
-  baggages      Baggage[]
-
-  @@index([agencyId])
-  @@index([status])
-}
 
 // ════════════════════════════════════════════════════════════════
-// QRTags — TagSale : journal des ventes de tags par les agences
 // ════════════════════════════════════════════════════════════════
-model TagSale {
-  id           String   @id @default(cuid())
-  baggageId    String
-  baggage      Baggage  @relation(fields: [baggageId], references: [id], onDelete: Cascade)
-  agencyId     String
-  agency       Agency   @relation(fields: [agencyId], references: [id], onDelete: Cascade)
-  buyerName    String?
-  buyerPhone   String?
-  salePrice    Float?
-  currency     String   @default("EUR")
-  invoiceRef   String?
-  soldAt       DateTime @default(now())
-
-  @@index([agencyId])
-  @@index([soldAt])
-}
 
 // Session model - secure HTTP-only cookie based sessions
 model Session {
@@ -113,12 +76,9 @@ model Agency {
   baggages           Baggage[]
   users              User[]
   invoices           Invoice[]
-  tagLots            TagLot[]
-  tagSales           TagSale[]
 }
 
-// Baggage model (QRTags "Tag") - ÉPURÉ pour éviter conflits DB production
-// Statuses: in_stock | assigned_to_agency | sold | activated | scanned | lost | found | blocked
+// Baggage model (QRTags "Tag") - ÉPURÉ : uniquement les colonnes de base
 model Baggage {
   id                String    @id @default(cuid())
   reference         String    @unique
@@ -140,31 +100,10 @@ model Baggage {
   founderName       String?
   founderPhone      String?
   founderAt         DateTime?
-  ownerPin          String?
-  ownerPinSetAt     DateTime?
-  validityExtendedAt      DateTime?
-  validityExtendedBy      String?
-
-  // ─── QRTags : workflow de traçabilité ───
-  assignedToAgencyAt      DateTime?
-  soldAt                  DateTime?
-  activatedAt             DateTime?
-
-  // ─── QRTags : champs dynamiques par agency_type (JSON) ───
-  customData              String?
-
-  // ─── QRTags : lien vers le lot ───
-  lotId                   String?
-  lot                     TagLot?  @relation(fields: [lotId], references: [id], onDelete: SetNull)
-
-  // ─── QRTags : journal des ventes ───
-  tagSales                TagSale[]
 
   agency            Agency?   @relation(fields: [agencyId], references: [id], onDelete: SetNull)
   scanLogs          ScanLog[]
   damageReports     DamageReport[]
-
-  @@index([lotId])
 }
 
 // ScanLog model - tracks all scans for audit
