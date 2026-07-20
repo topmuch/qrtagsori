@@ -128,33 +128,51 @@ export default function GenererQRPage() {
     return true;
   };
 
-  // Export generated QR codes as CSV (simple, no ZIP dependency)
+  // Export generated QR codes as PNG images (one ZIP-like download per QR)
   const handleExportGenerated = async () => {
     if (lastGeneratedRefs.length === 0) return;
     setIsExporting(true);
     try {
-      // Générer un CSV simple avec les références
-      const csv = 'Reference,URL\n' + lastGeneratedRefs.map((ref: string) => {
-        const baseUrl = window.location.origin;
-        return `${ref},${baseUrl}/scan/${ref}`;
-      }).join('\n');
+      const QRCode = (await import('qrcode')).default;
+      const baseUrl = window.location.origin;
 
-      // Télécharger le CSV
-      const blob = new Blob([csv], { type: 'text/csv' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `qrtags-${Date.now()}.csv`;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      URL.revokeObjectURL(url);
+      // Générer chaque QR code en PNG et télécharger
+      for (let i = 0; i < lastGeneratedRefs.length; i++) {
+        const ref = lastGeneratedRefs[i];
+        const targetUrl = `${baseUrl}/scan/${ref}`;
 
-      setSuccessMessage(`${lastGeneratedRefs.length} références exportées en CSV`);
+        // Générer le QR code en PNG (base64)
+        const dataUrl = await QRCode.toDataURL(targetUrl, {
+          errorCorrectionLevel: 'H',
+          margin: 2,
+          width: 512,
+          color: {
+            dark: '#111111',
+            light: '#E3B23C',
+          },
+        });
+
+        // Convertir base64 en blob et télécharger
+        const response = await fetch(dataUrl);
+        const blob = await response.blob();
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `QRTags-${ref}.png`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+
+        // Petite pause entre chaque téléchargement
+        await new Promise(resolve => setTimeout(resolve, 300));
+      }
+
+      setSuccessMessage(`${lastGeneratedRefs.length} QR codes exportés en PNG`);
       setTimeout(() => setSuccessMessage(''), 5000);
     } catch (error) {
       console.error('Export error:', error);
-      setErrorMessage('Erreur lors de l\'export');
+      setErrorMessage('Erreur lors de l\'export des QR codes');
     } finally {
       setIsExporting(false);
     }
