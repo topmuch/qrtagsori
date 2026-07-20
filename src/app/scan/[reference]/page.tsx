@@ -3,11 +3,9 @@
 import { useEffect, useState, useCallback } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import {
-  AlertCircle, Clock, Shield, Sparkles, Globe,
+  AlertCircle, Clock, Shield, Sparkles,
   MessageCircle, MapPin, Loader2, CheckCircle2,
 } from 'lucide-react';
-import { useTranslation } from '@/hooks/useTranslation';
-import { Language, LANGUAGE_NAMES } from '@/lib/i18n';
 
 const QRTAGS_BG = '#111111';
 const QRTAGS_ACCENT = '#E3B23C';
@@ -16,6 +14,7 @@ const FALLBACK_PHONE = '33600000000';
 
 interface BaggageData {
   status: string;
+  message?: string;
   baggage?: {
     reference: string;
     travelerName: string;
@@ -28,36 +27,12 @@ interface BaggageData {
   };
 }
 
-function LanguageSelector({ lang, setLang }: { lang: Language; setLang: (l: Language) => void }) {
-  const [isOpen, setIsOpen] = useState(false);
-  return (
-    <div className="relative">
-      <button onClick={() => setIsOpen(!isOpen)}
-        className="flex items-center gap-1.5 px-3 py-2 bg-transparent border-2 border-dashed rounded-full text-sm font-medium"
-        style={{ borderColor: QRTAGS_ACCENT, color: QRTAGS_ACCENT }}>
-        <Globe className="w-4 h-4" />
-        <span>{LANGUAGE_NAMES[lang]}</span>
-      </button>
-      {isOpen && (
-        <div className="absolute top-full right-0 mt-1 bg-[#111] border-2 border-dashed rounded-xl overflow-hidden z-50 min-w-[140px]" style={{ borderColor: QRTAGS_ACCENT }}>
-          {(['fr', 'en', 'ar'] as Language[]).map((l) => (
-            <button key={l} onClick={() => { setLang(l); setIsOpen(false); }}
-              className="w-full px-4 py-2 text-left text-sm"
-              style={{ color: lang === l ? QRTAGS_INK : QRTAGS_ACCENT, background: lang === l ? QRTAGS_ACCENT : 'transparent' }}>
-              {LANGUAGE_NAMES[l]}
-            </button>
-          ))}
-        </div>
-      )}
-    </div>
-  );
-}
+const PENDING_STATUSES = new Set(['in_stock', 'assigned_to_agency', 'sold', 'pending_activation']);
 
 export default function FinderPage() {
   const params = useParams();
   const router = useRouter();
   const reference = (params?.reference as string) || '';
-  const { t, lang, setLang } = useTranslation();
 
   const [tagData, setTagData] = useState<BaggageData | null>(null);
   const [loading, setLoading] = useState(true);
@@ -70,8 +45,6 @@ export default function FinderPage() {
   const [gpsPosition, setGpsPosition] = useState<{ lat: number; lng: number } | null>(null);
   const [showSuccess, setShowSuccess] = useState(false);
 
-  const PENDING_STATUSES = new Set(['in_stock', 'assigned_to_agency', 'sold', 'pending_activation']);
-
   useEffect(() => {
     if (!reference) return;
     (async () => {
@@ -79,10 +52,12 @@ export default function FinderPage() {
         const res = await fetch(`/api/scan/${reference}`, { cache: 'no-store' });
         const data: BaggageData = await res.json();
         setTagData(data);
-        if (typeof window !== 'undefined' && localStorage.getItem(`contacted_owner_${reference}`) === 'true') {
+        if (typeof window !== 'undefined' &&
+            localStorage.getItem(`contacted_owner_${reference}`) === 'true') {
           setHasContactedOwner(true);
         }
       } catch (err) {
+        console.error('Erreur fetch tag:', err);
         setTagData({ status: 'not_found' });
       } finally {
         setLoading(false);
@@ -106,7 +81,9 @@ export default function FinderPage() {
     if (typeof navigator !== 'undefined' && navigator.geolocation) {
       try {
         const pos = await new Promise<GeolocationPosition>((resolve, reject) => {
-          navigator.geolocation.getCurrentPosition(resolve, reject, { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 });
+          navigator.geolocation.getCurrentPosition(resolve, reject, {
+            enableHighAccuracy: true, timeout: 10000, maximumAge: 0,
+          });
         });
         sharedPos = { lat: pos.coords.latitude, lng: pos.coords.longitude };
         setGpsPosition(sharedPos);
@@ -116,26 +93,49 @@ export default function FinderPage() {
     setIsSubmitting(true);
     try {
       await fetch(`/api/scan/${reference}`, {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ location: otherLocation.trim() || '', finderName: finderName.trim(), finderPhone: finderPhone.trim(), latitude: sharedPos?.lat, longitude: sharedPos?.lng }),
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          location: otherLocation.trim() || '',
+          finderName: finderName.trim(),
+          finderPhone: finderPhone.trim(),
+          latitude: sharedPos?.lat,
+          longitude: sharedPos?.lng,
+        }),
       });
-      const locationLine = sharedPos ? `https://www.google.com/maps?q=${sharedPos.lat},${sharedPos.lng}` : (otherLocation.trim() || 'Position non partagée');
+
+      const locationLine = sharedPos
+        ? `https://www.google.com/maps?q=${sharedPos.lat},${sharedPos.lng}`
+        : (otherLocation.trim() || 'Position non partagée');
+
       const ownerName = tagData?.baggage?.travelerName || '';
       const firstName = ownerName.split(' ')[0] || '';
-      const msg = `Bonjour${firstName ? ` ${firstName}` : ''}, j'ai trouvé votre objet (réf. ${reference}). Je suis actuellement à cette position : ${locationLine}. — Message envoyé via QRTags.` + (finderName ? ` Trouveur : ${finderName}.` : '') + (finderPhone ? ` Contact : ${finderPhone}.` : '');
+      const msg =
+        `Bonjour${firstName ? ` ${firstName}` : ''}, ` +
+        `j'ai trouvé votre objet (réf. ${reference}). ` +
+        `Je suis actuellement à cette position : ${locationLine}. ` +
+        `— Message envoyé via QRTags.` +
+        (finderName ? ` Trouveur : ${finderName}.` : '') +
+        (finderPhone ? ` Contact : ${finderPhone}.` : '');
+
       const ownerNumber = (tagData?.baggage?.whatsappOwner || FALLBACK_PHONE).replace(/\D/g, '');
       const url = `https://wa.me/${ownerNumber}?text=${encodeURIComponent(msg)}`;
       window.location.href = url;
+
       setShowSuccess(true);
       setHasContactedOwner(true);
       localStorage.setItem(`contacted_owner_${reference}`, 'true');
       setTimeout(() => setShowSuccess(false), 4000);
-    } catch { alert('Erreur'); } finally { setIsSubmitting(false); }
+    } catch {
+      alert('Erreur');
+    } finally {
+      setIsSubmitting(false);
+    }
   }, [finderName, finderPhone, otherLocation, tagData, reference]);
 
   if (loading) {
     return (
-      <main className="min-h-screen page-dark-theme flex items-center justify-center" style={{ backgroundColor: QRTAGS_BG, color: QRTAGS_ACCENT }}>
+      <main className="min-h-screen flex items-center justify-center" style={{ backgroundColor: QRTAGS_BG, color: QRTAGS_ACCENT }}>
         <div className="text-center">
           <Loader2 className="w-12 h-12 mx-auto mb-4 animate-spin" style={{ color: QRTAGS_ACCENT }} />
           <p className="text-lg">Chargement...</p>
@@ -146,7 +146,7 @@ export default function FinderPage() {
 
   if (tagData?.status === 'not_found') {
     return (
-      <main className="min-h-screen page-dark-theme flex items-center justify-center p-5" style={{ backgroundColor: QRTAGS_BG, color: QRTAGS_ACCENT }}>
+      <main className="min-h-screen flex items-center justify-center p-5" style={{ backgroundColor: QRTAGS_BG, color: QRTAGS_ACCENT }}>
         <div className="max-w-md w-full rounded-2xl p-8 text-center" style={{ backgroundColor: QRTAGS_ACCENT, color: QRTAGS_INK, border: `2px dashed ${QRTAGS_INK}` }}>
           <AlertCircle className="w-12 h-12 mx-auto mb-4" />
           <h1 className="text-2xl font-bold mb-3">Code QR non valide</h1>
@@ -159,7 +159,7 @@ export default function FinderPage() {
 
   if (tagData?.status === 'expired') {
     return (
-      <main className="min-h-screen page-dark-theme flex items-center justify-center p-5" style={{ backgroundColor: QRTAGS_BG, color: QRTAGS_ACCENT }}>
+      <main className="min-h-screen flex items-center justify-center p-5" style={{ backgroundColor: QRTAGS_BG, color: QRTAGS_ACCENT }}>
         <div className="max-w-md w-full rounded-2xl p-8 text-center" style={{ backgroundColor: QRTAGS_ACCENT, color: QRTAGS_INK, border: `2px dashed ${QRTAGS_INK}` }}>
           <Clock className="w-12 h-12 mx-auto mb-4" />
           <h1 className="text-2xl font-bold mb-3">Tag expiré</h1>
@@ -171,7 +171,7 @@ export default function FinderPage() {
 
   if (tagData?.status === 'blocked') {
     return (
-      <main className="min-h-screen page-dark-theme flex items-center justify-center p-5" style={{ backgroundColor: QRTAGS_BG, color: QRTAGS_ACCENT }}>
+      <main className="min-h-screen flex items-center justify-center p-5" style={{ backgroundColor: QRTAGS_BG, color: QRTAGS_ACCENT }}>
         <div className="max-w-md w-full rounded-2xl p-8 text-center" style={{ backgroundColor: QRTAGS_ACCENT, color: QRTAGS_INK, border: `2px dashed ${QRTAGS_INK}` }}>
           <Shield className="w-12 h-12 mx-auto mb-4" />
           <h1 className="text-2xl font-bold mb-3">Tag bloqué</h1>
@@ -183,7 +183,7 @@ export default function FinderPage() {
 
   if (tagData && PENDING_STATUSES.has(tagData.status)) {
     return (
-      <main className="min-h-screen page-dark-theme flex items-center justify-center p-5" style={{ backgroundColor: QRTAGS_BG, color: QRTAGS_ACCENT }}>
+      <main className="min-h-screen flex items-center justify-center p-5" style={{ backgroundColor: QRTAGS_BG, color: QRTAGS_ACCENT }}>
         <div className="max-w-md w-full rounded-2xl p-8 text-center" style={{ backgroundColor: QRTAGS_ACCENT, color: QRTAGS_INK, border: `2px dashed ${QRTAGS_INK}` }}>
           <Sparkles className="w-12 h-12 mx-auto mb-4" />
           <h1 className="text-2xl font-bold mb-3">Redirection...</h1>
@@ -193,20 +193,14 @@ export default function FinderPage() {
     );
   }
 
-  // Page trouveur (objet actif)
   const baggage = tagData?.baggage;
   const ownerName = baggage?.travelerName || 'Anonyme';
   const objectRef = baggage?.reference || reference;
   const isLost = baggage?.declaredLostAt && !baggage?.foundAt;
 
   return (
-    <main className="page-dark-theme min-h-screen flex items-center justify-center p-4 md:p-8" style={{ backgroundColor: QRTAGS_BG, color: QRTAGS_ACCENT }}>
-      <div className="absolute top-4 right-4 z-20">
-        <LanguageSelector lang={lang} setLang={setLang} />
-      </div>
-
+    <main className="min-h-screen flex items-center justify-center p-4 md:p-8" style={{ backgroundColor: QRTAGS_BG, color: QRTAGS_ACCENT }}>
       <div className="relative w-full max-w-md rounded-2xl p-6 md:p-8 shadow-2xl" style={{ backgroundColor: QRTAGS_ACCENT, color: QRTAGS_INK, border: `2px dashed ${QRTAGS_INK}` }}>
-        {/* Badge QRTags */}
         <div className="flex items-center gap-2 mb-4">
           <div className="w-10 h-10 rounded-full flex items-center justify-center font-black" style={{ backgroundColor: QRTAGS_INK, color: QRTAGS_ACCENT, border: `2px dashed ${QRTAGS_ACCENT}` }}>Q</div>
           <div>
@@ -218,28 +212,32 @@ export default function FinderPage() {
         <h1 className="text-2xl md:text-3xl font-bold mb-1">{isLost ? 'Objet signalé perdu' : 'Objet retrouvé'}</h1>
         <p className="text-sm opacity-70 mb-5">Référence : {objectRef}</p>
 
-        {/* Carte propriétaire */}
         <div className="rounded-xl p-4 mb-5" style={{ background: 'rgba(17,17,17,0.08)', border: `2px dashed ${QRTAGS_INK}40` }}>
           <div className="text-xs uppercase tracking-wide opacity-60 mb-1">Propriétaire</div>
           <div className="font-bold text-base">{ownerName}</div>
           <div className="text-xs opacity-70 mt-1">Référence : {objectRef}</div>
         </div>
 
-        {/* Carte géoloc */}
         <div className="mb-5">
           <div className="flex items-center gap-2 text-xs uppercase tracking-wide opacity-70 mb-2">
             <MapPin className="w-4 h-4" /> Votre position
           </div>
           {gpsPosition ? (
             <div className="w-full h-48 rounded-xl overflow-hidden" style={{ border: `2px dashed ${QRTAGS_INK}` }}>
-              <iframe title="Position" src={`https://www.openstreetmap.org/export/embed.html?bbox=${gpsPosition.lng - 0.01}%2C${gpsPosition.lat - 0.01}%2C${gpsPosition.lng + 0.01}%2C${gpsPosition.lat + 0.01}&layer=mapnik&marker=${gpsPosition.lat}%2C${gpsPosition.lng}`} style={{ width: '100%', height: '100%', border: 0, filter: 'invert(1) hue-rotate(180deg)' }} loading="lazy" />
+              <iframe
+                title="Position"
+                src={`https://www.openstreetmap.org/export/embed.html?bbox=${gpsPosition.lng - 0.01}%2C${gpsPosition.lat - 0.01}%2C${gpsPosition.lng + 0.01}%2C${gpsPosition.lat + 0.01}&layer=mapnik&marker=${gpsPosition.lat}%2C${gpsPosition.lng}`}
+                style={{ width: '100%', height: '100%', border: 0, filter: 'invert(1) hue-rotate(180deg)' }}
+                loading="lazy"
+              />
             </div>
           ) : (
-            <div className="w-full h-32 rounded-xl flex items-center justify-center text-sm opacity-60" style={{ border: `2px dashed ${QRTAGS_INK}` }}>GPS en attente...</div>
+            <div className="w-full h-32 rounded-xl flex items-center justify-center text-sm opacity-60" style={{ border: `2px dashed ${QRTAGS_INK}` }}>
+              GPS en attente...
+            </div>
           )}
         </div>
 
-        {/* Formulaire trouveur */}
         <div className="space-y-3 mb-5">
           <div>
             <label className="block text-xs font-bold mb-1">Votre nom *</label>
@@ -258,7 +256,6 @@ export default function FinderPage() {
           </div>
         </div>
 
-        {/* Bouton WhatsApp WAME */}
         <button onClick={handleWhatsApp} disabled={isLocating || isSubmitting}
           className="w-full py-4 px-6 rounded-xl font-bold text-base flex items-center justify-center gap-2 transition-all min-h-[56px] disabled:opacity-60"
           style={{ backgroundColor: QRTAGS_INK, color: QRTAGS_ACCENT, border: `2px dashed ${QRTAGS_ACCENT}` }}>
