@@ -78,7 +78,7 @@ model Agency {
   invoices           Invoice[]
 }
 
-// Baggage model (QRTags "Tag") - ÉPURÉ : uniquement les colonnes de base
+// Baggage model (QRTags "Tag")
 model Baggage {
   id                String    @id @default(cuid())
   reference         String    @unique
@@ -100,6 +100,12 @@ model Baggage {
   founderName       String?
   founderPhone      String?
   founderAt         DateTime?
+
+  // QRTags : workflow + champs dynamiques
+  activatedAt       DateTime?
+  customData        String?
+  ownerPin          String?
+  ownerPinSetAt     DateTime?
 
   agency            Agency?   @relation(fields: [agencyId], references: [id], onDelete: SetNull)
   scanLogs          ScanLog[]

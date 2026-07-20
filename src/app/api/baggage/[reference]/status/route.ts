@@ -79,7 +79,7 @@ async function updateTagStatus(
     // ─── Récupérer le tag existant ──────────────────────────────
     const tag = await db.baggage.findUnique({
       where: { reference },
-      include: { agency: true, lot: true },
+      include: { agency: true },
     });
 
     if (!tag) {
@@ -123,7 +123,7 @@ async function updateTagStatus(
     const updated = await db.baggage.update({
       where: { reference },
       data: updateData,
-      include: { agency: true, lot: true },
+      include: { agency: true },
     });
 
     // ─── Si "sold" : créer une entrée TagSale ─────────────────
@@ -210,13 +210,6 @@ export async function GET(
             agencyType: true,
           },
         },
-        lot: {
-          select: {
-            id: true,
-            lotNumber: true,
-            quantity: true,
-            status: true,
-          },
         },
       },
     });

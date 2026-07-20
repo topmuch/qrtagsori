@@ -60,7 +60,7 @@ export async function POST(request: NextRequest) {
     // ─── 1. Trouver le tag ─────────────────────────────────────
     const baggage = await db.baggage.findUnique({
       where: { reference: validatedData.reference },
-      include: { agency: true, lot: true },
+      include: { agency: true },
     });
 
     if (!baggage) {

@@ -42,9 +42,6 @@ export async function GET(request: NextRequest) {
         agency: {
           select: { id: true, name: true, agencyType: true },
         },
-        lot: {
-          select: { id: true, lotNumber: true, quantity: true, status: true },
-        },
       },
     });
 

@@ -3,13 +3,11 @@
 import { useEffect, useState, useCallback } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import {
-  AlertCircle, Clock, Shield, ArrowRight, Sparkles, Globe,
+  AlertCircle, Clock, Shield, Sparkles, Globe,
   MessageCircle, MapPin, Loader2, CheckCircle2,
 } from 'lucide-react';
 import { useTranslation } from '@/hooks/useTranslation';
 import { Language, LANGUAGE_NAMES } from '@/lib/i18n';
-import dynamic from 'next/dynamic';
-import QRTagsLogo from '@/components/qrtags/QRTagsLogo';
 
 const QRTAGS_BG = '#111111';
 const QRTAGS_ACCENT = '#E3B23C';
