@@ -169,3 +169,112 @@ export function getProductLabel(value: string): string {
   return PRODUCT_TYPES.find((p) => p.value === value)?.label || value;
 }
 
+// ═══════════════════════════════════════════════════════════════════
+// QRTags — 8 Catégories d'objets (page d'inscription)
+// ═══════════════════════════════════════════════════════════════════
+
+export interface ObjectCategory {
+  value: string;
+  label: string;
+  icon: string;
+  examples: string;
+  fields: { key: string; label: string; type: 'text' | 'tel' | 'textarea' | 'number'; required?: boolean; placeholder?: string }[];
+}
+
+export const OBJECT_CATEGORIES: ObjectCategory[] = [
+  {
+    value: 'electronics',
+    label: 'Électronique',
+    icon: '📱',
+    examples: 'Téléphone, ordinateur, tablette, écouteurs, montre connectée',
+    fields: [
+      { key: 'brand', label: 'Marque', type: 'text', placeholder: 'Ex: Apple, Samsung...' },
+      { key: 'model', label: 'Modèle', type: 'text', placeholder: 'Ex: iPhone 14 Pro' },
+      { key: 'color', label: 'Couleur', type: 'text', placeholder: 'Ex: Noir' },
+      { key: 'imei', label: 'IMEI (optionnel)', type: 'text', placeholder: 'Ex: 35391810...' },
+    ],
+  },
+  {
+    value: 'travel',
+    label: 'Voyage',
+    icon: '🧳',
+    examples: 'Valise, sac à dos, passeport, portefeuille, sac à main',
+    fields: [
+      { key: 'type', label: 'Type', type: 'text', placeholder: 'Ex: Valise, sac à dos...' },
+      { key: 'brand', label: 'Marque', type: 'text', placeholder: 'Ex: Samsonite' },
+      { key: 'color', label: 'Couleur', type: 'text', placeholder: 'Ex: Rouge' },
+      { key: 'size', label: 'Taille', type: 'text', placeholder: 'Ex: Grand, cabine...' },
+    ],
+  },
+  {
+    value: 'keys',
+    label: 'Clés',
+    icon: '🔑',
+    examples: 'Clés maison, clés voiture, clés bureau, badge',
+    fields: [
+      { key: 'type', label: 'Type', type: 'text', placeholder: 'Ex: Maison, voiture...' },
+      { key: 'count', label: 'Nombre de clés', type: 'number', placeholder: 'Ex: 3' },
+      { key: 'keychain', label: 'Porte-clés distinctif', type: 'text', placeholder: 'Ex: Porte-clés en cuir marron' },
+    ],
+  },
+  {
+    value: 'vehicles',
+    label: 'Véhicules',
+    icon: '🚗',
+    examples: 'Vélo, scooter, trottinette, casque',
+    fields: [
+      { key: 'type', label: 'Type', type: 'text', placeholder: 'Ex: Vélo, scooter...' },
+      { key: 'brand', label: 'Marque', type: 'text', placeholder: 'Ex: Trek' },
+      { key: 'model', label: 'Modèle', type: 'text', placeholder: 'Ex: VTT 500' },
+      { key: 'color', label: 'Couleur', type: 'text', placeholder: 'Ex: Bleu' },
+      { key: 'plate', label: 'Immatriculation', type: 'text', placeholder: 'Ex: AB-123-CD' },
+    ],
+  },
+  {
+    value: 'pets',
+    label: 'Animaux',
+    icon: '🐾',
+    examples: 'Médaille chien, médaille chat, laisse',
+    fields: [
+      { key: 'pet_name', label: 'Nom de l\'animal', type: 'text', placeholder: 'Ex: Rex' },
+      { key: 'breed', label: 'Race', type: 'text', placeholder: 'Ex: Labrador' },
+      { key: 'color', label: 'Couleur', type: 'text', placeholder: 'Ex: Doré' },
+      { key: 'medal', label: 'Type de médaille', type: 'text', placeholder: 'Ex: Médaille métallique ronde' },
+    ],
+  },
+  {
+    value: 'kids',
+    label: 'Enfants',
+    icon: '🎒',
+    examples: 'Cartable, gourde, doudou, jouet',
+    fields: [
+      { key: 'child_name', label: 'Nom de l\'enfant', type: 'text', placeholder: 'Ex: Lucas' },
+      { key: 'school', label: 'École', type: 'text', placeholder: 'Ex: École Jules Ferry' },
+      { key: 'class', label: 'Classe', type: 'text', placeholder: 'Ex: CE2' },
+      { key: 'color', label: 'Couleur', type: 'text', placeholder: 'Ex: Bleu' },
+    ],
+  },
+  {
+    value: 'sport',
+    label: 'Sport',
+    icon: '⚽',
+    examples: 'Sac de sport, raquette, équipement, gourde',
+    fields: [
+      { key: 'sport_type', label: 'Type de sport', type: 'text', placeholder: 'Ex: Tennis, foot...' },
+      { key: 'brand', label: 'Marque', type: 'text', placeholder: 'Ex: Nike' },
+      { key: 'color', label: 'Couleur', type: 'text', placeholder: 'Ex: Noir' },
+    ],
+  },
+  {
+    value: 'other',
+    label: 'Autre',
+    icon: '📦',
+    examples: 'Objet personnalisé (champ libre)',
+    fields: [],
+  },
+];
+
+export function getObjectCategory(value: string): ObjectCategory | undefined {
+  return OBJECT_CATEGORIES.find((c) => c.value === value);
+}
+

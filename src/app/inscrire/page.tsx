@@ -4,15 +4,19 @@ import { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import {
   ArrowRight,
+  ArrowLeft,
   Sparkles,
   Globe,
   AlertCircle,
   Package,
+  CheckCircle2,
+  MapPin,
+  Gift,
+  MessageCircle,
+  Camera,
 } from 'lucide-react';
-import PhoneInput from '@/components/ui/PhoneInput';
-import DynamicTagForm from '@/components/qrtags/DynamicTagForm';
 import QRTagsLogo from '@/components/qrtags/QRTagsLogo';
-import { PRODUCT_TYPES, getAgencyTypeDef } from '@/lib/agency-types';
+import { OBJECT_CATEGORIES, getObjectCategory } from '@/lib/agency-types';
 import { useTranslation } from '@/hooks/useTranslation';
 import { Language, LANGUAGE_NAMES } from '@/lib/i18n';
 
@@ -39,10 +43,7 @@ function LanguageSelector({ lang, setLang }: { lang: Language; setLang: (l: Lang
               key={l}
               onClick={() => { setLang(l); setIsOpen(false); }}
               className="w-full px-4 py-2 text-left text-sm"
-              style={{
-                color: lang === l ? QRTAGS_INK : QRTAGS_ACCENT,
-                background: lang === l ? QRTAGS_ACCENT : 'transparent',
-              }}
+              style={{ color: lang === l ? QRTAGS_INK : QRTAGS_ACCENT, background: lang === l ? QRTAGS_ACCENT : 'transparent' }}
             >
               {LANGUAGE_NAMES[l]}
             </button>
@@ -59,44 +60,79 @@ function InscrireContent() {
   const qrFromUrl = searchParams.get('qr') || '';
   const { t, lang, setLang } = useTranslation();
 
+  const [step, setStep] = useState<1 | 2>(1);
   const [loading, setLoading] = useState(false);
-  const [phoneCountry, setPhoneCountry] = useState('FR');
-  const [agencyType, setAgencyType] = useState<string | null>(null);
-  const [productType, setProductType] = useState('laptop');
-  const [customData, setCustomData] = useState<Record<string, string>>({});
+  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
+  const [acceptTerms, setAcceptTerms] = useState(false);
+  const [acceptPrivacy, setAcceptPrivacy] = useState(false);
 
   const [formData, setFormData] = useState({
     reference: qrFromUrl.toUpperCase(),
     firstName: '',
     lastName: '',
     whatsapp: '',
+    email: '',
+    objectName: '',
+    objectDescription: '',
+    city: '',
+    country: '',
+    reward: '',
+    messageToFinder: '',
   });
 
-  // Récupérer l'agencyType du tag
+  const [categoryData, setCategoryData] = useState<Record<string, string>>({});
+
+  // Sauvegarde auto en localStorage
   useEffect(() => {
-    if (!qrFromUrl) return;
-    (async () => {
+    const draft = localStorage.getItem('qrtags_draft');
+    if (draft) {
       try {
-        const res = await fetch(`/api/baggage/${qrFromUrl.toUpperCase()}/status`);
-        if (res.ok) {
-          const data = await res.json();
-          setAgencyType(data.tag?.agency?.agencyType || null);
+        const saved = JSON.parse(draft);
+        if (saved.reference === formData.reference) {
+          setFormData(saved.formData || formData);
+          setSelectedCategory(saved.selectedCategory || null);
+          setCategoryData(saved.categoryData || {});
         }
       } catch {}
-    })();
-  }, [qrFromUrl]);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (formData.reference) {
+      localStorage.setItem('qrtags_draft', JSON.stringify({ formData, selectedCategory, categoryData }));
+    }
+  }, [formData, selectedCategory, categoryData]);
 
   const missingReference = !formData.reference;
+  const selectedCat = selectedCategory ? getObjectCategory(selectedCategory) : null;
+
+  const canSubmitStep1 = !!selectedCategory;
+  const canSubmitStep2 =
+    formData.firstName.trim() &&
+    formData.lastName.trim() &&
+    formData.whatsapp.trim() &&
+    formData.objectName.trim() &&
+    formData.objectDescription.trim() &&
+    acceptTerms &&
+    acceptPrivacy;
 
   const doSubmit = async () => {
-    if (missingReference) return;
-    if (!formData.firstName.trim() || !formData.lastName.trim() || !formData.whatsapp.trim()) {
-      alert('Veuillez remplir tous les champs obligatoires');
-      return;
-    }
+    if (!canSubmitStep2) return;
     setLoading(true);
-
     try {
+      const customData = {
+        ...categoryData,
+        category: selectedCategory,
+        category_label: selectedCat?.label,
+        object_name: formData.objectName,
+        object_description: formData.objectDescription,
+        city: formData.city,
+        country: formData.country,
+        reward: formData.reward,
+        message_to_finder: formData.messageToFinder,
+        email: formData.email,
+      };
+
       const response = await fetch('/api/activate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -105,11 +141,7 @@ function InscrireContent() {
           travelerFirstName: formData.firstName,
           travelerLastName: formData.lastName,
           whatsappOwner: formData.whatsapp,
-          customData: {
-            ...customData,
-            product_type: productType,
-            product_label: PRODUCT_TYPES.find((p) => p.value === productType)?.label || productType,
-          },
+          customData,
         }),
       });
 
@@ -120,11 +152,14 @@ function InscrireContent() {
           firstName: formData.firstName,
           lastName: formData.lastName,
           whatsapp: formData.whatsapp,
+          objectName: formData.objectName,
+          category: selectedCat?.label,
           type: 'voyageur',
           activatedAt: new Date().toISOString(),
           expiresAt: data.baggage?.expiresAt,
           ownerPin: data.baggage?.ownerPin,
         }));
+        localStorage.removeItem('qrtags_draft');
         router.push('/success?type=voyageur');
       } else {
         const err = await response.json();
@@ -146,7 +181,7 @@ function InscrireContent() {
 
       <div className="flex items-center justify-center p-5 md:p-8 min-h-screen">
         <div
-          className="relative max-w-md w-full rounded-2xl p-6 md:p-8 shadow-2xl"
+          className="relative max-w-2xl w-full rounded-2xl p-6 md:p-8 shadow-2xl"
           style={{ backgroundColor: QRTAGS_ACCENT, color: QRTAGS_INK, border: `2px dashed ${QRTAGS_INK}` }}
         >
           {/* Logo */}
@@ -154,17 +189,24 @@ function InscrireContent() {
             <QRTagsLogo size="md" variant="light" />
           </div>
 
+          {/* Titre */}
           <div className="text-center mb-6">
-            <div className="inline-block w-16 h-16 bg-white border-2 border-[#111111] rounded-full flex items-center justify-center mx-auto mb-4">
-              <Package className="w-8 h-8 text-[#111111]" />
-            </div>
-            <h1 className="text-2xl md:text-3xl font-bold text-[#111111] mb-1">
-              {t('common.welcome')}
+            <h1 className="text-2xl md:text-3xl font-black mb-1" style={{ color: QRTAGS_INK }}>
+              🎯 Activez votre QR code
             </h1>
-            <p className="text-[#111111]/70 text-sm md:text-base">
-              Activez votre tag QRTags pour protéger votre objet
+            <p className="text-sm" style={{ color: QRTAGS_INK, opacity: 0.7 }}>
+              Protégez vos objets en 2 minutes
             </p>
           </div>
+
+          {/* Barre de progression */}
+          <div className="flex items-center gap-2 mb-8">
+            <div className="flex-1 h-2 rounded-full transition-all" style={{ background: step >= 1 ? QRTAGS_INK : 'rgba(17,17,17,0.2)' }} />
+            <div className="flex-1 h-2 rounded-full transition-all" style={{ background: step >= 2 ? QRTAGS_INK : 'rgba(17,17,17,0.2)' }} />
+          </div>
+          <p className="text-center text-xs mb-6" style={{ color: QRTAGS_INK, opacity: 0.6 }}>
+            ÉTAPE {step} SUR 2 — {step === 1 ? 'QUEL OBJET ?' : 'VOS INFORMATIONS'}
+          </p>
 
           {missingReference && (
             <div className="mb-4 p-3 bg-red-100 border border-red-300 rounded-xl text-red-700 text-sm flex items-center gap-2">
@@ -173,127 +215,289 @@ function InscrireContent() {
             </div>
           )}
 
-          {/* Référence */}
-          <div className="mb-4">
-            <label className="block text-xs font-bold mb-1 text-[#111111]">
-              Référence du tag *
-            </label>
-            <input
-              type="text"
-              value={formData.reference}
-              onChange={(e) => setFormData({ ...formData, reference: e.target.value.toUpperCase() })}
-              placeholder="QRT26-XXXXXX"
-              className="w-full px-4 py-3 rounded-lg bg-transparent text-[#111111] placeholder:text-[#111111]/40 focus:outline-none border-2 border-[#111111]"
-              readOnly={!!qrFromUrl}
-            />
-          </div>
-
-          {/* Prénom + Nom */}
-          <div className="grid grid-cols-2 gap-3 mb-4">
+          {/* ═══ ÉTAPE 1 : CHOIX DE LA CATÉGORIE ═══ */}
+          {step === 1 && (
             <div>
-              <label className="block text-xs font-bold mb-1 text-[#111111]">Prénom *</label>
-              <input
-                type="text"
-                value={formData.firstName}
-                onChange={(e) => setFormData({ ...formData, firstName: e.target.value })}
-                placeholder="Marie"
-                className="w-full px-3 py-2.5 rounded-lg bg-transparent text-[#111111] placeholder:text-[#111111]/40 focus:outline-none border-2 border-[#111111]"
-              />
-            </div>
-            <div>
-              <label className="block text-xs font-bold mb-1 text-[#111111]">Nom *</label>
-              <input
-                type="text"
-                value={formData.lastName}
-                onChange={(e) => setFormData({ ...formData, lastName: e.target.value })}
-                placeholder="Dupont"
-                className="w-full px-3 py-2.5 rounded-lg bg-transparent text-[#111111] placeholder:text-[#111111]/40 focus:outline-none border-2 border-[#111111]"
-              />
-            </div>
-          </div>
-
-          {/* WhatsApp */}
-          <div className="mb-4">
-            <label className="block text-xs font-bold mb-1 text-[#111111]">
-              Numéro WhatsApp *
-            </label>
-            <input
-              type="tel"
-              value={formData.whatsapp}
-              onChange={(e) => setFormData({ ...formData, whatsapp: e.target.value })}
-              placeholder="+33 6 12 34 56 78"
-              className="w-full px-4 py-3 rounded-lg bg-transparent text-[#111111] placeholder:text-[#111111]/40 focus:outline-none border-2 border-[#111111]"
-            />
-            <p className="text-xs text-[#111111]/60 mt-1">
-              Ce numéro recevra le message WhatsApp si votre objet est trouvé
-            </p>
-          </div>
-
-          {/* Objet à protéger */}
-          <div className="mb-4">
-            <label className="block text-xs font-bold mb-1 text-[#111111]">
-              Objet à protéger *
-            </label>
-            <select
-              value={productType}
-              onChange={(e) => setProductType(e.target.value)}
-              className="w-full px-3 py-2.5 rounded-lg bg-transparent text-[#111111] focus:outline-none border-2 border-[#111111]"
-            >
-              {PRODUCT_TYPES.map((p) => (
-                <option key={p.value} value={p.value} className="bg-white text-black">
-                  {p.icon} {p.label}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          {/* Champs dynamiques par métier */}
-          {agencyType && agencyType !== 'generic' && (
-            <div className="mb-4 p-4 bg-[#111111]/5 rounded-xl border border-[#111111]/20">
-              <div className="flex items-center gap-2 mb-3">
-                <span className="text-sm">🏢</span>
-                <div className="flex-1">
-                  <div className="font-bold text-sm text-[#111111]">
-                    {getAgencyTypeDef(agencyType)?.label || 'Informations'}
-                  </div>
-                  <div className="text-xs text-[#111111]/60">
-                    {getAgencyTypeDef(agencyType)?.description}
-                  </div>
-                </div>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
+                {OBJECT_CATEGORIES.map((cat) => (
+                  <button
+                    key={cat.value}
+                    onClick={() => setSelectedCategory(cat.value)}
+                    className="p-4 rounded-xl text-center transition-all hover:scale-105"
+                    style={{
+                      background: selectedCategory === cat.value ? QRTAGS_INK : 'rgba(17,17,17,0.05)',
+                      color: selectedCategory === cat.value ? QRTAGS_ACCENT : QRTAGS_INK,
+                      border: `2px solid ${selectedCategory === cat.value ? QRTAGS_INK : 'transparent'}`,
+                    }}
+                  >
+                    <div className="text-3xl mb-2">{cat.icon}</div>
+                    <div className="font-bold text-sm">{cat.label}</div>
+                  </button>
+                ))}
               </div>
-              <DynamicTagForm
-                agencyType={agencyType}
-                values={customData}
-                onChange={setCustomData}
-                compact
-              />
+
+              {/* Exemples de la catégorie sélectionnée */}
+              {selectedCat && (
+                <div className="mb-6 p-3 rounded-xl" style={{ background: 'rgba(17,17,17,0.05)' }}>
+                  <p className="text-xs" style={{ color: QRTAGS_INK, opacity: 0.7 }}>
+                    <strong>{selectedCat.icon} {selectedCat.label} :</strong> {selectedCat.examples}
+                  </p>
+                </div>
+              )}
+
+              <button
+                onClick={() => canSubmitStep1 && setStep(2)}
+                disabled={!canSubmitStep1}
+                className="w-full py-4 px-6 rounded-xl font-bold text-base flex items-center justify-center gap-2 transition-all min-h-[56px] disabled:opacity-50"
+                style={{ backgroundColor: QRTAGS_INK, color: QRTAGS_ACCENT }}
+              >
+                Suivant
+                <ArrowRight className="w-5 h-5" />
+              </button>
             </div>
           )}
 
-          {/* Bouton */}
-          <button
-            onClick={doSubmit}
-            disabled={loading || missingReference}
-            className="w-full py-4 px-6 rounded-xl font-bold text-base flex items-center justify-center gap-2 transition-all min-h-[56px] disabled:opacity-50"
-            style={{ backgroundColor: QRTAGS_INK, color: QRTAGS_ACCENT }}
-          >
-            {loading ? (
-              <>
-                <div className="w-5 h-5 border-2 border-[#E3B23C]/30 border-t-[#E3B23C] rounded-full animate-spin" />
-                Activation...
-              </>
-            ) : (
-              <>
-                <Sparkles className="w-5 h-5" />
-                Activer mon tag
-                <ArrowRight className="w-5 h-5" />
-              </>
-            )}
-          </button>
+          {/* ═══ ÉTAPE 2 : FORMULAIRE ═══ */}
+          {step === 2 && (
+            <div className="space-y-6">
+              {/* Référence */}
+              <div>
+                <label className="block text-xs font-bold mb-1" style={{ color: QRTAGS_INK }}>Référence du tag</label>
+                <input
+                  type="text"
+                  value={formData.reference}
+                  onChange={(e) => setFormData({ ...formData, reference: e.target.value.toUpperCase() })}
+                  className="w-full px-4 py-3 rounded-lg bg-transparent focus:outline-none border-2"
+                  style={{ borderColor: QRTAGS_INK, color: QRTAGS_INK }}
+                  readOnly={!!qrFromUrl}
+                />
+              </div>
 
-          <p className="text-xs text-center mt-4 text-[#111111]/60">
-            En activant ce tag, vous acceptez d'être contacté via WhatsApp
-            si votre objet est trouvé.
+              {/* Section 1 : Vos informations */}
+              <div className="p-4 rounded-xl" style={{ background: 'rgba(17,17,17,0.05)' }}>
+                <h3 className="font-bold text-sm mb-3" style={{ color: QRTAGS_INK }}>👤 VOS INFORMATIONS DE CONTACT</h3>
+                <div className="grid grid-cols-2 gap-3 mb-3">
+                  <div>
+                    <label className="block text-xs font-bold mb-1" style={{ color: QRTAGS_INK }}>Prénom *</label>
+                    <input
+                      type="text"
+                      value={formData.firstName}
+                      onChange={(e) => setFormData({ ...formData, firstName: e.target.value })}
+                      placeholder="Marie"
+                      className="w-full px-3 py-2.5 rounded-lg bg-transparent focus:outline-none border-2"
+                      style={{ borderColor: QRTAGS_INK, color: QRTAGS_INK }}
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-bold mb-1" style={{ color: QRTAGS_INK }}>Nom *</label>
+                    <input
+                      type="text"
+                      value={formData.lastName}
+                      onChange={(e) => setFormData({ ...formData, lastName: e.target.value })}
+                      placeholder="Dupont"
+                      className="w-full px-3 py-2.5 rounded-lg bg-transparent focus:outline-none border-2"
+                      style={{ borderColor: QRTAGS_INK, color: QRTAGS_INK }}
+                    />
+                  </div>
+                </div>
+                <div className="mb-3">
+                  <label className="block text-xs font-bold mb-1" style={{ color: QRTAGS_INK }}>Numéro WhatsApp *</label>
+                  <input
+                    type="tel"
+                    value={formData.whatsapp}
+                    onChange={(e) => setFormData({ ...formData, whatsapp: e.target.value })}
+                    placeholder="+33 6 12 34 56 78"
+                    className="w-full px-3 py-2.5 rounded-lg bg-transparent focus:outline-none border-2"
+                    style={{ borderColor: QRTAGS_INK, color: QRTAGS_INK }}
+                  />
+                  <p className="text-xs mt-1" style={{ color: QRTAGS_INK, opacity: 0.6 }}>
+                    ⚠️ Le numéro WhatsApp est essentiel pour être contacté en cas de perte.
+                  </p>
+                </div>
+                <div>
+                  <label className="block text-xs font-bold mb-1" style={{ color: QRTAGS_INK }}>Email (optionnel)</label>
+                  <input
+                    type="email"
+                    value={formData.email}
+                    onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                    placeholder="marie@email.com"
+                    className="w-full px-3 py-2.5 rounded-lg bg-transparent focus:outline-none border-2"
+                    style={{ borderColor: QRTAGS_INK, color: QRTAGS_INK }}
+                  />
+                </div>
+              </div>
+
+              {/* Section 2 : Description de l'objet */}
+              <div className="p-4 rounded-xl" style={{ background: 'rgba(17,17,17,0.05)' }}>
+                <h3 className="font-bold text-sm mb-3" style={{ color: QRTAGS_INK }}>
+                  🏷️ DÉCRIRE VOTRE OBJET — {selectedCat?.icon} {selectedCat?.label}
+                </h3>
+                <div className="mb-3">
+                  <label className="block text-xs font-bold mb-1" style={{ color: QRTAGS_INK }}>Nom de l'objet *</label>
+                  <input
+                    type="text"
+                    value={formData.objectName}
+                    onChange={(e) => setFormData({ ...formData, objectName: e.target.value })}
+                    placeholder="Ex: Mon iPhone 14"
+                    className="w-full px-3 py-2.5 rounded-lg bg-transparent focus:outline-none border-2"
+                    style={{ borderColor: QRTAGS_INK, color: QRTAGS_INK }}
+                  />
+                </div>
+
+                {/* Champs spécifiques à la catégorie */}
+                {selectedCat?.fields.map((field) => (
+                  <div key={field.key} className="mb-3">
+                    <label className="block text-xs font-bold mb-1" style={{ color: QRTAGS_INK }}>{field.label}</label>
+                    <input
+                      type={field.type === 'number' ? 'number' : 'text'}
+                      value={categoryData[field.key] || ''}
+                      onChange={(e) => setCategoryData({ ...categoryData, [field.key]: e.target.value })}
+                      placeholder={field.placeholder}
+                      className="w-full px-3 py-2.5 rounded-lg bg-transparent focus:outline-none border-2"
+                      style={{ borderColor: QRTAGS_INK, color: QRTAGS_INK }}
+                    />
+                  </div>
+                ))}
+
+                <div className="mb-3">
+                  <label className="block text-xs font-bold mb-1" style={{ color: QRTAGS_INK }}>Description *</label>
+                  <textarea
+                    value={formData.objectDescription}
+                    onChange={(e) => setFormData({ ...formData, objectDescription: e.target.value })}
+                    placeholder="Caractéristiques distinctives, autocollants, rayures, contenu..."
+                    rows={3}
+                    className="w-full px-3 py-2.5 rounded-lg bg-transparent focus:outline-none border-2 resize-none"
+                    style={{ borderColor: QRTAGS_INK, color: QRTAGS_INK }}
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold mb-1" style={{ color: QRTAGS_INK }}>📸 Photo de l'objet (optionnel)</label>
+                  <button
+                    type="button"
+                    className="w-full py-3 rounded-lg border-2 border-dashed flex items-center justify-center gap-2 text-sm"
+                    style={{ borderColor: QRTAGS_INK, color: QRTAGS_INK }}
+                  >
+                    <Camera className="w-4 h-4" />
+                    Ajouter une photo
+                  </button>
+                </div>
+              </div>
+
+              {/* Section 3 : Localisation */}
+              <div className="p-4 rounded-xl" style={{ background: 'rgba(17,17,17,0.05)' }}>
+                <h3 className="font-bold text-sm mb-3" style={{ color: QRTAGS_INK }}>📍 VOTRE LOCALISATION</h3>
+                <div className="grid grid-cols-2 gap-3 mb-3">
+                  <div>
+                    <label className="block text-xs font-bold mb-1" style={{ color: QRTAGS_INK }}>Ville</label>
+                    <input
+                      type="text"
+                      value={formData.city}
+                      onChange={(e) => setFormData({ ...formData, city: e.target.value })}
+                      placeholder="Dakar"
+                      className="w-full px-3 py-2.5 rounded-lg bg-transparent focus:outline-none border-2"
+                      style={{ borderColor: QRTAGS_INK, color: QRTAGS_INK }}
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-bold mb-1" style={{ color: QRTAGS_INK }}>Pays</label>
+                    <input
+                      type="text"
+                      value={formData.country}
+                      onChange={(e) => setFormData({ ...formData, country: e.target.value })}
+                      placeholder="Sénégal"
+                      className="w-full px-3 py-2.5 rounded-lg bg-transparent focus:outline-none border-2"
+                      style={{ borderColor: QRTAGS_INK, color: QRTAGS_INK }}
+                    />
+                  </div>
+                </div>
+                <div className="mb-3">
+                  <label className="block text-xs font-bold mb-1" style={{ color: QRTAGS_INK }}>
+                    <Gift className="w-3 h-3 inline mr-1" /> Récompense proposée (optionnel)
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.reward}
+                    onChange={(e) => setFormData({ ...formData, reward: e.target.value })}
+                    placeholder="Ex: 5000 FCFA"
+                    className="w-full px-3 py-2.5 rounded-lg bg-transparent focus:outline-none border-2"
+                    style={{ borderColor: QRTAGS_INK, color: QRTAGS_INK }}
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold mb-1" style={{ color: QRTAGS_INK }}>
+                    <MessageCircle className="w-3 h-3 inline mr-1" /> Message au trouveur (optionnel)
+                  </label>
+                  <textarea
+                    value={formData.messageToFinder}
+                    onChange={(e) => setFormData({ ...formData, messageToFinder: e.target.value })}
+                    placeholder="Merci de me contacter, je récompenserai généreusement !"
+                    rows={2}
+                    className="w-full px-3 py-2.5 rounded-lg bg-transparent focus:outline-none border-2 resize-none"
+                    style={{ borderColor: QRTAGS_INK, color: QRTAGS_INK }}
+                  />
+                </div>
+              </div>
+
+              {/* Section 4 : Confirmation */}
+              <div className="p-4 rounded-xl" style={{ background: 'rgba(17,17,17,0.05)' }}>
+                <h3 className="font-bold text-sm mb-3" style={{ color: QRTAGS_INK }}>✅ CONFIRMATION</h3>
+                <label className="flex items-start gap-2 mb-3 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={acceptTerms}
+                    onChange={(e) => setAcceptTerms(e.target.checked)}
+                    className="mt-1"
+                  />
+                  <span className="text-xs" style={{ color: QRTAGS_INK }}>J'accepte les conditions d'utilisation</span>
+                </label>
+                <label className="flex items-start gap-2 mb-4 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={acceptPrivacy}
+                    onChange={(e) => setAcceptPrivacy(e.target.checked)}
+                    className="mt-1"
+                  />
+                  <span className="text-xs" style={{ color: QRTAGS_INK }}>
+                    Je comprends que mes informations seront visibles uniquement par la personne qui trouve mon objet
+                  </span>
+                </label>
+              </div>
+
+              {/* Boutons */}
+              <div className="flex gap-3">
+                <button
+                  onClick={() => setStep(1)}
+                  className="px-6 py-4 rounded-xl font-bold flex items-center gap-2"
+                  style={{ border: `2px solid ${QRTAGS_INK}`, color: QRTAGS_INK }}
+                >
+                  <ArrowLeft className="w-5 h-5" />
+                  Précédent
+                </button>
+                <button
+                  onClick={doSubmit}
+                  disabled={loading || !canSubmitStep2}
+                  className="flex-1 py-4 px-6 rounded-xl font-bold flex items-center justify-center gap-2 disabled:opacity-50"
+                  style={{ backgroundColor: QRTAGS_INK, color: QRTAGS_ACCENT }}
+                >
+                  {loading ? (
+                    <>
+                      <div className="w-5 h-5 border-2 border-[#E3B23C]/30 border-t-[#E3B23C] rounded-full animate-spin" />
+                      Activation...
+                    </>
+                  ) : (
+                    <>
+                      <Sparkles className="w-5 h-5" />
+                      Activer mon QR code
+                    </>
+                  )}
+                </button>
+              </div>
+            </div>
+          )}
+
+          <p className="text-xs text-center mt-6" style={{ color: QRTAGS_INK, opacity: 0.5 }}>
+            Propulsé par QRTags
           </p>
         </div>
       </div>
