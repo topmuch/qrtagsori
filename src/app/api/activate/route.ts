@@ -67,6 +67,7 @@ export async function POST(request: NextRequest) {
         trackingEnabled: true,
         scanCount: 0,
         isLost: false,
+        customData: validatedData.customData ? JSON.stringify(validatedData.customData) : null,
       },
     });
 

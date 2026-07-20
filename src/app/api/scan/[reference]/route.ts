@@ -54,6 +54,30 @@ export async function GET(
     // Check if declared lost
     const isDeclaredLost = baggage.declaredLostAt && !baggage.foundAt;
 
+    // Parser customData pour afficher les infos objet au trouveur
+    // (filtre de confidentialité : on ne renvoie PAS email ni photo au trouveur)
+    let objectInfo: Record<string, unknown> | null = null;
+    if (baggage.customData) {
+      try {
+        const parsed = JSON.parse(baggage.customData) as Record<string, unknown>;
+        objectInfo = {
+          category: parsed.category || null,
+          category_label: parsed.category_label || null,
+          object_name: parsed.object_name || null,
+          object_description: parsed.object_description || null,
+          brand: parsed.brand || null,
+          model: parsed.model || null,
+          color: parsed.color || null,
+          reward: parsed.reward || null,
+          message_to_finder: parsed.message_to_finder || null,
+          city: parsed.city || null,
+          country: parsed.country || null,
+        };
+      } catch {
+        objectInfo = null;
+      }
+    }
+
     return NextResponse.json({
       status: isDeclaredLost ? 'lost' : 'active',
       theme: baggage.type === 'hajj' ? 'hajj' : 'voyageur',
@@ -62,14 +86,15 @@ export async function GET(
         reference: baggage.reference,
         type: baggage.type,
         travelerName: `${baggage.travelerFirstName} ${baggage.travelerLastName}`,
-        
-        
+        travelerFirstName: baggage.travelerFirstName || null,
         status: baggage.status,
         agency: baggage.agency?.name || null,
         whatsappOwner: baggage.whatsappOwner || null,
         declaredLostAt: baggage.declaredLostAt,
         foundAt: baggage.foundAt,
         createdAt: baggage.createdAt?.toISOString() || null,
+        isLost: Boolean(baggage.isLost),
+        objectInfo,
       },
     }, {
       headers: {

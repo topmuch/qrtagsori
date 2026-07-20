@@ -144,6 +144,8 @@ function InscrireContent() {
     if (!canSubmitStep2) return;
     setLoading(true);
     try {
+      // Construire customData avec tous les champs du formulaire (sera affiché
+      // sur la page trouveur et la page de suivi propriétaire)
       const customData = {
         ...categoryData,
         category: selectedCategory,
@@ -157,7 +159,6 @@ function InscrireContent() {
         email: formData.email,
         photo: photoPreview || undefined,
       };
-      void customData; // réservé pour usage futur (customData JSON)
 
       const response = await fetch('/api/activate', {
         method: 'POST',
@@ -167,6 +168,7 @@ function InscrireContent() {
           travelerFirstName: formData.firstName,
           travelerLastName: formData.lastName,
           whatsappOwner: formData.whatsapp,
+          customData,
         }),
       });
 

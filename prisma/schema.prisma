@@ -110,6 +110,12 @@ model Baggage {
   lostReportedAt    DateTime?                        // Date du signalement de perte
   lostMessage       String?                          // Message personnalisé du propriétaire quand l'objet est perdu
 
+  // ─── Données personnalisées (JSON) ───
+  // Stocke les champs dynamiques du formulaire d'inscription :
+  // { category, category_label, object_name, object_description, brand, model, color,
+  //   city, country, reward, message_to_finder, email, photo, ... }
+  customData        String?
+
   agency            Agency?   @relation(fields: [agencyId], references: [id], onDelete: SetNull)
   scanLogs          ScanLog[]
   damageReports     DamageReport[]
