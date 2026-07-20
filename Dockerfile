@@ -18,7 +18,8 @@ RUN npm run build
 RUN cp -r .next/static .next/standalone/.next/ && \
     cp -r public .next/standalone/public && \
     cp -r node_modules .next/standalone/node_modules && \
-    cp prisma/schema.prisma .next/standalone/prisma/schema.prisma && \
+    cp -r prisma .next/standalone/prisma && \
+    cp -r scripts .next/standalone/scripts && \
     cp package.json .next/standalone/package.json
 
 RUN mkdir -p /app/data
