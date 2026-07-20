@@ -1,76 +1,48 @@
-'use client'
+'use client';
 
 import { useState, useEffect, Suspense } from 'react';
-import QRTagsLogo from "@/components/qrtags/QRTagsLogo";
-import Image from 'next/image';
-import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import {
-  ArrowLeft,
   ArrowRight,
-  CheckCircle,
-  Camera,
-  FileText,
   Sparkles,
   Globe,
   AlertCircle,
+  Package,
 } from 'lucide-react';
 import PhoneInput from '@/components/ui/PhoneInput';
-import CountryRegionSelect from '@/components/inscrire/CountryRegionSelect';
 import DynamicTagForm from '@/components/qrtags/DynamicTagForm';
-import { getAgencyTypeDef } from '@/lib/agency-types';
-
-// TRANSPORT-FEATURE: Import transport utilities
+import QRTagsLogo from '@/components/qrtags/QRTagsLogo';
+import { PRODUCT_TYPES, getAgencyTypeDef } from '@/lib/agency-types';
 import { useTranslation } from '@/hooks/useTranslation';
 import { Language, LANGUAGE_NAMES } from '@/lib/i18n';
-import TransportModeSelector from '@/components/inscrire/TransportModeSelector';
-import type { TransportMode } from '@/lib/transport';
-import {
-  TRANSPORT_ICONS,
-  TRANSPORT_IMAGES,
-  TRANSPORT_FIELDS,
-  getTransportImage,
-} from '@/lib/transport';
 
-// ─── Brand constants (QRTags palette: blue #111111 + yellow #E3B23C) ───
-const BRAND = '#111111'; // bleu vif — fonds principaux, headers
-const ACCENT = '#E3B23C'; // jaune vif — cards, badges, accents
-const INK = '#1a1a1a'; // noir — texte sur jaune, bordures dashed
+const QRTAGS_BG = '#111111';
+const QRTAGS_ACCENT = '#E3B23C';
+const QRTAGS_INK = '#111111';
 
-// ─── Language Selector Component ───
 function LanguageSelector({ lang, setLang }: { lang: Language; setLang: (l: Language) => void }) {
   const [isOpen, setIsOpen] = useState(false);
-
   return (
     <div className="relative">
       <button
         onClick={() => setIsOpen(!isOpen)}
-        aria-expanded={isOpen}
-        aria-haspopup="listbox"
-        className="flex items-center gap-1.5 px-3 py-2 sm:px-4 sm:py-2.5 bg-white border-2 border-black rounded-full text-black hover:bg-black/5 transition-colors text-xs sm:text-sm md:text-base font-medium shadow-sm min-h-[36px] sm:min-h-[40px] md:min-h-[44px]"
+        className="flex items-center gap-1.5 px-3 py-2 bg-transparent border-2 rounded-full text-sm font-medium"
+        style={{ borderColor: QRTAGS_ACCENT, color: QRTAGS_ACCENT }}
       >
-        <Globe className="w-4 h-4 sm:w-5 sm:h-5" />
+        <Globe className="w-4 h-4" />
         <span>{LANGUAGE_NAMES[lang]}</span>
       </button>
-
       {isOpen && (
-        <div
-          role="listbox"
-          aria-label="Language"
-          className="absolute top-full right-0 mt-1 sm:mt-2 bg-white border-2 border-black rounded-xl shadow-lg overflow-hidden z-50 min-w-[140px] sm:min-w-[160px]"
-        >
+        <div className="absolute top-full right-0 mt-1 bg-[#111] border-2 rounded-xl overflow-hidden z-50 min-w-[140px]" style={{ borderColor: QRTAGS_ACCENT }}>
           {(['fr', 'en', 'ar'] as Language[]).map((l) => (
             <button
               key={l}
-              role="option"
-              aria-selected={lang === l}
-              onClick={() => {
-                setLang(l);
-                setIsOpen(false);
+              onClick={() => { setLang(l); setIsOpen(false); }}
+              className="w-full px-4 py-2 text-left text-sm"
+              style={{
+                color: lang === l ? QRTAGS_INK : QRTAGS_ACCENT,
+                background: lang === l ? QRTAGS_ACCENT : 'transparent',
               }}
-              className={`w-full px-4 py-2.5 sm:px-5 sm:py-3 text-left text-xs sm:text-sm md:text-base font-medium transition-colors ${
-                lang === l ? 'bg-[#E3B23C] text-black' : 'text-black hover:bg-black/5'
-              }`}
             >
               {LANGUAGE_NAMES[l]}
             </button>
@@ -81,59 +53,26 @@ function LanguageSelector({ lang, setLang }: { lang: Language; setLang: (l: Lang
   );
 }
 
-// ─── Dashed Encart Helper (bordure noire pointillée) ───
-function DashedEncart({ children, className = '' }: { children: React.ReactNode; className?: string }) {
-  return (
-    <div className={`border-2 border-dashed border-black rounded-xl p-4 mb-3 last:mb-0 bg-white/30 ${className}`}>
-      {children}
-    </div>
-  );
-}
-
 function InscrireContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const qrFromUrl = searchParams.get('qr') || '';
-
-  // TRANSPORT-FEATURE: Translation hook + transport mode + step state
-  const { t, lang, setLang, dir, countryCode } = useTranslation();
-  // ACTIVATION-FLOW: Lire ?mode= depuis l'URL pour pré-sélectionner le mode de transport
-  const modeFromUrl = searchParams.get('mode') || '';
-  const isModeFromUrl = ['flight', 'train', 'boat', 'bus'].includes(modeFromUrl);
-  const [transportMode, setTransportMode] = useState<TransportMode | ''>(
-    isModeFromUrl ? (modeFromUrl as TransportMode) : ''
-  );
-  const [step, setStep] = useState(isModeFromUrl ? 2 : 1);
-  const [activeTab, setActiveTab] = useState<'manual' | 'scan'>('manual');
+  const { t, lang, setLang } = useTranslation();
 
   const [loading, setLoading] = useState(false);
-  const [phoneCountry, setPhoneCountry] = useState(countryCode);
-
-  // QRTags : agencyType du tag (récupéré via /api/baggage/[ref]/status au chargement)
-  // Permet d'afficher des champs dynamiques (N° chambre, N° casier, etc.) selon le métier de l'agence.
+  const [phoneCountry, setPhoneCountry] = useState('FR');
   const [agencyType, setAgencyType] = useState<string | null>(null);
+  const [productType, setProductType] = useState('laptop');
   const [customData, setCustomData] = useState<Record<string, string>>({});
 
   const [formData, setFormData] = useState({
-    reference: qrFromUrl.toUpperCase(), // caché UI, conservé pour l'API
+    reference: qrFromUrl.toUpperCase(),
     firstName: '',
     lastName: '',
-    destination: '',
-    departureDate: '',
-    departureTime: '',
     whatsapp: '',
-    // TRANSPORT-FEATURE: Conditional fields (all modes)
-    airlineName: '',
-    flightNumber: '',
-    trainCompany: '',
-    trainNumber: '',
-    shipName: '',
-    shipCabin: '',
-    busCompany: '',
-    busLineNumber: '',
   });
 
-  // QRTags : récupère l'agencyType du tag pour afficher les bons champs dynamiques
+  // Récupérer l'agencyType du tag
   useEffect(() => {
     if (!qrFromUrl) return;
     (async () => {
@@ -143,37 +82,18 @@ function InscrireContent() {
           const data = await res.json();
           setAgencyType(data.tag?.agency?.agencyType || null);
         }
-      } catch {
-        // silent — fallback sur generic
-      }
+      } catch {}
     })();
   }, [qrFromUrl]);
 
-  // Sync phoneCountry when countryCode is detected
-  useEffect(() => {
-    if ((countryCode && countryCode !== 'FR') || !phoneCountry) {
-      setPhoneCountry(countryCode);
-    }
-  }, [countryCode]);
-
-  // TRANSPORT-FEATURE: Get dynamic fields for current transport mode
-  const currentFields = transportMode ? TRANSPORT_FIELDS[transportMode] : [];
-
-  // TRANSPORT-FEATURE: Handle transport mode selection → advance to step 2
-  const handleModeSelect = (mode: TransportMode) => {
-    setTransportMode(mode);
-    setStep(2);
-  };
-
-  const handleBackToMode = () => {
-    setStep(1);
-  };
-
-  // 🔒 Référence absente → activation impossible
   const missingReference = !formData.reference;
 
   const doSubmit = async () => {
-    if (!transportMode || missingReference) return;
+    if (missingReference) return;
+    if (!formData.firstName.trim() || !formData.lastName.trim() || !formData.whatsapp.trim()) {
+      alert('Veuillez remplir tous les champs obligatoires');
+      return;
+    }
     setLoading(true);
 
     try {
@@ -185,377 +105,158 @@ function InscrireContent() {
           travelerFirstName: formData.firstName,
           travelerLastName: formData.lastName,
           whatsappOwner: formData.whatsapp,
-          transportMode: transportMode,
-          airlineName: formData.airlineName,
-          flightNumber: formData.flightNumber,
-          trainCompany: formData.trainCompany,
-          trainNumber: formData.trainNumber,
-          shipName: formData.shipName,
-          shipCabin: formData.shipCabin,
-          busCompany: formData.busCompany,
-          busLineNumber: formData.busLineNumber,
-          destination: formData.destination,
-          departureDate: formData.departureDate || undefined,
-          departureTime: formData.departureTime || undefined,
-          // QRTags : champs dynamiques par métier (custom_data JSON)
-          customData: Object.keys(customData).length > 0 ? customData : undefined,
+          customData: {
+            ...customData,
+            product_type: productType,
+            product_label: PRODUCT_TYPES.find((p) => p.value === productType)?.label || productType,
+          },
         }),
       });
 
       if (response.ok) {
         const data = await response.json();
-        sessionStorage.setItem(
-          'activationData',
-          JSON.stringify({
-            reference: formData.reference,
-            firstName: formData.firstName,
-            lastName: formData.lastName,
-            whatsapp: formData.whatsapp,
-            destination: formData.destination,
-            transportMode: transportMode,
-            airlineName: formData.airlineName,
-            flightNumber: formData.flightNumber,
-            trainCompany: formData.trainCompany,
-            trainNumber: formData.trainNumber,
-            shipName: formData.shipName,
-            shipCabin: formData.shipCabin,
-            busCompany: formData.busCompany,
-            busLineNumber: formData.busLineNumber,
-            type: 'voyageur',
-            activatedAt: new Date().toISOString(),
-            expiresAt: data.baggage?.expiresAt,
-            // LABS — Feature #2: PIN propriétaire (récupéré une seule fois de l'API)
-            ownerPin: data.baggage?.ownerPin,
-          })
-        );
+        sessionStorage.setItem('activationData', JSON.stringify({
+          reference: formData.reference,
+          firstName: formData.firstName,
+          lastName: formData.lastName,
+          whatsapp: formData.whatsapp,
+          type: 'voyageur',
+          activatedAt: new Date().toISOString(),
+          expiresAt: data.baggage?.expiresAt,
+          ownerPin: data.baggage?.ownerPin,
+        }));
         router.push('/success?type=voyageur');
       } else {
-        const error = await response.json();
-        alert(error.message || t('inscrire.error_activation'));
+        const err = await response.json();
+        alert(err.error || 'Erreur lors de l\'activation');
       }
     } catch (error) {
-      console.error('Activation error:', error);
-      alert(t('inscrire.error_activation'));
+      console.error('Error:', error);
+      alert('Erreur réseau');
     } finally {
       setLoading(false);
     }
   };
 
-  // TRANSPORT_ICON: Utilise la vraie image PNG si un mode est sélectionné, sinon emoji fallback.
-  const TransportIcon = transportMode ? TRANSPORT_ICONS[transportMode] : '✈️';
-  const TransportImageSrc = transportMode ? getTransportImage(transportMode) : null;
-
   return (
-    <main
-      className="min-h-[100dvh] min-h-screen bg-[#111111] flex flex-col px-4 sm:px-5 md:px-8 pb-[env(safe-area-inset-bottom,0px)]"
-      dir={dir}
-    >
-      {/* ─── Header ─── */}
-      <header className="sticky top-0 z-40 flex items-center justify-between pt-[env(safe-area-inset-top,0px)] px-0 py-2 sm:py-3 md:py-4 bg-[#111111]">
-        <Link
-          href="/"
-          className="flex items-center gap-2 text-white hover:text-[#E3B23C] transition-colors min-h-[44px]"
-        >
-          <ArrowLeft className="w-5 h-5" />
-          <span className="text-sm md:text-base font-medium">{t('inscrire.back')}</span>
-        </Link>
-        <div className="flex items-center gap-2">
-          <QRTagsLogo size="md" variant="light" />
-        </div>
+    <main className="min-h-screen page-dark-theme" style={{ backgroundColor: QRTAGS_BG, color: QRTAGS_ACCENT }}>
+      <div className="absolute top-4 right-4 z-20">
         <LanguageSelector lang={lang} setLang={setLang} />
-      </header>
+      </div>
 
-      {/* ─── Container ─── */}
-      <div className="w-full max-w-md mx-auto flex-1 flex flex-col py-4 sm:py-6 md:py-0">
-        {/* ═══ BADGE DE STATUT ═══ */}
-        <div className="mt-2 sm:mt-4 md:mt-6 mb-4 sm:mb-6 text-center">
-          <span
-            className="inline-flex items-center justify-center px-6 py-3 rounded-full font-bold text-lg shadow-lg text-black"
-            style={{ backgroundColor: ACCENT, boxShadow: `0 10px 25px ${INK}40` }}
-          >
-            {qrFromUrl ? `✨ ${t('inscrire.voyageur_badge')}` : `🧳 ${t('inscrire.title')}`}
-          </span>
-          <p className="mt-3 text-white text-base md:text-lg leading-relaxed max-w-md mx-auto">
-            {qrFromUrl ? t('inscrire.welcome_desc') : t('inscrire.subtitle')}
-          </p>
-        </div>
-
-        {/* ─── Status Indicator ─── */}
-        <div className="flex items-center justify-center gap-2 mb-5">
-          <span className="w-2.5 h-2.5 rounded-full animate-pulse" style={{ backgroundColor: ACCENT }} />
-          <span className="text-sm font-bold uppercase tracking-widest text-white">
-            {step === 1 ? t('transport.select_mode') : t('inscrire.step_2_subtitle')}
-          </span>
-        </div>
-
-        {/* ═══ BLOC PRINCIPAL — Formulaire Activation (jaune QRTags) ═══ */}
+      <div className="flex items-center justify-center p-5 md:p-8 min-h-screen">
         <div
-          className="w-full rounded-2xl p-5 md:p-6 mb-5 shadow-xl"
-          style={{ backgroundColor: ACCENT, boxShadow: `0 20px 40px ${INK}15` }}
+          className="relative max-w-md w-full rounded-2xl p-6 md:p-8 shadow-2xl"
+          style={{ backgroundColor: QRTAGS_ACCENT, color: QRTAGS_INK, border: `2px dashed ${QRTAGS_INK}` }}
         >
-          {/* ─── Step 1: Transport Mode Selector ─── */}
-          {step === 1 && (
-            <>
-              <h2 className="text-xs uppercase tracking-widest text-black font-bold mb-4 flex items-center gap-2">
-                <Sparkles className="w-4 h-4" style={{ color: INK }} />
-                {t('transport.select_mode')}
-              </h2>
+          {/* Logo */}
+          <div className="flex justify-center mb-6">
+            <QRTagsLogo size="md" variant="light" />
+          </div>
 
-              {/* Tab Toggle — Manual / Scan (selected = blanc) */}
-              <div className="flex gap-2 mb-5">
-                <button
-                  onClick={() => setActiveTab('manual')}
-                  className={`flex-1 flex items-center justify-center gap-2 py-3 px-4 rounded-xl text-sm font-semibold transition-all min-h-[44px] border-2 border-black ${
-                    activeTab === 'manual'
-                      ? 'bg-white text-black shadow-lg'
-                      : 'bg-white/40 text-black hover:bg-white/60'
-                  }`}
-                >
-                  <FileText className="w-4 h-4" />
-                  {t('inscrire.manual_tab')}
-                </button>
-                <button
-                  onClick={() => setActiveTab('scan')}
-                  className={`flex-1 flex items-center justify-center gap-2 py-3 px-4 rounded-xl text-sm font-semibold transition-all min-h-[44px] border-2 border-black ${
-                    activeTab === 'scan'
-                      ? 'bg-white text-black shadow-lg'
-                      : 'bg-white/40 text-black hover:bg-white/60'
-                  }`}
-                >
-                  <Camera className="w-4 h-4" />
-                  {t('inscrire.scan_tab')}
-                </button>
-              </div>
+          <div className="text-center mb-6">
+            <div className="inline-block w-16 h-16 bg-white border-2 border-[#111111] rounded-full flex items-center justify-center mx-auto mb-4">
+              <Package className="w-8 h-8 text-[#111111]" />
+            </div>
+            <h1 className="text-2xl md:text-3xl font-bold text-[#111111] mb-1">
+              {t('common.welcome')}
+            </h1>
+            <p className="text-[#111111]/70 text-sm md:text-base">
+              Activez votre tag QRTags pour protéger votre objet
+            </p>
+          </div>
 
-              {activeTab === 'scan' ? (
-                <div className="text-center py-6">
-                  <div className="w-20 h-20 bg-white/40 rounded-full flex items-center justify-center mx-auto mb-4 border-2 border-dashed border-black">
-                    <Camera className="w-10 h-10 text-black/60" />
-                  </div>
-                  <h3 className="text-black font-semibold text-lg mb-2">{t('inscrire.scan_title')}</h3>
-                  <p className="text-black/70 text-sm mb-5">{t('inscrire.scan_desc')}</p>
-                  <button className="w-full py-4 px-6 bg-black hover:bg-black/80 text-white rounded-xl font-bold text-lg transition-colors flex items-center justify-center gap-2 min-h-[56px] shadow-lg">
-                    <Camera className="w-5 h-5" />
-                    {t('inscrire.scan_button')}
-                  </button>
-                </div>
-              ) : (
-                <>
-                  <TransportModeSelector
-                    selectedMode={transportMode}
-                    onSelect={handleModeSelect}
-                    t={t}
-                    lang={lang}
-                  />
-                  <button
-                    type="button"
-                    disabled={!transportMode}
-                    onClick={() => transportMode && setStep(2)}
-                    className="w-full mt-5 py-4 px-6 bg-black hover:bg-black/80 disabled:bg-black/30 disabled:cursor-not-allowed text-white rounded-xl font-bold text-lg transition-colors flex items-center justify-center gap-2 min-h-[56px] shadow-lg"
-                  >
-                    {t('inscrire.next_step')}
-                    <ArrowRight className="w-5 h-5" />
-                  </button>
-                </>
-              )}
-            </>
-          )}
-
-          {/* ─── Step 2: Activation Form ─── */}
-          {step === 2 && (
-            <div className="space-y-4">
-              {/* Back button */}
-              <button
-                type="button"
-                onClick={handleBackToMode}
-                className="flex items-center gap-1.5 text-black/70 hover:text-black transition-colors text-sm mb-2"
-              >
-                <ArrowLeft className="w-4 h-4" />
-                {t('inscrire.back_step')}
-              </button>
-
-              {/* Mode indicator — vraie image au lieu d'emoji */}
-              <DashedEncart>
-                <div className="flex items-center gap-3">
-                  {TransportImageSrc ? (
-                    <div className="w-10 h-10 flex-shrink-0">
-                      <Image
-                        src={TransportImageSrc}
-                        alt={t(`transport.mode_${transportMode}`)}
-                        width={40}
-                        height={40}
-                        className="w-full h-full object-contain mix-blend-multiply"
-                      />
-                    </div>
-                  ) : (
-                    <span className="text-2xl">{TransportIcon}</span>
-                  )}
-                  <div>
-                    <p className="text-sm text-black/70 font-medium">{t('common.baggage_type')}</p>
-                    <p className="text-lg font-bold text-black">{t(`transport.mode_${transportMode}`)}</p>
-                  </div>
-                </div>
-              </DashedEncart>
-
-              <h2 className="text-xs uppercase tracking-widest text-black font-bold flex items-center gap-2">
-                {TransportImageSrc ? (
-                  <div className="w-4 h-4 flex-shrink-0">
-                    <Image
-                      src={TransportImageSrc}
-                      alt=""
-                      width={16}
-                      height={16}
-                      className="w-full h-full object-contain mix-blend-multiply"
-                    />
-                  </div>
-                ) : (
-                  <span>{TransportIcon}</span>
-                )}
-                {t('transport.traveler_info')}
-              </h2>
-
-              {/* 🔒 Référence absente — warning + bouton désactivé */}
-              {missingReference && (
-                <div className="border-2 border-dashed border-black bg-white/60 rounded-xl p-4 mb-3 flex items-start gap-3">
-                  <AlertCircle className="w-5 h-5 text-black flex-shrink-0 mt-0.5" />
-                  <div className="text-sm text-black">
-                    <p className="font-bold mb-1">⚠️ Aucun code QR détecté</p>
-                    <p className="text-black/70">
-                      Scannez le QR code collé sur votre bagage pour activer votre protection. Si vous
-                      n&apos;avez pas encore de QR,{' '}
-                      <Link href="/#pricing" className="underline font-bold text-black">
-                        commandez un autocollant
-                      </Link>
-                      .
-                    </p>
-                  </div>
-                </div>
-              )}
-
-              {/* Name Fields — Dashed Encart */}
-              <DashedEncart>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <p className="text-sm text-black/80 font-medium mb-1.5">
-                      {t('inscrire.first_name_label')}
-                    </p>
-                    <input
-                      type="text"
-                      placeholder={t('inscrire.first_name_placeholder')}
-                      value={formData.firstName}
-                      onChange={(e) => setFormData({ ...formData, firstName: e.target.value })}
-                      className="w-full bg-white border-2 border-black text-black placeholder:text-black/40 focus:outline-none focus:ring-2 focus:ring-black focus:border-black rounded-lg px-3 py-2.5 text-base min-h-[48px]"
-                      required
-                    />
-                  </div>
-                  <div>
-                    <p className="text-sm text-black/80 font-medium mb-1.5">
-                      {t('inscrire.last_name_label')}
-                    </p>
-                    <input
-                      type="text"
-                      placeholder={t('inscrire.last_name_placeholder')}
-                      value={formData.lastName}
-                      onChange={(e) => setFormData({ ...formData, lastName: e.target.value })}
-                      className="w-full bg-white border-2 border-black text-black placeholder:text-black/40 focus:outline-none focus:ring-2 focus:ring-black focus:border-black rounded-lg px-3 py-2.5 text-base min-h-[48px]"
-                      required
-                    />
-                  </div>
-                </div>
-              </DashedEncart>
-
-              {/* TRANSPORT-FEATURE: Dynamic conditional fields */}
-              {currentFields.length > 0 && (
-                <DashedEncart>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {currentFields.map((field) => (
-                      <div key={field.key}>
-                        <p className="text-sm text-black/80 font-medium mb-1.5">{t(field.labelKey)}</p>
-                        <input
-                          type="text"
-                          placeholder={t(field.placeholderKey)}
-                          value={(formData as Record<string, string>)[field.key] || ''}
-                          onChange={(e) => setFormData({ ...formData, [field.key]: e.target.value })}
-                          className="w-full bg-white border-2 border-black text-black placeholder:text-black/40 focus:outline-none focus:ring-2 focus:ring-black focus:border-black rounded-lg px-3 py-2.5 text-base min-h-[48px]"
-                        />
-                      </div>
-                    ))}
-                  </div>
-                </DashedEncart>
-              )}
-
-              {/* Destination — Dashed Encart + dropdown pays par régions */}
-              <DashedEncart>
-                <div className="flex items-center gap-3">
-                  <span className="text-xl">📍</span>
-                  <div className="flex-1">
-                    <p className="text-sm text-black/80 font-medium mb-1.5">
-                      {t('inscrire.destination_label')}
-                    </p>
-                    <CountryRegionSelect
-                      value={formData.destination}
-                      onChange={(v) => setFormData({ ...formData, destination: v })}
-                      placeholder="Sélectionnez votre destination"
-                    />
-                  </div>
-                </div>
-              </DashedEncart>
-
-              {/* Departure Date & Time — Dashed Encart */}
-              <DashedEncart>
-                <div className="flex items-center gap-3 mb-3">
-                  <span className="text-xl">📅</span>
-                  <p className="text-sm text-black/80 font-medium">{t('transport.common_departure_date')}</p>
-                </div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  <input
-                    type="date"
-                    value={formData.departureDate}
-                    onChange={(e) => setFormData({ ...formData, departureDate: e.target.value })}
-                    className="w-full bg-white border-2 border-black text-black focus:outline-none focus:ring-2 focus:ring-black focus:border-black rounded-lg px-3 py-2.5 text-base min-h-[48px]"
-                  />
-                  <input
-                    type="time"
-                    value={formData.departureTime}
-                    onChange={(e) => setFormData({ ...formData, departureTime: e.target.value })}
-                    className="w-full bg-white border-2 border-black text-black focus:outline-none focus:ring-2 focus:ring-black focus:border-black rounded-lg px-3 py-2.5 text-base min-h-[48px]"
-                  />
-                </div>
-              </DashedEncart>
-
-              {/* WhatsApp — Dashed Encart */}
-              <DashedEncart className="mb-0">
-                <div className="flex items-center gap-3">
-                  <span className="text-xl">📱</span>
-                  <div className="flex-1">
-                    <PhoneInput
-                      countryCode={phoneCountry}
-                      onCountryChange={setPhoneCountry}
-                      value={formData.whatsapp}
-                      onChange={(fullNumber) => setFormData({ ...formData, whatsapp: fullNumber })}
-                      placeholder="6 12 34 56 78"
-                      required
-                      label={t('inscrire.whatsapp_label')}
-                      hint={t('inscrire.whatsapp_hint')}
-                    />
-                  </div>
-                </div>
-              </DashedEncart>
+          {missingReference && (
+            <div className="mb-4 p-3 bg-red-100 border border-red-300 rounded-xl text-red-700 text-sm flex items-center gap-2">
+              <AlertCircle className="w-4 h-4" />
+              Référence QR manquante. Scannez votre QR code pour commencer.
             </div>
           )}
-        </div>
 
-        {/* ═══ QRTags : Champs dynamiques par métier (custom_data JSON) ═══ */}
-        {step === 2 && agencyType && agencyType !== 'generic' && (
-          <div className="mb-6">
-            <DashedEncart>
-              <div className="flex items-center gap-2 mb-4">
-                <span className="text-xl">🏢</span>
+          {/* Référence */}
+          <div className="mb-4">
+            <label className="block text-xs font-bold mb-1 text-[#111111]">
+              Référence du tag *
+            </label>
+            <input
+              type="text"
+              value={formData.reference}
+              onChange={(e) => setFormData({ ...formData, reference: e.target.value.toUpperCase() })}
+              placeholder="QRT26-XXXXXX"
+              className="w-full px-4 py-3 rounded-lg bg-transparent text-[#111111] placeholder:text-[#111111]/40 focus:outline-none border-2 border-[#111111]"
+              readOnly={!!qrFromUrl}
+            />
+          </div>
+
+          {/* Prénom + Nom */}
+          <div className="grid grid-cols-2 gap-3 mb-4">
+            <div>
+              <label className="block text-xs font-bold mb-1 text-[#111111]">Prénom *</label>
+              <input
+                type="text"
+                value={formData.firstName}
+                onChange={(e) => setFormData({ ...formData, firstName: e.target.value })}
+                placeholder="Marie"
+                className="w-full px-3 py-2.5 rounded-lg bg-transparent text-[#111111] placeholder:text-[#111111]/40 focus:outline-none border-2 border-[#111111]"
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-bold mb-1 text-[#111111]">Nom *</label>
+              <input
+                type="text"
+                value={formData.lastName}
+                onChange={(e) => setFormData({ ...formData, lastName: e.target.value })}
+                placeholder="Dupont"
+                className="w-full px-3 py-2.5 rounded-lg bg-transparent text-[#111111] placeholder:text-[#111111]/40 focus:outline-none border-2 border-[#111111]"
+              />
+            </div>
+          </div>
+
+          {/* WhatsApp */}
+          <div className="mb-4">
+            <label className="block text-xs font-bold mb-1 text-[#111111]">
+              Numéro WhatsApp *
+            </label>
+            <input
+              type="tel"
+              value={formData.whatsapp}
+              onChange={(e) => setFormData({ ...formData, whatsapp: e.target.value })}
+              placeholder="+33 6 12 34 56 78"
+              className="w-full px-4 py-3 rounded-lg bg-transparent text-[#111111] placeholder:text-[#111111]/40 focus:outline-none border-2 border-[#111111]"
+            />
+            <p className="text-xs text-[#111111]/60 mt-1">
+              Ce numéro recevra le message WhatsApp si votre objet est trouvé
+            </p>
+          </div>
+
+          {/* Objet à protéger */}
+          <div className="mb-4">
+            <label className="block text-xs font-bold mb-1 text-[#111111]">
+              Objet à protéger *
+            </label>
+            <select
+              value={productType}
+              onChange={(e) => setProductType(e.target.value)}
+              className="w-full px-3 py-2.5 rounded-lg bg-transparent text-[#111111] focus:outline-none border-2 border-[#111111]"
+            >
+              {PRODUCT_TYPES.map((p) => (
+                <option key={p.value} value={p.value} className="bg-white text-black">
+                  {p.icon} {p.label}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {/* Champs dynamiques par métier */}
+          {agencyType && agencyType !== 'generic' && (
+            <div className="mb-4 p-4 bg-[#111111]/5 rounded-xl border border-[#111111]/20">
+              <div className="flex items-center gap-2 mb-3">
+                <span className="text-sm">🏢</span>
                 <div className="flex-1">
-                  <div className="font-bold text-base text-black">
-                    {getAgencyTypeDef(agencyType)?.label || 'Informations métier'}
+                  <div className="font-bold text-sm text-[#111111]">
+                    {getAgencyTypeDef(agencyType)?.label || 'Informations'}
                   </div>
-                  <div className="text-xs text-black/70">
+                  <div className="text-xs text-[#111111]/60">
                     {getAgencyTypeDef(agencyType)?.description}
                   </div>
                 </div>
@@ -566,40 +267,33 @@ function InscrireContent() {
                 onChange={setCustomData}
                 compact
               />
-            </DashedEncart>
-          </div>
-        )}
+            </div>
+          )}
 
-        {/* ═══ BOUTON SUBMIT (noir) ═══ */}
-        {step === 2 && (
-          <div className="mb-6">
-            <button
-              onClick={doSubmit}
-              disabled={loading || !transportMode || missingReference}
-              className="w-full py-4 px-6 bg-black hover:bg-black/80 active:bg-black/90 disabled:bg-black/30 disabled:cursor-not-allowed text-white font-bold text-lg rounded-xl shadow-lg transition-all duration-200 transform hover:-translate-y-1 min-h-[56px] focus:ring-2 focus:ring-black focus:ring-offset-2 flex items-center justify-center gap-2"
-            >
-              {loading ? (
-                <span className="flex items-center justify-center gap-2">
-                  <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                  {t('inscrire.submit_loading')}
-                </span>
-              ) : (
-                <span className="flex items-center justify-center gap-2">
-                  <Sparkles className="w-5 h-5" />
-                  {t('inscrire.submit')}
-                </span>
-              )}
-            </button>
-          </div>
-        )}
+          {/* Bouton */}
+          <button
+            onClick={doSubmit}
+            disabled={loading || missingReference}
+            className="w-full py-4 px-6 rounded-xl font-bold text-base flex items-center justify-center gap-2 transition-all min-h-[56px] disabled:opacity-50"
+            style={{ backgroundColor: QRTAGS_INK, color: QRTAGS_ACCENT }}
+          >
+            {loading ? (
+              <>
+                <div className="w-5 h-5 border-2 border-[#E3B23C]/30 border-t-[#E3B23C] rounded-full animate-spin" />
+                Activation...
+              </>
+            ) : (
+              <>
+                <Sparkles className="w-5 h-5" />
+                Activer mon tag
+                <ArrowRight className="w-5 h-5" />
+              </>
+            )}
+          </button>
 
-        {/* ─── Help Section ─── */}
-        <div className="text-center pb-6">
-          <p className="text-white/80 text-sm">
-            {t('inscrire.no_qr')}{' '}
-            <Link href="/#pricing" className="font-bold underline" style={{ color: ACCENT }}>
-              {t('inscrire.order_sticker')}
-            </Link>
+          <p className="text-xs text-center mt-4 text-[#111111]/60">
+            En activant ce tag, vous acceptez d'être contacté via WhatsApp
+            si votre objet est trouvé.
           </p>
         </div>
       </div>
@@ -608,19 +302,8 @@ function InscrireContent() {
 }
 
 export default function InscrirePage() {
-  const { t } = useTranslation();
-
   return (
-    <Suspense
-      fallback={
-        <main className="min-h-screen bg-[#111111] flex items-center justify-center">
-          <div className="text-center">
-            <div className="animate-spin w-12 h-12 border-4 border-white/20 border-t-[#E3B23C] rounded-full mx-auto mb-4" />
-            <p className="text-lg text-white">{t('common.loading')}</p>
-          </div>
-        </main>
-      }
-    >
+    <Suspense fallback={<div className="min-h-screen bg-[#111111]" />}>
       <InscrireContent />
     </Suspense>
   );
