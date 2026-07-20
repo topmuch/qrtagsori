@@ -83,7 +83,7 @@ export default function EtiquettesPage() {
       params.set('type', activeTab);
       if (search) params.set('search', search);
 
-      const response = await fetch(`/api/qrcodes?${params}`);
+      const response = await fetch(`/api/qrcodes?${params}`, { cache: "no-store", headers: { "Cache-Control": "no-cache" } });
       const data = await response.json();
 
       // Calculate activation status for each set

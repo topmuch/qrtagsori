@@ -47,22 +47,11 @@ export async function GET(
       });
     }
 
-    // ─── LABS — Feature #3: Mode "En transit" ───
-    // Si le propriétaire a désactivé son QR, on renvoie un statut "inactive"
-    // qui affichera une page neutre sur /scan (pas d'infos sur le propriétaire).
-    if (baggage.transitMode === 'inactive') {
-      return NextResponse.json({
-        status: 'inactive',
-        message: 'Ce QR code est actuellement désactivé par son propriétaire.',
-        theme: 'neutral',
-      });
-    }
-
     // Check expiration
     if (baggage.expiresAt && new Date() > baggage.expiresAt) {
       return NextResponse.json({
         status: 'expired',
-        message: 'Ce bagage a expiré',
+        message: 'Ce tag a expiré',
         theme: 'error',
         expiredAt: baggage.expiresAt.toISOString(),
         agency: baggage.agency?.name || null,
@@ -76,27 +65,12 @@ export async function GET(
     // Check if baggage is declared lost (but not yet found)
     const isDeclaredLost = baggage.declaredLostAt && !baggage.foundAt;
 
-    // AI-FEATURE: Feature #3 — Detect locale and set cookie for server-side i18n
-    let detectedLocale: Language = 'fr';
-    try {
-      if (GROQ_AI_ENABLED && GROQ_AUTO_TRANSLATE_ENABLED) {
-        const autoTranslateEnabled = await isFeatureEnabled('auto_translate').catch(() => false);
-        if (autoTranslateEnabled) {
-          detectedLocale = detectLocaleFromHeaders(request.headers);
-        }
-      }
-    } catch {
-      // Silent fallback to 'fr'
-    }
-
     // Return baggage info
     let theme;
     if (isDeclaredLost) {
-      theme = 'lost-urgent'; // Special theme for declared lost baggage
+      theme = 'lost-urgent';
     } else {
-      theme = baggage.type === 'hajj'
-        ? (baggage.status === 'lost' ? 'lost-hajj' : 'hajj')
-        : (baggage.status === 'lost' ? 'lost-voyageur' : 'voyageur');
+      theme = baggage.status === 'lost' ? 'lost-voyageur' : 'voyageur';
     }
 
     const response = NextResponse.json(
@@ -104,7 +78,6 @@ export async function GET(
       status: isDeclaredLost ? 'lost' : 'active',
       theme,
       type: baggage.type,
-      // TRANSPORT-FEATURE: Include transportMode + conditional fields
       baggage: {
         reference: baggage.reference,
         type: baggage.type,
@@ -112,23 +85,11 @@ export async function GET(
         baggageIndex: baggage.baggageIndex,
         baggageType: baggage.baggageType,
         status: baggage.status,
-        transportMode: baggage.transportMode || 'flight',
-        airlineName: baggage.airlineName,
-        flightNumber: baggage.flightNumber,
-        trainCompany: baggage.trainCompany,
-        trainNumber: baggage.trainNumber,
-        shipName: baggage.shipName,
-        shipCabin: baggage.shipCabin,
-        busCompany: baggage.busCompany,
-        busLineNumber: baggage.busLineNumber,
-        destination: baggage.destination,
         agency: baggage.agency?.name || null,
         whatsappOwner: baggage.whatsappOwner || null,
         declaredLostAt: baggage.declaredLostAt,
         foundAt: baggage.foundAt,
         createdAt: baggage.createdAt?.toISOString() || null,
-        departureDate: baggage.departureDate?.toISOString() || null,
-        departureTime: baggage.departureTime || null,
       }
     },
     {
@@ -300,7 +261,6 @@ export async function POST(
           const aiResult = await generateWhatsAppMessage({
             reference: baggage.reference,
             location: {
-              city: city || baggage.destination || 'Inconnue',
               country: country || '',
             },
             time: scanTime,
@@ -336,8 +296,6 @@ export async function POST(
       ? manualContext
       : detectScanContext(
           {
-            departureDate: baggage.departureDate,
-            destination: baggage.destination,
           },
           {
             city: city || location,
@@ -449,22 +407,14 @@ export async function POST(
       );
 
       // ─── LABS — Feature #4: Alerte "Vol de Retour" (pays mismatch) ───
-      // Si le scan vient d'un pays différent de la destination enregistrée,
-      // envoyer une alerte critique + incrémenter suspiciousScanCount.
-      if (country && baggage.destination) {
-        // Si destinationCountry (ISO code) est défini → comparaison stricte
         // Sinon → comparaison floue sur le texte libre (fallback)
         let isMatch: boolean;
-        if (baggage.destinationCountry) {
-          // Comparaison stricte : code ISO du scan vs code ISO de la destination
           // Note : `country` peut être soit un code ISO (2 lettres) soit un nom complet
           // selon la source. On normalise en comparant les 2 premières lettres.
           const scanCode = country.toUpperCase().substring(0, 2);
-          const expectedCode = baggage.destinationCountry.toUpperCase();
           isMatch = scanCode === expectedCode;
         } else {
           // Fallback : comparaison floue sur le texte
-          const expectedCountry = baggage.destination.toLowerCase();
           const scanCountry = country.toLowerCase();
           isMatch = expectedCountry.includes(scanCountry) || scanCountry.includes(expectedCountry);
         }
@@ -474,7 +424,6 @@ export async function POST(
           try {
             await db.baggage.update({
               where: { id: baggage.id },
-              data: { suspiciousScanCount: { increment: 1 } },
             });
           } catch {
             // Non-critique
@@ -487,8 +436,6 @@ export async function POST(
             scanTime,
             scanCity: city || null,
             scanCountry: country || null,
-            expectedCountry: baggage.destinationCountry || baggage.destination,
-            destination: baggage.destination,
             trackingUrl: trackingUrlForEmail,
           });
 
