@@ -1,315 +1,121 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import Link from 'next/link';
-import { CheckCircle, Luggage, Calendar, Backpack, KeyRound } from 'lucide-react';
-import { QRCodeSVG } from 'qrcode.react';
-import SuccessOverlay from '@/components/ui/SuccessOverlay';
-import { useTranslation } from '@/hooks/useTranslation';
-import { toast } from '@/hooks/use-toast';
+import { useState, useEffect, Suspense } from 'react';
+import { useSearchParams, useRouter } from 'next/navigation';
+import { CheckCircle2, Download, Home, QrCode } from 'lucide-react';
+import QRTagsLogo from '@/components/qrtags/QRTagsLogo';
 
-// ─── Brand constants (QRTags palette: blue #111111 + yellow #E3B23C) ───
-const BRAND = '#111111'; // bleu vif — fonds, boutons primaires
-const ACCENT = '#E3B23C'; // jaune vif — cards, accents
-const INK = '#1a1a1a'; // noir — texte sur jaune, bordures dashed
-
-interface ActivationData {
-  reference: string;
-  firstName: string;
-  lastName: string;
-  whatsapp: string;
-  flightNumber?: string;
-  destination?: string;
-  type: string;
-  activatedAt: string;
-  expiresAt?: string;
-  // TRANSPORT-FEATURE: Transport mode + conditional fields (conservés pour sessionStorage, non affichés)
-  transportMode?: string;
-  trainNumber?: string;
-  shipName?: string;
-  busLineNumber?: string;
-  // LABS — Feature #2: PIN propriétaire (une seule fois, pour affichage à l'activation)
-  ownerPin?: string;
-}
+const QRTAGS_BG = '#111111';
+const QRTAGS_ACCENT = '#E3B23C';
+const QRTAGS_INK = '#111111';
 
 function SuccessContent() {
-  const [activationData, setActivationData] = useState<ActivationData | null>(null);
-  const { t } = useTranslation();
+  const searchParams = useSearchParams();
+  const router = useRouter();
+  const [activationData, setActivationData] = useState<any>(null);
 
-  // Lecture unique de sessionStorage au mount — pattern légitime (storage externe non disponible au SSR)
   useEffect(() => {
-    const storedData = sessionStorage.getItem('activationData');
-    if (storedData) {
-      try {
-        // eslint-disable-next-line react-hooks/set-state-in-effect
-        setActivationData(JSON.parse(storedData));
-      } catch (e) {
-        console.error('Error parsing activation data:', e);
-      }
+    const stored = sessionStorage.getItem('activationData');
+    if (stored) {
+      setActivationData(JSON.parse(stored));
     }
   }, []);
 
-  // Valeur dérivée — évite un useEffect + setState redondant
-  const activationConfirmed = activationData !== null;
-
-  const reference = activationData?.reference || '';
-  const origin = typeof window !== 'undefined' ? window.location.origin : '';
-  const trackingUrl = `${origin}/suivi/${reference}`;
-  const qrUrl = `${origin}/scan/${reference}`;
-
-  // Format date (avec heure)
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('fr-FR', {
-      day: 'numeric',
-      month: 'long',
-      year: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit',
-    });
+  const formatDate = (dateStr?: string) => {
+    if (!dateStr) return '';
+    return new Date(dateStr).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' });
   };
-
-  // Format expiration date (sans heure)
-  const formatExpiration = (dateString?: string) => {
-    if (!dateString) return 'Selon formule';
-    return new Date(dateString).toLocaleDateString('fr-FR', {
-      day: 'numeric',
-      month: 'long',
-      year: 'numeric',
-    });
-  };
-
-  // Web Share API + fallback clipboard
-  const handleShare = async () => {
-    if (!reference) return;
-
-    if (navigator.share) {
-      try {
-        await navigator.share({
-          title: 'Mon bagage QRTags',
-          text: 'Suivez mon bagage en temps réel avec QRTags.',
-          url: trackingUrl,
-        });
-      } catch (err) {
-        // Annulation utilisateur ou erreur — silencieux
-      }
-    } else {
-      try {
-        await navigator.clipboard.writeText(trackingUrl);
-        toast({
-          title: 'Lien copié !',
-          description: 'Le lien de suivi a été copié dans le presse-papiers.',
-        });
-      } catch (err) {
-        toast({
-          title: 'Impossible de copier le lien',
-          description: 'Votre navigateur ne supporte pas le copier-coller automatique.',
-          variant: 'destructive',
-        });
-      }
-    }
-  };
-
-  // ─── Empty state : pas d'activation data ───
-  if (!activationData) {
-    return (
-      <main className="min-h-screen bg-[#111111] flex items-center justify-center p-4">
-        <div className="max-w-md w-full">
-          <div className="bg-[#E3B23C] border-2 border-dashed border-[#1a1a1a] rounded-2xl p-8 text-center">
-            <div className="w-16 h-16 bg-white rounded-full flex items-center justify-center mx-auto mb-4 border-2 border-[#1a1a1a]">
-              <CheckCircle className="w-8 h-8" style={{ color: INK }} />
-            </div>
-            <h1 className="text-2xl font-bold mb-2" style={{ color: INK }}>
-              ✅ Activation réussie !
-            </h1>
-            <p className="mb-6" style={{ color: INK, opacity: 0.7 }}>
-              Votre bagage est maintenant protégé
-            </p>
-            <Link
-              href="/inscrire"
-              className="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-xl font-bold transition-colors min-h-[48px]"
-              style={{ backgroundColor: INK, color: ACCENT }}
-            >
-              ← Revenir à l&apos;inscription
-            </Link>
-          </div>
-        </div>
-      </main>
-    );
-  }
 
   return (
-    <main className="min-h-screen bg-[#111111] flex items-center justify-center p-4">
-      {/* SuccessOverlay — feedback premium d'activation (indépendant du thème) */}
-      <SuccessOverlay show={activationConfirmed} messageKey="activation.success" t={t} />
+    <main className="min-h-screen page-dark-theme flex items-center justify-center p-5" style={{ backgroundColor: QRTAGS_BG, color: QRTAGS_ACCENT }}>
+      <div
+        className="relative max-w-md w-full rounded-2xl p-8 shadow-2xl text-center"
+        style={{ backgroundColor: QRTAGS_ACCENT, color: QRTAGS_INK, border: `2px dashed ${QRTAGS_INK}` }}
+      >
+        {/* Logo */}
+        <div className="flex justify-center mb-6">
+          <QRTagsLogo size="md" variant="light" />
+        </div>
 
-      <div className="max-w-md w-full py-6">
-        {/* ═══ 1. En-tête succès ═══ */}
-        <div className="text-center mb-6">
-          <div className="relative inline-block mb-3">
-            <div
-              className="w-20 h-20 bg-white rounded-full flex items-center justify-center border-2"
-              style={{ borderColor: INK }}
-            >
-              <CheckCircle className="w-10 h-10" style={{ color: INK }} />
+        {/* Icône succès */}
+        <div
+          className="w-24 h-24 rounded-full flex items-center justify-center mx-auto mb-6"
+          style={{ backgroundColor: QRTAGS_INK, border: `3px dashed ${QRTAGS_ACCENT}` }}
+        >
+          <CheckCircle2 className="w-12 h-12" style={{ color: QRTAGS_ACCENT }} />
+        </div>
+
+        <h1 className="text-2xl md:text-3xl font-black mb-2" style={{ color: QRTAGS_INK }}>
+          🎉 Votre QR code est activé !
+        </h1>
+
+        {activationData?.objectName && (
+          <p className="text-base mb-2" style={{ color: QRTAGS_INK, opacity: 0.8 }}>
+            Votre <strong>{activationData.objectName}</strong> est maintenant protégé.
+          </p>
+        )}
+
+        <p className="text-sm mb-6" style={{ color: QRTAGS_INK, opacity: 0.7 }}>
+          Si vous le perdez, le trouveur pourra vous contacter directement sur WhatsApp
+          {activationData?.whatsapp ? ` au ${activationData.whatsapp}` : ''}.
+        </p>
+
+        {/* Référence + PIN */}
+        {activationData && (
+          <div className="mb-6 p-4 rounded-xl" style={{ background: 'rgba(17,17,17,0.05)', border: `2px dashed ${QRTAGS_INK}40` }}>
+            <div className="grid grid-cols-2 gap-3 text-left">
+              <div>
+                <div className="text-xs font-bold opacity-60" style={{ color: QRTAGS_INK }}>RÉFÉRENCE</div>
+                <div className="font-mono font-bold text-sm" style={{ color: QRTAGS_INK }}>{activationData.reference}</div>
+              </div>
+              {activationData.ownerPin && (
+                <div>
+                  <div className="text-xs font-bold opacity-60" style={{ color: QRTAGS_INK }}>CODE PIN</div>
+                  <div className="font-mono font-bold text-sm" style={{ color: QRTAGS_INK }}>{activationData.ownerPin}</div>
+                </div>
+              )}
+              {activationData.expiresAt && (
+                <div className="col-span-2">
+                  <div className="text-xs font-bold opacity-60" style={{ color: QRTAGS_INK }}>EXPIRE LE</div>
+                  <div className="text-sm" style={{ color: QRTAGS_INK }}>{formatDate(activationData.expiresAt)}</div>
+                </div>
+              )}
             </div>
-            <div
-              className="absolute inset-0 w-20 h-20 rounded-full animate-ping"
-              style={{ backgroundColor: ACCENT, opacity: 0.3 }}
-            />
           </div>
-          <h1 className="text-2xl font-bold mb-1 text-white">
-            ✅ Activation réussie !
-          </h1>
-          <p className="text-white/80">Votre bagage est maintenant protégé</p>
-        </div>
+        )}
 
-        {/* ═══ 2. Carte QR Code (fond jaune QRTags + bordure dashed noire) ═══ */}
-        <div
-          className="border-2 border-dashed rounded-2xl p-5 mb-4 text-center"
-          style={{ backgroundColor: ACCENT, borderColor: INK }}
-        >
-          {/* QR Code sur fond blanc pour scan optimal */}
-          <div className="bg-white rounded-xl p-3 inline-block mb-3">
-            <QRCodeSVG
-              value={qrUrl}
-              size={160}
-              level="H"
-              includeMargin={true}
-              bgColor="#ffffff"
-              fgColor={INK}
-            />
-          </div>
-          <p className="font-mono font-bold text-lg break-all" style={{ color: INK }}>
-            {reference}
-          </p>
-          <p className="text-sm" style={{ color: INK, opacity: 0.7 }}>
-            {activationData.firstName} {activationData.lastName}
-          </p>
-        </div>
-
-        {/* ═══ 3. Résumé Activité (bloc blanc épuré + bordure dashed noire) ═══ */}
-        <div
-          className="bg-white border-2 border-dashed rounded-2xl p-4 mb-4 space-y-3"
-          style={{ borderColor: INK }}
-        >
-          <div className="flex items-center gap-3">
-            <Luggage className="w-5 h-5 flex-shrink-0" style={{ color: INK }} />
-            <p className="font-medium text-sm" style={{ color: INK }}>
-              🧳 1 bagage activé •{' '}
-              <span style={{ color: INK, opacity: 0.7 }}>Protection active</span>
-            </p>
-          </div>
-          <div className="flex items-center gap-3">
-            <Calendar className="w-5 h-5 flex-shrink-0" style={{ color: INK }} />
-            <p className="font-medium text-sm" style={{ color: INK }}>
-              ⏰ Expire le {formatExpiration(activationData.expiresAt)} •{' '}
-              <span style={{ color: INK, opacity: 0.7 }}>
-                Activé le {formatDate(activationData.activatedAt)}
-              </span>
-            </p>
-          </div>
-        </div>
-
-        {/* ═══ 4. Boutons d'Action (flex-col mobile, flex-row md) ═══ */}
-        <div className="flex flex-col md:flex-row gap-3 mb-4">
-          {/* Bouton A : Suivre mon bagage (target _blank) */}
-          <a
-            href={`/suivi/${reference}`}
-            target="_blank"
-            rel="noopener noreferrer"
-            aria-label="Suivre mon bagage dans un nouvel onglet"
-            className="flex-1 inline-flex items-center justify-center gap-2 px-4 py-3.5 rounded-xl font-bold transition-colors min-h-[52px] border-2"
-            style={{ backgroundColor: INK, color: ACCENT, borderColor: INK }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.backgroundColor = ACCENT;
-              e.currentTarget.style.color = INK;
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.backgroundColor = INK;
-              e.currentTarget.style.color = ACCENT;
-            }}
-          >
-            📍 Suivre mon bagage
-          </a>
-
-          {/* Bouton B : Partager (Web Share API + fallback clipboard) */}
+        {/* Boutons */}
+        <div className="space-y-3">
           <button
-            onClick={handleShare}
-            aria-label="Partager le lien de suivi"
-            className="flex-1 inline-flex items-center justify-center gap-2 px-4 py-3.5 rounded-xl font-bold transition-colors min-h-[52px] border-2 cursor-pointer"
-            style={{ backgroundColor: INK, color: ACCENT, borderColor: INK }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.backgroundColor = ACCENT;
-              e.currentTarget.style.color = INK;
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.backgroundColor = INK;
-              e.currentTarget.style.color = ACCENT;
-            }}
+            onClick={() => window.print()}
+            className="w-full py-4 rounded-xl font-bold flex items-center justify-center gap-2"
+            style={{ backgroundColor: QRTAGS_INK, color: QRTAGS_ACCENT, border: `2px dashed ${QRTAGS_ACCENT}` }}
           >
-            📤 Partager
+            <Download className="w-5 h-5" />
+            Télécharger mon QR code
+          </button>
+          <button
+            onClick={() => router.push('/')}
+            className="w-full py-4 rounded-xl font-bold flex items-center justify-center gap-2"
+            style={{ border: `2px dashed ${QRTAGS_INK}`, color: QRTAGS_INK }}
+          >
+            <Home className="w-5 h-5" />
+            Retour à l'accueil
           </button>
         </div>
 
-        {/* ═══ 5. Encart Checklist (fond jaune QRTags + bordure dashed noire) ═══ */}
-        <div
-          className="border-2 border-dashed rounded-2xl p-5 text-center"
-          style={{ backgroundColor: ACCENT, borderColor: INK }}
-        >
-          <div className="flex items-center justify-center gap-2 mb-3">
-            <Backpack className="w-5 h-5" style={{ color: INK }} />
-            <h2 className="font-bold text-base" style={{ color: INK }}>
-              🎒 Préparez votre voyage sereinement
-            </h2>
-          </div>
-          <Link
-            href="/checklist"
-            className="inline-flex items-center justify-center gap-2 px-5 py-3 rounded-xl font-bold transition-colors min-h-[48px]"
-            style={{ backgroundColor: INK, color: ACCENT }}
-          >
-            Créer ma checklist gratuite →
-          </Link>
-        </div>
-
-        {/* ═══ 6. LABS — Feature #2: PIN propriétaire (affichage unique à l'activation) ═══ */}
-        {activationData.ownerPin && (
-          <div
-            className="border-2 border-dashed rounded-2xl p-5"
-            style={{ backgroundColor: 'white', borderColor: INK }}
-          >
-            <div className="flex items-center justify-center gap-2 mb-2">
-              <KeyRound className="w-5 h-5" style={{ color: INK }} />
-              <h2 className="font-bold text-base" style={{ color: INK }}>
-                🔐 Votre code PIN propriétaire
-              </h2>
-            </div>
-            <p className="text-sm text-center mb-4" style={{ color: INK, opacity: 0.7 }}>
-              Notez ce code précieusement. Il vous servira à :
-              <br />
-              • Modifier votre profil de voyage (numéro de vol, destination…)
-              <br />
-              • Activer/désactiver le mode « En transit »
-              <br />
-              • Vérifier l&apos;identité de la personne qui rend votre bagage
-            </p>
-            <div
-              className="text-center text-5xl font-mono font-bold tracking-[0.5em] py-4 rounded-xl mb-3"
-              style={{ backgroundColor: ACCENT, color: INK }}
-            >
-              {activationData.ownerPin}
-            </div>
-            <p className="text-xs text-center" style={{ color: INK, opacity: 0.6 }}>
-              ⚠️ Pour votre sécurité, ce code ne sera plus jamais affiché.
-              <br />
-              En cas d&apos;oubli, vous devrez contacter le support QRTags.
-            </p>
-          </div>
-        )}
+        <p className="text-xs mt-6" style={{ color: QRTAGS_INK, opacity: 0.5 }}>
+          Propulsé par QRTags
+        </p>
       </div>
     </main>
   );
 }
 
 export default function SuccessPage() {
-  return <SuccessContent />;
+  return (
+    <Suspense fallback={<div className="min-h-screen bg-[#111111]" />}>
+      <SuccessContent />
+    </Suspense>
+  );
 }
