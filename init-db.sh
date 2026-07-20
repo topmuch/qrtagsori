@@ -402,4 +402,4 @@ echo "✅ activatedAt présent: $HAS_ACTIVATED"
 
 # 4. Démarrer le serveur
 echo "🚀 Démarrage Next.js..."
-exec node .next/standalone/server.js
+exec node server.js
