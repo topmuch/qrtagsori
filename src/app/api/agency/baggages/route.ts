@@ -51,8 +51,6 @@ export async function GET(request: NextRequest) {
       status: normalizeStatus(b.status),
       // QRTags : exposer agencyType (depuis l'agence) au niveau racine pour faciliter le frontend
       agencyType: b.agency?.agencyType || null,
-      // QRTags : exposer lotNumber au niveau racine pour le tableau de traçabilité
-      lotNumber: b.lot?.lotNumber || null,
     }));
 
     // Calculate stats using normalized statuses
