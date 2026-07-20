@@ -1,6 +1,11 @@
-FROM node:20-alpine
+FROM node:20-slim
 
-RUN apk add --no-cache git libc6-compat sqlite
+# Installer sqlite3 + git + libc (Debian-slim natif, pas besoin de libc6-compat)
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    git \
+    sqlite3 \
+    ca-certificates \
+    && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
 
