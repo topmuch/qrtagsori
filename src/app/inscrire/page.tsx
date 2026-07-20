@@ -133,6 +133,7 @@ function InscrireContent() {
     if (!canSubmitStep2) return;
     setLoading(true);
     try {
+      const customData = {
         ...categoryData,
         category: selectedCategory,
         category_label: selectedCat?.label,
