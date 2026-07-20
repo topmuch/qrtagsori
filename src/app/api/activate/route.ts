@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { z } from 'zod';
-import bcrypt from 'bcryptjs';
 import crypto from 'crypto';
 
 const activateSchema = z.object({
@@ -13,6 +12,14 @@ const activateSchema = z.object({
 });
 
 const PENDING_STATUSES = new Set(['in_stock', 'assigned_to_agency', 'sold', 'pending_activation']);
+
+/**
+ * Génère un token de suivi unique (24 caractères base36, sans ambiguous chars).
+ * Exemple: "x7k2mp9q4t8h6v3f1j5n0wby"
+ */
+function generateTrackingToken(): string {
+  return crypto.randomBytes(12).toString('base64url').replace(/[-_]/g, '').slice(0, 24);
+}
 
 export async function POST(request: NextRequest) {
   try {
@@ -35,6 +42,19 @@ export async function POST(request: NextRequest) {
     const expiresAt = new Date();
     expiresAt.setFullYear(expiresAt.getFullYear() + 1);
 
+    // Génère un token unique (avec retry si collision — improbable mais safe)
+    let trackingToken = generateTrackingToken();
+    let attempts = 0;
+    while (attempts < 3) {
+      const existing = await db.baggage.findUnique({
+        where: { trackingToken },
+        select: { id: true },
+      });
+      if (!existing) break;
+      trackingToken = generateTrackingToken();
+      attempts++;
+    }
+
     const updatedBaggage = await db.baggage.update({
       where: { id: baggage.id },
       data: {
@@ -43,6 +63,10 @@ export async function POST(request: NextRequest) {
         whatsappOwner: validatedData.whatsappOwner,
         status: 'activated',
         expiresAt,
+        trackingToken,
+        trackingEnabled: true,
+        scanCount: 0,
+        isLost: false,
       },
     });
 
@@ -54,6 +78,7 @@ export async function POST(request: NextRequest) {
         type: updatedBaggage.type,
         status: updatedBaggage.status,
         expiresAt: updatedBaggage.expiresAt,
+        trackingToken: updatedBaggage.trackingToken,
       },
     });
   } catch (error) {

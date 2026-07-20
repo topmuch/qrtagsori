@@ -101,6 +101,15 @@ model Baggage {
   founderPhone      String?
   founderAt         DateTime?
 
+  // ─── Suivi partageable (page /track/[token]) ───
+  trackingToken     String?   @unique               // Token unique pour le lien de suivi propriétaire
+  trackingEnabled   Boolean   @default(true)         // Le propriétaire peut désactiver le suivi
+  scanCount         Int       @default(0)            // Nombre total de scans
+  lastScanLocation  String?                          // Ville/pays du dernier scan
+  isLost            Boolean   @default(false)        // Objet signalé perdu par le propriétaire
+  lostReportedAt    DateTime?                        // Date du signalement de perte
+  lostMessage       String?                          // Message personnalisé du propriétaire quand l'objet est perdu
+
   agency            Agency?   @relation(fields: [agencyId], references: [id], onDelete: SetNull)
   scanLogs          ScanLog[]
   damageReports     DamageReport[]

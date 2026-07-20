@@ -181,6 +181,7 @@ function InscrireContent() {
           category: selectedCat?.label,
           type: 'voyageur',
           expiresAt: data.baggage?.expiresAt,
+          trackingToken: data.baggage?.trackingToken,
         }));
         localStorage.removeItem('qrtags_draft');
         router.push('/success?type=voyageur');

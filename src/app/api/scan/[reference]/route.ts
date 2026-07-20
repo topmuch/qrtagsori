@@ -121,12 +121,21 @@ export async function POST(
       // Non-bloquant si le log échoue
     });
 
-    // Mettre à jour lastScanDate et lastLocation
+    // Construire la chaîne de localisation lisible pour le suivi propriétaire
+    const readableLocation = location && location.trim() !== ''
+      ? location
+      : (latitude && longitude
+          ? `${latitude.toFixed(4)}, ${longitude.toFixed(4)}`
+          : 'Position non partagée');
+
+    // Mettre à jour lastScanDate, lastLocation + INCRÉMENTER scanCount + lastScanLocation
     await prisma.baggage.update({
       where: { id: baggage.id },
       data: {
         lastScanDate: new Date(),
         lastLocation: location || null,
+        lastScanLocation: readableLocation,
+        scanCount: { increment: 1 },
         founderName: finderName || null,
         founderPhone: finderPhone || null,
         founderAt: new Date(),

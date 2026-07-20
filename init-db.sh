@@ -61,7 +61,15 @@ CREATE TABLE Baggage (
   activatedAt DATETIME,
   customData TEXT,
   ownerPin TEXT,
-  ownerPinSetAt DATETIME
+  ownerPinSetAt DATETIME,
+  -- Suivi partageable (page /track/[token])
+  trackingToken TEXT UNIQUE,
+  trackingEnabled INTEGER NOT NULL DEFAULT 1,
+  scanCount INTEGER NOT NULL DEFAULT 0,
+  lastScanLocation TEXT,
+  isLost INTEGER NOT NULL DEFAULT 0,
+  lostReportedAt DATETIME,
+  lostMessage TEXT
 );
 
 CREATE TABLE ScanLog (
