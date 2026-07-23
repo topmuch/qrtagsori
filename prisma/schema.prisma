@@ -558,3 +558,41 @@ model DamageReport {
   @@index([baggageId])
   @@index([type])
 }
+
+// ════════════════════════════════════════════════════════════════
+// BOUTIQUE EXPRESS — Produits & Commandes (Cash on Delivery)
+// Checkout sans compte, sans panier, paiement à la livraison.
+// ════════════════════════════════════════════════════════════════
+
+model Product {
+  id          String   @id @default(cuid())
+  name        String   // ex: "Pack 3 Stickers"
+  slug        String   @unique // ex: "pack-3-stickers"
+  price       Int      // en FCFA
+  quantity    Int      // nombre de stickers dans le pack (3, 5, 10, 15)
+  description String?  // courte description marketing
+  image       String?  // URL de l'image produit
+  active      Boolean  @default(true)
+  sortOrder   Int      @default(0)
+  createdAt   DateTime @default(now())
+  orders      Order[]
+}
+
+model Order {
+  id            String   @id @default(cuid())
+  productId     String
+  customerName  String   // Nom complet du client
+  customerPhone String   // Numéro +221
+  city          String?  // Ville (par défaut Dakar)
+  quartier      String?  // Quartier (optionnel)
+  quantity      Int      @default(1) // nombre de packs commandés
+  total         Int      // total en FCFA = price * quantity
+  status        String   @default("PENDING") // PENDING | CONFIRMED | SHIPPED | DELIVERED | CANCELLED
+  notes         String?  // notes internes du superadmin
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  product       Product  @relation(fields: [productId], references: [id])
+
+  @@index([status])
+  @@index([createdAt])
+}

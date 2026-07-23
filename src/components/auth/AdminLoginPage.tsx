@@ -18,33 +18,43 @@ import {
   KeyRound,
   Activity,
   Server,
+  HandHelping,
+  Heart,
+  CheckCircle2,
+  Globe,
   type LucideIcon,
 } from 'lucide-react';
 import { motion, AnimatePresence, easeOut, type Variants } from 'framer-motion';
 
 /* ══════════════════════════════════════════════════════════════
-   DATA
+   DATA — Messaging orienté plateforme & impact
    ══════════════════════════════════════════════════════════════ */
 
 const STATS = [
-  { value: '2M+', label: 'Bagages protégés', icon: QrCode },
-  { value: '850+', label: 'Agences partenaires', icon: Server },
-  { value: '45+', label: 'Pays couverts', icon: Activity },
-  { value: '99.9%', label: 'Disponibilité', icon: Shield },
+  { value: '98%', label: 'Objets retrouvés', icon: CheckCircle2 },
+  { value: '850+', label: 'Agences', icon: Server },
+  { value: '45+', label: 'Pays', icon: Globe },
+  { value: '99.9%', label: 'Uptime', icon: Activity },
 ] as const;
 
 const TESTIMONIALS = [
   {
     name: 'Fatou Diallo',
-    role: 'Hôtel Le Royal',
-    text: 'QRTags a transformé notre gestion de bagages. Zéro perte depuis 2 ans.',
+    role: 'Hôtel Le Royal, Dakar',
+    text: 'QRTags a transformé notre gestion des objets perdus. Zéro perte depuis 2 ans, et nos clients sont ravis.',
   },
   {
-    name: 'Moussa Koné',
-    role: 'Voyages Sahel',
-    text: 'Le dashboard est simple et efficace. Nos clients sont rassurés.',
+    name: 'Karim Benali',
+    role: 'Gare de Lyon, Paris',
+    text: 'Le dashboard est simple et efficace. Chaque bagage étiqueté est un bagage qui rentre.',
   },
 ] as const;
+
+const IMPACT_METRICS = [
+  { label: 'Objets retrouvés cette semaine', value: '127', color: '#22C55E' },
+  { label: 'Scans QR aujourd\'hui', value: '432', color: '#FDB900' },
+  { label: 'Agences actives', value: '28', color: '#3B82F6' },
+];
 
 /* ══════════════════════════════════════════════════════════════
    HEXAGONAL GRID — SVG ANIMATED BACKGROUND
@@ -85,8 +95,8 @@ function HexagonalGrid() {
     >
       <defs>
         <linearGradient id="hex-stroke" x1="0%" y1="0%" x2="100%" y2="100%">
-          <stop offset="0%" stopColor="#7C3AED" stopOpacity="0.2" />
-          <stop offset="100%" stopColor="#8B5CF6" stopOpacity="0.05" />
+          <stop offset="0%" stopColor="#FDB900" stopOpacity="0.15" />
+          <stop offset="100%" stopColor="#FDB900" stopOpacity="0.03" />
         </linearGradient>
       </defs>
       {hexagons.map((hex) => (
@@ -96,7 +106,7 @@ function HexagonalGrid() {
           fill="none"
           stroke="url(#hex-stroke)"
           strokeWidth="0.8"
-          opacity={0.2 + (hex.key % 3) * 0.1}
+          opacity={0.15 + (hex.key % 3) * 0.1}
         />
       ))}
     </svg>
@@ -120,9 +130,9 @@ function DataFlowLines() {
     <svg className="absolute inset-0 w-full h-full pointer-events-none" preserveAspectRatio="none">
       <defs>
         <linearGradient id="flow-grad" x1="0%" y1="0%" x2="100%" y2="0%">
-          <stop offset="0%" stopColor="#7C3AED" stopOpacity="0" />
-          <stop offset="50%" stopColor="#8B5CF6" stopOpacity="0.4" />
-          <stop offset="100%" stopColor="#7C3AED" stopOpacity="0" />
+          <stop offset="0%" stopColor="#FDB900" stopOpacity="0" />
+          <stop offset="50%" stopColor="#FDB900" stopOpacity="0.3" />
+          <stop offset="100%" stopColor="#FDB900" stopOpacity="0" />
         </linearGradient>
       </defs>
       {lines.map((line, i) => (
@@ -158,10 +168,11 @@ function PulsingCircles() {
       {[80, 140, 210, 290].map((size, i) => (
         <div
           key={i}
-          className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full border border-blue-500/20 animate-pulse"
+          className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full border animate-pulse"
           style={{
             width: size,
             height: size,
+            borderColor: i < 2 ? 'rgba(253,185,0,0.15)' : 'rgba(34,197,94,0.12)',
             animationDuration: `${3 + i * 0.7}s`,
             animationDelay: `${i * 0.5}s`,
           }}
@@ -183,10 +194,12 @@ function StatCard({ value, label, icon: Icon }: { value: string; label: string; 
       transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
       className="text-center group"
     >
-      <div className="inline-flex items-center justify-center w-10 h-10 rounded-xl bg-blue-500/10 border border-blue-500/20 mb-2 group-hover:bg-blue-500/20 transition-colors">
-        <Icon className="w-4 h-4 text-blue-400" />
+      <div className="inline-flex items-center justify-center w-10 h-10 rounded-xl bg-[#FDB900]/10 border border-[#FDB900]/20 mb-2 group-hover:bg-[#FDB900]/20 transition-colors">
+        <Icon className="w-4 h-4 text-[#FDB900]" />
       </div>
-      <p className="text-2xl xl:text-3xl font-bold text-white tracking-tight" style={{ textShadow: '0 0 20px rgba(139, 92, 246, 0.4)' }}>
+      <p className="text-2xl xl:text-3xl font-bold text-white tracking-tight"
+        style={{ textShadow: '0 0 20px rgba(253,185,0,0.3)' }}
+      >
         {value}
       </p>
       <p className="text-white/35 text-[10px] xl:text-xs mt-1 leading-tight uppercase tracking-wider">
@@ -197,22 +210,38 @@ function StatCard({ value, label, icon: Icon }: { value: string; label: string; 
 }
 
 /* ══════════════════════════════════════════════════════════════
-   ANIMATION VARIANTS
+   IMPACT BAR — live metrics
    ══════════════════════════════════════════════════════════════ */
 
-const fadeSlideUp = {
-  initial: { opacity: 0, y: 24 },
-  animate: { opacity: 1, y: 0 },
-  transition: { duration: 0.6, ease: [0.25, 0.46, 0.45, 0.94] },
-};
+function ImpactBar({ label, value, color }: { label: string; value: string; color: string }) {
+  return (
+    <motion.div
+      className="flex items-center gap-3 py-2 px-3 rounded-xl bg-white/[0.06] border border-white/[0.08]"
+      initial={{ opacity: 0, x: -10 }}
+      animate={{ opacity: 1, x: 0 }}
+      transition={{ duration: 0.4 }}
+    >
+      <div
+        className="w-2 h-2 rounded-full animate-pulse"
+        style={{ background: color, boxShadow: `0 0 6px ${color}` }}
+      />
+      <span className="text-white/50 text-[10px] uppercase tracking-wider flex-1">{label}</span>
+      <span className="text-white font-bold text-sm" style={{ color }}>{value}</span>
+    </motion.div>
+  );
+}
 
-const staggerContainer = {
-  animate: { transition: { staggerChildren: 0.1, delayChildren: 0.2 } },
-};
+/* ══════════════════════════════════════════════════════════════
+   ANIMATION VARIANTS
+   ══════════════════════════════════════════════════════════════ */
 
 const formChild: Variants = {
   initial: { opacity: 0, y: 16 },
   animate: { opacity: 1, y: 0, transition: { duration: 0.5, ease: [0.16, 1, 0.3, 1] as [number, number, number, number] } },
+};
+
+const staggerContainer = {
+  animate: { transition: { staggerChildren: 0.1, delayChildren: 0.2 } },
 };
 
 /* ══════════════════════════════════════════════════════════════
@@ -232,7 +261,6 @@ export default function AdminLoginPage() {
   const [focusedField, setFocusedField] = useState<string | null>(null);
   const [activeTestimonial, setActiveTestimonial] = useState(0);
 
-  /* ─── Redirect if already logged in as superadmin ─── */
   useEffect(() => {
     if (authLoading) return;
     if (user && isSuperAdmin) {
@@ -240,7 +268,6 @@ export default function AdminLoginPage() {
     }
   }, [user, authLoading, isSuperAdmin, router]);
 
-  /* ─── Rotate testimonials every 5s ─── */
   useEffect(() => {
     const interval = setInterval(() => {
       setActiveTestimonial((prev) => (prev + 1) % TESTIMONIALS.length);
@@ -248,7 +275,6 @@ export default function AdminLoginPage() {
     return () => clearInterval(interval);
   }, []);
 
-  /* ─── Submit handler ─── */
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
@@ -277,7 +303,6 @@ export default function AdminLoginPage() {
     }
   };
 
-  /* ─── Demo fill ─── */
   const fillDemo = useCallback(() => {
     setEmail('admin@qrtags.com');
     setPassword('admin123');
@@ -290,58 +315,52 @@ export default function AdminLoginPage() {
     .join('');
 
   return (
-    <div className="min-h-screen flex flex-col lg:flex-row bg-[#111111] overflow-hidden">
+    <div className="min-h-screen flex flex-col lg:flex-row bg-[#0d0d0f] overflow-hidden">
       {/* ════════════════════════════════════════════════════════
-          LEFT PANEL — "Midnight Command Center" (desktop only)
+          LEFT PANEL — "Midnight Command Center" + warm gold accents
           ════════════════════════════════════════════════════════ */}
       <div className="relative hidden lg:flex lg:w-[52%] min-h-screen flex-col overflow-hidden">
-        {/* Deep midnight gradient base */}
+        {/* Deep midnight gradient */}
         <div className="absolute inset-0">
           <div
             className="absolute inset-0"
             style={{
               background:
-                'radial-gradient(ellipse at 30% 20%, rgba(0, 71, 214, 0.15) 0%, transparent 60%), radial-gradient(ellipse at 80% 80%, rgba(0, 71, 214, 0.10) 0%, transparent 50%), linear-gradient(160deg, #111111 0%, #0033a8 40%, #111111 100%)',
+                'radial-gradient(ellipse at 30% 20%, rgba(253,185,0,0.12) 0%, transparent 60%), radial-gradient(ellipse at 80% 80%, rgba(34,197,94,0.06) 0%, transparent 50%), linear-gradient(160deg, #0d0d0f 0%, #111111 40%, #0d0d0f 100%)',
             }}
           />
         </div>
 
-        {/* Hexagonal grid overlay */}
         <HexagonalGrid />
-
-        {/* Data flow lines */}
         <DataFlowLines />
-
-        {/* Pulsing radar circles */}
         <PulsingCircles />
 
-        {/* Floating violet/purple orbs */}
-        <div className="absolute top-[15%] -left-16 w-72 h-72 rounded-full bg-blue-600/15 blur-[100px] animate-pulse" />
+        {/* Floating warm orbs */}
+        <div className="absolute top-[15%] -left-16 w-72 h-72 rounded-full bg-[#FDB900]/12 blur-[100px] animate-pulse" />
         <div
-          className="absolute bottom-[20%] right-[-40px] w-80 h-80 rounded-full bg-blue-600/10 blur-[120px] animate-pulse"
+          className="absolute bottom-[20%] right-[-40px] w-80 h-80 rounded-full bg-[#FDB900]/6 blur-[120px] animate-pulse"
           style={{ animationDelay: '1.5s' }}
         />
         <div
-          className="absolute top-[50%] left-[40%] w-96 h-96 rounded-full bg-blue-500/5 blur-[150px] animate-pulse"
+          className="absolute top-[50%] left-[40%] w-96 h-96 rounded-full bg-[#22C55E]/4 blur-[150px] animate-pulse"
           style={{ animationDelay: '3s' }}
         />
         <div
-          className="absolute bottom-[5%] left-[15%] w-48 h-48 rounded-full bg-yellow-500/8 blur-[80px] animate-pulse"
+          className="absolute bottom-[5%] left-[15%] w-48 h-48 rounded-full bg-[#FDB900]/6 blur-[80px] animate-pulse"
           style={{ animationDelay: '2s' }}
         />
 
-        {/* ─── Left Panel Content ─── */}
+        {/* Content */}
         <div className="relative z-10 flex flex-col h-full p-10 xl:p-14">
-          {/* Top: Logo in glowing frame */}
+          {/* Top: Logo */}
           <motion.div
             initial={{ opacity: 0, x: -20 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
           >
             <Link href="/" className="group inline-block">
-              <div className="relative w-20 h-20 rounded-2xl bg-white/[0.07] backdrop-blur-sm p-2 border border-blue-500/20 flex items-center justify-center group-hover:bg-white/[0.12] group-hover:border-blue-500/40 transition-all duration-300">
-                {/* Glow effect behind logo */}
-                <div className="absolute -inset-1 rounded-2xl bg-blue-500/10 blur-lg opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+              <div className="relative w-20 h-20 rounded-2xl bg-white/[0.07] backdrop-blur-sm p-2 border border-[#FDB900]/20 flex items-center justify-center group-hover:bg-white/[0.12] group-hover:border-[#FDB900]/40 transition-all duration-300">
+                <div className="absolute -inset-1 rounded-2xl bg-[#FDB900]/8 blur-lg opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
                 <QRTagsLogo size="md" variant="light" />
               </div>
             </Link>
@@ -349,29 +368,28 @@ export default function AdminLoginPage() {
 
           {/* Middle: Hero Content */}
           <div className="flex-1 flex flex-col justify-center max-w-lg">
-            {/* Floating QR illustration */}
+            {/* QR + Shield illustration */}
             <motion.div
               className="relative mb-10"
               initial={{ opacity: 0, scale: 0.8 }}
               animate={{ opacity: 1, scale: 1 }}
               transition={{ duration: 0.7, delay: 0.2, ease: [0.34, 1.56, 0.64, 1] }}
             >
-              <div className="relative w-20 h-20 rounded-2xl bg-gradient-to-br from-blue-600 to-blue-700 flex items-center justify-center shadow-2xl shadow-blue-600/30">
-                <QrCode className="w-10 h-10 text-white" />
-                {/* Animated ring */}
-                <div className="absolute -inset-2 rounded-2xl border-2 border-blue-400/30 animate-ping" style={{ animationDuration: '3s' }} />
+              <div className="relative w-20 h-20 rounded-2xl bg-gradient-to-br from-[#FDB900] to-[#E3B23C] flex items-center justify-center shadow-2xl shadow-amber-600/30">
+                <QrCode className="w-10 h-10 text-[#0d0d0f]" />
+                <div className="absolute -inset-2 rounded-2xl border-2 border-[#FDB900]/30 animate-ping" style={{ animationDuration: '3s' }} />
               </div>
-              {/* Decorative floating dots */}
+              {/* Decorative dots */}
               <div
-                className="absolute -top-3 -right-3 w-5 h-5 rounded-full bg-emerald-400/70 animate-bounce"
+                className="absolute -top-3 -right-3 w-5 h-5 rounded-full bg-[#22C55E]/70 animate-bounce"
                 style={{ animationDelay: '0.5s', animationDuration: '2.5s' }}
               />
               <div
-                className="absolute -bottom-2 -right-6 w-3.5 h-3.5 rounded-full bg-amber-400/50 animate-bounce"
+                className="absolute -bottom-2 -right-6 w-3.5 h-3.5 rounded-full bg-[#FDB900]/50 animate-bounce"
                 style={{ animationDelay: '1.2s', animationDuration: '3s' }}
               />
               <div
-                className="absolute -top-1 -left-5 w-4 h-4 rounded-full bg-blue-300/40 animate-bounce"
+                className="absolute -top-1 -left-5 w-4 h-4 rounded-full bg-white/20 animate-bounce"
                 style={{ animationDelay: '0.8s', animationDuration: '2.8s' }}
               />
             </motion.div>
@@ -382,30 +400,45 @@ export default function AdminLoginPage() {
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.7, delay: 0.35 }}
             >
-              Centre de contrôle
+              Centre de
               <br />
-              <span
-                className="bg-clip-text text-transparent"
-                style={{
-                  backgroundImage:
-                    'linear-gradient(135deg, #a78bfa 0%, #c4b5fd 40%, #8B5CF6 70%, #7C3AED 100%)',
-                }}
-              >
-                de la plateforme
+              <span className="bg-gradient-to-r from-[#FDB900] via-[#E3B23C] to-[#22C55E] bg-clip-text text-transparent">
+                coordination
               </span>
               <br />
               QRTags.
             </motion.h2>
 
             <motion.p
-              className="text-white/40 text-lg leading-relaxed mb-10 max-w-md"
+              className="text-white/40 text-lg leading-relaxed mb-8 max-w-md"
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.7, delay: 0.5 }}
             >
-              Administration sécurisée. Surveillez les opérations, gérez les agences
-              et pilotez l&apos;infrastructure mondiale de suivi.
+              Supervisez les opérations, pilotez les agences
+              et mesurez l&apos;impact de chaque retrouvaille.
+              Une plateforme, une mission.
             </motion.p>
+
+            {/* Impact metrics — live feel */}
+            <motion.div
+              className="space-y-2 mb-10"
+              initial={{ opacity: 0, y: 16 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.7, delay: 0.55 }}
+            >
+              <p className="text-white/20 text-[10px] uppercase tracking-widest font-bold mb-1">Impact en direct</p>
+              {IMPACT_METRICS.map((m, i) => (
+                <motion.div
+                  key={i}
+                  initial={{ opacity: 0, x: -10 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: 0.6 + i * 0.1 }}
+                >
+                  <ImpactBar label={m.label} value={m.value} color={m.color} />
+                </motion.div>
+              ))}
+            </motion.div>
 
             {/* Stats row */}
             <motion.div
@@ -427,7 +460,7 @@ export default function AdminLoginPage() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.7, delay: 0.9 }}
           >
-            <div className="border-l-2 border-blue-500/40 pl-5">
+            <div className="border-l-2 border-[#FDB900]/40 pl-5">
               <AnimatePresence mode="wait">
                 <motion.div
                   key={activeTestimonial}
@@ -440,8 +473,8 @@ export default function AdminLoginPage() {
                     &ldquo;{currentTestimonial.text}&rdquo;
                   </p>
                   <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-400 to-blue-700 flex items-center justify-center border border-blue-500/30">
-                      <span className="text-white text-xs font-bold">{initials}</span>
+                    <div className="w-8 h-8 rounded-full bg-gradient-to-br from-[#FDB900] to-[#E3B23C] flex items-center justify-center border border-[#FDB900]/30">
+                      <span className="text-[#0d0d0f] text-xs font-bold">{initials}</span>
                     </div>
                     <div>
                       <p className="text-white/75 text-xs font-medium">{currentTestimonial.name}</p>
@@ -460,7 +493,7 @@ export default function AdminLoginPage() {
                   onClick={() => setActiveTestimonial(i)}
                   className={`h-1.5 rounded-full transition-all duration-300 ${
                     i === activeTestimonial
-                      ? 'bg-blue-500 w-5'
+                      ? 'bg-[#FDB900] w-5'
                       : 'bg-white/15 hover:bg-white/25 w-1.5'
                   }`}
                   aria-label={`Témoignage ${i + 1}`}
@@ -472,25 +505,25 @@ export default function AdminLoginPage() {
       </div>
 
       {/* ════════════════════════════════════════════════════════
-          RIGHT PANEL — DARK MODE FORM
+          RIGHT PANEL — Dark Premium Form with warm accents
           ════════════════════════════════════════════════════════ */}
-      <div className="w-full lg:w-[48%] min-h-screen flex items-center justify-center bg-[#111111] px-6 py-12 sm:px-10 relative">
-        {/* Subtle right-side background treatment */}
+      <div className="w-full lg:w-[48%] min-h-screen flex items-center justify-center bg-[#0d0d0f] px-6 py-12 sm:px-10 relative">
+        {/* Warm gradient on right */}
         <div className="absolute inset-0">
           <div
             className="absolute inset-0"
             style={{
               background:
-                'radial-gradient(ellipse at 50% 0%, rgba(124, 58, 237, 0.06) 0%, transparent 50%)',
+                'radial-gradient(ellipse at 50% 0%, rgba(253,185,0,0.06) 0%, transparent 50%)',
             }}
           />
         </div>
 
-        {/* Glowing accent line at top */}
+        {/* Gold accent line at top */}
         <div
           className="absolute top-0 left-0 right-0 h-1"
           style={{
-            background: 'linear-gradient(90deg, #7C3AED 0%, #8B5CF6 30%, #a78bfa 50%, #8B5CF6 70%, #7C3AED 100%)',
+            background: 'linear-gradient(90deg, #0d0d0f, #FDB900, #22C55E, #FDB900, #0d0d0f)',
           }}
         />
 
@@ -507,15 +540,15 @@ export default function AdminLoginPage() {
             animate={{ opacity: 1, scale: 1 }}
             transition={{ duration: 0.5 }}
           >
-            <div className="relative w-20 h-20 rounded-2xl bg-white/[0.07] backdrop-blur-sm p-2 border border-blue-500/20 flex items-center justify-center">
-              <div className="absolute -inset-1 rounded-2xl bg-blue-500/10 blur-lg" />
+            <div className="relative w-20 h-20 rounded-2xl bg-white/[0.07] backdrop-blur-sm p-2 border border-[#FDB900]/20 flex items-center justify-center">
+              <div className="absolute -inset-1 rounded-2xl bg-[#FDB900]/10 blur-lg" />
               <QRTagsLogo size="md" variant="light" />
             </div>
           </motion.div>
 
           {/* Admin Badge */}
           <motion.div className="flex items-center gap-2 mb-6" {...formChild} transition={{ delay: 0.1 }}>
-            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-blue-600/20 text-blue-300 border border-blue-500/20">
+            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-[#FDB900]/15 text-[#FDB900] border border-[#FDB900]/20">
               <Shield className="w-3 h-3" />
               Admin
             </span>
@@ -523,9 +556,12 @@ export default function AdminLoginPage() {
 
           {/* Header */}
           <motion.div className="mb-8" {...formChild} transition={{ delay: 0.2 }}>
-            <h1 className="text-3xl font-bold text-white tracking-tight mb-2">Administration</h1>
+            <h1 className="text-3xl font-bold text-white tracking-tight mb-2">
+              Administration 🛡️
+            </h1>
             <p className="text-white/40 text-sm leading-relaxed">
-              Accès réservé aux administrateurs de la plateforme QRTags
+              Accès réservé aux administrateurs. Pilotez la plateforme,
+              surveillez l&apos;impact et coordonnez les agences partenaires.
             </p>
           </motion.div>
 
@@ -559,13 +595,13 @@ export default function AdminLoginPage() {
               <div
                 className={`relative flex items-center rounded-xl border transition-all duration-300 ${
                   focusedField === 'email'
-                    ? 'border-blue-500 bg-[#0033a8] shadow-[0_0_0_4px_rgba(124,58,237,0.15),0_0_20px_rgba(124,58,237,0.1)]'
-                    : 'border-white/10 bg-[#0033a8]/80 hover:border-white/20'
+                    ? 'border-[#FDB900] bg-[#1a1a1a] shadow-[0_0_0_4px_rgba(253,185,0,0.15),0_0_20px_rgba(253,185,0,0.08)]'
+                    : 'border-white/10 bg-[#1a1a1a] hover:border-white/20'
                 }`}
               >
                 <div
                   className={`pl-4 transition-colors duration-200 ${
-                    focusedField === 'email' ? 'text-blue-400' : 'text-white/30'
+                    focusedField === 'email' ? 'text-[#FDB900]' : 'text-white/30'
                   }`}
                 >
                   <Mail className="w-[18px] h-[18px]" />
@@ -581,10 +617,9 @@ export default function AdminLoginPage() {
                   required
                   autoComplete="email"
                 />
-                {/* Focus glow indicator */}
                 {focusedField === 'email' && (
                   <motion.div
-                    className="absolute right-3 top-1/2 -translate-y-1/2 w-1.5 h-1.5 rounded-full bg-blue-400"
+                    className="absolute right-3 top-1/2 -translate-y-1/2 w-1.5 h-1.5 rounded-full bg-[#FDB900]"
                     layoutId="focus-dot"
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
@@ -602,13 +637,13 @@ export default function AdminLoginPage() {
               <div
                 className={`relative flex items-center rounded-xl border transition-all duration-300 ${
                   focusedField === 'password'
-                    ? 'border-blue-500 bg-[#0033a8] shadow-[0_0_0_4px_rgba(124,58,237,0.15),0_0_20px_rgba(124,58,237,0.1)]'
-                    : 'border-white/10 bg-[#0033a8]/80 hover:border-white/20'
+                    ? 'border-[#FDB900] bg-[#1a1a1a] shadow-[0_0_0_4px_rgba(253,185,0,0.15),0_0_20px_rgba(253,185,0,0.08)]'
+                    : 'border-white/10 bg-[#1a1a1a] hover:border-white/20'
                 }`}
               >
                 <div
                   className={`pl-4 transition-colors duration-200 ${
-                    focusedField === 'password' ? 'text-blue-400' : 'text-white/30'
+                    focusedField === 'password' ? 'text-[#FDB900]' : 'text-white/30'
                   }`}
                 >
                   <Lock className="w-[18px] h-[18px]" />
@@ -627,7 +662,7 @@ export default function AdminLoginPage() {
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="pr-4 text-white/30 hover:text-blue-400 transition-colors duration-200"
+                  className="pr-4 text-white/30 hover:text-[#FDB900] transition-colors duration-200"
                   tabIndex={-1}
                   aria-label={showPassword ? 'Masquer le mot de passe' : 'Afficher le mot de passe'}
                 >
@@ -635,7 +670,7 @@ export default function AdminLoginPage() {
                 </button>
                 {focusedField === 'password' && (
                   <motion.div
-                    className="absolute right-10 top-1/2 -translate-y-1/2 w-1.5 h-1.5 rounded-full bg-blue-400"
+                    className="absolute right-10 top-1/2 -translate-y-1/2 w-1.5 h-1.5 rounded-full bg-[#FDB900]"
                     layoutId="focus-dot"
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
@@ -656,7 +691,7 @@ export default function AdminLoginPage() {
                   type="checkbox"
                   checked={rememberMe}
                   onChange={(e) => setRememberMe(e.target.checked)}
-                  className="w-4 h-4 rounded border-white/20 bg-white/5 text-blue-600 focus:ring-blue-500/30 focus:ring-offset-0 cursor-pointer accent-blue-600"
+                  className="w-4 h-4 rounded border-white/20 bg-white/5 text-[#FDB900] focus:ring-[#FDB900]/30 focus:ring-offset-0 cursor-pointer accent-[#FDB900]"
                 />
                 <span className="text-sm text-white/40 group-hover:text-white/60 transition-colors duration-200">
                   Se souvenir de moi
@@ -664,7 +699,7 @@ export default function AdminLoginPage() {
               </label>
               <Link
                 href="/forgot-password"
-                className="text-sm font-medium text-blue-400 hover:text-blue-300 transition-colors duration-200"
+                className="text-sm font-medium text-[#FDB900] hover:text-[#E3B23C] transition-colors duration-200"
               >
                 Mot de passe oublié ?
               </Link>
@@ -675,7 +710,7 @@ export default function AdminLoginPage() {
               <button
                 type="submit"
                 disabled={loading}
-                className="w-full text-white font-semibold py-3.5 px-4 rounded-xl transition-all duration-300 disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2.5 text-sm bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-500 hover:to-blue-600 active:scale-[0.98] shadow-lg shadow-blue-600/30 hover:shadow-xl hover:shadow-blue-600/40 relative overflow-hidden group"
+                className="w-full text-[#0d0d0f] font-semibold py-3.5 px-4 rounded-xl transition-all duration-300 disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2.5 text-sm bg-gradient-to-r from-[#FDB900] to-[#E3B23C] hover:from-[#FFDB58] hover:to-[#FDB900] active:scale-[0.98] shadow-lg shadow-[#FDB900]/30 hover:shadow-xl hover:shadow-[#FDB900]/40 relative overflow-hidden group"
               >
                 {/* Shimmer overlay */}
                 <div className="absolute inset-0 -translate-x-full group-hover:translate-x-full transition-transform duration-700 bg-gradient-to-r from-transparent via-white/10 to-transparent" />
@@ -696,15 +731,15 @@ export default function AdminLoginPage() {
 
           {/* Demo Account Card */}
           <motion.div
-            className="mt-6 p-4 rounded-xl bg-white/[0.04] border border-blue-500/15 backdrop-blur-sm"
+            className="mt-6 p-4 rounded-xl bg-white/[0.04] border border-[#FDB900]/15 backdrop-blur-sm"
             initial={{ opacity: 0, y: 16 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, delay: 0.75 }}
           >
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2.5">
-                <div className="w-9 h-9 rounded-lg bg-blue-600/20 border border-blue-500/20 flex items-center justify-center">
-                  <Fingerprint className="w-4 h-4 text-blue-400" />
+                <div className="w-9 h-9 rounded-lg bg-[#FDB900]/20 border border-[#FDB900]/20 flex items-center justify-center">
+                  <Fingerprint className="w-4 h-4 text-[#FDB900]" />
                 </div>
                 <div>
                   <p className="text-xs font-semibold text-white/70">Compte démo</p>
@@ -716,7 +751,7 @@ export default function AdminLoginPage() {
               <button
                 type="button"
                 onClick={fillDemo}
-                className="text-xs font-semibold px-4 py-2 rounded-lg bg-blue-600/20 text-blue-300 border border-blue-500/20 hover:bg-blue-600/30 hover:text-blue-200 hover:border-blue-500/40 transition-all duration-200 active:scale-95"
+                className="text-xs font-semibold px-4 py-2 rounded-lg bg-[#FDB900]/20 text-[#FDB900] border border-[#FDB900]/20 hover:bg-[#FDB900]/30 hover:text-[#FFDB58] hover:border-[#FDB900]/40 transition-all duration-200 active:scale-95"
               >
                 Remplir
               </button>
@@ -733,7 +768,7 @@ export default function AdminLoginPage() {
             Vous êtes une agence ?{' '}
             <Link
               href="/agence/connexion"
-              className="font-semibold text-blue-400 hover:text-blue-300 transition-colors duration-200"
+              className="font-semibold text-[#FDB900] hover:text-[#FFDB58] transition-colors duration-200"
             >
               Connexion Agence
             </Link>
@@ -746,20 +781,20 @@ export default function AdminLoginPage() {
             animate={{ opacity: 1 }}
             transition={{ duration: 0.5, delay: 0.95 }}
           >
-            <Link href="/cgu" className="hover:text-white/40 transition-colors duration-200">
+            <Link href="/cgu" className="hover:text-[#FDB900]/40 transition-colors duration-200">
               CGU
             </Link>
             <span className="text-white/10">•</span>
-            <Link href="/confidentialite" className="hover:text-white/40 transition-colors duration-200">
+            <Link href="/confidentialite" className="hover:text-[#FDB900]/40 transition-colors duration-200">
               Confidentialité
             </Link>
             <span className="text-white/10">•</span>
-            <Link href="/contact" className="hover:text-white/40 transition-colors duration-200">
+            <Link href="/contact" className="hover:text-[#FDB900]/40 transition-colors duration-200">
               Aide
             </Link>
           </motion.div>
 
-          {/* Security indicators at the very bottom */}
+          {/* Security indicators */}
           <motion.div
             className="mt-10 flex items-center justify-center gap-4 text-[10px] text-white/15 uppercase tracking-widest"
             initial={{ opacity: 0 }}

@@ -2,7 +2,8 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Search } from 'lucide-react';
+import { Search, MapPin, Sparkles } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { useTranslation } from '@/hooks/useTranslation';
 
 /**
@@ -12,12 +13,27 @@ import { useTranslation } from '@/hooks/useTranslation';
  */
 const REFERENCE_REGEX = /^(QRT|HAJJ|VOL)\d{2}-[A-Z0-9]{6}$/;
 
+// ─── Color tokens harmonisés avec la homepage ───
+const COLORS = {
+  bg: '#FFF8E7',
+  accent: '#FDB900',
+  accentDark: '#c89a00',
+  green: '#22C55E',
+  greenDark: '#16A34A',
+  text: '#0d0d0f',
+  textMuted: '#525252',
+  card: '#ffffff',
+  border: '#e5e5e5',
+  borderAccent: 'rgba(253, 185, 0, 0.3)',
+};
+
 export default function TrackingWidget() {
   const router = useRouter();
   const { t, dir } = useTranslation();
 
   const [inputValue, setInputValue] = useState<string>('');
   const [error, setError] = useState<string>('');
+  const [isFocused, setIsFocused] = useState(false);
 
   const inputId = 'tracking-reference-input';
   const errorId = 'tracking-reference-error';
@@ -25,25 +41,21 @@ export default function TrackingWidget() {
   const handleSubmit = (): void => {
     const trimmed = inputValue.trim();
 
-    // Empty check
     if (trimmed === '') {
       setError(t('home.tracking_empty'));
       return;
     }
 
-    // Validation regex
     if (!REFERENCE_REGEX.test(trimmed)) {
       setError(t('home.tracking_error'));
       return;
     }
 
-    // Navigate to tracking page
     router.push(`/suivi/${trimmed}`);
   };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>): void => {
     setInputValue(e.target.value.toUpperCase());
-    // Clear error on typing
     if (error) setError('');
   };
 
@@ -57,75 +69,127 @@ export default function TrackingWidget() {
   return (
     <section
       dir={dir}
-      className="w-full bg-blue-600 py-10 sm:py-14"
+      className="w-full py-10 sm:py-14"
+      style={{ background: COLORS.bg }}
     >
-      <div className="max-w-lg mx-auto px-4">
-        <div className="bg-blue-700 border border-blue-500/30 rounded-2xl p-6 sm:p-8 shadow-xl shadow-blue-900/20">
-          {/* Label */}
-          <label
-            htmlFor={inputId}
-            className="flex items-center gap-2 text-white font-bold text-lg sm:text-xl mb-5"
-          >
-            <Search className="w-5 h-5 text-blue-200" />
-            {t('home.tracking_label')}
-          </label>
+      <div className="max-w-xl mx-auto px-4">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5 }}
+          className="rounded-2xl p-6 sm:p-8 shadow-xl"
+          style={{
+            background: COLORS.card,
+            border: `2px solid ${COLORS.borderAccent}`,
+          }}
+        >
+          {/* Header */}
+          <div className="flex items-center gap-3 mb-2">
+            <div
+              className="w-10 h-10 rounded-full flex items-center justify-center"
+              style={{ background: COLORS.green, color: 'white' }}
+            >
+              <MapPin className="w-5 h-5" />
+            </div>
+            <label
+              htmlFor={inputId}
+              className="font-bold text-lg sm:text-xl"
+              style={{ color: COLORS.text }}
+            >
+              {t('home.tracking_label')}
+            </label>
+          </div>
+          <p className="text-sm mb-5" style={{ color: COLORS.textMuted }}>
+            Entrez votre référence QRTags (ex : QRT26-XXXXXX) pour localiser votre objet.
+          </p>
 
           {/* Input + Button */}
           <div className="flex flex-col sm:flex-row gap-3">
-            <input
-              id={inputId}
-              type="text"
-              value={inputValue}
-              onChange={handleInputChange}
-              onKeyDown={handleKeyDown}
-              placeholder={t('home.tracking_placeholder')}
-              aria-label={t('home.tracking_label')}
-              aria-describedby={error ? errorId : undefined}
-              aria-invalid={error !== ''}
-              autoComplete="off"
-              spellCheck={false}
-              maxLength={15}
-              className={`
-                flex-1 w-full sm:w-auto px-5 py-4 rounded-xl text-base font-mono tracking-wider
-                bg-white/10 border text-white placeholder:text-white/40
-                transition-all duration-200 outline-none
-                focus:ring-2 focus:ring-white/30
-                ${error
-                  ? 'border-red-300/60 focus:border-red-300'
-                  : 'border-white/15 focus:border-white/40'
-                }
-              `}
-            />
-            <button
+            <motion.div
+              animate={{
+                boxShadow: isFocused
+                  ? `0 0 0 3px ${COLORS.green}33`
+                  : '0 0 0 0px transparent',
+              }}
+              className="flex-1 w-full sm:w-auto rounded-xl"
+            >
+              <input
+                id={inputId}
+                type="text"
+                value={inputValue}
+                onChange={handleInputChange}
+                onKeyDown={handleKeyDown}
+                onFocus={() => setIsFocused(true)}
+                onBlur={() => setIsFocused(false)}
+                placeholder={t('home.tracking_placeholder')}
+                aria-label={t('home.tracking_label')}
+                aria-describedby={error ? errorId : undefined}
+                aria-invalid={error !== ''}
+                autoComplete="off"
+                spellCheck={false}
+                maxLength={15}
+                className={`
+                  w-full px-5 py-4 rounded-xl text-base font-mono tracking-wider
+                  transition-all duration-200 outline-none
+                  ${error
+                    ? `border-2 border-red-400 bg-red-50/30 text-red-700 placeholder:text-red-300`
+                    : `border-2 bg-white text-gray-900 placeholder:text-gray-400`
+                  }
+                  ${!error ? (isFocused ? `border-[${COLORS.green}]` : `border-[${COLORS.border}]`) : ''}
+                `}
+                style={{
+                  borderColor: error ? '#f87171' : (isFocused ? COLORS.green : COLORS.border),
+                }}
+              />
+            </motion.div>
+
+            <motion.button
               type="button"
               onClick={handleSubmit}
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
               className="
                 flex items-center justify-center gap-2 px-7 py-4 rounded-xl
-                bg-white hover:bg-blue-50 active:bg-blue-100
-                text-blue-700 font-bold text-base
-                shadow-lg shadow-blue-900/30 hover:shadow-blue-900/40
-                transition-all duration-200 hover:scale-[1.02] active:scale-[0.98]
-                min-h-[52px]
+                font-bold text-base min-h-[52px]
+                shadow-lg transition-all duration-200
               "
+              style={{
+                background: COLORS.green,
+                color: 'white',
+              }}
             >
               <Search className="w-4 h-4" />
               <span>{t('home.tracking_button')}</span>
-            </button>
+            </motion.button>
           </div>
 
           {/* Error message */}
-          {error !== '' && (
-            <p
-              id={errorId}
-              role="alert"
-              aria-live="polite"
-              className="text-red-200 text-sm mt-3 flex items-center gap-1.5 font-medium"
-            >
-              <span className="inline-block w-1.5 h-1.5 bg-red-300 rounded-full flex-shrink-0" />
-              {error}
-            </p>
-          )}
-        </div>
+          <AnimatePresence>
+            {error !== '' && (
+              <motion.p
+                id={errorId}
+                role="alert"
+                aria-live="polite"
+                initial={{ opacity: 0, y: -5 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -5 }}
+                transition={{ duration: 0.2 }}
+                className="text-red-500 text-sm mt-3 flex items-center gap-1.5 font-medium"
+              >
+                <span className="inline-block w-1.5 h-1.5 bg-red-400 rounded-full flex-shrink-0" />
+                {error}
+              </motion.p>
+            )}
+          </AnimatePresence>
+
+          {/* Helper hint */}
+          <div className="mt-4 flex items-center gap-2 text-xs" style={{ color: COLORS.textMuted }}>
+            <Sparkles className="w-3 h-3" style={{ color: COLORS.accent }} />
+            <span>
+              Format : QRT26-XXXXXX · HAJJ25-XXXXXX · VOL26-XXXXXX
+            </span>
+          </div>
+        </motion.div>
       </div>
     </section>
   );

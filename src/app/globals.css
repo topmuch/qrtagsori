@@ -766,3 +766,22 @@ body * {
   /* /suivi keeps blue bg + yellow cards — brand identity */
   /* Only admin area uses dark mode via .dark class */
 }
+
+/* ═══ Marquee scrolling animation ═══ */
+@keyframes marquee {
+  0% {
+    transform: translateX(0);
+  }
+  100% {
+    transform: translateX(-50%);
+  }
+}
+
+.animate-marquee {
+  animation: marquee 30s linear infinite;
+  will-change: transform;
+}
+
+.animate-marquee:hover {
+  animation-play-state: paused;
+}
