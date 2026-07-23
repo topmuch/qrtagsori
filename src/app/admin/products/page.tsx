@@ -1,10 +1,9 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
 import {
-  Plus,
   Edit3,
   Trash2,
   Save,
@@ -14,7 +13,8 @@ import {
   CheckCircle2,
   ToggleLeft,
   ToggleRight,
-  ArrowLeft,
+  Upload,
+  ImagePlus,
 } from 'lucide-react';
 
 // ════════════════════════════════════════════════════════════════
@@ -50,6 +50,7 @@ export default function AdminProductsPage() {
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [editingId, setEditingId] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Form state
   const [formName, setFormName] = useState('');
@@ -60,6 +61,7 @@ export default function AdminProductsPage() {
   const [formImage, setFormImage] = useState('');
   const [formSortOrder, setFormSortOrder] = useState('0');
   const [saving, setSaving] = useState(false);
+  const [uploading, setUploading] = useState(false);
   const [message, setMessage] = useState<{ text: string; type: 'success' | 'error' } | null>(null);
 
   // Load products
@@ -86,6 +88,38 @@ export default function AdminProductsPage() {
       .replace(/\s+/g, '-')
       .replace(/-+/g, '-')
       .trim();
+  };
+
+  // Upload image
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setUploading(true);
+    setMessage(null);
+
+    try {
+      const formData = new FormData();
+      formData.append('image', file);
+
+      const res = await fetch('/api/shop/admin/products/upload', {
+        method: 'POST',
+        body: formData,
+      });
+
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Erreur upload');
+
+      setFormImage(data.url);
+      setMessage({ text: 'Image uploadée !', type: 'success' });
+    } catch (err: unknown) {
+      const errorMsg = err instanceof Error ? err.message : 'Erreur upload';
+      setMessage({ text: errorMsg, type: 'error' });
+    } finally {
+      setUploading(false);
+      // Reset file input so same file can be re-selected
+      if (fileInputRef.current) fileInputRef.current.value = '';
+    }
   };
 
   // Save product (create or update)
@@ -123,7 +157,7 @@ export default function AdminProductsPage() {
         const data = await res.json();
         if (!res.ok) throw new Error(data.error || 'Erreur');
         setProducts([...products, data]);
-        setMessage({ text: 'Produit cree !', type: 'success' });
+        setMessage({ text: 'Produit cree ! Il apparaitra sur la page d\'accueil.', type: 'success' });
       }
       resetForm();
     } catch (err: unknown) {
@@ -316,29 +350,76 @@ export default function AdminProductsPage() {
           />
         </div>
 
-        <div className="grid md:grid-cols-2 gap-4 mb-4">
-          <div>
-            <label className="block text-sm font-bold mb-1" style={{ color: COLORS.black }}>Image URL</label>
-            <input
-              type="text"
-              value={formImage}
-              onChange={e => setFormImage(e.target.value)}
-              placeholder="/images/shop/pack-5.png"
-              className="w-full px-3 py-2 rounded-xl text-sm font-medium outline-none"
-              style={{ background: COLORS.inputBg, color: COLORS.black, border: `2px solid ${COLORS.inputBorder}` }}
-            />
+        {/* ─── IMAGE UPLOAD ─── */}
+        <div className="mb-4">
+          <label className="block text-sm font-bold mb-2" style={{ color: COLORS.black }}>
+            <ImagePlus className="w-4 h-4 inline mr-1" />
+            Image du produit
+          </label>
+          <div className="flex flex-col gap-3">
+            {/* Upload button */}
+            <div className="flex items-center gap-3">
+              <button
+                type="button"
+                onClick={() => fileInputRef.current?.click()}
+                disabled={uploading}
+                className="px-4 py-2 rounded-xl font-bold text-sm flex items-center gap-2 transition-all hover:scale-105 disabled:opacity-50"
+                style={{ background: COLORS.black, color: COLORS.mustard, border: `2px solid ${COLORS.mustard}` }}
+              >
+                {uploading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Upload className="w-4 h-4" />}
+                {uploading ? 'Upload en cours...' : 'Choisir une image'}
+              </button>
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/jpeg,image/png,image/webp,image/gif"
+                onChange={handleImageUpload}
+                className="hidden"
+              />
+              {/* Or manually enter URL */}
+              <span className="text-xs" style={{ color: COLORS.black, opacity: 0.6 }}>ou</span>
+              <input
+                type="text"
+                value={formImage}
+                onChange={e => setFormImage(e.target.value)}
+                placeholder="/images/shop/pack-5.png"
+                className="flex-1 px-3 py-2 rounded-xl text-sm font-medium outline-none"
+                style={{ background: COLORS.inputBg, color: COLORS.black, border: `2px solid ${COLORS.inputBorder}` }}
+              />
+            </div>
+
+            {/* Image preview */}
+            {formImage && (
+              <div className="relative inline-block">
+                <img
+                  src={formImage}
+                  alt="Preview"
+                  className="w-24 h-24 rounded-xl object-cover"
+                  style={{ border: `3px solid ${COLORS.black}` }}
+                />
+                <button
+                  onClick={() => setFormImage('')}
+                  className="absolute -top-2 -right-2 w-5 h-5 rounded-full flex items-center justify-center"
+                  style={{ background: COLORS.red, color: '#fff' }}
+                  title="Supprimer l'image"
+                >
+                  <X className="w-3 h-3" />
+                </button>
+              </div>
+            )}
           </div>
-          <div>
-            <label className="block text-sm font-bold mb-1" style={{ color: COLORS.black }}>Ordre</label>
-            <input
-              type="number"
-              value={formSortOrder}
-              onChange={e => setFormSortOrder(e.target.value)}
-              placeholder="0"
-              className="w-full px-3 py-2 rounded-xl text-sm font-medium outline-none"
-              style={{ background: COLORS.inputBg, color: COLORS.black, border: `2px solid ${COLORS.inputBorder}` }}
-            />
-          </div>
+        </div>
+
+        <div className="mb-4">
+          <label className="block text-sm font-bold mb-1" style={{ color: COLORS.black }}>Ordre d'affichage</label>
+          <input
+            type="number"
+            value={formSortOrder}
+            onChange={e => setFormSortOrder(e.target.value)}
+            placeholder="0"
+            className="w-full px-3 py-2 rounded-xl text-sm font-medium outline-none"
+            style={{ background: COLORS.inputBg, color: COLORS.black, border: `2px solid ${COLORS.inputBorder}` }}
+          />
         </div>
 
         <div className="flex gap-3">
@@ -388,13 +469,22 @@ export default function AdminProductsPage() {
               key={product.id}
               className="rounded-xl p-4 flex items-center gap-4 dark:bg-slate-800/70 bg-white border dark:border-slate-700 border-slate-200"
             >
-              {/* Quantite badge */}
-              <div
-                className="w-12 h-12 rounded-lg flex items-center justify-center flex-shrink-0"
-                style={{ background: product.active ? COLORS.mustard : '#555', color: COLORS.black }}
-              >
-                <span className="text-lg font-black">{product.quantity}</span>
-              </div>
+              {/* Product image or quantity badge */}
+              {product.image ? (
+                <img
+                  src={product.image}
+                  alt={product.name}
+                  className="w-12 h-12 rounded-lg object-cover flex-shrink-0"
+                  style={{ border: `2px solid ${product.active ? COLORS.mustard : '#555'}` }}
+                />
+              ) : (
+                <div
+                  className="w-12 h-12 rounded-lg flex items-center justify-center flex-shrink-0"
+                  style={{ background: product.active ? COLORS.mustard : '#555', color: COLORS.black }}
+                >
+                  <span className="text-lg font-black">{product.quantity}</span>
+                </div>
+              )}
 
               {/* Info */}
               <div className="flex-1 min-w-0">

@@ -197,12 +197,25 @@ const OBJECT_TYPES = [
   { image: '/images/home/passport-qr.png', name: 'Documents & passeports' },
 ];
 
-// ─── Packs Boutique — Stickers QRTags ───
-const SHOP_PACKS = [
-  { quantity: 3, name: 'Pack 3 Stickers', slug: 'pack-3-stickers', price: 1500, desc: '3 étiquettes QR indestructibles. Idéal pour tester.', badge: '' },
-  { quantity: 5, name: 'Pack 5 Stickers', slug: 'pack-5-stickers', price: 3000, desc: '5 étiquettes QR indestructibles. Le plus populaire.', badge: 'POPULAIRE' },
-  { quantity: 10, name: 'Pack 10 Stickers', slug: 'pack-10-stickers', price: 4000, desc: '10 étiquettes QR indestructibles. Pour usage fréquent.', badge: '' },
-  { quantity: 15, name: 'Pack 15 Stickers', slug: 'pack-15-stickers', price: 5500, desc: '15 étiquettes QR indestructibles. Le plus économique.', badge: 'ÉCONOMIQUE' },
+// ─── Packs Boutique — fetched dynamically from DB ───
+interface ShopProduct {
+  id: string;
+  name: string;
+  slug: string;
+  price: number;
+  quantity: number;
+  description: string | null;
+  image: string | null;
+  active: boolean;
+  sortOrder: number;
+}
+
+// Default fallback packs (used before API fetch completes)
+const SHOP_PACKS_FALLBACK = [
+  { quantity: 3, name: 'Pack 3 Stickers', slug: 'pack-3-stickers', price: 1500, desc: '3 étiquettes QR indestructibles. Idéal pour tester.', badge: '', image: null },
+  { quantity: 5, name: 'Pack 5 Stickers', slug: 'pack-5-stickers', price: 3000, desc: '5 étiquettes QR indestructibles. Le plus populaire.', badge: 'POPULAIRE', image: null },
+  { quantity: 10, name: 'Pack 10 Stickers', slug: 'pack-10-stickers', price: 4000, desc: '10 étiquettes QR indestructibles. Pour usage fréquent.', badge: '', image: null },
+  { quantity: 15, name: 'Pack 15 Stickers', slug: 'pack-15-stickers', price: 5500, desc: '15 étiquettes QR indestructibles. Le plus économique.', badge: 'ÉCONOMIQUE', image: null },
 ];
 
 // ─── Bande défilante — Produits protégés ───
@@ -226,6 +239,34 @@ export default function HomePage() {
   const [scrolled, setScrolled] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const [activeTab, setActiveTab] = useState<'finder' | 'owner'>('finder');
+  const [shopProducts, setShopProducts] = useState<ShopProduct[]>([]);
+
+  // Fetch active products from DB on mount
+  useEffect(() => {
+    fetch('/api/shop/products')
+      .then(res => res.json())
+      .then(data => {
+        if (Array.isArray(data) && data.length > 0) {
+          setShopProducts(data);
+        }
+      })
+      .catch(() => {
+        // Keep fallback if API fails
+      });
+  }, []);
+
+  // Use DB products if available, otherwise fallback
+  const displayPacks = shopProducts.length > 0
+    ? shopProducts.map(p => ({
+        quantity: p.quantity,
+        name: p.name,
+        slug: p.slug,
+        price: p.price,
+        desc: p.description || `${p.quantity} étiquettes QR indestructibles.`,
+        badge: p.quantity >= 10 ? 'ÉCONOMIQUE' : p.quantity === 5 ? 'POPULAIRE' : '',
+        image: p.image,
+      }))
+    : SHOP_PACKS_FALLBACK;
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 20);
@@ -772,7 +813,7 @@ export default function HomePage() {
           </div>
 
           <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
-            {SHOP_PACKS.map((pack, i) => (
+            {displayPacks.map((pack, i) => (
               <motion.div
                 key={pack.slug}
                 initial={{ opacity: 0, y: 20 }}
@@ -795,15 +836,24 @@ export default function HomePage() {
                   </div>
                 )}
 
-                {/* Nombre de stickers */}
-                <div
-                  className="w-16 h-16 rounded-xl flex items-center justify-center mb-4"
-                  style={{ background: '#000000' }}
-                >
-                  <span className="text-3xl font-black" style={{ color: '#E3B23C' }}>
-                    {pack.quantity}
-                  </span>
-                </div>
+                {/* Product image or quantity number */}
+                {pack.image ? (
+                  <img
+                    src={pack.image}
+                    alt={pack.name}
+                    className="w-16 h-16 rounded-xl object-cover mb-4"
+                    style={{ border: '3px solid #000000' }}
+                  />
+                ) : (
+                  <div
+                    className="w-16 h-16 rounded-xl flex items-center justify-center mb-4"
+                    style={{ background: '#000000' }}
+                  >
+                    <span className="text-3xl font-black" style={{ color: '#E3B23C' }}>
+                      {pack.quantity}
+                    </span>
+                  </div>
+                )}
 
                 <h3 className="text-lg font-black mb-2" style={{ color: '#000000' }}>
                   {pack.name}

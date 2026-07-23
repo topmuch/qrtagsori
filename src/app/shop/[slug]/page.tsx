@@ -192,15 +192,24 @@ export default function ShopProductPage() {
           style={{ background: COLORS.mustard, border: `4px solid ${COLORS.black}` }}
         >
           <div className="flex flex-col md:flex-row gap-6 items-center">
-            {/* Nombre de stickers en grand */}
-            <div
-              className="w-24 h-24 md:w-32 md:h-32 rounded-xl flex items-center justify-center flex-shrink-0"
-              style={{ background: COLORS.black }}
-            >
-              <span className="text-5xl md:text-6xl font-black" style={{ color: COLORS.mustard }}>
-                {product.quantity}
-              </span>
-            </div>
+            {/* Product image or quantity number */}
+            {product.image ? (
+              <img
+                src={product.image}
+                alt={product.name}
+                className="w-24 h-24 md:w-32 md:h-32 rounded-xl object-cover flex-shrink-0"
+                style={{ border: `4px solid ${COLORS.black}` }}
+              />
+            ) : (
+              <div
+                className="w-24 h-24 md:w-32 md:h-32 rounded-xl flex items-center justify-center flex-shrink-0"
+                style={{ background: COLORS.black }}
+              >
+                <span className="text-5xl md:text-6xl font-black" style={{ color: COLORS.mustard }}>
+                  {product.quantity}
+                </span>
+              </div>
+            )}
 
             <div className="flex-1">
               <h1 className="text-2xl md:text-3xl font-black mb-2" style={{ color: COLORS.black }}>
