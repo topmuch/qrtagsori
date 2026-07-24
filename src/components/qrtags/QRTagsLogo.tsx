@@ -25,6 +25,13 @@ import { useEffect, useState } from 'react';
 export type QRTagsLogoSize = 'xs' | 'sm' | 'md' | 'lg' | 'xl';
 export type QRTagsLogoVariant = 'auto' | 'light' | 'dark';
 
+// ─── Cache-buster ───
+// Incrémenter cette valeur à chaque changement de logo pour forcer la
+// mise à jour chez tous les visiteurs (sinon le navigateur sert l'ancienne
+// version en cache, même après modification de /public/logo.png).
+// Format : YYYYMMDD (date de mise à jour du logo).
+const LOGO_VERSION = '20260725';
+
 const SIZE_CLASSES: Record<QRTagsLogoSize, string> = {
   xs: 'h-6',
   sm: 'h-10',
@@ -76,7 +83,7 @@ export default function QRTagsLogo({
 
   const img = (
     <img
-      src="/logo.png"
+      src={`/logo.png?v=${LOGO_VERSION}`}
       alt={alt}
       className={classes}
       // Évite le layout shift

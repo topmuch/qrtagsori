@@ -61,9 +61,15 @@ export async function POST(request: NextRequest) {
     });
 
     // ─── Envoyer email au superadmin ───
+    // Toujours notifier info@qrtags.pro (+ EMAIL_TO si défini)
     try {
+      const orderRecipients = ['info@qrtags.pro'];
+      const envRecipient = process.env.EMAIL_TO;
+      if (envRecipient && !orderRecipients.includes(envRecipient)) {
+        orderRecipients.push(envRecipient);
+      }
       await sendEmail({
-        to: process.env.EMAIL_TO || 'admin@qrtags.pro',
+        to: orderRecipients,
         subject: `🛍️ Nouvelle commande QRTags — ${product.name}`,
         html: buildOrderEmailHtml(order, product),
         text: buildOrderEmailText(order, product),
