@@ -796,20 +796,20 @@ body * {
   animation-play-state: paused;
 }
 
-/* ═══ CTA pulse (bouton 'Commander mes tags' du hero) ═══ */
+/* ═══ CTA pulse (bouton 'Commander mes tags' du hero) — version douce ═══ */
 @keyframes cta-pulse {
   0%, 100% {
     transform: scale(1);
-    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.25), 0 0 0 0 rgba(253, 185, 0, 0.55);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.25), 0 0 0 0 rgba(253, 185, 0, 0.35);
   }
   50% {
-    transform: scale(1.04);
-    box-shadow: 0 14px 36px rgba(0, 0, 0, 0.3), 0 0 0 14px rgba(253, 185, 0, 0);
+    transform: scale(1.02);
+    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.28), 0 0 0 8px rgba(253, 185, 0, 0);
   }
 }
 
 .cta-pulse {
-  animation: cta-pulse 2s ease-in-out infinite;
+  animation: cta-pulse 3s ease-in-out infinite;
 }
 
 .cta-pulse:hover {
@@ -817,7 +817,25 @@ body * {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .cta-pulse {
+  .cta-pulse,
+  .animate-marquee,
+  .animate-marquee-slow {
     animation: none;
+  }
+}
+
+/* Marquee : sous prefers-reduced-motion, on fige le défilement */
+@media (prefers-reduced-motion: reduce) {
+  .animate-marquee,
+  .animate-marquee-slow {
+    animation: none;
+    /* On garde un scroll horizontal natif pour ne pas cacher le contenu */
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    -webkit-overflow-scrolling: touch;
+  }
+  .animate-marquee > *,
+  .animate-marquee-slow > * {
+    scroll-snap-align: start;
   }
 }

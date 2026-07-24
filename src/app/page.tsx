@@ -6,24 +6,15 @@ import dynamic from 'next/dynamic';
 import Image from 'next/image';
 import { motion } from 'framer-motion';
 import {
-  QrCode,
-  Smartphone,
-  MapPin,
-  MessageCircle,
   Menu,
   X,
   Shield,
   Search,
-  Heart,
+  MessageCircle,
   HandHelping,
   ArrowRight,
   CheckCircle2,
   Sparkles,
-  Eye,
-  Bell,
-  Globe,
-  Zap,
-  Package,
   Users,
   ShoppingBag,
 } from 'lucide-react';
@@ -128,7 +119,7 @@ const OWNER_STEPS = [
 const STATS = [
   { value: '98%', label: 'Objets retrouvés' },
   { value: '< 2h', label: 'Délai moyen retour' },
-  { value: '0 app', label: 'Aucune app requise' },
+  { value: 'Sans app', label: 'Aucune installation' },
   { value: '3 langues', label: 'FR · EN · AR' },
 ];
 
@@ -154,15 +145,6 @@ const TESTIMONIALS = [
     avatar: 'TL',
     type: 'owner',
   },
-];
-
-const OBJECT_TYPES = [
-  { image: '/images/home/suitcase-qr.png', name: 'Valises & bagages' },
-  { image: '/images/home/phone-tablet-qr.png', name: 'Téléphones & tablettes' },
-  { image: '/images/home/keys-qr.png', name: 'Clés & portefeuilles' },
-  { image: '/images/home/glasses-qr.png', name: 'Lunettes & accessoires' },
-  { image: '/images/home/jacket-qr.png', name: 'Vestes & sacs' },
-  { image: '/images/home/passport-qr.png', name: 'Documents & passeports' },
 ];
 
 // ─── Packs Boutique — fetched dynamically from DB ───
@@ -346,8 +328,7 @@ export default function HomePage() {
 
             <div className="hidden md:flex items-center gap-1">
               <a href="#comment" className="px-4 py-2 text-sm font-medium hover:text-[#c89a00] transition-colors">Comment ça marche</a>
-              <a href="#features" className="px-4 py-2 text-sm font-medium hover:text-[#c89a00] transition-colors">Avantages</a>
-              <a href="#objets" className="px-4 py-2 text-sm font-medium hover:text-[#c89a00] transition-colors">Objets protégés</a>
+              <a href="#contact-whatsapp" className="px-4 py-2 text-sm font-medium hover:text-[#c89a00] transition-colors">Comment suis-je contacté ?</a>
               <a href="#tarifs" className="px-4 py-2 text-sm font-medium hover:text-[#c89a00] transition-colors">Tarifs</a>
               <a href="#temoignages" className="px-4 py-2 text-sm font-medium hover:text-[#c89a00] transition-colors">Témoignages</a>
             </div>
@@ -360,7 +341,7 @@ export default function HomePage() {
                 Suivre un objet
               </a>
               <Link
-                href="/#tarifs"
+                href="#tarifs"
                 className="px-5 py-2.5 rounded-lg text-sm font-bold transition-all hover:scale-105"
                 style={{ background: COLORS.accent, color: COLORS.text }}
               >
@@ -376,12 +357,11 @@ export default function HomePage() {
           {menuOpen && (
             <div className="md:hidden pb-4 space-y-2">
               <a href="#comment" onClick={() => setMenuOpen(false)} className="block px-4 py-2 text-sm">Comment ça marche</a>
-              <a href="#features" onClick={() => setMenuOpen(false)} className="block px-4 py-2 text-sm">Avantages</a>
-              <a href="#objets" onClick={() => setMenuOpen(false)} className="block px-4 py-2 text-sm">Objets protégés</a>
+              <a href="#contact-whatsapp" onClick={() => setMenuOpen(false)} className="block px-4 py-2 text-sm">Comment suis-je contacté ?</a>
               <a href="#tarifs" onClick={() => setMenuOpen(false)} className="block px-4 py-2 text-sm">Tarifs</a>
               <a href="#temoignages" onClick={() => setMenuOpen(false)} className="block px-4 py-2 text-sm">Témoignages</a>
-              <a href="#tracker" onClick={() => setMenuOpen(false)} className="block px-4 py-2 text-sm text-[#c89a00]">Suivre un objet →</a>
-              <Link href="/#tarifs" className="block px-4 py-3 text-sm font-bold text-center rounded-lg" style={{ background: COLORS.accent, color: COLORS.text }}>
+              <a href="#tracker" onClick={() => setMenuOpen(false)} className="block px-4 py-2 text-sm text-[#c89a00]">Suivre un objet</a>
+              <Link href="#tarifs" onClick={() => setMenuOpen(false)} className="block px-4 py-3 text-sm font-bold text-center rounded-lg" style={{ background: COLORS.accent, color: COLORS.text }}>
                 Protéger mes objets
               </Link>
             </div>
@@ -390,7 +370,7 @@ export default function HomePage() {
       </nav>
 
       {/* ═══ HERO — Carrousel défilant EN HAUT + infos en dessous ═══ */}
-      <section className="pt-24 pb-20 lg:pt-28 lg:pb-32 relative overflow-hidden">
+      <section id="objets" className="pt-24 pb-20 lg:pt-28 lg:pb-32 relative overflow-hidden">
         <div
           className="absolute inset-0 opacity-50"
           style={{
@@ -466,14 +446,11 @@ export default function HomePage() {
                       QR Tag
                     </div>
                   </div>
-                  {/* Texte (bas) */}
+                  {/* Texte (bas) — sobre : juste le nom, pas de description répétitive */}
                   <div className="p-5">
-                    <h3 className="text-lg font-bold mb-1.5" style={{ color: COLORS.text }}>
+                    <h3 className="text-lg font-bold" style={{ color: COLORS.text }}>
                       {item.name}
                     </h3>
-                    <p className="text-sm leading-relaxed" style={{ color: COLORS.textMuted }}>
-                      Collez un tag QR, et si cet objet est perdu, toute personne qui le trouve peut vous contacter en 1 clic.
-                    </p>
                   </div>
                 </div>
               ))}
@@ -549,7 +526,7 @@ export default function HomePage() {
                 Suivre un objet perdu
               </a>
               <Link
-                href="/#tarifs"
+                href="#tarifs"
                 className="px-6 py-4 rounded-xl font-bold text-base flex items-center justify-center gap-2 border-2 transition-all hover:bg-[#fffdf5]"
                 style={{ borderColor: COLORS.accent, color: COLORS.text }}
               >
@@ -736,64 +713,248 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* ═══ OBJETS PROTÉGÉS — with real images ═══ */}
-      <section id="objets" className="py-20 lg:py-28 px-5" style={{ background: COLORS.bgAlt }}>
+      {/* ═══ COMMENT SUIS-JE CONTACTÉ ? — Mockup WhatsApp réaliste ═══ */}
+      <section id="contact-whatsapp" className="py-20 lg:py-28 px-5" style={{ background: COLORS.bgAlt }}>
         <div className="max-w-screen-2xl mx-auto">
-          <div className="text-center mb-14">
-            <div
-              className="inline-block px-4 py-1.5 rounded-full text-sm font-bold mb-4"
-              style={{ background: COLORS.bgWarm, color: COLORS.accentDark, border: `1px solid ${COLORS.borderAccent}` }}
+          <div className="grid lg:grid-cols-2 gap-12 lg:gap-16 items-center">
+            {/* ─── Left : Explications ─── */}
+            <motion.div
+              initial={{ opacity: 0, x: -30 }}
+              whileInView={{ opacity: 1, x: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.6 }}
             >
-              OBJETS DU QUOTIDIEN
-            </div>
-            <h2 className="text-3xl md:text-5xl font-black mb-4" style={{ color: COLORS.text }}>
-              Quels objets pouvez-vous <span style={{ color: COLORS.accentDark }}>protéger</span> ?
-            </h2>
-            <p className="text-lg max-w-2xl mx-auto" style={{ color: COLORS.textMuted }}>
-              Tout ce que vous emmenez avec vous et que vous ne voulez pas perdre.
-              Un QR tag, et votre objet est traçable par n&apos;importe qui.
-            </p>
-          </div>
+              <div
+                className="inline-flex items-center gap-2 px-4 py-2 rounded-full mb-6"
+                style={{ background: '#25D36622', border: '1px solid #25D36655' }}
+              >
+                <MessageCircle className="w-4 h-4" style={{ color: '#25D366' }} />
+                <span className="text-sm font-bold" style={{ color: '#128C7E' }}>
+                  Alerte WhatsApp instantanée
+                </span>
+              </div>
 
-          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
-            {OBJECT_TYPES.map((obj, i) => (
+              <h2 className="text-3xl md:text-4xl lg:text-5xl font-black mb-6 leading-tight" style={{ color: COLORS.text }}>
+                Comment <span style={{ color: '#128C7E' }}>suis-je contacté</span> quand on trouve mon objet&nbsp;?
+              </h2>
+
+              <p className="text-lg mb-6" style={{ color: COLORS.textMuted }}>
+                Dès qu&apos;un trouveur scanne votre QR tag, vous recevez un WhatsApp avec sa position GPS exacte.
+                Pas de spam, pas d&apos;appel inconnu — juste un message clair, et vous décidez de la suite.
+              </p>
+
+              <ul className="space-y-3 mb-8">
+                {[
+                  { icon: '📍', text: 'Position GPS du trouveur envoyée automatiquement' },
+                  { icon: '💬', text: 'Message pré-rempli : référence, objet, heure du scan' },
+                  { icon: '🔒', text: 'Votre numéro reste invisible — le trouveur passe par QRTags' },
+                  { icon: '⚡', text: 'Notification en moins de 5 secondes après le scan' },
+                ].map((item, i) => (
+                  <li key={i} className="flex items-start gap-3">
+                    <span className="text-xl flex-shrink-0" aria-hidden="true">{item.icon}</span>
+                    <span className="text-base" style={{ color: COLORS.text }}>{item.text}</span>
+                  </li>
+                ))}
+              </ul>
+
+              <Link
+                href="#tarifs"
+                className="inline-flex items-center gap-2 px-6 py-3 rounded-xl font-bold transition-all hover:scale-105"
+                style={{ background: '#25D366', color: 'white' }}
+              >
+                <MessageCircle className="w-5 h-5" />
+                Recevoir mes alertes WhatsApp
+                <ArrowRight className="w-4 h-4" />
+              </Link>
+            </motion.div>
+
+            {/* ─── Right : Mockup WhatsApp réaliste ─── */}
+            <motion.div
+              initial={{ opacity: 0, scale: 0.9, rotate: 2 }}
+              whileInView={{ opacity: 1, scale: 1, rotate: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.7, delay: 0.2 }}
+              className="relative mx-auto"
+              style={{ maxWidth: '380px' }}
+            >
+              {/* Cadre téléphone */}
+              <div
+                className="rounded-[2.5rem] p-2.5 shadow-2xl"
+                style={{ background: '#1a1a1a', border: '8px solid #0a0a0a' }}
+              >
+                {/* Encoche */}
+                <div className="relative mx-auto mb-1" style={{ width: '120px', height: '22px', background: '#0a0a0a', borderRadius: '0 0 14px 14px' }} />
+
+                {/* Écran WhatsApp */}
+                <div
+                  className="rounded-[2rem] overflow-hidden"
+                  style={{ background: '#ECE5DD', height: '600px' }}
+                >
+                  {/* ─── Header vert WhatsApp ─── */}
+                  <div
+                    className="px-4 py-3 flex items-center gap-3"
+                    style={{ background: '#075E54', color: 'white' }}
+                  >
+                    {/* Avatar */}
+                    <div
+                      className="rounded-full flex items-center justify-center font-bold text-sm"
+                      style={{ width: '38px', height: '38px', background: '#FDB900', color: '#0d0d0f' }}
+                    >
+                      Q
+                    </div>
+                    <div className="flex-1">
+                      <div className="text-sm font-bold">Alerte QRTags</div>
+                      <div className="text-xs opacity-80">en ligne · vérifié</div>
+                    </div>
+                    <svg viewBox="0 0 24 24" fill="white" className="w-5 h-5 opacity-90" aria-hidden="true">
+                      <path d="M20 15.5c-1.25 0-2.45-.2-3.57-.57a1 1 0 0 0-1.02.24l-2.2 2.2a15.05 15.05 0 0 1-6.59-6.58l2.2-2.21a1 1 0 0 0 .25-1.02A11.36 11.36 0 0 1 8.5 4a1 1 0 0 0-1-1H4a1 1 0 0 0-1 1c0 9.39 7.61 17 17 17a1 1 0 0 0 1-1v-3.5a1 1 0 0 0-1-1z"/>
+                    </svg>
+                  </div>
+
+                  {/* ─── Zone de chat ─── */}
+                  <div className="px-3 py-4 space-y-2.5" style={{ height: 'calc(100% - 64px)', backgroundImage: 'url(\'data:image/svg+xml;utf8,<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"40\" height=\"40\"><circle cx=\"20\" cy=\"20\" r=\"1\" fill=\"%23d4cab1\" opacity=\"0.3\"/></svg>\')' }}>
+                    {/* Date separator */}
+                    <div className="flex justify-center">
+                      <span
+                        className="px-3 py-1 rounded-lg text-xs font-bold"
+                        style={{ background: '#E1F2FA', color: '#54656F' }}
+                      >Aujourd&rsquo;hui</span>
+                    </div>
+
+                    {/* Message entrant 1 — texte */}
+                    <div className="flex justify-start">
+                      <div
+                        className="rounded-xl rounded-tl-sm px-3 py-2 max-w-[80%] shadow-sm"
+                        style={{ background: 'white' }}
+                      >
+                        <p className="text-sm mb-1" style={{ color: '#111' }}>
+                          <strong>🔔 Objet trouvé !</strong>
+                        </p>
+                        <p className="text-sm mb-1" style={{ color: '#111' }}>
+                          Bonjour Amira 👋
+                        </p>
+                        <p className="text-sm" style={{ color: '#111' }}>
+                          Quelqu&rsquo;un vient de scanner votre valise <strong>Réf. QRT26-MLQGY7</strong>.
+                        </p>
+                        <div className="flex items-center justify-end gap-1 mt-1">
+                          <span className="text-[10px]" style={{ color: '#667781' }}>10:42</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Message entrant 2 — localisation */}
+                    <div className="flex justify-start">
+                      <div
+                        className="rounded-xl rounded-tl-sm overflow-hidden max-w-[80%] shadow-sm"
+                        style={{ background: 'white' }}
+                      >
+                        {/* Preview carte (gradient simulé) */}
+                        <div
+                          className="relative flex items-center justify-center"
+                          style={{
+                            height: '120px',
+                            background: 'linear-gradient(135deg, #c8e6c9 0%, #a5d6a7 35%, #81c784 70%, #66bb6a 100%)',
+                          }}
+                        >
+                          {/* Routes simulées */}
+                          <svg viewBox="0 0 200 120" className="absolute inset-0 w-full h-full" preserveAspectRatio="none" aria-hidden="true">
+                            <path d="M0,80 Q50,60 100,75 T200,70" stroke="white" strokeWidth="3" fill="none" opacity="0.7"/>
+                            <path d="M50,0 L60,120" stroke="white" strokeWidth="2" fill="none" opacity="0.5"/>
+                            <path d="M0,30 L200,45" stroke="white" strokeWidth="2" fill="none" opacity="0.5"/>
+                          </svg>
+                          {/* Pin centrale */}
+                          <div className="relative z-10 flex flex-col items-center">
+                            <svg viewBox="0 0 24 24" className="w-8 h-8" fill="#ea4335" aria-hidden="true">
+                              <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5a2.5 2.5 0 1 1 0-5 2.5 2.5 0 0 1 0 5z"/>
+                            </svg>
+                            <span className="mt-1 px-2 py-0.5 rounded text-[10px] font-bold" style={{ background: 'white', color: '#111' }}>
+                              Position GPS
+                            </span>
+                          </div>
+                        </div>
+                        <div className="px-3 py-2">
+                          <p className="text-sm font-bold" style={{ color: '#111' }}>📍 Gare Saint-Charles, Marseille</p>
+                          <p className="text-xs" style={{ color: '#667781' }}>Précision : 8 mètres · il y a 2 min</p>
+                          <div className="flex items-center justify-end gap-1 mt-1">
+                            <span className="text-[10px]" style={{ color: '#667781' }}>10:42</span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Message entrant 3 — message du trouveur */}
+                    <div className="flex justify-start">
+                      <div
+                        className="rounded-xl rounded-tl-sm px-3 py-2 max-w-[80%] shadow-sm"
+                        style={{ background: 'white' }}
+                      >
+                        <p className="text-sm" style={{ color: '#111' }}>
+                          « Bonjour, j&rsquo;ai trouvé votre valise à la sortie de la gare. Je peux vous la rendre tout de suite. — Lucas »
+                        </p>
+                        <div className="flex items-center justify-end gap-1 mt-1">
+                          <span className="text-[10px]" style={{ color: '#667781' }}>10:43</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Message sortant — votre réponse */}
+                    <div className="flex justify-end">
+                      <div
+                        className="rounded-xl rounded-tr-sm px-3 py-2 max-w-[80%] shadow-sm"
+                        style={{ background: '#DCF8C6' }}
+                      >
+                        <p className="text-sm" style={{ color: '#111' }}>
+                          Merci Lucas !! J&rsquo;arrive dans 15 minutes 🙏
+                        </p>
+                        <div className="flex items-center justify-end gap-1 mt-1">
+                          <span className="text-[10px]" style={{ color: '#667781' }}>10:44</span>
+                          {/* Double check bleu */}
+                          <svg viewBox="0 0 16 11" className="w-4 h-3" fill="#53bdeb" aria-hidden="true">
+                            <path d="M11.07 0.65l-0.36 0.36 3.46 3.46-3.5 3.5 0.36 0.36 3.86-3.86zM7.07 0.65l-0.36 0.36 3.46 3.46-3.5 3.5 0.36 0.36 3.86-3.86z"/>
+                          </svg>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Badge flottant — Stats */}
               <motion.div
-                key={i}
                 initial={{ opacity: 0, y: 20 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
-                transition={{ delay: i * 0.05 }}
-                className="rounded-2xl overflow-hidden transition-all hover:scale-105 hover:shadow-xl"
-                style={{ background: COLORS.card, border: `1px solid ${COLORS.border}` }}
+                transition={{ delay: 0.6 }}
+                className="absolute -top-4 -right-4 lg:-right-6 rounded-2xl px-4 py-3 shadow-xl"
+                style={{ background: 'white', border: '2px solid #25D366' }}
               >
-                <div className="relative aspect-square overflow-hidden">
-                  <Image
-                    src={obj.image}
-                    alt={obj.name}
-                    fill
-                    className="object-cover"
-                    sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
-                  />
-                </div>
-                <div className="p-5">
-                  <h3 className="text-lg font-bold mb-1" style={{ color: COLORS.text }}>{obj.name}</h3>
-                  <p className="text-sm" style={{ color: COLORS.textMuted }}>
-                    Collez un tag QR, et si cet objet est perdu, toute personne qui le trouve peut vous contacter en 1 clic.
-                  </p>
+                <div className="flex items-center gap-2">
+                  <div
+                    className="rounded-full flex items-center justify-center"
+                    style={{ width: '32px', height: '32px', background: '#25D366', color: 'white' }}
+                  >
+                    <CheckCircle2 className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <div className="text-xs font-bold" style={{ color: COLORS.text }}>98% rendus</div>
+                    <div className="text-[10px]" style={{ color: COLORS.textMuted }}>en moins de 2h</div>
+                  </div>
                 </div>
               </motion.div>
-            ))}
-          </div>
 
-          <div className="text-center mt-12">
-            <Link
-              href="/#tarifs"
-              className="inline-flex items-center gap-2 px-6 py-4 rounded-xl font-bold transition-all hover:scale-105"
-              style={{ background: COLORS.accent, color: COLORS.text }}
-            >
-              Protéger mes objets maintenant
-              <ArrowRight className="w-5 h-5" />
-            </Link>
+              {/* Badge flottant — Temps réel */}
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ delay: 0.8 }}
+                className="absolute -bottom-4 -left-4 lg:-left-6 rounded-2xl px-4 py-3 shadow-xl flex items-center gap-2"
+                style={{ background: '#FDB900', color: COLORS.text }}
+              >
+                <div className="w-2 h-2 rounded-full animate-pulse" style={{ background: COLORS.greenDark }} />
+                <span className="text-xs font-bold">Temps réel</span>
+              </motion.div>
+            </motion.div>
           </div>
         </div>
       </section>
@@ -1003,36 +1164,34 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* ═══ CTA FINAL ═══ */}
-      <section className="py-20 lg:py-28 px-5" style={{ background: COLORS.bgAlt }}>
-        <div className="max-w-4xl mx-auto text-center">
+      {/* ═══ CTA FINAL — sobre, sans dupliquer le hero ═══ */}
+      <section className="py-14 lg:py-16 px-5" style={{ background: COLORS.bgAlt }}>
+        <div className="max-w-3xl mx-auto text-center">
           <motion.div
             initial={{ opacity: 0, scale: 0.95 }}
             whileInView={{ opacity: 1, scale: 1 }}
             viewport={{ once: true }}
-            className="rounded-3xl p-12 shadow-2xl"
+            className="rounded-2xl p-8 shadow-lg"
             style={{ background: `linear-gradient(145deg, ${COLORS.green}, ${COLORS.greenDark})`, color: 'white' }}
           >
-            <HandHelping className="w-12 h-12 mb-6 mx-auto" />
-            <h2 className="text-3xl md:text-5xl font-black mb-4">
+            <h2 className="text-2xl md:text-3xl font-black mb-3">
               Chaque objet perdu peut être retrouvé
             </h2>
-            <p className="text-lg md:text-xl mb-8 opacity-90">
-              Protégez vos affaires avec un QR tag. Et si vous trouvez un objet étiqueté,
-              rendez-le en 1 clic. Solidarité citoyenne, technologie simple.
+            <p className="text-base md:text-lg mb-6 opacity-90">
+              Un geste citoyen, une technologie simple. Protégez vos affaires, rendez ce que vous trouvez.
             </p>
-            <div className="flex flex-col sm:flex-row gap-4 justify-center">
+            <div className="flex flex-col sm:flex-row gap-3 justify-center">
               <Link
-                href="/#tarifs"
-                className="px-8 py-4 rounded-xl font-black text-base inline-flex items-center justify-center gap-2 transition-all hover:scale-105"
+                href="#tarifs"
+                className="px-6 py-3 rounded-xl font-black text-base inline-flex items-center justify-center gap-2 transition-all hover:scale-105"
                 style={{ background: COLORS.accent, color: COLORS.text }}
               >
-                Protéger mes objets
+                Commander mes tags
                 <ArrowRight className="w-5 h-5" />
               </Link>
               <a
                 href="#tracker"
-                className="px-8 py-4 rounded-xl font-bold text-base inline-flex items-center justify-center gap-2 border-2 transition-all hover:bg-white/10"
+                className="px-6 py-3 rounded-xl font-bold text-base inline-flex items-center justify-center gap-2 border-2 transition-all hover:bg-white/10"
                 style={{ borderColor: 'white', color: 'white' }}
               >
                 <Search className="w-5 h-5" />
@@ -1073,9 +1232,10 @@ export default function HomePage() {
               <h4 className="font-bold mb-3 text-sm" style={{ color: COLORS.accentDark }}>Pour particuliers</h4>
               <ul className="space-y-2 text-sm">
                 <li><a href="#comment" style={{ color: COLORS.textMuted }}>Comment ça marche</a></li>
+                <li><a href="#contact-whatsapp" style={{ color: COLORS.textMuted }}>Comment suis-je contacté ?</a></li>
                 <li><a href="#tracker" style={{ color: COLORS.textMuted }}>Suivre un objet</a></li>
                 <li><a href="#tarifs" style={{ color: COLORS.textMuted }}>Tarifs</a></li>
-                <li><Link href="/#tarifs" style={{ color: COLORS.textMuted }}>Protéger mes objets</Link></li>
+                <li><Link href="#tarifs" style={{ color: COLORS.textMuted }}>Protéger mes objets</Link></li>
                 <li><Link href="/scan" style={{ color: COLORS.textMuted }}>Scanner un QR</Link></li>
               </ul>
             </div>
