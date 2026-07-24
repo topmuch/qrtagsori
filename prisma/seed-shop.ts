@@ -9,6 +9,9 @@ const prisma = new PrismaClient();
 async function main() {
   console.log('🛍️ Seeding QRTags Boutique products...');
 
+  // Image paths persisted in DB so they survive future schema changes / new packs.
+  // Each image shows the QRTAG sachet with the correct number of QR codes visible
+  // (3, 5, 10, 15) — see /public/images/shop/pack-{n}-stickers.png
   const products = [
     {
       name: 'Pack 3 Stickers',
@@ -17,6 +20,7 @@ async function main() {
       quantity: 3,
       description: '3 étiquettes QR indestructibles. Idéal pour tester.',
       sortOrder: 1,
+      image: '/images/shop/pack-3-stickers.png',
     },
     {
       name: 'Pack 5 Stickers',
@@ -25,6 +29,7 @@ async function main() {
       quantity: 5,
       description: '5 étiquettes QR indestructibles. Le plus populaire.',
       sortOrder: 2,
+      image: '/images/shop/pack-5-stickers.png',
     },
     {
       name: 'Pack 10 Stickers',
@@ -33,6 +38,7 @@ async function main() {
       quantity: 10,
       description: '10 étiquettes QR indestructibles. Pour usage fréquent.',
       sortOrder: 3,
+      image: '/images/shop/pack-10-stickers.png',
     },
     {
       name: 'Pack 15 Stickers',
@@ -41,6 +47,7 @@ async function main() {
       quantity: 15,
       description: '15 étiquettes QR indestructibles. Le plus économique.',
       sortOrder: 4,
+      image: '/images/shop/pack-15-stickers.png',
     },
   ];
 
@@ -53,11 +60,12 @@ async function main() {
         quantity: product.quantity,
         description: product.description,
         sortOrder: product.sortOrder,
+        image: product.image, // <-- persisted in DB
         active: true,
       },
       create: product,
     });
-    console.log(`  ✅ ${result.name} — ${result.price} FCFA (${result.quantity} stickers)`);
+    console.log(`  ✅ ${result.name} — ${result.price} FCFA (${result.quantity} stickers) — image: ${result.image}`);
   }
 
   console.log('');
