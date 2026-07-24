@@ -35,7 +35,7 @@ interface BlogTeaserSectionProps {
   limit?: number;
   /** Endpoint à fetcher (par défaut /api/blog/public) */
   endpoint?: string;
-  /** Préfixe des liens vers les articles (par défaut /agence/blog/) */
+  /** Préfixe des liens vers les articles (par défaut /blog/) */
   linkPrefix?: string;
   /** Titre de la section */
   title?: string;
@@ -59,7 +59,7 @@ interface BlogTeaserSectionProps {
 export default function BlogTeaserSection({
   limit = 3,
   endpoint = '/api/blog/public',
-  linkPrefix = '/agence/blog/',
+  linkPrefix = '/blog/',
   title = 'Dernières actualités',
   subtitle = 'Conseils, actualités et bonnes pratiques pour protéger vos objets du quotidien.',
   colors,

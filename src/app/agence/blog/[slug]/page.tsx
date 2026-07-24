@@ -64,7 +64,9 @@ export default function BlogPostPage() {
     setLoading(true);
     setError(null);
     try {
-      const response = await fetch(`/api/blog/${slug}`);
+      // Public endpoint — no auth required, so anonymous visitors can read
+      // published articles without being redirected to /login.
+      const response = await fetch(`/api/blog/public/${slug}`);
       const data = await response.json();
 
       if (response.ok && data.post) {
