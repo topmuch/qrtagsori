@@ -49,6 +49,11 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { url: `${baseUrl}/etapes/recevez-votre-qr`, lastModified: now, changeFrequency: 'monthly', priority: 0.6 },
     { url: `${baseUrl}/etapes/soyez-notifie`, lastModified: now, changeFrequency: 'monthly', priority: 0.6 },
     { url: `${baseUrl}/etapes/voyagez-serein`, lastModified: now, changeFrequency: 'monthly', priority: 0.6 },
+    // Pages étapes — parcours trouveur (4 pages détaillées)
+    { url: `${baseUrl}/etapes/trouveur/vous-trouvez-un-objet`, lastModified: now, changeFrequency: 'monthly', priority: 0.7 },
+    { url: `${baseUrl}/etapes/trouveur/scannez-le-qr-code`, lastModified: now, changeFrequency: 'monthly', priority: 0.7 },
+    { url: `${baseUrl}/etapes/trouveur/contactez-le-proprietaire`, lastModified: now, changeFrequency: 'monthly', priority: 0.7 },
+    { url: `${baseUrl}/etapes/trouveur/objet-est-rendu`, lastModified: now, changeFrequency: 'monthly', priority: 0.7 },
     // Pages métiers
     { url: `${baseUrl}/metiers/hotels`, lastModified: now, changeFrequency: 'monthly', priority: 0.6 },
     { url: `${baseUrl}/metiers/ecoles`, lastModified: now, changeFrequency: 'monthly', priority: 0.6 },

@@ -61,6 +61,7 @@ const FINDER_STEPS = [
     title: 'Vous trouvez un objet',
     desc: 'Dans la rue, à l\'aéroport, dans un taxi, au café... Vous voyez un QR tag QRTags sur l\'objet perdu.',
     color: COLORS.accent,
+    href: '/etapes/trouveur/vous-trouvez-un-objet',
   },
   {
     num: '02',
@@ -68,6 +69,7 @@ const FINDER_STEPS = [
     title: 'Scannez le QR code',
     desc: 'Un simple scan avec votre téléphone — aucune app à installer, pas besoin de batterie ou de GPS sur l\'objet.',
     color: COLORS.accentAlt,
+    href: '/etapes/trouveur/scannez-le-qr-code',
   },
   {
     num: '03',
@@ -75,6 +77,7 @@ const FINDER_STEPS = [
     title: 'Contactez le propriétaire',
     desc: 'La page WAME s\'ouvre automatiquement avec votre position GPS. Un message WhatsApp pré-rempli est envoyé au propriétaire.',
     color: COLORS.green,
+    href: '/etapes/trouveur/contactez-le-proprietaire',
   },
   {
     num: '04',
@@ -82,6 +85,7 @@ const FINDER_STEPS = [
     title: 'L\'objet est rendu',
     desc: 'Le propriétaire sait exactement où vous êtes. Vous rendez l\'objet en 2h en moyenne. Un geste simple qui change une vie.',
     color: COLORS.greenDark,
+    href: '/etapes/trouveur/objet-est-rendu',
   },
 ];
 
@@ -92,6 +96,7 @@ const OWNER_STEPS = [
     title: 'Collez un QR tag',
     desc: 'Commandez vos tags QRTags et collez-les sur vos objets : valise, clés, sac, lunettes, téléphone... Chaque tag est unique.',
     color: COLORS.accent,
+    href: undefined as string | undefined,
   },
   {
     num: '02',
@@ -99,6 +104,7 @@ const OWNER_STEPS = [
     title: 'Activez en 30 secondes',
     desc: 'Scannez votre propre tag, entrez vos infos (prénom, WhatsApp) et l\'objet est protégé. Pas d\'app, pas de compte obligatoire.',
     color: COLORS.accentAlt,
+    href: undefined as string | undefined,
   },
   {
     num: '03',
@@ -106,6 +112,7 @@ const OWNER_STEPS = [
     title: 'Recevez une alerte',
     desc: 'Si quelqu\'un trouve votre objet, vous recevez un message WhatsApp avec la position exacte du trouveur. Instantané.',
     color: COLORS.green,
+    href: undefined as string | undefined,
   },
   {
     num: '04',
@@ -113,6 +120,7 @@ const OWNER_STEPS = [
     title: 'Récupérez votre objet',
     desc: 'Contactez le trouveur via WhatsApp, récupérez votre objet. 98% des objets étiquetés sont retrouvés.',
     color: COLORS.greenDark,
+    href: undefined as string | undefined,
   },
 ];
 
@@ -681,36 +689,58 @@ export default function HomePage() {
 
           {/* Steps — with real images */}
           <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
-            {currentSteps.map((step, i) => (
-              <motion.div
-                key={`${activeTab}-${i}`}
-                initial={{ opacity: 0, y: 30 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: i * 0.1 }}
-                className="rounded-2xl overflow-hidden transition-all hover:scale-105 hover:shadow-xl h-full"
-                style={{ background: COLORS.card, border: `1px solid ${COLORS.border}` }}
-              >
-                <div className="relative aspect-[4/3] overflow-hidden">
-                  <Image
-                    src={step.image}
-                    alt={step.title}
-                    fill
-                    className="object-cover"
-                    sizes="(max-width: 768px) 100vw, (max-width: 1024px) 50vw, 25vw"
-                  />
-                  <div
-                    className="absolute top-3 left-3 text-xs font-black px-2 py-1 rounded-lg"
-                    style={{ background: step.color, color: 'white' }}
-                  >
-                    Étape {step.num}
+            {currentSteps.map((step, i) => {
+              const card = (
+                <motion.div
+                  key={`${activeTab}-${i}`}
+                  initial={{ opacity: 0, y: 30 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: i * 0.1 }}
+                  className="rounded-2xl overflow-hidden transition-all hover:scale-105 hover:shadow-xl h-full"
+                  style={{ background: COLORS.card, border: `1px solid ${COLORS.border}` }}
+                >
+                  <div className="relative aspect-[4/3] overflow-hidden">
+                    <Image
+                      src={step.image}
+                      alt={step.title}
+                      fill
+                      className="object-cover"
+                      sizes="(max-width: 768px) 100vw, (max-width: 1024px) 50vw, 25vw"
+                    />
+                    <div
+                      className="absolute top-3 left-3 text-xs font-black px-2 py-1 rounded-lg"
+                      style={{ background: step.color, color: 'white' }}
+                    >
+                      Étape {step.num}
+                    </div>
+                    {step.href && (
+                      <div
+                        className="absolute bottom-3 right-3 text-xs font-bold px-2 py-1 rounded-lg flex items-center gap-1"
+                        style={{ background: 'rgba(255,255,255,0.95)', color: COLORS.text }}
+                      >
+                        Voir le détail
+                        <ArrowRight className="w-3 h-3" />
+                      </div>
+                    )}
                   </div>
-                </div>
-                <div className="p-5">
-                  <h3 className="text-lg font-bold mb-2" style={{ color: COLORS.text }}>{step.title}</h3>
-                  <p className="text-sm" style={{ color: COLORS.textMuted }}>{step.desc}</p>
-                </div>
-              </motion.div>
-            ))}
+                  <div className="p-5">
+                    <h3 className="text-lg font-bold mb-2" style={{ color: COLORS.text }}>{step.title}</h3>
+                    <p className="text-sm" style={{ color: COLORS.textMuted }}>{step.desc}</p>
+                  </div>
+                </motion.div>
+              );
+
+              // Si l'étape a une page dédiée (parcours trouveur), on wrappe dans un Link.
+              if (step.href) {
+                return (
+                  <Link key={`${activeTab}-${i}`} href={step.href} className="block h-full">
+                    {card}
+                  </Link>
+                );
+              }
+
+              return card;
+            })}
           </div>
         </div>
       </section>
