@@ -180,7 +180,6 @@ interface ShopProduct {
 
 // Default fallback packs (used before API fetch completes OR if API returns image: null)
 // Each pack has its own dedicated sachet image showing the correct sticker count.
-// Local image paths also serve as fallback when DB Product.image is null (e.g. before seed runs in prod).
 const SHOP_PACKS_FALLBACK = [
   { quantity: 3, name: 'Pack 3 Stickers', slug: 'pack-3-stickers', price: 1500, desc: '3 étiquettes QR indestructibles. Idéal pour tester.', badge: '', image: '/images/shop/pack-3-stickers.png' },
   { quantity: 5, name: 'Pack 5 Stickers', slug: 'pack-5-stickers', price: 3000, desc: '5 étiquettes QR indestructibles. Le plus populaire.', badge: 'POPULAIRE', image: '/images/shop/pack-5-stickers.png' },
@@ -188,11 +187,44 @@ const SHOP_PACKS_FALLBACK = [
   { quantity: 15, name: 'Pack 15 Stickers', slug: 'pack-15-stickers', price: 5500, desc: '15 étiquettes QR indestructibles. Le plus économique.', badge: 'ÉCONOMIQUE', image: '/images/shop/pack-15-stickers.png' },
 ];
 
-// Map slug → local image path, used as fallback when DB Product.image is null
-// (e.g. on production environments where the seed hasn't been re-run yet).
+// ─── Image fallback strategy ───
+// Production DB products often have either:
+//   • image: null (seed not re-run)
+//   • image: '/images/shop/product-XXXX.jpeg' pointing to a file that does NOT exist
+//     (uploaded via admin panel, but the upload failed silently or was lost)
+//   • slug variants like 'pack-5-stickers-' (trailing dash) or 'packs-10-stickers'
+//     that don't match SHOP_PACKS_FALLBACK slugs exactly.
+//
+// To ALWAYS show a sachet image we:
+//   1. Map quantity → local pack image (most reliable, the sachet shows the right number)
+//   2. Map slug → local pack image (handles edge cases where quantity differs)
+//   3. On <img> onError, swap the broken src to the quantity-mapped local image
+//      (instead of hiding it and showing the number fallback, which is less pretty)
+const PACK_IMAGE_BY_QUANTITY: Record<number, string> = Object.fromEntries(
+  SHOP_PACKS_FALLBACK.map(p => [p.quantity, p.image])
+);
 const PACK_IMAGE_BY_SLUG: Record<string, string> = Object.fromEntries(
   SHOP_PACKS_FALLBACK.map(p => [p.slug, p.image])
 );
+// Generic sachet used when quantity is unknown (e.g. Pack Revendeur qty=35)
+const GENERIC_PACK_IMAGE = '/images/shop/pack-15-stickers.png';
+
+/**
+ * Resolve the best local fallback image for a given product.
+ * Priority: quantity match > slug match > generic pack image.
+ */
+function resolvePackImage(p: { image: string | null; quantity: number; slug: string }): string {
+  if (p.image && /^\/images\/shop\/pack-(3|5|10|15)-stickers\.png$/.test(p.image)) {
+    return p.image; // Already pointing to a known-good local image
+  }
+  return (
+    PACK_IMAGE_BY_QUANTITY[p.quantity] ||
+    PACK_IMAGE_BY_SLUG[p.slug] ||
+    PACK_IMAGE_BY_SLUG[p.slug.replace(/[-\s]+$/, '')] || // strip trailing dash
+    PACK_IMAGE_BY_SLUG[p.slug.replace(/s(\d|-)/, '$1')] || // packs-10 → pack-10
+    GENERIC_PACK_IMAGE
+  );
+}
 
 // ─── Bande défilante — Produits protégés ───
 const MARQUEE_ITEMS = [
@@ -232,8 +264,8 @@ export default function HomePage() {
   }, []);
 
   // Use DB products if available, otherwise fallback.
-  // CRITICAL: when DB Product.image is null (e.g. before seed runs in prod),
-  // fall back to the local pack image by slug so the sachet ALWAYS shows.
+  // resolvePackImage() guarantees every product gets a working local sachet image
+  // even when DB image is null, broken, or points to a missing upload.
   const displayPacks = shopProducts.length > 0
     ? shopProducts.map(p => ({
         quantity: p.quantity,
@@ -242,9 +274,10 @@ export default function HomePage() {
         price: p.price,
         desc: p.description || `${p.quantity} étiquettes QR indestructibles.`,
         badge: p.quantity >= 10 ? 'ÉCONOMIQUE' : p.quantity === 5 ? 'POPULAIRE' : '',
-        image: p.image || PACK_IMAGE_BY_SLUG[p.slug] || null,
+        image: p.image,                              // Original DB image (may be broken)
+        fallbackImage: resolvePackImage(p),          // Always a working local sachet
       }))
-    : SHOP_PACKS_FALLBACK;
+    : SHOP_PACKS_FALLBACK.map(p => ({ ...p, fallbackImage: p.image }));
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 20);
@@ -833,28 +866,36 @@ export default function HomePage() {
                   </div>
                 )}
 
-                {/* Product image GRANDE (format portrait) ou quantité en grand */}
+                {/* Product image GRANDE (format portrait) — avec fallback robuste */}
                 <div className="relative w-full" style={{ aspectRatio: '3 / 4', background: '#000000' }}>
-                  {pack.image ? (
-                    <img
-                      src={pack.image}
-                      alt={pack.name}
-                      className="w-full h-full object-cover"
-                      loading="lazy"
-                      onError={(e) => {
-                        // If image fails to load (404, network, broken upload), hide it
-                        // so the number fallback below becomes visible.
-                        (e.currentTarget as HTMLImageElement).style.display = 'none';
-                        const fallback = (e.currentTarget.parentElement?.querySelector('[data-fallback-number]') as HTMLElement | null);
-                        if (fallback) fallback.style.display = 'flex';
-                      }}
-                    />
-                  ) : null}
-                  {/* Number fallback — shown when pack.image is null OR when the <img> fails to load */}
+                  <img
+                    src={pack.image || pack.fallbackImage}
+                    alt={pack.name}
+                    className="w-full h-full object-cover"
+                    loading="lazy"
+                    onError={(e) => {
+                      // Si l'image DB est cassée (404 etc.), on remplace le src
+                      // par l'image locale de fallback (sachet QRTAG par quantité).
+                      // Garde un flag pour éviter une boucle infinie si la fallback
+                      // elle-même casse.
+                      const img = e.currentTarget as HTMLImageElement;
+                      if (img.dataset.fallbackApplied) {
+                        // Même la fallback a échoué → on masque l'<img> et on
+                        // affiche le chiffre de fallback.
+                        img.style.display = 'none';
+                        const num = img.parentElement?.querySelector('[data-fallback-number]') as HTMLElement | null;
+                        if (num) num.style.display = 'flex';
+                        return;
+                      }
+                      img.dataset.fallbackApplied = '1';
+                      img.src = pack.fallbackImage;
+                    }}
+                  />
+                  {/* Number fallback — uniquement si même la fallback image casse */}
                   <div
                     data-fallback-number
                     className="w-full h-full items-center justify-center"
-                    style={{ display: pack.image ? 'none' : 'flex' }}
+                    style={{ display: 'none' }}
                   >
                     <span className="text-7xl md:text-8xl font-black" style={{ color: '#E3B23C' }}>
                       {pack.quantity}
