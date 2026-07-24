@@ -423,7 +423,7 @@ export default function HomePage() {
             </div>
           </motion.div>
 
-          {/* Hero : Real photo + Preview trouvaille */}
+          {/* Hero : Real photo — scène réelle objets retrouvés + Preview trouvaille */}
           <motion.div
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
@@ -435,8 +435,8 @@ export default function HomePage() {
               style={{ border: `1px solid ${COLORS.border}` }}
             >
               <Image
-                src="/images/home/hero-black-woman.png"
-                alt="QRTags — voyageuse avec sa valise protégée par un tag QR"
+                src="/images/home/hero-found-objects.png"
+                alt="QRTags — retrouvez vos objets perdus : un inconnu rend une valise étiquetée à sa propriétaire"
                 width={1344}
                 height={768}
                 className="w-full h-auto object-cover"
