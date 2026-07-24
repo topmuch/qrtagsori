@@ -210,20 +210,55 @@ const PACK_IMAGE_BY_SLUG: Record<string, string> = Object.fromEntries(
 const GENERIC_PACK_IMAGE = '/images/shop/pack-15-stickers.png';
 
 /**
- * Resolve the best local fallback image for a given product.
- * Priority: quantity match > slug match > generic pack image.
+ * Resolve the best local image for a given product.
+ *
+ * CRITICAL: we NEVER trust DB-uploaded images (pattern: /images/shop/product-*.jpeg)
+ * because they are almost always broken uploads (admin panel saved the path but
+ * the file was never written, or was lost during deploy). We only trust the 4
+ * known-good local sachet images that ship with the codebase.
+ *
+ * Strategy (in order):
+ *   1. If DB image matches the known-good local pattern → use it as-is.
+ *   2. Otherwise resolve by quantity (most reliable — sachet shows the right number).
+ *   3. Then by slug, slug-without-trailing-dash, slug-without-s.
+ *   4. Finally fall back to the generic pack-15 sachet.
+ *
+ * This guarantees the <img src> is ALWAYS a valid local path from the first render,
+ * so there is no flash of broken image, no 30s-then-disappear bug, no need to rely
+ * on the onError swap (which can race with React re-renders).
  */
 function resolvePackImage(p: { image: string | null; quantity: number; slug: string }): string {
+  // Only trust DB image if it matches one of our 4 known-good local sachet paths
   if (p.image && /^\/images\/shop\/pack-(3|5|10|15)-stickers\.png$/.test(p.image)) {
-    return p.image; // Already pointing to a known-good local image
+    return p.image;
   }
   return (
     PACK_IMAGE_BY_QUANTITY[p.quantity] ||
     PACK_IMAGE_BY_SLUG[p.slug] ||
-    PACK_IMAGE_BY_SLUG[p.slug.replace(/[-\s]+$/, '')] || // strip trailing dash
-    PACK_IMAGE_BY_SLUG[p.slug.replace(/s(\d|-)/, '$1')] || // packs-10 → pack-10
+    PACK_IMAGE_BY_SLUG[p.slug.replace(/[-\s]+$/, '')] || // strip trailing dash: 'pack-5-stickers-' → 'pack-5-stickers'
+    PACK_IMAGE_BY_SLUG[p.slug.replace(/^packs-/, 'pack-')] || // 'packs-10-stickers' → 'pack-10-stickers'
     GENERIC_PACK_IMAGE
   );
+}
+
+/**
+ * Decide what to use as the <img src>. Returns the DB image ONLY if it's safe
+ * (one of the 4 known-good local paths). Otherwise returns the fallback.
+ *
+ * This prevents the "30-second disappear" bug where:
+ *   1. Initial render uses SHOP_PACKS_FALLBACK (sachets show).
+ *   2. API responds ~30s later with broken DB image URLs.
+ *   3. <img src> switches to broken URL → broken image icon.
+ *   4. onError swap may race with React re-renders and lose the swap.
+ *
+ * By NEVER using a DB image that doesn't match the safe pattern, we eliminate
+ * the broken-image state entirely.
+ */
+function getSafeImageSrc(p: { image: string | null; fallbackImage: string }): string {
+  if (p.image && /^\/images\/shop\/pack-(3|5|10|15)-stickers\.png$/.test(p.image)) {
+    return p.image;
+  }
+  return p.fallbackImage;
 }
 
 // ─── Bande défilante — Produits protégés ───
@@ -866,32 +901,24 @@ export default function HomePage() {
                   </div>
                 )}
 
-                {/* Product image GRANDE (format portrait) — avec fallback robuste */}
+                {/* Product image GRANDE (format portrait) — src TOUJOURS valide */}
                 <div className="relative w-full" style={{ aspectRatio: '3 / 4', background: '#000000' }}>
                   <img
-                    src={pack.image || pack.fallbackImage}
+                    src={getSafeImageSrc(pack)}
                     alt={pack.name}
                     className="w-full h-full object-cover"
                     loading="lazy"
                     onError={(e) => {
-                      // Si l'image DB est cassée (404 etc.), on remplace le src
-                      // par l'image locale de fallback (sachet QRTAG par quantité).
-                      // Garde un flag pour éviter une boucle infinie si la fallback
-                      // elle-même casse.
+                      // Filet de sécurité ultime : si l'image locale elle-même
+                      // casse (ce qui ne devrait jamais arriver), on affiche
+                      // le chiffre doré sur fond noir.
                       const img = e.currentTarget as HTMLImageElement;
-                      if (img.dataset.fallbackApplied) {
-                        // Même la fallback a échoué → on masque l'<img> et on
-                        // affiche le chiffre de fallback.
-                        img.style.display = 'none';
-                        const num = img.parentElement?.querySelector('[data-fallback-number]') as HTMLElement | null;
-                        if (num) num.style.display = 'flex';
-                        return;
-                      }
-                      img.dataset.fallbackApplied = '1';
-                      img.src = pack.fallbackImage;
+                      img.style.display = 'none';
+                      const num = img.parentElement?.querySelector('[data-fallback-number]') as HTMLElement | null;
+                      if (num) num.style.display = 'flex';
                     }}
                   />
-                  {/* Number fallback — uniquement si même la fallback image casse */}
+                  {/* Number fallback — uniquement si même l'image locale casse */}
                   <div
                     data-fallback-number
                     className="w-full h-full items-center justify-center"

@@ -15,6 +15,8 @@ import {
   ToggleRight,
   Upload,
   ImagePlus,
+  RotateCcw,
+  AlertTriangle,
 } from 'lucide-react';
 
 // ════════════════════════════════════════════════════════════════
@@ -63,6 +65,10 @@ export default function AdminProductsPage() {
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [message, setMessage] = useState<{ text: string; type: 'success' | 'error' } | null>(null);
+
+  // ─── Reset boutique state ───
+  const [resetting, setResetting] = useState(false);
+  const [showResetConfirm, setShowResetConfirm] = useState(false);
 
   // Load products
   useEffect(() => {
@@ -168,6 +174,32 @@ export default function AdminProductsPage() {
     }
   };
 
+  // Reset boutique — wipe all products and recreate the 4 clean packs
+  const handleResetBoutique = async () => {
+    setResetting(true);
+    setMessage(null);
+    try {
+      const res = await fetch('/api/shop/admin/products/reset', { method: 'POST' });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Erreur lors de la réinitialisation');
+
+      // Refresh product list
+      const fresh = await fetch('/api/shop/admin/products').then(r => r.json());
+      if (Array.isArray(fresh)) setProducts(fresh);
+
+      setMessage({
+        text: data.message || 'Boutique réinitialisée avec succès.',
+        type: 'success',
+      });
+    } catch (err: unknown) {
+      const errorMsg = err instanceof Error ? err.message : 'Erreur inconnue';
+      setMessage({ text: errorMsg, type: 'error' });
+    } finally {
+      setResetting(false);
+      setShowResetConfirm(false);
+    }
+  };
+
   // Delete product
   const handleDelete = async (id: string) => {
     if (!confirm('Supprimer ce produit ?')) return;
@@ -238,7 +270,7 @@ export default function AdminProductsPage() {
   return (
     <div className="space-y-6">
       {/* ─── Page Header ─── */}
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between flex-wrap gap-3">
         <div className="flex items-center gap-3">
           <div
             className="w-10 h-10 rounded-xl flex items-center justify-center"
@@ -253,14 +285,93 @@ export default function AdminProductsPage() {
             </p>
           </div>
         </div>
-        <Link
-          href="/admin/orders"
-          className="px-4 py-2 rounded-lg text-sm font-bold flex items-center gap-2 transition-all hover:scale-105"
-          style={{ background: COLORS.mustard, color: COLORS.black }}
-        >
-          Commandes
-        </Link>
+        <div className="flex items-center gap-3 flex-wrap">
+          {/* Reset boutique — destructive, asks confirmation */}
+          <button
+            onClick={() => setShowResetConfirm(true)}
+            disabled={resetting}
+            className="px-4 py-2 rounded-lg text-sm font-bold flex items-center gap-2 transition-all hover:scale-105 disabled:opacity-50"
+            style={{
+              background: '#fff',
+              color: COLORS.red,
+              border: `2px solid ${COLORS.red}`,
+            }}
+            title="Supprime tous les produits et recrée les 4 packs propres (3, 5, 10, 15 stickers)"
+          >
+            {resetting ? <Loader2 className="w-4 h-4 animate-spin" /> : <RotateCcw className="w-4 h-4" />}
+            {resetting ? 'Réinitialisation...' : 'Réinitialiser la boutique'}
+          </button>
+          <Link
+            href="/admin/orders"
+            className="px-4 py-2 rounded-lg text-sm font-bold flex items-center gap-2 transition-all hover:scale-105"
+            style={{ background: COLORS.mustard, color: COLORS.black }}
+          >
+            Commandes
+          </Link>
+        </div>
       </div>
+
+      {/* ─── Reset Confirmation Modal ─── */}
+      {showResetConfirm && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4"
+          style={{ background: 'rgba(0,0,0,0.6)' }}
+          onClick={() => !resetting && setShowResetConfirm(false)}
+        >
+          <motion.div
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="rounded-2xl p-6 max-w-md w-full"
+            style={{ background: '#fff', border: `4px solid ${COLORS.red}` }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-start gap-3 mb-4">
+              <div
+                className="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0"
+                style={{ background: '#fee2e2' }}
+              >
+                <AlertTriangle className="w-5 h-5" style={{ color: COLORS.red }} />
+              </div>
+              <div>
+                <h3 className="text-lg font-black mb-1" style={{ color: COLORS.black }}>
+                  Réinitialiser la boutique ?
+                </h3>
+                <p className="text-sm" style={{ color: '#374151' }}>
+                  Cette action va <strong>supprimer tous les produits existants</strong> et recréer
+                  les 4 packs propres (Pack 3, 5, 10, 15 Stickers) avec les images de sachet
+                  générées automatiquement.
+                </p>
+                <ul className="text-xs mt-3 space-y-1" style={{ color: '#6b7280' }}>
+                  <li>• Les produits <strong>sans commande</strong> seront définitivement supprimés.</li>
+                  <li>• Les produits <strong>avec commandes</strong> seront archivés (désactivés) pour préserver l'historique.</li>
+                  <li>• Les 4 packs propres seront créés avec leurs images de sachet.</li>
+                  <li>• Cette action est <strong>irréversible</strong>.</li>
+                </ul>
+              </div>
+            </div>
+
+            <div className="flex gap-3 justify-end">
+              <button
+                onClick={() => setShowResetConfirm(false)}
+                disabled={resetting}
+                className="px-4 py-2 rounded-xl font-bold text-sm"
+                style={{ background: '#f3f4f6', color: '#374151' }}
+              >
+                Annuler
+              </button>
+              <button
+                onClick={handleResetBoutique}
+                disabled={resetting}
+                className="px-4 py-2 rounded-xl font-bold text-sm flex items-center gap-2 disabled:opacity-50"
+                style={{ background: COLORS.red, color: '#fff' }}
+              >
+                {resetting ? <Loader2 className="w-4 h-4 animate-spin" /> : <RotateCcw className="w-4 h-4" />}
+                {resetting ? 'En cours...' : 'Oui, réinitialiser'}
+              </button>
+            </div>
+          </motion.div>
+        </div>
+      )}
 
       {/* ─── Message ─── */}
       {message && (
