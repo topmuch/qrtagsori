@@ -107,6 +107,41 @@ export async function runMigrationIfNeeded(prisma: PrismaClient): Promise<void> 
 
 async function doMigration(prisma: PrismaClient): Promise<void> {
   try {
+    // ─── 1. Ensure critical tables exist ─────────────────────────────
+    // On a fresh DB (e.g. after deploy without `prisma db push`), critical
+    // tables like Product, BlogPost, Order might be missing. We detect this
+    // and run `prisma db push` to create the full schema from schema.prisma.
+    const CRITICAL_TABLES = [
+      'User', 'Baggage', 'Agency', 'QRCode', 'Lead',
+      'BlogPost', 'Product', 'Order', 'Notification', 'Session',
+    ];
+    const missingTables: string[] = [];
+    for (const t of CRITICAL_TABLES) {
+      if (!(await tableExists(prisma, t))) missingTables.push(t);
+    }
+
+    if (missingTables.length > 0) {
+      console.log(`[migration] Missing tables detected: ${missingTables.join(', ')}`);
+      console.log('[migration] Running `prisma db push` to create full schema...');
+      try {
+        // Use execSync to run prisma db push synchronously.
+        // This creates all tables from schema.prisma.
+        const { execSync } = require('child_process');
+        execSync('bunx prisma db push --skip-generate --accept-data-loss', {
+          stdio: 'inherit',
+          cwd: process.cwd(),
+          env: process.env,
+          timeout: 60_000,
+        });
+        console.log('[migration] ✅ prisma db push completed');
+      } catch (pushErr) {
+        console.error('[migration] prisma db push failed:', pushErr instanceof Error ? pushErr.message : pushErr);
+        // Continue anyway — the per-column ALTERs below might still help for
+        // partial schemas (Baggage exists but missing QRTags columns).
+      }
+    }
+
+    // ─── 2. Baggage column migration (legacy) ────────────────────────
     // Check Baggage table exists
     const hasBaggage = await tableExists(prisma, 'Baggage');
     if (!hasBaggage) {
@@ -120,6 +155,8 @@ async function doMigration(prisma: PrismaClient): Promise<void> {
     const needsMigration = !existingCols.includes('trackingToken');
 
     if (!needsMigration) {
+      // Even if Baggage is up-to-date, ensure superadmin exists
+      await ensureSuperadmin(prisma);
       return; // Already up-to-date
     }
 

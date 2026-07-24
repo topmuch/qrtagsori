@@ -9,8 +9,15 @@ const nextConfig: NextConfig = {
   },
   reactStrictMode: false,
   images: {
-    formats: ['image/webp'],
-    qualities: [75, 90],
+    // Bypass the Next.js image optimizer. We already serve optimized images
+    // (PNG/JPEG), and the optimizer can fail in production environments
+    // where sharp is not properly bundled (especially with output: 'standalone'
+    // + serverExternalPackages). Setting unoptimized = true serves the
+    // images directly via /public, which is more reliable across dev/preview/
+    // production environments. The browser still benefits from srcset because
+    // next/image keeps generating it when the Image component is used.
+    unoptimized: true,
+    formats: ['image/webp', 'image/avif'],
   },
 };
 
