@@ -79,8 +79,8 @@ export default function QRTagsLogo({
       src="/logo.png"
       alt={alt}
       className={classes}
-      // Évite le layout shift
-      width={276}
+      // Évite le layout shift — dimensions intrinsèques du logo source (123×100, ratio 1.23)
+      width={123}
       height={100}
     />
   );

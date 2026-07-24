@@ -2,15 +2,33 @@ import type { MetadataRoute } from 'next';
 
 /**
  * Sitemap dynamique — Next.js App Router génère /sitemap.xml automatiquement.
- * Inclut les pages publiques principales + les articles de blog publiés.
+ * Inclut les pages publiques principales + les articles de blog publiés + hreflang.
  */
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://qrtags.com';
   const now = new Date();
 
-  // Pages publiques statiques
+  // Pages publiques statiques avec hreflang FR/EN/AR
+  const langs = {
+    fr: 'fr-FR',
+    en: 'en-US',
+    ar: 'ar-AR',
+  };
+
+  const makeAlternates = (path: string) =>
+    Object.entries(langs).map(([code, locale]) => ({
+      url: `${baseUrl}${code === 'fr' ? path : `/${code}${path === '/' ? '' : path}`}`,
+      hrefLang: locale,
+    }));
+
   const staticPages: MetadataRoute.Sitemap = [
-    { url: `${baseUrl}/`, lastModified: now, changeFrequency: 'daily', priority: 1.0 },
+    {
+      url: `${baseUrl}/`,
+      lastModified: now,
+      changeFrequency: 'daily',
+      priority: 1.0,
+      alternates: { languages: { 'fr-FR': `${baseUrl}/`, 'en-US': `${baseUrl}/en`, 'ar-AR': `${baseUrl}/ar` } },
+    },
     { url: `${baseUrl}/assistance`, lastModified: now, changeFrequency: 'monthly', priority: 0.7 },
     { url: `${baseUrl}/a-propos`, lastModified: now, changeFrequency: 'monthly', priority: 0.7 },
     { url: `${baseUrl}/contact`, lastModified: now, changeFrequency: 'monthly', priority: 0.7 },
@@ -37,8 +55,16 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { url: `${baseUrl}/metiers/consignes`, lastModified: now, changeFrequency: 'monthly', priority: 0.6 },
     { url: `${baseUrl}/metiers/loueurs`, lastModified: now, changeFrequency: 'monthly', priority: 0.6 },
     { url: `${baseUrl}/metiers/cliniques`, lastModified: now, changeFrequency: 'monthly', priority: 0.6 },
-    // Boutique
-    { url: `${baseUrl}/shop`, lastModified: now, changeFrequency: 'weekly', priority: 0.7 },
+    // Boutique (packs)
+    { url: `${baseUrl}/shop`, lastModified: now, changeFrequency: 'weekly', priority: 0.8 },
+    { url: `${baseUrl}/shop/pack-3-stickers`, lastModified: now, changeFrequency: 'weekly', priority: 0.7 },
+    { url: `${baseUrl}/shop/pack-5-stickers`, lastModified: now, changeFrequency: 'weekly', priority: 0.7 },
+    { url: `${baseUrl}/shop/pack-10-stickers`, lastModified: now, changeFrequency: 'weekly', priority: 0.7 },
+    { url: `${baseUrl}/shop/pack-15-stickers`, lastModified: now, changeFrequency: 'weekly', priority: 0.7 },
+    // Scan — page publique importante
+    { url: `${baseUrl}/scan`, lastModified: now, changeFrequency: 'monthly', priority: 0.7 },
+    // Blog
+    { url: `${baseUrl}/blog`, lastModified: now, changeFrequency: 'weekly', priority: 0.7 },
   ];
 
   // Articles de blog publiés (fetch DB)
@@ -54,7 +80,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     });
     for (const p of posts) {
       blogPosts.push({
-        url: `${baseUrl}/agence/blog/${p.slug}`,
+        url: `${baseUrl}/blog/${p.slug}`,
         lastModified: p.updatedAt || p.publishedAt || now,
         changeFrequency: 'weekly',
         priority: 0.6,

@@ -1,11 +1,11 @@
 {
-  "name": "QRTags — Gestion d'objets perdus",
+  "name": "QRTags — Étiquettes QR pour objets perdus & retrouvés",
   "short_name": "QRTags",
-  "description": "QRTags — SaaS de gestion d'objets perdus pour entreprises. QR codes multi-métiers, traçabilité, et contact WhatsApp WAME.",
+  "description": "QRTags protège vos objets du quotidien (valise, clés, sac, lunettes, téléphone) grâce à une étiquette QR intelligente. Sans app, sans batterie, sans GPS. Alerte WhatsApp instantanée avec la position exacte du trouveur. 98% des objets étiquetés sont retrouvés.",
   "start_url": "/?from=pwa",
   "display": "standalone",
-  "background_color": "#111111",
-  "theme_color": "#E3B23C",
+  "background_color": "#ffffff",
+  "theme_color": "#FDB900",
   "orientation": "portrait-primary",
   "scope": "/",
   "prefer_related_applications": false,
@@ -47,7 +47,7 @@
       "purpose": "any"
     },
     {
-      "src": "/icons/icon-192x192.png",
+      "src": "/icons/maskable-icon-192x192.png",
       "sizes": "192x192",
       "type": "image/png",
       "purpose": "maskable"
@@ -71,7 +71,7 @@
       "purpose": "maskable"
     }
   ],
-  "categories": ["business", "utilities", "productivity"],
+  "categories": ["business", "utilities", "productivity", "travel", "lifestyle"],
   "lang": "fr",
   "dir": "auto",
   "shortcuts": [
@@ -86,6 +86,12 @@
       "short_name": "Activer",
       "description": "Activer un nouveau tag QRTags",
       "url": "/inscrire"
+    },
+    {
+      "name": "Commander des tags",
+      "short_name": "Boutique",
+      "description": "Commander des étiquettes QR QRTags",
+      "url": "/#tarifs"
     }
   ],
   "handle_links": "preferred",

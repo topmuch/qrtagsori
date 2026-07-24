@@ -13,33 +13,57 @@ const inter = Inter({
 
 export const metadata: Metadata = {
   title: {
-    default: "QRTags — Étiquettes QR pour objets perdus & retrouvés | Sans app, sans batterie",
+    default: "QRTags — Étiquette QR pour objets perdus & retrouvés | Sans app, 98% rendus",
     template: "%s | QRTags",
   },
   description:
-    "QRTags protège vos objets du quotidien (valise, clés, sac, lunettes, téléphone) grâce à une étiquette QR intelligente. " +
+    "QRTags protège vos objets du quotidien (valise, clés, sac, lunettes, téléphone, ordinateur) grâce à une étiquette QR intelligente. " +
     "Sans application, sans batterie, sans GPS. Un scan suffit pour être alerté sur WhatsApp avec la position exacte du trouveur. " +
-    "98% des objets étiquetés sont retrouvés. Solution RGPD pour particuliers, hôtels, écoles, consignes, loueurs et cliniques.",
+    "98% des objets étiquetés sont retrouvés en moins de 2h. Solution RGPD pour particuliers, hôtels, écoles, consignes, loueurs et cliniques. " +
+    "Paiement à la livraison à Dakar, livraison partout en Afrique de l'Ouest.",
   keywords: [
-    // Core brand & product
-    "QRTags", "QR tag", "étiquette QR", "QR code objet perdu",
-    // Use cases
+    // ─── Marque & produit cœur ───
+    "QRTags", "QR tag", "étiquette QR", "QR code objet perdu", "étiquette QR code",
+    "tag QR", "sticker QR", "autocollant QR", "QR perdu", "QR retrouvé",
+    // ─── Cas d'usage (FR) ───
     "objet perdu", "objet retrouvé", "perte bagage", "valise perdue", "bagage égaré",
-    "retrouver objets perdus", "signalé objet trouvé",
-    // Segments
-    "hôtel", "école", "consigne", "loueur", "clinique", "entreprise",
-    // Features
+    "retrouver objets perdus", "signaler objet trouvé", "objet perdu avion",
+    "objet perdu train", "objet perdu aéroport", "objet perdu taxi",
+    "clés perdues", "téléphone perdu", "sac perdu", "lunettes perdues",
+    "passeport perdu", "portefeuille perdu", "ordinateur perdu",
+    // ─── Objets protégés ───
+    "étiquette valise", "étiquette bagage", "étiquette clés", "étiquette téléphone",
+    "tracker bagage", "tracker objets", "localiser objet perdu",
+    // ─── Segments B2B ───
+    "hôtel", "écoles", "consigne", "loueur", "clinique", "entreprise",
+    "hôtel objets perdus", "école objets perdus", "consigne bagagerie",
+    "loueur véhicule", "clinique objets",
+    // ─── Caractéristiques ───
     "sans application", "sans batterie", "sans GPS", "alerte WhatsApp",
-    "géolocalisation", "RGPD", "vie privée",
-    // Travel / transport
+    "géolocalisation", "RGPD", "vie privée", "anonymat",
+    "paiement à la livraison", "cash on delivery", "livraison Dakar",
+    // ─── Voyage / transport ───
     "voyage", "aéroport", "avion", "train", "sncf", " taxi",
-    // Competitors / synonyms (SEO long tail)
-    "tracker bagage", "étiquette bagage", "tag bagage intelligent",
-    "airtag alternative", "tile alternative", "smart tag",
-    // Languages
-    "lost and found", "luggage tracker", "QR luggage tag",
+    "voyage d'affaires", "vacances", "déplacement",
+    // ─── Concurrents / synonymes (SEO long tail) ───
+    "airtag alternative", "tile alternative", "smart tag", "airtag pas cher",
+    "étiquette bagage intelligente", "tag bagage intelligent",
+    "localisateur objet", "traceur objet", "géolocalisateur objet",
+    // ─── Marché Afrique ───
+    "Sénégal", "Dakar", "Abidjan", "Côte d'Ivoire", "Bamako", "Mali",
+    "Afrique de l'Ouest", "CEDEAO", "WhatsApp Sénégal",
+    "paiement mobile", "Orange Money", "Wave",
+    // ─── Anglais (SEO international) ───
+    "lost and found", "luggage tracker", "QR luggage tag", "lost item tracker",
+    "QR code tag", "smart luggage tag", "travel tag", "bag finder",
+    // ─── Arabe (SEO Maghreb/Afrique du Nord) ───
+    "ملصق QR", "أشياء ضائعة", "تتبع الأمتعة", "رمز QR للحقائب",
+    // ─── Long tail questions ───
+    "comment retrouver un objet perdu", "que faire si on trouve un objet",
+    "étiquette bagage sans app", "comment protéger ses objets",
+    "comment éviter de perdre ses affaires",
   ],
-  authors: [{ name: "QRTags Team" }],
+  authors: [{ name: "QRTags Team" }, { name: "MMASOLUTION" }],
   creator: "MMASOLUTION",
   publisher: "QRTags",
   category: "Travel & Lifestyle",
@@ -51,13 +75,14 @@ export const metadata: Metadata = {
       { url: "/favicon.png", sizes: "32x32", type: "image/png" },
       { url: "/icons/favicon-16x16.png", sizes: "16x16", type: "image/png" },
       { url: "/icons/icon-192x192.png", sizes: "192x192", type: "image/png" },
+      { url: "/icons/icon-512x512.png", sizes: "512x512", type: "image/png" },
     ],
     apple: [
       { url: "/apple-touch-icon.png", sizes: "180x180", type: "image/png" },
       { url: "/icons/icon-152x152.png", sizes: "152x152", type: "image/png" },
     ],
     other: [
-      { rel: "mask-icon", url: "/icons/maskable-icon-512x512.png", color: "#ffffff" },
+      { rel: "mask-icon", url: "/icons/maskable-icon-512x512.png", color: "#FDB900" },
     ],
   },
 
@@ -66,7 +91,8 @@ export const metadata: Metadata = {
     title: "QRTags — Retrouvez 98% de vos objets perdus grâce au QR code",
     description:
       "Étiquettez vos objets du quotidien (valise, clés, sac, lunettes, téléphone) avec un QR tag intelligent. " +
-      "Sans app, sans batterie, sans GPS. Alerte WhatsApp instantanée avec la position du trouveur.",
+      "Sans app, sans batterie, sans GPS. Alerte WhatsApp instantanée avec la position du trouveur. " +
+      "Paiement à la livraison à Dakar, livraison en Afrique de l'Ouest.",
     url: "https://qrtags.com",
     siteName: "QRTags",
     type: "website",
@@ -74,16 +100,16 @@ export const metadata: Metadata = {
     alternateLocale: ["en_US", "ar_AR"],
     images: [
       {
-        url: "/icons/icon-512x512.png",
-        width: 512,
-        height: 512,
+        url: "/og-image.png",
+        width: 1200,
+        height: 630,
         alt: "QRTags — Étiquette QR pour objets perdus et retrouvés",
       },
       {
-        url: "/hero-illustration-new.png",
-        width: 1200,
-        height: 630,
-        alt: "QRTags — Retrouvez vos objets perdus avec un simple scan QR",
+        url: "/icons/icon-512x512.png",
+        width: 512,
+        height: 512,
+        alt: "Logo QRTags",
       },
     ],
   },
@@ -96,7 +122,7 @@ export const metadata: Metadata = {
     title: "QRTags — Retrouvez 98% de vos objets perdus",
     description:
       "Étiquette QR intelligente pour valise, clés, sac, lunettes, téléphone. Sans app, sans batterie. Alerte WhatsApp instantanée.",
-    images: ["/hero-illustration-new.png", "/icons/icon-512x512.png"],
+    images: ["/og-image.png"],
   },
 
   // PWA
@@ -157,6 +183,8 @@ export const metadata: Metadata = {
     "msapplication-TileColor": "#FDB900",
     "referrer": "origin-when-cross-origin",
     "format-detection": "telephone=no",
+    "p:domain_verify": "PLACEHOLDER_PINTEREST",
+    "yandex-verification": "PLACEHOLDER_YANDEX",
   },
 };
 
@@ -222,14 +250,19 @@ export default function RootLayout({
               alternateName: "QRTags by MMASOLUTION",
               url: "https://qrtags.com",
               logo: "https://qrtags.com/icons/icon-512x512.png",
+              image: "https://qrtags.com/og-image.png",
               description:
-                "QRTags protège les objets du quotidien grâce à des étiquettes QR intelligentes. Sans app, sans batterie, sans GPS.",
+                "QRTags protège les objets du quotidien grâce à des étiquettes QR intelligentes. Sans app, sans batterie, sans GPS. Alerte WhatsApp instantanée avec la position du trouveur.",
+              slogan: "98% des objets étiquetés sont retrouvés en moins de 2h",
               founder: { "@type": "Organization", name: "MMASOLUTION" },
+              foundingDate: "2024",
+              knowsLanguage: ["fr", "en", "ar"],
               sameAs: [
                 "https://www.facebook.com/qrtags",
                 "https://www.instagram.com/qrtags",
                 "https://twitter.com/qrtags",
                 "https://www.linkedin.com/company/qrtags",
+                "https://www.youtube.com/@qrtags",
               ],
               contactPoint: {
                 "@type": "ContactPoint",
@@ -237,6 +270,49 @@ export default function RootLayout({
                 email: "contact@qrtags.com",
                 availableLanguage: ["French", "English", "Arabic"],
               },
+            }),
+          }}
+        />
+        {/* LocalBusiness : présence locale à Dakar pour Google Local */}
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify({
+              "@context": "https://schema.org",
+              "@type": "LocalBusiness",
+              name: "QRTags",
+              image: "https://qrtags.com/og-image.png",
+              url: "https://qrtags.com",
+              telephone: "+221-77-000-00-00",
+              priceRange: "1500-5500 FCFA",
+              address: {
+                "@type": "PostalAddress",
+                addressLocality: "Dakar",
+                addressRegion: "Dakar",
+                addressCountry: "SN",
+                postalCode: "00000",
+                streetAddress: "Dakar, Sénégal",
+              },
+              geo: {
+                "@type": "GeoCoordinates",
+                latitude: 14.7167,
+                longitude: -17.4677,
+              },
+              openingHoursSpecification: [{
+                "@type": "OpeningHoursSpecification",
+                dayOfWeek: ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"],
+                opens: "08:00",
+                closes: "20:00",
+              }],
+              areaServed: [
+                { "@type": "Country", name: "Sénégal" },
+                { "@type": "Country", name: "Côte d'Ivoire" },
+                { "@type": "Country", name: "Mali" },
+                { "@type": "Country", name: "Burkina Faso" },
+                { "@type": "Country", name: "France" },
+              ],
+              paymentAccepted: ["Cash", "Orange Money", "Wave", "Cash on Delivery"],
+              currenciesAccepted: "XOF, EUR",
             }),
           }}
         />
@@ -270,16 +346,16 @@ export default function RootLayout({
               "@context": "https://schema.org",
               "@type": "Product",
               name: "Étiquette QR QRTags",
-              image: "https://qrtags.com/hero-illustration-new.png",
+              image: "https://qrtags.com/og-image.png",
               description:
                 "Étiquette QR intelligente pour protéger valise, clés, sac, lunettes, téléphone. Alerte WhatsApp instantanée dès qu'un trouveur scanne le tag.",
               brand: { "@type": "Brand", name: "QRTags" },
               category: "Travel Accessories",
               offers: {
                 "@type": "AggregateOffer",
-                priceCurrency: "EUR",
-                lowPrice: "5",
-                highPrice: "49",
+                priceCurrency: "XOF",
+                lowPrice: "1500",
+                highPrice: "5500",
                 offerCount: 4,
                 availability: "https://schema.org/InStock",
               },
@@ -289,6 +365,28 @@ export default function RootLayout({
                 reviewCount: "1240",
                 bestRating: "5",
                 worstRating: "1",
+              },
+            }),
+          }}
+        />
+        {/* Service : précise la nature du service pour Google */}
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify({
+              "@context": "https://schema.org",
+              "@type": "Service",
+              serviceType: "Protection et traçabilité d'objets perdus par QR code",
+              provider: { "@type": "Organization", name: "QRTags", url: "https://qrtags.com" },
+              areaServed: "Worldwide",
+              description:
+                "Service d'étiquettes QR intelligentes permettant à toute personne qui trouve un objet étiqueté de contacter le propriétaire via WhatsApp avec sa position GPS, sans application ni batterie.",
+              offers: {
+                "@type": "Offer",
+                priceCurrency: "XOF",
+                price: "1500",
+                availability: "https://schema.org/InStock",
+                description: "Pack 3 stickers — à partir de 1500 FCFA",
               },
             }),
           }}
