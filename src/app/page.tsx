@@ -178,14 +178,21 @@ interface ShopProduct {
   sortOrder: number;
 }
 
-// Default fallback packs (used before API fetch completes)
-// Image : sachet QRTAG généré (utilisé pour tous les packs)
+// Default fallback packs (used before API fetch completes OR if API returns image: null)
+// Each pack has its own dedicated sachet image showing the correct sticker count.
+// Local image paths also serve as fallback when DB Product.image is null (e.g. before seed runs in prod).
 const SHOP_PACKS_FALLBACK = [
-  { quantity: 3, name: 'Pack 3 Stickers', slug: 'pack-3-stickers', price: 1500, desc: '3 étiquettes QR indestructibles. Idéal pour tester.', badge: '', image: '/images/shop/qrtag-pack-sachet.png' },
-  { quantity: 5, name: 'Pack 5 Stickers', slug: 'pack-5-stickers', price: 3000, desc: '5 étiquettes QR indestructibles. Le plus populaire.', badge: 'POPULAIRE', image: '/images/shop/qrtag-pack-sachet.png' },
-  { quantity: 10, name: 'Pack 10 Stickers', slug: 'pack-10-stickers', price: 4000, desc: '10 étiquettes QR indestructibles. Pour usage fréquent.', badge: '', image: '/images/shop/qrtag-pack-sachet.png' },
-  { quantity: 15, name: 'Pack 15 Stickers', slug: 'pack-15-stickers', price: 5500, desc: '15 étiquettes QR indestructibles. Le plus économique.', badge: 'ÉCONOMIQUE', image: '/images/shop/qrtag-pack-sachet.png' },
+  { quantity: 3, name: 'Pack 3 Stickers', slug: 'pack-3-stickers', price: 1500, desc: '3 étiquettes QR indestructibles. Idéal pour tester.', badge: '', image: '/images/shop/pack-3-stickers.png' },
+  { quantity: 5, name: 'Pack 5 Stickers', slug: 'pack-5-stickers', price: 3000, desc: '5 étiquettes QR indestructibles. Le plus populaire.', badge: 'POPULAIRE', image: '/images/shop/pack-5-stickers.png' },
+  { quantity: 10, name: 'Pack 10 Stickers', slug: 'pack-10-stickers', price: 4000, desc: '10 étiquettes QR indestructibles. Pour usage fréquent.', badge: '', image: '/images/shop/pack-10-stickers.png' },
+  { quantity: 15, name: 'Pack 15 Stickers', slug: 'pack-15-stickers', price: 5500, desc: '15 étiquettes QR indestructibles. Le plus économique.', badge: 'ÉCONOMIQUE', image: '/images/shop/pack-15-stickers.png' },
 ];
+
+// Map slug → local image path, used as fallback when DB Product.image is null
+// (e.g. on production environments where the seed hasn't been re-run yet).
+const PACK_IMAGE_BY_SLUG: Record<string, string> = Object.fromEntries(
+  SHOP_PACKS_FALLBACK.map(p => [p.slug, p.image])
+);
 
 // ─── Bande défilante — Produits protégés ───
 const MARQUEE_ITEMS = [
@@ -224,7 +231,9 @@ export default function HomePage() {
       });
   }, []);
 
-  // Use DB products if available, otherwise fallback
+  // Use DB products if available, otherwise fallback.
+  // CRITICAL: when DB Product.image is null (e.g. before seed runs in prod),
+  // fall back to the local pack image by slug so the sachet ALWAYS shows.
   const displayPacks = shopProducts.length > 0
     ? shopProducts.map(p => ({
         quantity: p.quantity,
@@ -233,7 +242,7 @@ export default function HomePage() {
         price: p.price,
         desc: p.description || `${p.quantity} étiquettes QR indestructibles.`,
         badge: p.quantity >= 10 ? 'ÉCONOMIQUE' : p.quantity === 5 ? 'POPULAIRE' : '',
-        image: p.image,
+        image: p.image || PACK_IMAGE_BY_SLUG[p.slug] || null,
       }))
     : SHOP_PACKS_FALLBACK;
 
@@ -825,23 +834,32 @@ export default function HomePage() {
                 )}
 
                 {/* Product image GRANDE (format portrait) ou quantité en grand */}
-                <div className="relative w-full" style={{ aspectRatio: '3 / 4' }}>
+                <div className="relative w-full" style={{ aspectRatio: '3 / 4', background: '#000000' }}>
                   {pack.image ? (
                     <img
                       src={pack.image}
                       alt={pack.name}
                       className="w-full h-full object-cover"
+                      loading="lazy"
+                      onError={(e) => {
+                        // If image fails to load (404, network, broken upload), hide it
+                        // so the number fallback below becomes visible.
+                        (e.currentTarget as HTMLImageElement).style.display = 'none';
+                        const fallback = (e.currentTarget.parentElement?.querySelector('[data-fallback-number]') as HTMLElement | null);
+                        if (fallback) fallback.style.display = 'flex';
+                      }}
                     />
-                  ) : (
-                    <div
-                      className="w-full h-full flex items-center justify-center"
-                      style={{ background: '#000000' }}
-                    >
-                      <span className="text-7xl md:text-8xl font-black" style={{ color: '#E3B23C' }}>
-                        {pack.quantity}
-                      </span>
-                    </div>
-                  )}
+                  ) : null}
+                  {/* Number fallback — shown when pack.image is null OR when the <img> fails to load */}
+                  <div
+                    data-fallback-number
+                    className="w-full h-full items-center justify-center"
+                    style={{ display: pack.image ? 'none' : 'flex' }}
+                  >
+                    <span className="text-7xl md:text-8xl font-black" style={{ color: '#E3B23C' }}>
+                      {pack.quantity}
+                    </span>
+                  </div>
                 </div>
 
                 <div className="p-5 flex flex-col flex-1">
