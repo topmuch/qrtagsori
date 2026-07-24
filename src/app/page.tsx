@@ -179,11 +179,12 @@ interface ShopProduct {
 }
 
 // Default fallback packs (used before API fetch completes)
+// Image : sachet QRTAG généré (utilisé pour tous les packs)
 const SHOP_PACKS_FALLBACK = [
-  { quantity: 3, name: 'Pack 3 Stickers', slug: 'pack-3-stickers', price: 1500, desc: '3 étiquettes QR indestructibles. Idéal pour tester.', badge: '', image: null },
-  { quantity: 5, name: 'Pack 5 Stickers', slug: 'pack-5-stickers', price: 3000, desc: '5 étiquettes QR indestructibles. Le plus populaire.', badge: 'POPULAIRE', image: null },
-  { quantity: 10, name: 'Pack 10 Stickers', slug: 'pack-10-stickers', price: 4000, desc: '10 étiquettes QR indestructibles. Pour usage fréquent.', badge: '', image: null },
-  { quantity: 15, name: 'Pack 15 Stickers', slug: 'pack-15-stickers', price: 5500, desc: '15 étiquettes QR indestructibles. Le plus économique.', badge: 'ÉCONOMIQUE', image: null },
+  { quantity: 3, name: 'Pack 3 Stickers', slug: 'pack-3-stickers', price: 1500, desc: '3 étiquettes QR indestructibles. Idéal pour tester.', badge: '', image: '/images/shop/qrtag-pack-sachet.png' },
+  { quantity: 5, name: 'Pack 5 Stickers', slug: 'pack-5-stickers', price: 3000, desc: '5 étiquettes QR indestructibles. Le plus populaire.', badge: 'POPULAIRE', image: '/images/shop/qrtag-pack-sachet.png' },
+  { quantity: 10, name: 'Pack 10 Stickers', slug: 'pack-10-stickers', price: 4000, desc: '10 étiquettes QR indestructibles. Pour usage fréquent.', badge: '', image: '/images/shop/qrtag-pack-sachet.png' },
+  { quantity: 15, name: 'Pack 15 Stickers', slug: 'pack-15-stickers', price: 5500, desc: '15 étiquettes QR indestructibles. Le plus économique.', badge: 'ÉCONOMIQUE', image: '/images/shop/qrtag-pack-sachet.png' },
 ];
 
 // ─── Bande défilante — Produits protégés ───
@@ -411,7 +412,7 @@ export default function HomePage() {
             >
               <Link
                 href="/#tarifs"
-                className="flex items-center gap-3 px-7 py-4 rounded-full font-black text-base shadow-2xl transition-all hover:scale-105 hover:shadow-2xl"
+                className="cta-pulse flex items-center gap-3 px-7 py-4 rounded-full font-black text-base shadow-2xl transition-all hover:scale-105 hover:shadow-2xl"
                 style={{
                   background: COLORS.accent,
                   color: COLORS.text,
