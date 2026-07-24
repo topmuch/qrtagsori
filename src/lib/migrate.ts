@@ -30,7 +30,14 @@ const QRTAGS_BAGGAGE_COLUMNS: Array<[string, string]> = [
   ['lostMessage',      'TEXT'],
 ];
 
-const SUPERADMIN_HASH = '$2b$10$5JnNkrnAaKKWV6kw5Ya9X.yCPqhCi4qTEFTQ37fGRUIORU9nSx9Dq';
+// ⚠️ This hash MUST correspond to the password declared in the ADMIN_PASSWORD
+// env var (default "Admin12345!"). If these don't match, every server restart
+// resets the superadmin password to an unknown value and the admin can no
+// longer log in — which breaks every authenticated admin endpoint (e.g.
+// /api/admin/blog/upload returns 401).
+//
+// Hash generated with: bcrypt.hashSync('Admin12345!', 10)
+const SUPERADMIN_HASH = '$2b$10$sx2dt8wYmI6dk4mD.UV1HuzEHPiej0VlQPDxDnrgDMBK1s5mGfAdi';
 const SUPERADMIN_EMAIL = 'admin@qrtags.com';
 
 let migrationStarted = false;

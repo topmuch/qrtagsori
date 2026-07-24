@@ -27,10 +27,11 @@ const BAGGAGE_COLUMNS = [
   ['lostMessage',      'TEXT'],
 ];
 
-// Superadmin credentials (bcrypt hash for "admin123")
+// Superadmin credentials. The hash MUST correspond to the ADMIN_PASSWORD env
+// var (default "Admin12345!"). Generated with bcrypt.hashSync('Admin12345!', 10).
 const SUPERADMIN_ID = 'admin-001';
 const SUPERADMIN_EMAIL = 'admin@qrtags.com';
-const SUPERADMIN_HASH = '$2b$10$5JnNkrnAaKKWV6kw5Ya9X.yCPqhCi4qTEFTQ37fGRUIORU9nSx9Dq';
+const SUPERADMIN_HASH = '$2b$10$sx2dt8wYmI6dk4mD.UV1HuzEHPiej0VlQPDxDnrgDMBK1s5mGfAdi';
 
 async function tableExists(prisma, tableName) {
   const result = await prisma.$queryRawUnsafe(
