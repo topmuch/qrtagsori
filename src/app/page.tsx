@@ -352,7 +352,9 @@ export default function HomePage() {
             background: `radial-gradient(ellipse at 20% 30%, ${COLORS.accent}22 0%, transparent 60%), radial-gradient(ellipse at 80% 70%, ${COLORS.green}11 0%, transparent 50%)`,
           }}
         />
-        <div className="max-w-screen-2xl mx-auto relative grid lg:grid-cols-2 gap-12 items-center">
+        <div className="max-w-screen-2xl mx-auto relative">
+          {/* Top : grille 2 colonnes — texte + preview trouvaille */}
+          <div className="grid lg:grid-cols-2 gap-12 items-center">
           <motion.div
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
@@ -423,27 +425,13 @@ export default function HomePage() {
             </div>
           </motion.div>
 
-          {/* Hero : Real photo — scène réelle objets retrouvés + Preview trouvaille */}
+          {/* Right : Preview trouvaille + badges flottants */}
           <motion.div
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ duration: 0.7, delay: 0.3 }}
-            className="relative space-y-6"
+            className="relative"
           >
-            <div
-              className="rounded-3xl overflow-hidden shadow-2xl"
-              style={{ border: `1px solid ${COLORS.border}` }}
-            >
-              <Image
-                src="/images/home/hero-found-objects.png"
-                alt="QRTags — retrouvez vos objets perdus : un inconnu rend une valise étiquetée à sa propriétaire"
-                width={1344}
-                height={768}
-                className="w-full h-auto object-cover"
-                priority
-              />
-            </div>
-
             {/* Preview : "objet trouvé" card */}
             <div
               className="rounded-2xl p-6 shadow-lg"
@@ -505,6 +493,91 @@ export default function HomePage() {
               <Shield className="w-5 h-5" />
               <span className="text-sm font-bold">RGPD · vie privée</span>
             </motion.div>
+          </motion.div>
+          </div>
+
+          {/* Bottom : Carrousel défilant pleine largeur — immersif */}
+          <motion.div
+            initial={{ opacity: 0, y: 30 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.7, delay: 0.5 }}
+            className="mt-16 lg:mt-24"
+            style={{
+              width: '100vw',
+              marginLeft: 'calc(50% - 50vw)',
+              marginRight: 'calc(50% - 50vw)',
+            }}
+          >
+            <div
+              className="relative overflow-hidden"
+              style={{ background: COLORS.bgWarm, padding: '32px 0 36px 0' }}
+            >
+              {/* Fade edges */}
+              <div
+                className="absolute left-0 top-0 bottom-0 w-24 z-10 pointer-events-none"
+                style={{ background: `linear-gradient(to right, ${COLORS.bgWarm}, transparent)` }}
+              />
+              <div
+                className="absolute right-0 top-0 bottom-0 w-24 z-10 pointer-events-none"
+                style={{ background: `linear-gradient(to left, ${COLORS.bgWarm}, transparent)` }}
+              />
+
+              {/* Petit titre au-dessus du défilement */}
+              <div className="px-6 md:px-12 mb-4 flex items-center justify-between">
+                <p className="text-xs font-bold uppercase tracking-wider" style={{ color: COLORS.accentDark }}>
+                  Objets protégés par QRTags · défilement continu
+                </p>
+                <div
+                  className="hidden md:flex items-center gap-2 px-3 py-1 rounded-full"
+                  style={{ background: COLORS.card, border: `1px solid ${COLORS.border}` }}
+                >
+                  <span className="w-2 h-2 rounded-full animate-pulse" style={{ background: COLORS.green }} />
+                  <span className="text-xs font-bold" style={{ color: COLORS.textMuted }}>98% retrouvés</span>
+                </div>
+              </div>
+
+              {/* Bande de cards qui défile en continu (45s, plus lent) */}
+              <div className="flex animate-marquee-slow">
+                {MARQUEE_ITEMS.concat(MARQUEE_ITEMS).map((item, i) => (
+                  <div
+                    key={`hero-card-${i}`}
+                    className="flex-shrink-0 mx-3 rounded-2xl overflow-hidden shadow-md hover:shadow-xl transition-shadow"
+                    style={{
+                      background: COLORS.card,
+                      border: `1px solid ${COLORS.border}`,
+                      width: '300px',
+                    }}
+                  >
+                    {/* Image (haut, ~75%) */}
+                    <div className="relative h-64">
+                      <Image
+                        src={item.image}
+                        alt={item.name}
+                        fill
+                        className="object-cover"
+                        sizes="300px"
+                      />
+                      {/* Petit badge QR en bas à droite de l'image */}
+                      <div
+                        className="absolute bottom-2 right-2 px-2 py-1 rounded-md text-[10px] font-bold shadow-md"
+                        style={{ background: 'rgba(255,255,255,0.95)', color: COLORS.accentDark }}
+                      >
+                        QR Tag
+                      </div>
+                    </div>
+                    {/* Texte (bas, ~25%) */}
+                    <div className="p-4">
+                      <h3 className="text-base font-bold mb-1.5" style={{ color: COLORS.text }}>
+                        {item.name}
+                      </h3>
+                      <p className="text-xs leading-relaxed" style={{ color: COLORS.textMuted }}>
+                        Collez un tag QR, et si cet objet est perdu, toute personne qui le trouve peut vous contacter en 1 clic.
+                      </p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
           </motion.div>
         </div>
       </section>

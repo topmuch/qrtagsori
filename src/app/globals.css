@@ -785,3 +785,13 @@ body * {
 .animate-marquee:hover {
   animation-play-state: paused;
 }
+
+/* ═══ Marquee lent (hero carrousel — 45s, plus immersif) ═══ */
+.animate-marquee-slow {
+  animation: marquee 45s linear infinite;
+  will-change: transform;
+}
+
+.animate-marquee-slow:hover {
+  animation-play-state: paused;
+}
