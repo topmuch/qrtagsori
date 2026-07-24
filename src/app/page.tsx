@@ -125,39 +125,6 @@ const OWNER_STEPS = [
   },
 ];
 
-const FEATURES = [
-  {
-    image: '/images/landing-v2/features/alertes-whatsapp.jpg',
-    title: 'Contact instantané',
-    desc: 'WhatsApp pré-rempli avec la géolocalisation. Le trouveur et le propriétaire se contactent en 1 clic. Aucune app à installer.',
-  },
-  {
-    image: '/images/home/gps-map.png',
-    title: 'Position GPS automatique',
-    desc: 'Le trouveur n\'a rien à taper — sa position est envoyée automatiquement au propriétaire via Google Maps. Simple et précis.',
-  },
-  {
-    image: '/images/landing-v2/features/securise-rgpd.jpg',
-    title: 'Vie privée protégée',
-    desc: 'Le trouveur ne voit que le prénom du propriétaire et la référence. Le numéro WhatsApp n\'est révélé qu\'au clic volontaire. Conforme RGPD.',
-  },
-  {
-    image: '/images/landing-v2/features/sans-app.jpg',
-    title: 'Multilingue automatique',
-    desc: 'La page trouveur s\'adapte en FR / EN / AR selon la langue du navigateur. Un tag français peut être scanné par un touristes anglophone.',
-  },
-  {
-    image: '/images/home/tracking-screen.png',
-    title: 'Suivi en temps réel',
-    desc: 'Entrez votre référence QRTags et suivez l\'état de votre objet : perdu, trouvé, en cours de récupération. Transparence totale.',
-  },
-  {
-    image: '/images/home/solidarity-black.png',
-    title: 'Solidarité citoyenne',
-    desc: 'QRTags transforme chaque trouveur en héros local. Rendre un objet perdu devient simple, rapide et gratifiant.',
-  },
-];
-
 const STATS = [
   { value: '98%', label: 'Objets retrouvés' },
   { value: '< 2h', label: 'Délai moyen retour' },
@@ -433,6 +400,30 @@ export default function HomePage() {
                 </div>
               ))}
             </div>
+
+            {/* CTA flottant superposé au carrousel — 'Commander mes tags' */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.6 }}
+              className="absolute left-1/2 -translate-x-1/2 z-20"
+              style={{ bottom: '24px' }}
+            >
+              <Link
+                href="/#tarifs"
+                className="flex items-center gap-3 px-7 py-4 rounded-full font-black text-base shadow-2xl transition-all hover:scale-105 hover:shadow-2xl"
+                style={{
+                  background: COLORS.accent,
+                  color: COLORS.text,
+                  border: `3px solid ${COLORS.text}`,
+                  boxShadow: '0 10px 30px rgba(0,0,0,0.25)',
+                }}
+              >
+                <ShoppingBag className="w-5 h-5" />
+                Commander mes tags
+                <ArrowRight className="w-5 h-5" />
+              </Link>
+            </motion.div>
           </div>
         </motion.div>
 
@@ -729,55 +720,6 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* ═══ AVANTAGES — with real images ═══ */}
-      <section id="features" className="py-20 lg:py-28 px-5" style={{ background: COLORS.bg }}>
-        <div className="max-w-screen-2xl mx-auto">
-          <div className="text-center mb-14">
-            <div
-              className="inline-block px-4 py-1.5 rounded-full text-sm font-bold mb-4"
-              style={{ background: COLORS.bgWarm, color: COLORS.accentDark, border: `1px solid ${COLORS.borderAccent}` }}
-            >
-              AVANTAGES
-            </div>
-            <h2 className="text-3xl md:text-5xl font-black mb-4" style={{ color: COLORS.text }}>
-              Objets <span style={{ color: COLORS.accentDark }}>perdus</span> &{' '}
-              <span style={{ color: COLORS.greenDark }}>retrouvés</span>
-            </h2>
-            <p className="text-lg max-w-2xl mx-auto" style={{ color: COLORS.textMuted }}>
-              QRTags fonctionne pour tout le monde — pas besoin de compte, d&apos;app ou de technologie.
-            </p>
-          </div>
-
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {FEATURES.map((f, i) => (
-              <motion.div
-                key={i}
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ delay: i * 0.05 }}
-                className="rounded-2xl overflow-hidden transition-all hover:scale-105 hover:shadow-xl h-full"
-                style={{ background: COLORS.card, border: `1px solid ${COLORS.border}` }}
-              >
-                <div className="relative aspect-[4/3] overflow-hidden">
-                  <Image
-                    src={f.image}
-                    alt={f.title}
-                    fill
-                    className="object-cover"
-                    sizes="(max-width: 768px) 100vw, (max-width: 1024px) 50vw, 33vw"
-                  />
-                </div>
-                <div className="p-5">
-                  <h3 className="text-lg font-bold mb-2" style={{ color: COLORS.text }}>{f.title}</h3>
-                  <p className="text-sm" style={{ color: COLORS.textMuted }}>{f.desc}</p>
-                </div>
-              </motion.div>
-            ))}
-          </div>
-        </div>
-      </section>
-
       {/* ═══ TÉMOIGNAGES ═══ */}
       <section id="temoignages" className="py-20 lg:py-28 px-5" style={{ background: COLORS.bgAlt }}>
         <div className="max-w-screen-2xl mx-auto">
@@ -865,7 +807,7 @@ export default function HomePage() {
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
                 transition={{ delay: i * 0.1 }}
-                className="rounded-2xl p-6 relative overflow-hidden"
+                className="rounded-2xl relative overflow-hidden flex flex-col"
                 style={{
                   background: '#E3B23C',
                   border: '4px solid #000000',
@@ -874,51 +816,54 @@ export default function HomePage() {
                 {/* Badge */}
                 {pack.badge && (
                   <div
-                    className="absolute top-3 right-3 px-3 py-1 rounded-lg text-xs font-black"
+                    className="absolute top-3 right-3 z-10 px-3 py-1 rounded-lg text-xs font-black"
                     style={{ background: '#000000', color: '#E3B23C' }}
                   >
                     {pack.badge}
                   </div>
                 )}
 
-                {/* Product image or quantity number */}
-                {pack.image ? (
-                  <img
-                    src={pack.image}
-                    alt={pack.name}
-                    className="w-16 h-16 rounded-xl object-cover mb-4"
-                    style={{ border: '3px solid #000000' }}
-                  />
-                ) : (
-                  <div
-                    className="w-16 h-16 rounded-xl flex items-center justify-center mb-4"
-                    style={{ background: '#000000' }}
-                  >
-                    <span className="text-3xl font-black" style={{ color: '#E3B23C' }}>
-                      {pack.quantity}
-                    </span>
-                  </div>
-                )}
-
-                <h3 className="text-lg font-black mb-2" style={{ color: '#000000' }}>
-                  {pack.name}
-                </h3>
-                <p className="text-sm mb-4" style={{ color: '#000000', opacity: 0.8 }}>
-                  {pack.desc}
-                </p>
-
-                <div className="text-2xl font-black mb-4" style={{ color: '#000000' }}>
-                  {new Intl.NumberFormat('fr-FR').format(pack.price)} FCFA
+                {/* Product image GRANDE (format portrait) ou quantité en grand */}
+                <div className="relative w-full" style={{ aspectRatio: '3 / 4' }}>
+                  {pack.image ? (
+                    <img
+                      src={pack.image}
+                      alt={pack.name}
+                      className="w-full h-full object-cover"
+                    />
+                  ) : (
+                    <div
+                      className="w-full h-full flex items-center justify-center"
+                      style={{ background: '#000000' }}
+                    >
+                      <span className="text-7xl md:text-8xl font-black" style={{ color: '#E3B23C' }}>
+                        {pack.quantity}
+                      </span>
+                    </div>
+                  )}
                 </div>
 
-                <Link
-                  href={`/shop/${pack.slug}`}
-                  className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl font-bold text-sm transition-all hover:scale-105"
-                  style={{ background: '#000000', color: '#E3B23C', border: '2px solid #E3B23C' }}
-                >
-                  Commander maintenant
-                  <ArrowRight className="w-4 h-4" />
-                </Link>
+                <div className="p-5 flex flex-col flex-1">
+                  <h3 className="text-lg font-black mb-2" style={{ color: '#000000' }}>
+                    {pack.name}
+                  </h3>
+                  <p className="text-sm mb-4 flex-1" style={{ color: '#000000', opacity: 0.8 }}>
+                    {pack.desc}
+                  </p>
+
+                  <div className="text-2xl font-black mb-4" style={{ color: '#000000' }}>
+                    {new Intl.NumberFormat('fr-FR').format(pack.price)} FCFA
+                  </div>
+
+                  <Link
+                    href={`/shop/${pack.slug}`}
+                    className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl font-bold text-sm transition-all hover:scale-105"
+                    style={{ background: '#000000', color: '#E3B23C', border: '2px solid #E3B23C' }}
+                  >
+                    Commander maintenant
+                    <ArrowRight className="w-4 h-4" />
+                  </Link>
+                </div>
               </motion.div>
             ))}
           </div>
