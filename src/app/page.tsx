@@ -563,82 +563,17 @@ export default function HomePage() {
             </div>
           </motion.div>
 
-          {/* Right : Preview trouvaille + badges flottants */}
+          {/* Right : Formulaire "Suivre un objet" directement dans le hero
+              (colonne de droite sur desktop, sous le texte sur mobile).
+              L'utilisateur peut tracker son objet dès la landing, sans scroll. */}
           <motion.div
+            id="tracker"
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ duration: 0.7, delay: 0.3 }}
-            className="relative"
           >
-            {/* Preview : "objet trouvé" card */}
-            <div
-              className="rounded-2xl p-6 shadow-lg"
-              style={{ background: COLORS.card, border: `1px solid ${COLORS.border}` }}
-            >
-              <div className="flex items-center gap-3 mb-4">
-                <div
-                  className="w-10 h-10 rounded-full flex items-center justify-center"
-                  style={{ background: COLORS.green, color: 'white' }}
-                >
-                  <CheckCircle2 className="w-5 h-5" />
-                </div>
-                <div>
-                  <div className="text-sm font-bold" style={{ color: COLORS.text }}>
-                    Objet trouvé !
-                  </div>
-                  <div className="text-xs" style={{ color: COLORS.textMuted }}>
-                    Il y a 45 min · Gare Saint-Charles, Marseille
-                  </div>
-                </div>
-              </div>
-              <p className="text-sm mb-3" style={{ color: COLORS.textMuted }}>
-                &laquo; Bonjour Amira, j&apos;ai trouvé votre valise (réf. QRT26-MLQGY7). Je suis à la sortie de la gare, près du café. Je peux vous la rendre tout de suite. — Lucas &raquo;
-              </p>
-              <div className="flex items-center gap-2">
-                <div
-                  className="px-3 py-1.5 rounded-lg text-xs font-bold"
-                  style={{ background: '#25D36622', color: '#25D366' }}
-                >
-                  Position GPS envoyée
-                </div>
-                <div
-                  className="px-3 py-1.5 rounded-lg text-xs font-bold"
-                  style={{ background: COLORS.bgWarm, color: COLORS.accentDark }}
-                >
-                  Contact WhatsApp
-                </div>
-              </div>
-            </div>
-
-            {/* Floating badges */}
-            <motion.div
-              initial={{ opacity: 0, x: 20 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ delay: 0.8 }}
-              className="absolute -bottom-4 -right-4 rounded-2xl px-4 py-3 shadow-xl flex items-center gap-2"
-              style={{ background: '#25D366', color: 'white' }}
-            >
-              <MessageCircle className="w-5 h-5" />
-              <span className="text-sm font-bold">1 clic = contact</span>
-            </motion.div>
-            <motion.div
-              initial={{ opacity: 0, x: -20 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ delay: 0.9 }}
-              className="absolute -top-4 -left-4 rounded-2xl px-4 py-3 shadow-xl flex items-center gap-2"
-              style={{ background: COLORS.accent, color: COLORS.text }}
-            >
-              <Shield className="w-5 h-5" />
-              <span className="text-sm font-bold">RGPD · vie privée</span>
-            </motion.div>
-          </motion.div>
-
-          {/* Formulaire de suivi — placé DIRECTEMENT sous la preview trouvaille
-              (colonne de droite sur desktop, sous la card sur mobile)
-              pour que l'utilisateur puisse tracker son objet dès la landing. */}
-          <div id="tracker" className="lg:col-start-2 lg:mt-8 mt-10">
             <TrackingWidget inline />
-          </div>
+          </motion.div>
           </div>
         </div>
       </section>
