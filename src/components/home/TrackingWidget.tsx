@@ -27,7 +27,7 @@ const COLORS = {
   borderAccent: 'rgba(253, 185, 0, 0.3)',
 };
 
-export default function TrackingWidget() {
+export default function TrackingWidget({ inline = false }: { inline?: boolean }) {
   const router = useRouter();
   const { t, dir } = useTranslation();
 
@@ -66,23 +66,18 @@ export default function TrackingWidget() {
     }
   };
 
-  return (
-    <section
-      dir={dir}
-      className="w-full py-10 sm:py-14"
-      style={{ background: COLORS.bg }}
+  // Inner card content — shared between inline and standalone modes
+  const card = (
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.5 }}
+      className="rounded-2xl p-6 sm:p-8 shadow-xl"
+      style={{
+        background: COLORS.card,
+        border: `2px solid ${COLORS.borderAccent}`,
+      }}
     >
-      <div className="max-w-xl mx-auto px-4">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5 }}
-          className="rounded-2xl p-6 sm:p-8 shadow-xl"
-          style={{
-            background: COLORS.card,
-            border: `2px solid ${COLORS.borderAccent}`,
-          }}
-        >
           {/* Header */}
           <div className="flex items-center gap-3 mb-2">
             <div
@@ -189,7 +184,28 @@ export default function TrackingWidget() {
               Format : QRT26-XXXXXX · HAJJ25-XXXXXX · VOL26-XXXXXX
             </span>
           </div>
-        </motion.div>
+    </motion.div>
+  );
+
+  // Mode inline : carte seule, sans wrapper <section> (pour intégration dans
+  // une colonne existante, ex: sous la preview trouvaille du hero).
+  if (inline) {
+    return (
+      <div dir={dir} className="w-full">
+        {card}
+      </div>
+    );
+  }
+
+  // Mode standalone : section pleine largeur avec fond jaune doux.
+  return (
+    <section
+      dir={dir}
+      className="w-full py-10 sm:py-14"
+      style={{ background: COLORS.bg }}
+    >
+      <div className="max-w-xl mx-auto px-4">
+        {card}
       </div>
     </section>
   );

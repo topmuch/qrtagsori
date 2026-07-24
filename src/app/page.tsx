@@ -624,13 +624,15 @@ export default function HomePage() {
               <span className="text-sm font-bold">RGPD · vie privée</span>
             </motion.div>
           </motion.div>
+
+          {/* Formulaire de suivi — placé DIRECTEMENT sous la preview trouvaille
+              (colonne de droite sur desktop, sous la card sur mobile)
+              pour que l'utilisateur puisse tracker son objet dès la landing. */}
+          <div id="tracker" className="lg:col-start-2 lg:mt-8 mt-10">
+            <TrackingWidget inline />
+          </div>
           </div>
         </div>
-      </section>
-
-      {/* ═══ TRACKER — Suivre un objet ═══ */}
-      <section id="tracker">
-        <TrackingWidget />
       </section>
 
       {/* ═══ COMMENT ÇA MARCHE — Tabs Trouveur / Propriétaire ═══ */}
