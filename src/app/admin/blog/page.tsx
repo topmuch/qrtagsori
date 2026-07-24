@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -27,7 +27,9 @@ import {
   Quote,
   Heading2,
   Link as LinkIcon,
-  Image as ImageIcon
+  Image as ImageIcon,
+  Upload,
+  Loader2,
 } from "lucide-react";
 
 interface BlogPost {
@@ -91,7 +93,10 @@ export default function BlogAdminPage() {
   const [modalMode, setModalMode] = useState<'create' | 'edit'>('create');
   const [selectedPost, setSelectedPost] = useState<BlogPost | null>(null);
   const [saving, setSaving] = useState(false);
-  
+  const [uploadingCover, setUploadingCover] = useState(false);
+  const [coverUploadError, setCoverUploadError] = useState<string | null>(null);
+  const coverFileInputRef = useRef<HTMLInputElement>(null);
+
   // Form state
   const [formData, setFormData] = useState({
     title: '',
@@ -101,6 +106,38 @@ export default function BlogAdminPage() {
     category: 'actualites',
     status: 'draft'
   });
+
+  // Upload cover image to /api/admin/blog/upload
+  const handleCoverImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setUploadingCover(true);
+    setCoverUploadError(null);
+
+    try {
+      const fd = new FormData();
+      fd.append('image', file);
+
+      const res = await fetch('/api/admin/blog/upload', {
+        method: 'POST',
+        body: fd,
+      });
+
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.error || 'Erreur lors de l\'upload');
+      }
+
+      setFormData({ ...formData, coverImage: data.url });
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Erreur upload';
+      setCoverUploadError(msg);
+    } finally {
+      setUploadingCover(false);
+      if (coverFileInputRef.current) coverFileInputRef.current.value = '';
+    }
+  };
 
   useEffect(() => {
     fetchPosts();
@@ -566,20 +603,64 @@ export default function BlogAdminPage() {
                   />
                 </div>
 
-                {/* Cover Image */}
+                {/* Cover Image — upload + URL fallback */}
                 <div>
-                  <Label className="text-slate-700 dark:text-slate-300">Image de couverture (URL)</Label>
-                  <Input
-                    value={formData.coverImage}
-                    onChange={(e) => setFormData({ ...formData, coverImage: e.target.value })}
-                    placeholder="https://exemple.com/image.jpg"
-                    className="mt-1 bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700"
-                  />
+                  <Label className="text-slate-700 dark:text-slate-300">Image de couverture</Label>
+                  <div className="mt-1 flex gap-2">
+                    <Input
+                      value={formData.coverImage}
+                      onChange={(e) => setFormData({ ...formData, coverImage: e.target.value })}
+                      placeholder="/images/blog/mon-image.jpg ou https://exemple.com/image.jpg"
+                      className="flex-1 bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700"
+                    />
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() => coverFileInputRef.current?.click()}
+                      disabled={uploadingCover}
+                      className="shrink-0"
+                    >
+                      {uploadingCover ? (
+                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                      ) : (
+                        <Upload className="w-4 h-4 mr-2" />
+                      )}
+                      {uploadingCover ? 'Upload...' : 'Téléverser'}
+                    </Button>
+                    <input
+                      ref={coverFileInputRef}
+                      type="file"
+                      accept="image/png,image/jpeg,image/webp,image/gif"
+                      onChange={handleCoverImageUpload}
+                      className="hidden"
+                    />
+                  </div>
+                  {coverUploadError && (
+                    <p className="mt-1 text-sm text-red-600 dark:text-red-400">{coverUploadError}</p>
+                  )}
                   {formData.coverImage && (
-                    <div className="mt-2 h-32 rounded-lg overflow-hidden bg-slate-100 dark:bg-slate-700">
-                      <img src={formData.coverImage} alt="Preview" className="w-full h-full object-cover" />
+                    <div className="mt-2 h-32 rounded-lg overflow-hidden bg-slate-100 dark:bg-slate-700 relative">
+                      <img
+                        src={formData.coverImage}
+                        alt="Preview"
+                        className="w-full h-full object-cover"
+                        onError={(e) => {
+                          (e.target as HTMLImageElement).style.opacity = '0.2';
+                        }}
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setFormData({ ...formData, coverImage: '' })}
+                        className="absolute top-1 right-1 p-1 rounded bg-black/60 text-white hover:bg-black/80"
+                        title="Retirer l'image"
+                      >
+                        <X className="w-3 h-3" />
+                      </button>
                     </div>
                   )}
+                  <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
+                    Astuce : téléversez l'image (max 5MB, JPG/PNG/WebP) ou collez une URL externe.
+                  </p>
                 </div>
 
                 {/* Excerpt */}

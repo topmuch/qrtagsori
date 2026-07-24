@@ -395,7 +395,12 @@ export default function AdminProductsPage() {
                   src={formImage}
                   alt="Preview"
                   className="w-24 h-24 rounded-xl object-cover"
-                  style={{ border: `3px solid ${COLORS.black}` }}
+                  style={{ border: `3px solid ${COLORS.black}`, background: '#f3f4f6' }}
+                  onError={(e) => {
+                    const img = e.target as HTMLImageElement;
+                    img.style.opacity = '0.3';
+                    img.alt = 'Image introuvable';
+                  }}
                 />
                 <button
                   onClick={() => setFormImage('')}

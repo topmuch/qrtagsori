@@ -40,11 +40,17 @@ export async function POST(request: NextRequest) {
     return NextResponse.json(product);
   } catch (error: unknown) {
     const err = error as Error;
-    if (err.message?.includes('Unique')) {
-      return NextResponse.json({ error: 'Ce slug existe déjà' }, { status: 409 });
+    const msg = err?.message || String(error);
+    // Prisma unique constraint violation (P2002) — message contains "Unique" or "UNIQUE"
+    if (msg.includes('Unique') || msg.includes('UNIQUE') || msg.includes('P2002')) {
+      return NextResponse.json({ error: 'Ce slug existe déjà. Choisissez un autre nom.' }, { status: 409 });
     }
     console.error('[shop-admin] Error creating product:', error);
-    return NextResponse.json({ error: 'Erreur serveur' }, { status: 500 });
+    // Surface a more useful message to the client while keeping server logs for full stack
+    return NextResponse.json(
+      { error: `Erreur serveur: ${msg.slice(0, 200)}` },
+      { status: 500 },
+    );
   }
 }
 
