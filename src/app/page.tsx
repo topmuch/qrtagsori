@@ -303,7 +303,7 @@ export default function HomePage() {
               <a href="#comment" className="px-4 py-2 text-sm font-medium hover:text-[#c89a00] transition-colors">Comment ça marche</a>
               <a href="#features" className="px-4 py-2 text-sm font-medium hover:text-[#c89a00] transition-colors">Avantages</a>
               <a href="#objets" className="px-4 py-2 text-sm font-medium hover:text-[#c89a00] transition-colors">Objets protégés</a>
-              <a href="#boutique" className="px-4 py-2 text-sm font-medium hover:text-[#c89a00] transition-colors">Boutique</a>
+              <a href="#tarifs" className="px-4 py-2 text-sm font-medium hover:text-[#c89a00] transition-colors">Tarifs</a>
               <a href="#temoignages" className="px-4 py-2 text-sm font-medium hover:text-[#c89a00] transition-colors">Témoignages</a>
             </div>
 
@@ -315,7 +315,7 @@ export default function HomePage() {
                 Suivre un objet
               </a>
               <Link
-                href="/inscrire"
+                href="/#tarifs"
                 className="px-5 py-2.5 rounded-lg text-sm font-bold transition-all hover:scale-105"
                 style={{ background: COLORS.accent, color: COLORS.text }}
               >
@@ -333,10 +333,10 @@ export default function HomePage() {
               <a href="#comment" onClick={() => setMenuOpen(false)} className="block px-4 py-2 text-sm">Comment ça marche</a>
               <a href="#features" onClick={() => setMenuOpen(false)} className="block px-4 py-2 text-sm">Avantages</a>
               <a href="#objets" onClick={() => setMenuOpen(false)} className="block px-4 py-2 text-sm">Objets protégés</a>
-              <a href="#boutique" onClick={() => setMenuOpen(false)} className="block px-4 py-2 text-sm">Boutique</a>
+              <a href="#tarifs" onClick={() => setMenuOpen(false)} className="block px-4 py-2 text-sm">Tarifs</a>
               <a href="#temoignages" onClick={() => setMenuOpen(false)} className="block px-4 py-2 text-sm">Témoignages</a>
               <a href="#tracker" onClick={() => setMenuOpen(false)} className="block px-4 py-2 text-sm text-[#c89a00]">Suivre un objet →</a>
-              <Link href="/inscrire" className="block px-4 py-3 text-sm font-bold text-center rounded-lg" style={{ background: COLORS.accent, color: COLORS.text }}>
+              <Link href="/#tarifs" className="block px-4 py-3 text-sm font-bold text-center rounded-lg" style={{ background: COLORS.accent, color: COLORS.text }}>
                 Protéger mes objets
               </Link>
             </div>
@@ -394,7 +394,7 @@ export default function HomePage() {
                 Suivre un objet perdu
               </a>
               <Link
-                href="/inscrire"
+                href="/#tarifs"
                 className="px-6 py-4 rounded-xl font-bold text-base flex items-center justify-center gap-2 border-2 transition-all hover:bg-[#fffdf5]"
                 style={{ borderColor: COLORS.accent, color: COLORS.text }}
               >
@@ -674,7 +674,7 @@ export default function HomePage() {
 
           <div className="text-center mt-12">
             <Link
-              href="/inscrire"
+              href="/#tarifs"
               className="inline-flex items-center gap-2 px-6 py-4 rounded-xl font-bold transition-all hover:scale-105"
               style={{ background: COLORS.accent, color: COLORS.text }}
             >
@@ -795,7 +795,7 @@ export default function HomePage() {
       </section>
 
       {/* ═══ BOUTIQUE — Nos Packs de Stickers ═══ */}
-      <section id="boutique" className="py-20 lg:py-28 px-5" style={{ background: '#111111' }}>
+      <section id="tarifs" className="py-20 lg:py-28 px-5" style={{ background: '#111111' }}>
         <div className="max-w-screen-2xl mx-auto">
           <div className="text-center mb-12">
             <div
@@ -947,7 +947,7 @@ export default function HomePage() {
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <Link
-                href="/inscrire"
+                href="/#tarifs"
                 className="px-8 py-4 rounded-xl font-black text-base inline-flex items-center justify-center gap-2 transition-all hover:scale-105"
                 style={{ background: COLORS.accent, color: COLORS.text }}
               >
@@ -998,8 +998,8 @@ export default function HomePage() {
               <ul className="space-y-2 text-sm">
                 <li><a href="#comment" style={{ color: COLORS.textMuted }}>Comment ça marche</a></li>
                 <li><a href="#tracker" style={{ color: COLORS.textMuted }}>Suivre un objet</a></li>
-                <li><a href="#boutique" style={{ color: COLORS.textMuted }}>Boutique stickers</a></li>
-                <li><Link href="/inscrire" style={{ color: COLORS.textMuted }}>Protéger mes objets</Link></li>
+                <li><a href="#tarifs" style={{ color: COLORS.textMuted }}>Tarifs</a></li>
+                <li><Link href="/#tarifs" style={{ color: COLORS.textMuted }}>Protéger mes objets</Link></li>
                 <li><Link href="/scan" style={{ color: COLORS.textMuted }}>Scanner un QR</Link></li>
               </ul>
             </div>
