@@ -100,16 +100,16 @@ export const metadata: Metadata = {
     alternateLocale: ["en_US", "ar_AR"],
     images: [
       {
-        url: "/og-image.png",
-        width: 1200,
-        height: 630,
-        alt: "QRTags — Étiquette QR pour objets perdus et retrouvés",
-      },
-      {
         url: "/icons/icon-512x512.png",
         width: 512,
         height: 512,
-        alt: "Logo QRTags",
+        alt: "QRTags — Étiquette QR pour objets perdus et retrouvés",
+      },
+      {
+        url: "/hero-illustration-new.png",
+        width: 1200,
+        height: 630,
+        alt: "QRTags — Retrouvez vos objets perdus avec un simple scan QR",
       },
     ],
   },
@@ -122,7 +122,7 @@ export const metadata: Metadata = {
     title: "QRTags — Retrouvez 98% de vos objets perdus",
     description:
       "Étiquette QR intelligente pour valise, clés, sac, lunettes, téléphone. Sans app, sans batterie. Alerte WhatsApp instantanée.",
-    images: ["/og-image.png"],
+    images: ["/hero-illustration-new.png", "/icons/icon-512x512.png"],
   },
 
   // PWA
@@ -250,7 +250,7 @@ export default function RootLayout({
               alternateName: "QRTags by MMASOLUTION",
               url: "https://qrtags.com",
               logo: "https://qrtags.com/icons/icon-512x512.png",
-              image: "https://qrtags.com/og-image.png",
+              image: "https://qrtags.com/icons/icon-512x512.png",
               description:
                 "QRTags protège les objets du quotidien grâce à des étiquettes QR intelligentes. Sans app, sans batterie, sans GPS. Alerte WhatsApp instantanée avec la position du trouveur.",
               slogan: "98% des objets étiquetés sont retrouvés en moins de 2h",
@@ -281,7 +281,7 @@ export default function RootLayout({
               "@context": "https://schema.org",
               "@type": "LocalBusiness",
               name: "QRTags",
-              image: "https://qrtags.com/og-image.png",
+              image: "https://qrtags.com/icons/icon-512x512.png",
               url: "https://qrtags.com",
               telephone: "+221-77-000-00-00",
               priceRange: "1500-5500 FCFA",
@@ -346,7 +346,7 @@ export default function RootLayout({
               "@context": "https://schema.org",
               "@type": "Product",
               name: "Étiquette QR QRTags",
-              image: "https://qrtags.com/og-image.png",
+              image: "https://qrtags.com/icons/icon-512x512.png",
               description:
                 "Étiquette QR intelligente pour protéger valise, clés, sac, lunettes, téléphone. Alerte WhatsApp instantanée dès qu'un trouveur scanne le tag.",
               brand: { "@type": "Brand", name: "QRTags" },
