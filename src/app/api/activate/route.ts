@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { z } from 'zod';
 import crypto from 'crypto';
+import { notifyNewRegistration } from '@/lib/in-app-notifications';
 
 const activateSchema = z.object({
   reference: z.string().min(1, 'Référence requise'),
@@ -69,6 +70,13 @@ export async function POST(request: NextRequest) {
         isLost: false,
         customData: validatedData.customData ? JSON.stringify(validatedData.customData) : null,
       },
+    });
+
+    // Notification in-app : nouvelle inscription voyageur (broadcast superadmins)
+    await notifyNewRegistration({
+      email: `${validatedData.travelerFirstName} ${validatedData.travelerLastName}`.trim(),
+      name: `${validatedData.travelerFirstName} ${validatedData.travelerLastName}`.trim(),
+      reference: validatedData.reference,
     });
 
     return NextResponse.json({

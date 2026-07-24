@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { getSession } from '@/lib/session';
+import { notifyNewBlogPost } from '@/lib/in-app-notifications';
 
 // Helper to generate slug from title
 function generateSlug(title: string): string {
@@ -142,6 +143,16 @@ export async function POST(request: NextRequest) {
       }
     });
 
+    // Notification in-app : nouvel article publié (broadcast superadmins)
+    if (isPublishing) {
+      await notifyNewBlogPost({
+        id: post.id,
+        title: post.title,
+        slug: post.slug,
+        category: post.category,
+      });
+    }
+
     return NextResponse.json({ success: true, post });
 
   } catch (error) {
@@ -227,6 +238,16 @@ export async function PUT(request: NextRequest) {
           : (publishedAt ? new Date(publishedAt) : existing.publishedAt)
       }
     });
+
+    // Notification in-app : publication d'un article (passage draft -> published)
+    if (isPublishing) {
+      await notifyNewBlogPost({
+        id: post.id,
+        title: post.title,
+        slug: post.slug,
+        category: post.category,
+      });
+    }
 
     return NextResponse.json({ success: true, post });
 

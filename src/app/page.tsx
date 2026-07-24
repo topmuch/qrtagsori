@@ -29,6 +29,7 @@ import {
 } from 'lucide-react';
 import QRTagsLogo from '@/components/qrtags/QRTagsLogo';
 import TrackingWidget from '@/components/home/TrackingWidget';
+import BlogTeaserSection from '@/components/home/BlogTeaserSection';
 
 const LandingChatbotWidget = dynamic(
   () => import('@/components/finder/LandingChatbotWidget'),
@@ -65,28 +66,28 @@ const COLORS = {
 const FINDER_STEPS = [
   {
     num: '01',
-    image: '/images/home/finding-object-black.png',
+    image: '/images/how-it-works/step-1-generation.png',
     title: 'Vous trouvez un objet',
     desc: 'Dans la rue, à l\'aéroport, dans un taxi, au café... Vous voyez un QR tag QRTags sur l\'objet perdu.',
     color: COLORS.accent,
   },
   {
     num: '02',
-    image: '/images/home/scan-whatsapp-black.png',
+    image: '/images/how-it-works/step-3-scan-alert.png',
     title: 'Scannez le QR code',
     desc: 'Un simple scan avec votre téléphone — aucune app à installer, pas besoin de batterie ou de GPS sur l\'objet.',
     color: COLORS.accentAlt,
   },
   {
     num: '03',
-    image: '/images/home/whatsapp-alert-black.png',
+    image: '/images/how-it-works/step-3-scan-alert.png',
     title: 'Contactez le propriétaire',
     desc: 'La page WAME s\'ouvre automatiquement avec votre position GPS. Un message WhatsApp pré-rempli est envoyé au propriétaire.',
     color: COLORS.green,
   },
   {
     num: '04',
-    image: '/images/home/item-returned-black.png',
+    image: '/images/how-it-works/step-4-recovered.png',
     title: 'L\'objet est rendu',
     desc: 'Le propriétaire sait exactement où vous êtes. Vous rendez l\'objet en 2h en moyenne. Un geste simple qui change une vie.',
     color: COLORS.greenDark,
@@ -96,28 +97,28 @@ const FINDER_STEPS = [
 const OWNER_STEPS = [
   {
     num: '01',
-    image: '/images/home/attach-qr-tag-black.png',
+    image: '/images/how-it-works/step-1-generation.png',
     title: 'Collez un QR tag',
     desc: 'Commandez vos tags QRTags et collez-les sur vos objets : valise, clés, sac, lunettes, téléphone... Chaque tag est unique.',
     color: COLORS.accent,
   },
   {
     num: '02',
-    image: '/images/home/activate-qr-black.png',
+    image: '/images/how-it-works/step-2-activation.png',
     title: 'Activez en 30 secondes',
     desc: 'Scannez votre propre tag, entrez vos infos (prénom, WhatsApp) et l\'objet est protégé. Pas d\'app, pas de compte obligatoire.',
     color: COLORS.accentAlt,
   },
   {
     num: '03',
-    image: '/images/home/whatsapp-alert-black.png',
+    image: '/images/how-it-works/step-3-scan-alert.png',
     title: 'Recevez une alerte',
     desc: 'Si quelqu\'un trouve votre objet, vous recevez un message WhatsApp avec la position exacte du trouveur. Instantané.',
     color: COLORS.green,
   },
   {
     num: '04',
-    image: '/images/home/retrieve-item-black.png',
+    image: '/images/how-it-works/step-4-recovered.png',
     title: 'Récupérez votre objet',
     desc: 'Contactez le trouveur via WhatsApp, récupérez votre objet. 98% des objets étiquetés sont retrouvés.',
     color: COLORS.greenDark,
@@ -508,29 +509,29 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* ═══ BANDE DÉFILANTE — Produits protégés ═══ */}
-      <section className="py-6 overflow-hidden" style={{ background: COLORS.bgWarm }}>
-        <div className="text-center mb-4">
-          <p className="text-sm font-bold" style={{ color: COLORS.accentDark }}>
+      {/* ═══ BANDE DÉFILANTE — Produits protégés (hauteur augmentée pour meilleure visibilité) ═══ */}
+      <section className="py-10 overflow-hidden" style={{ background: COLORS.bgWarm }}>
+        <div className="text-center mb-6">
+          <p className="text-base font-bold" style={{ color: COLORS.accentDark }}>
             Protégez tous vos objets du quotidien avec QRTags
           </p>
         </div>
         {/* Scrolling marquee */}
         <div className="relative">
           {/* Fade edges */}
-          <div className="absolute left-0 top-0 bottom-0 w-16 z-10" style={{ background: `linear-gradient(to right, ${COLORS.bgWarm}, transparent)` }} />
-          <div className="absolute right-0 top-0 bottom-0 w-16 z-10" style={{ background: `linear-gradient(to left, ${COLORS.bgWarm}, transparent)` }} />
+          <div className="absolute left-0 top-0 bottom-0 w-20 z-10" style={{ background: `linear-gradient(to right, ${COLORS.bgWarm}, transparent)` }} />
+          <div className="absolute right-0 top-0 bottom-0 w-20 z-10" style={{ background: `linear-gradient(to left, ${COLORS.bgWarm}, transparent)` }} />
           <div className="flex animate-marquee">
             {MARQUEE_ITEMS.concat(MARQUEE_ITEMS).map((item, i) => (
               <div
                 key={`m-${i}`}
-                className="flex-shrink-0 mx-4 flex items-center gap-3 px-5 py-3 rounded-xl transition-all hover:scale-105"
-                style={{ background: COLORS.card, border: `1px solid ${COLORS.border}`, minWidth: '140px' }}
+                className="flex-shrink-0 mx-4 flex items-center gap-4 px-6 py-5 rounded-2xl transition-all hover:scale-105 shadow-sm"
+                style={{ background: COLORS.card, border: `1px solid ${COLORS.border}`, minWidth: '180px' }}
               >
-                <div className="relative w-10 h-10 rounded-lg overflow-hidden flex-shrink-0">
-                  <Image src={item.image} alt={item.name} fill className="object-cover" sizes="40px" />
+                <div className="relative w-16 h-16 rounded-xl overflow-hidden flex-shrink-0 shadow-inner">
+                  <Image src={item.image} alt={item.name} fill className="object-cover" sizes="64px" />
                 </div>
-                <span className="text-sm font-bold whitespace-nowrap" style={{ color: COLORS.text }}>{item.name}</span>
+                <span className="text-base font-bold whitespace-nowrap" style={{ color: COLORS.text }}>{item.name}</span>
               </div>
             ))}
           </div>
@@ -695,8 +696,8 @@ export default function HomePage() {
               AVANTAGES
             </div>
             <h2 className="text-3xl md:text-5xl font-black mb-4" style={{ color: COLORS.text }}>
-              Pour <span style={{ color: COLORS.accentDark }}>trouveurs</span> &{' '}
-              <span style={{ color: COLORS.greenDark }}>propriétaires</span>
+              Objets <span style={{ color: COLORS.accentDark }}>perdus</span> &{' '}
+              <span style={{ color: COLORS.greenDark }}>retrouvés</span>
             </h2>
             <p className="text-lg max-w-2xl mx-auto" style={{ color: COLORS.textMuted }}>
               QRTags fonctionne pour tout le monde — pas besoin de compte, d&apos;app ou de technologie.
@@ -744,8 +745,8 @@ export default function HomePage() {
               TÉMOIGNAGES
             </div>
             <h2 className="text-3xl md:text-5xl font-black mb-4" style={{ color: COLORS.text }}>
-              Des <span style={{ color: COLORS.greenDark }}>trouveurs</span> &{' '}
-              <span style={{ color: COLORS.accentDark }}>propriétaires</span> heureux
+              Ils ont <span style={{ color: COLORS.accentDark }}>retrouvé</span> ce qui comptait le{' '}
+              <span style={{ color: COLORS.greenDark }}>plus.</span>
             </h2>
           </div>
 
@@ -965,6 +966,21 @@ export default function HomePage() {
           </motion.div>
         </div>
       </section>
+
+      {/* ═══ DERNIERS ARTICLES DU BLOG ═══ */}
+      <BlogTeaserSection
+        limit={3}
+        title="Dernières actualités"
+        subtitle="Conseils, actualités et bonnes pratiques pour protéger vos objets du quotidien."
+        colors={{
+          bg: COLORS.bgAlt,
+          text: COLORS.text,
+          textMuted: COLORS.textMuted,
+          accentDark: COLORS.accentDark,
+          card: COLORS.card,
+          border: COLORS.border,
+        }}
+      />
 
       {/* ═══ FOOTER ═══ */}
       <footer className="py-12 px-5 border-t" style={{ borderColor: COLORS.border, background: COLORS.bg }}>

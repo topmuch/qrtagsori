@@ -670,34 +670,7 @@ export default function AgenceLoginPage() {
             </motion.button>
           </motion.form>
 
-          {/* Demo Account Card */}
-          <motion.div
-            className="mt-6 p-4 rounded-xl bg-[#FDB900]/10 border border-[#FDB900]/20"
-            variants={itemVariants}
-          >
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <div className="w-9 h-9 rounded-lg bg-[#0d0d0f] flex items-center justify-center shadow-sm">
-                  <Fingerprint className="w-4 h-4 text-[#FDB900]" />
-                </div>
-                <div>
-                  <p className="text-xs font-semibold text-[#0d0d0f]">
-                    Compte démo
-                  </p>
-                  <p className="text-[10px] text-[#525252] font-mono leading-relaxed">
-                    agence@qrtags.com / agence123
-                  </p>
-                </div>
-              </div>
-              <button
-                type="button"
-                onClick={fillDemo}
-                className="text-xs font-semibold px-3.5 py-2 rounded-lg bg-[#0d0d0f] text-[#FDB900] hover:bg-[#1a1a1a] active:scale-[0.97] transition-all duration-200 shadow-sm"
-              >
-                Remplir
-              </button>
-            </div>
-          </motion.div>
+          {/* Demo account card removed for production */}
 
           {/* Switch to Admin */}
           <motion.div

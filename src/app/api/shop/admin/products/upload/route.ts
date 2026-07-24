@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { writeFile } from 'fs/promises';
+import { writeFile, mkdir } from 'fs/promises';
 import path from 'path';
 
 // POST /api/shop/admin/products/upload — Upload product image
@@ -30,8 +30,11 @@ export async function POST(request: NextRequest) {
     const randomStr = Math.random().toString(36).substring(2, 8);
     const filename = `product-${timestamp}-${randomStr}.${ext}`;
 
-    // Save to /public/images/shop/
+    // Save to /public/images/shop/ — ensure the directory exists (mkdir recursive)
+    // Without this, writeFile throws ENOENT on first upload because the folder
+    // is not committed to the repo and is not copied into the standalone bundle.
     const publicDir = path.join(process.cwd(), 'public', 'images', 'shop');
+    await mkdir(publicDir, { recursive: true });
     const filePath = path.join(publicDir, filename);
 
     const bytes = await file.arrayBuffer();
@@ -44,6 +47,10 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ url: imageUrl, filename });
   } catch (error) {
     console.error('[shop-admin] Error uploading image:', error);
-    return NextResponse.json({ error: 'Erreur serveur lors de l\'upload' }, { status: 500 });
+    const message = error instanceof Error ? error.message : 'Erreur inconnue';
+    return NextResponse.json(
+      { error: `Erreur serveur lors de l'upload: ${message}` },
+      { status: 500 }
+    );
   }
 }

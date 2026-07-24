@@ -3,6 +3,7 @@ import { db } from '@/lib/db';
 import { z } from 'zod';
 import bcrypt from 'bcryptjs';
 import { revalidatePath } from 'next/cache';
+import { notifyNewUser } from '@/lib/in-app-notifications';
 
 // Validation schema
 const userSchema = z.object({
@@ -85,6 +86,15 @@ export async function POST(request: NextRequest) {
         role: validatedData.role,
         agencyId,
       }
+    });
+
+    // Notification in-app : nouvel utilisateur créé (broadcast superadmins)
+    await notifyNewUser({
+      id: user.id,
+      email: user.email,
+      name: user.name,
+      role: user.role,
+      agencyId: user.agencyId,
     });
 
     // Remove password from response

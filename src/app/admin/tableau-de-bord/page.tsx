@@ -19,6 +19,7 @@ import {
   Plus,
   Filter
 } from "lucide-react";
+import AdminLatestBlogPosts from '@/components/admin/AdminLatestBlogPosts';
 
 // Types
 interface DashboardStats {
@@ -439,6 +440,11 @@ export default function DashboardPage() {
             <RecentActivityList activities={recentActivities} />
           </>
         )}
+      </div>
+
+      {/* Derniers articles du blog (intégration Super Admin → dashboard admin) */}
+      <div className="mt-8">
+        <AdminLatestBlogPosts limit={3} />
       </div>
     </div>
   );

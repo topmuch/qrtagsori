@@ -613,7 +613,7 @@ export default function AdminLoginPage() {
                   onFocus={() => setFocusedField('email')}
                   onBlur={() => setFocusedField(null)}
                   className="w-full bg-transparent border-none outline-none text-white placeholder-white/25 py-3.5 px-3 text-sm"
-                  placeholder="admin@qrtags.com"
+                  placeholder="Votre adresse email"
                   required
                   autoComplete="email"
                 />
@@ -729,34 +729,7 @@ export default function AdminLoginPage() {
             </motion.div>
           </form>
 
-          {/* Demo Account Card */}
-          <motion.div
-            className="mt-6 p-4 rounded-xl bg-white/[0.04] border border-[#FDB900]/15 backdrop-blur-sm"
-            initial={{ opacity: 0, y: 16 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.75 }}
-          >
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2.5">
-                <div className="w-9 h-9 rounded-lg bg-[#FDB900]/20 border border-[#FDB900]/20 flex items-center justify-center">
-                  <Fingerprint className="w-4 h-4 text-[#FDB900]" />
-                </div>
-                <div>
-                  <p className="text-xs font-semibold text-white/70">Compte démo</p>
-                  <p className="text-[10px] text-white/25 font-mono mt-0.5">
-                    admin@qrtags.com / admin123
-                  </p>
-                </div>
-              </div>
-              <button
-                type="button"
-                onClick={fillDemo}
-                className="text-xs font-semibold px-4 py-2 rounded-lg bg-[#FDB900]/20 text-[#FDB900] border border-[#FDB900]/20 hover:bg-[#FDB900]/30 hover:text-[#FFDB58] hover:border-[#FDB900]/40 transition-all duration-200 active:scale-95"
-              >
-                Remplir
-              </button>
-            </div>
-          </motion.div>
+          {/* Demo account card removed for production */}
 
           {/* Switch to Agency */}
           <motion.div
