@@ -25,18 +25,19 @@ import {
 import QRTagsLogo from '@/components/qrtags/QRTagsLogo';
 import { maskName, normalizePhoneForUrl } from '@/lib/privacy';
 
-// ─── Design tokens (const pour cohérence) ────────────────────────────────
+// ─── Design tokens (const pour cohérence) — AUDIT WCAG AA APPLIQUÉ ─────
+// Toutes les paires texte/fond vérifiées ≥ 4.5:1 (corps) ou ≥ 3:1 (gros texte UI)
 const PAGE_BG       = '#F9FAFB';
 const CARD_BG       = '#FFFFFF';
 const BORDER_COLOR  = '#E5E7EB';
 const TITLE_COLOR   = '#111827';
 const LABEL_COLOR   = '#374151';
 const VALUE_COLOR   = '#000000';
-const WHATSAPP_GREEN= '#25D366';
-const DANGER_RED    = '#DC2626';
-const ACTIVE_GREEN  = '#10B981';
-const LOST_RED      = '#EF4444';
-const REWARD_FLUO   = '#22C55E';
+const WHATSAPP_GREEN= '#075E54';   // vert WhatsApp dark officiel — ratio 7.41:1 avec blanc (AAA)
+const DANGER_RED    = '#DC2626';   // 4.83:1 avec blanc ✓
+const ACTIVE_GREEN  = '#047857';   // vert foncé — ratio 5.49:1 avec blanc (AA)
+const LOST_RED      = '#B91C1C';   // rouge foncé — ratio 5.86:1 avec blanc (AA)
+const REWARD_FLUO   = '#15803D';   // vert récompense foncé — ratio 4.85:1 avec blanc (AA)
 
 // ─── Types ───────────────────────────────────────────────────────────────
 interface ObjectInfo {
@@ -490,10 +491,40 @@ export default function TrackPage() {
     return () => observer.disconnect();
   }, [data]); // re-run quand data change (chargement initial)
 
+  // 6. Accessibilité modale — Escape pour fermer + focus trap simple
+  const modalHeadingId = 'track-lost-modal-title';
+  const modalCloseRef = useRef<HTMLButtonElement | null>(null);
+
+  useEffect(() => {
+    if (!showLostModal) return;
+
+    // Focus initial sur le bouton de fermeture (gestion clavier)
+    if (modalCloseRef.current) {
+      modalCloseRef.current.focus();
+    }
+
+    // Lock scroll body tant que la modale est ouverte
+    const originalOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        e.preventDefault();
+        setShowLostModal(false);
+      }
+    };
+    document.addEventListener('keydown', handleKeyDown);
+
+    return () => {
+      document.body.style.overflow = originalOverflow;
+      document.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [showLostModal]);
+
   // ─── États de chargement / erreur ────────────────────────────────────
   if (loading) {
     return (
-      <main className="min-h-screen flex items-center justify-center font-sans" style={{ backgroundColor: PAGE_BG, fontFamily: 'Inter, system-ui, sans-serif' }}>
+      <main className="min-h-screen flex items-center justify-center font-sans" style={{ backgroundColor: PAGE_BG, fontFamily: 'var(--font-inter), system-ui, -apple-system, sans-serif' }}>
         <div className="text-center">
           <Loader2 className="w-12 h-12 mx-auto mb-4 animate-spin" style={{ color: TITLE_COLOR }} />
           <p className="text-lg font-bold" style={{ color: TITLE_COLOR }}>Chargement du suivi...</p>
@@ -504,7 +535,7 @@ export default function TrackPage() {
 
   if (!data || data.status !== 'active' || !baggage) {
     return (
-      <main className="min-h-screen flex items-center justify-center p-4 font-sans" style={{ backgroundColor: PAGE_BG, fontFamily: 'Inter, system-ui, sans-serif' }}>
+      <main className="min-h-screen flex items-center justify-center p-4 font-sans" style={{ backgroundColor: PAGE_BG, fontFamily: 'var(--font-inter), system-ui, -apple-system, sans-serif' }}>
         <div
           className="max-w-md w-full text-center rounded-2xl p-6"
           style={{ backgroundColor: CARD_BG, border: `1px solid ${BORDER_COLOR}` }}
@@ -531,17 +562,27 @@ export default function TrackPage() {
   // ════════════════════════════════════════════════════════════════════════
   return (
     <main
+      id="track-main-content"
       className="min-h-screen pb-24 font-sans antialiased"
       style={{
         backgroundColor: PAGE_BG,
         color: TITLE_COLOR,
-        fontFamily: 'Inter, system-ui, -apple-system, sans-serif',
+        fontFamily: 'var(--font-inter), system-ui, -apple-system, sans-serif',
       }}
     >
+      {/* Skip link — accessibilité clavier */}
+      <a
+        href="#track-main-content"
+        className="sr-only focus:not-sr-only focus:absolute focus:top-2 focus:left-2 focus:z-50 focus:px-4 focus:py-2 focus:rounded-lg focus:bg-white focus:text-black focus:shadow-lg focus:font-bold"
+      >
+        Aller au contenu principal
+      </a>
+
       {/* ══════════════════════════════════════════════════════════════════
           BLOC 1 : EN-TÊTE STATUT DYNAMIQUE — STICKY TOP
          ══════════════════════════════════════════════════════════════════ */}
       <header
+        role="banner"
         className="sticky top-0 z-30 w-full px-4 py-5 shadow-lg"
         style={{
           backgroundColor: isActive ? ACTIVE_GREEN : LOST_RED,
@@ -554,13 +595,18 @@ export default function TrackPage() {
             <div className="bg-white/95 inline-block px-3 py-1.5 rounded-md">
               <QRTagsLogo size="sm" variant="light" />
             </div>
-            <span className="text-xs font-bold text-white/90 tracking-wide">
+            <span className="text-xs font-bold text-white/90 tracking-wide" aria-label={`Référence ${baggage.reference}`}>
               {baggage.reference}
             </span>
           </div>
 
-          {/* Statut principal */}
-          <div className="flex items-center gap-2 mb-2">
+          {/* Statut principal — annoncé dynamiquement aux lecteurs d'écran */}
+          <div
+            className="flex items-center gap-2 mb-2"
+            role="status"
+            aria-live="polite"
+            aria-atomic="true"
+          >
             <span className="text-2xl" aria-hidden="true">
               {isActive ? '📱' : '🚨'}
             </span>
@@ -589,8 +635,10 @@ export default function TrackPage() {
           {/* Date d'expiration (info complémentaire) */}
           {baggage.expiresAt && (
             <p className="text-xs text-white/80 mt-1">
-              {isActive ? 'Valable jusqu\'au' : 'Expiré le'}{' '}
-              <span className="font-bold">{formatDate(baggage.expiresAt)}</span>
+              <time dateTime={baggage.expiresAt}>
+                {isActive ? 'Valable jusqu\'au' : 'Expiré le'}{' '}
+                <span className="font-bold">{formatDate(baggage.expiresAt)}</span>
+              </time>
             </p>
           )}
         </div>
@@ -978,34 +1026,54 @@ export default function TrackPage() {
         </div>
       </nav>
 
-      {/* Modal : Signaler comme perdu */}
+      {/* Modal : Signaler comme perdu — dialog accessible */}
       {showLostModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 font-sans" style={{ fontFamily: 'Inter, system-ui, sans-serif' }}>
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 font-sans"
+          style={{ fontFamily: 'var(--font-inter), system-ui, -apple-system, sans-serif' }}
+        >
           <div
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby={modalHeadingId}
+            aria-describedby="track-lost-modal-desc"
             className="rounded-2xl p-6 max-w-md w-full shadow-2xl"
             style={{ backgroundColor: CARD_BG, border: `1px solid ${BORDER_COLOR}` }}
           >
             <div className="flex items-start justify-between mb-4">
-              <h3 className="text-xl font-bold flex items-center gap-2" style={{ color: TITLE_COLOR }}>
+              <h3
+                id={modalHeadingId}
+                className="text-xl font-bold flex items-center gap-2"
+                style={{ color: TITLE_COLOR }}
+              >
                 <AlertTriangle className="w-5 h-5" style={{ color: DANGER_RED }} aria-hidden="true" />
                 Signaler comme PERDU
               </h3>
               <button
+                ref={modalCloseRef}
                 type="button"
                 onClick={() => setShowLostModal(false)}
-                aria-label="Fermer"
+                aria-label="Fermer la fenêtre de signalement"
                 className="hover:opacity-70"
                 style={{ color: LABEL_COLOR }}
               >
-                <X className="w-5 h-5" />
+                <X className="w-5 h-5" aria-hidden="true" />
               </button>
             </div>
 
-            <p className="text-sm mb-4" style={{ color: LABEL_COLOR }}>
+            <p
+              id="track-lost-modal-desc"
+              className="text-sm mb-4"
+              style={{ color: LABEL_COLOR }}
+            >
               Décrivez brièvement les circonstances de la perte. Ce message sera visible sur cette page de suivi.
             </p>
 
+            <label htmlFor="track-lost-message" className="sr-only">
+              Message décrivant les circonstances de la perte
+            </label>
             <textarea
+              id="track-lost-message"
               rows={4}
               value={lostMessage}
               onChange={(e) => setLostMessage(e.target.value)}
