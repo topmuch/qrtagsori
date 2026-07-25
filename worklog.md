@@ -144,3 +144,36 @@ Stage Summary:
 - Commit 37d2a04 poussé sur origin/main ✓
 - Coolify va automatiquement re-déclencher un build avec npm (plus de bun install)
 - Remote URL nettoyée pour sécurité
+
+---
+Task ID: track-redesign-urgent
+Agent: Main Orchestrator
+Task: Corriger vocabulaire hôtelier + refonte design palette QRTags
+
+Work Log:
+- Diagnostic utilisateur : page /track/[token] affichait "ACTIF — En cours de séjour" + "Appeler Hôtel" pour tous les objets, même hors contexte hôtel
+- Cause racine : isHotelContext se déclenchait sur simple présence de hotel_phone OU hotel_room dans objectInfo (ces champs peuvent être remplis pour n'importe quel métier — clinique, école, consigne)
+- Fix logique : isHotelContext = (agencyType === 'hotel') UNIQUEMENT
+- Fix vocabulaire :
+  • "ACTIF — En cours de séjour" → "Sous protection QRTags"
+  • "PERDU — Garantie expirée" → "Garantie expirée" (badge pill)
+  • "Valable jusqu'au" → "Valide jusqu'au"
+  • "Appeler Hôtel" ne s'affiche plus que pour les vraies agences hôtel
+- Refonte design — nouvelle palette QRTags :
+  • BRAND_GOLD #FDB900 (signature QRTags, déjà utilisée dans layout.tsx + manifest)
+  • BRAND_GOLD_DARK #B8860B (pour textes sur fond clair, 4.6:1 ✓ AA)
+  • BRAND_BLACK #0A0A0A (noir profond)
+  • PAGE_BG #FAFAF7 (crème chaud remplace gris froid)
+- Header sticky : dégradé noir (actif) ou rouge (perdu) + bordure dorée 3px + badge pill statut
+- Cards : bandeau titre noir avec icône dorée (signature QRTags), box-shadow subtile
+- Items de scan : border-left doré 3px + chip numéroté #1/#2/#3
+- Footer sticky : bordure supérieure dorée 3px signature
+- Build vérifié : 157 pages compilées, 0 erreur
+- Commit 8e22ebe poussé sur origin/main
+
+Stage Summary:
+- Vocabulaire générique pour tous métiers ✓
+- "Appeler Hôtel" réservé aux vraies agences hôtel ✓
+- Nouvelle identité visuelle QRTags (noir + doré) cohérente avec layout.tsx ✓
+- Contrastes WCAG AA préservés (4.5:1+ sur tous les textes)
+- Push réussi : 37d2a04..8e22ebe main -> main
