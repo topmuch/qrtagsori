@@ -1,6 +1,6 @@
 /// <reference lib="webworker" />
 
-const CACHE_NAME = 'qrbag-v2';
+const CACHE_NAME = 'qrbag-v3';
 
 // Assets to pre-cache on install
 const PRECACHE_ASSETS = [

@@ -225,3 +225,32 @@ Stage Summary:
 - Incohérence "WhatsApp vers soi-même" supprimée — le bouton WhatsApp devient partage de lien ✓
 - Features modernes conservées (object info, photo, reward, accessibility, fade-in, auto-refresh, toast) ✓
 - Types et contrat API préservés (GET /api/track/[token], POST declare_lost/cancel_lost) ✓
+
+---
+Task ID: logo-replace-all-pages
+Agent: Main Orchestrator
+Task: Remplacer le logo QRTags par le nouveau fichier fourni (log.jpg) sur toutes les pages (accueil, footer, etc.)
+
+Work Log:
+- Analyse centralisation logo : QRTagsLogo.tsx est l'unique source de vérité, référencé par 19 fichiers (27 sites de rendu)
+- Conversion log.jpg (335x100 JPEG) → public/logo.png (PNG optimisé, même dimensions)
+- Update src/components/qrtags/QRTagsLogo.tsx :
+  • LOGO_VERSION '20260725' → '20260726' (cache-buster pour forcer refresh navigateur)
+  • width={276} → width={335} (nouvelles dimensions intrinsèques pour éviter layout shift)
+- Update public/sw.js :
+  • CACHE_NAME 'qrbag-v2' → 'qrbag-v3' (invalide precache SW pour refetch du nouveau logo)
+- Cohérence marque — favicon & PWA icons aussi régénérés depuis le nouveau logo :
+  • public/favicon.png (32x32, crop centre du logo horizontal)
+  • public/apple-touch-icon.png (180x180)
+  • public/icons/icon-{72,96,128,144,152,192,384,512}.png (8 tailles PWA)
+  • public/icons/maskable-icon-{192,512}.png (avec padding 30% pour safe zone Android)
+  • public/icons/favicon-16x16.png
+- Vérifications :
+  • TypeScript : 0 erreur sur QRTagsLogo.tsx
+  • Fichiers générés valides (PNG optimisés, tailles conformes aux références dans layout.tsx + manifest.json)
+
+Stage Summary:
+- Nouveau logo propagé sur TOUS les sites de rendu via QRTagsLogo.tsx (27 sites / 19 fichiers) ✓
+- Pages concernées : homepage (header + footer), devenir-partenaire, voyageurs-standard, inscrire, inscription, success, scan, suivi, track, checklist, shop, auth (login/agence/admin), 404, reset-password, verify-email, forgot-password, et toutes les pages via PublicLayout (a-propos, cgu, contact, confidentialite, mentions-legales, demo, fonctionnalites/*, etapes/*)
+- Cache-buster bumped (LOGO_VERSION + CACHE_NAME) pour forcer refresh chez tous les visiteurs ✓
+- Favicon + PWA icons régénérés pour cohérence marque ✓

@@ -30,7 +30,7 @@ export type QRTagsLogoVariant = 'auto' | 'light' | 'dark';
 // mise à jour chez tous les visiteurs (sinon le navigateur sert l'ancienne
 // version en cache, même après modification de /public/logo.png).
 // Format : YYYYMMDD (date de mise à jour du logo).
-const LOGO_VERSION = '20260725';
+const LOGO_VERSION = '20260726';
 
 const SIZE_CLASSES: Record<QRTagsLogoSize, string> = {
   xs: 'h-6',
@@ -87,7 +87,7 @@ export default function QRTagsLogo({
       alt={alt}
       className={classes}
       // Évite le layout shift
-      width={276}
+      width={335}
       height={100}
     />
   );
