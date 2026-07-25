@@ -55,11 +55,20 @@ export async function GET(
     const isDeclaredLost = baggage.declaredLostAt && !baggage.foundAt;
 
     // Parser customData pour afficher les infos objet au trouveur
-    // (filtre de confidentialité : on ne renvoie PAS email ni photo au trouveur)
+    // (filtre de confidentialité : on ne renvoie PAS email au trouveur)
+    // NOTE: la photo (base64 data URL) est renvoyée car elle a été volontairement
+    // partagée par le propriétaire lors de l'inscription pour aider le trouveur
+    // à identifier l'objet.
     let objectInfo: Record<string, unknown> | null = null;
     if (baggage.customData) {
       try {
         const parsed = JSON.parse(baggage.customData) as Record<string, unknown>;
+        // Validation : on ne renvoie la photo QUE si c'est bien un data URL d'image
+        // (évite d'exposer un chemin serveur ou une donnée inattendue)
+        const rawPhoto = typeof parsed.photo === 'string' ? parsed.photo : null;
+        const safePhoto = rawPhoto && /^data:image\/(jpeg|jpg|png|webp|gif|avif);base64,/i.test(rawPhoto)
+          ? rawPhoto
+          : null;
         objectInfo = {
           category: parsed.category || null,
           category_label: parsed.category_label || null,
@@ -72,6 +81,7 @@ export async function GET(
           message_to_finder: parsed.message_to_finder || null,
           city: parsed.city || null,
           country: parsed.country || null,
+          photo: safePhoto,
         };
       } catch {
         objectInfo = null;
