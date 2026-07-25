@@ -879,9 +879,36 @@ body * {
   .reward-pulse,
   .reward-shimmer::after,
   .animate-marquee,
-  .animate-marquee-slow {
-    animation: none;
+  .animate-marquee-slow,
+  .track-card-animate,
+  .track-toast-enter {
+    animation: none !important;
+    opacity: 1 !important;
+    transform: none !important;
   }
+}
+
+/* ═══ Page /track/[token] — animations Étape 3 ═══ */
+
+/* Cartes : fade-in + slide-up doux au scroll (IntersectionObserver ajoute .track-card-visible) */
+.track-card-animate {
+  opacity: 0;
+  transform: translateY(16px);
+  transition: opacity 0.5s ease-out, transform 0.5s ease-out;
+  will-change: opacity, transform;
+}
+.track-card-animate.track-card-visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* Toast : slide-up + fade-in au montage */
+@keyframes track-toast-in {
+  0%   { opacity: 0; transform: translate(-50%, 16px); }
+  100% { opacity: 1; transform: translate(-50%, 0); }
+}
+.track-toast-enter {
+  animation: track-toast-in 0.25s ease-out;
 }
 
 /* Marquee : sous prefers-reduced-motion, on fige le défilement */

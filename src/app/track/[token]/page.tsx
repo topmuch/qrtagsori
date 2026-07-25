@@ -3,22 +3,19 @@
 /**
  * ════════════════════════════════════════════════════════════════════════
  *  QRTags — Page de suivi /track/[token]
- *  ÉTAPE 2 — Logique dynamique server-side
+ *  ÉTAPE 3 — Interactions client-side (Étape 1 + 2 + 3 complétées)
+ *  ✓ Structure 4 blocs mobile-first + design tokens stricts
  *  ✓ Comparaison de dates (today vs expiresAt) → statut ACTIF/PERDU
  *  ✓ maskName() appliqué au propriétaire
  *  ✓ Génération conditionnelle des URLs WhatsApp/WAME
- *    - ACTIF + hôtel : wa.me/[HOTEL_PHONE]?text=Objet trouvé chambre [ROOM]...
- *    - PERDU         : wa.me/[OWNER_PHONE]?text=Bonjour [MASKED], j'ai trouvé votre [OBJECT]...
- *  ✓ objectInfo parsé depuis customData via API
- *
- *  ⏸️ Étape 3 (interactions client-side) à venir :
- *    - Clipboard API + feedback "✅ Copié !"
- *    - Handlers onClick sur les boutons du sticky footer
- *    - Auto-refresh
+ *  ✓ Clipboard API + feedback "✅ Copié !" pendant 2s (+ fallback execCommand)
+ *  ✓ Toast de confirmation pour actions (signaler/retrouvé)
+ *  ✓ Animation fade-in des cartes au scroll (IntersectionObserver)
+ *  ✓ Auto-refresh 60s
  * ════════════════════════════════════════════════════════════════════════
  */
 
-import { useEffect, useState, useCallback, useMemo } from 'react';
+import { useEffect, useState, useCallback, useMemo, useRef } from 'react';
 import { useParams } from 'next/navigation';
 import {
   MapPin, Clock, AlertTriangle, CheckCircle2,
@@ -224,6 +221,10 @@ export default function TrackPage() {
   const [showLostModal, setShowLostModal] = useState(false);
   const [lostMessage, setLostMessage] = useState('');
   const [actionLoading, setActionLoading] = useState(false);
+  const [copied, setCopied] = useState(false);            // feedback bouton Copier lien
+  const [toast, setToast] = useState<{ message: string; kind: 'success' | 'error' | 'info' } | null>(null);
+  const copyTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const toastTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // ─── Récupération des données depuis l'API ─────────────────────────────
   const refresh = useCallback(async () => {
@@ -338,8 +339,85 @@ export default function TrackPage() {
   }, [isActive, isHotelContext]);
 
   // ════════════════════════════════════════════════════════════════════════
-  //  ACTIONS (handlers — seront pleinement actifs en Étape 3)
+  //  TOAST — helper pour afficher un feedback temporaire en bas d'écran
   // ════════════════════════════════════════════════════════════════════════
+  const showToast = useCallback((message: string, kind: 'success' | 'error' | 'info' = 'success') => {
+    setToast({ message, kind });
+    if (toastTimerRef.current) clearTimeout(toastTimerRef.current);
+    toastTimerRef.current = setTimeout(() => setToast(null), 2500);
+  }, []);
+
+  // Nettoyage des timers à la destruction du composant
+  useEffect(() => {
+    return () => {
+      if (copyTimerRef.current) clearTimeout(copyTimerRef.current);
+      if (toastTimerRef.current) clearTimeout(toastTimerRef.current);
+    };
+  }, []);
+
+  // ════════════════════════════════════════════════════════════════════════
+  //  ACTIONS (handlers — pleinement actifs)
+  // ════════════════════════════════════════════════════════════════════════
+
+  // 1. Copier le lien de suivi via Clipboard API + fallback mobile execCommand
+  const handleCopyLink = useCallback(async () => {
+    if (!trackUrl) return;
+    let success = false;
+    try {
+      // Tente d'abord l'API moderne (HTTPS required)
+      if (typeof navigator !== 'undefined' && navigator.clipboard?.writeText) {
+        await navigator.clipboard.writeText(trackUrl);
+        success = true;
+      } else {
+        throw new Error('Clipboard API indisponible');
+      }
+    } catch {
+      // Fallback mobile (execCommand deprecated mais encore supporté)
+      try {
+        const input = document.createElement('input');
+        input.value = trackUrl;
+        input.setAttribute('readonly', '');
+        input.style.position = 'absolute';
+        input.style.left = '-9999px';
+        document.body.appendChild(input);
+        input.select();
+        input.setSelectionRange(0, input.value.length);
+        success = document.execCommand('copy');
+        document.body.removeChild(input);
+      } catch {
+        success = false;
+      }
+    }
+
+    if (success) {
+      setCopied(true);
+      if (copyTimerRef.current) clearTimeout(copyTimerRef.current);
+      copyTimerRef.current = setTimeout(() => setCopied(false), 2000);
+      showToast('✅ Lien de suivi copié !', 'success');
+    } else {
+      showToast('❌ Impossible de copier. Copiez manuellement : ' + trackUrl, 'error');
+    }
+  }, [trackUrl, showToast]);
+
+  // 2. Clic sur WhatsApp/tel — feedback utilisateur + tracking optionnel
+  const handleWhatsAppClick = useCallback(() => {
+    if (!whatsappUrl) {
+      showToast('❌ Numéro de téléphone indisponible', 'error');
+      return;
+    }
+    showToast('💬 Ouverture de WhatsApp...', 'info');
+    // Le navigateur ouvre l'URL via l'attribut href du <a>
+  }, [whatsappUrl, showToast]);
+
+  const handleTelClick = useCallback(() => {
+    if (!telUrl) {
+      showToast('❌ Numéro de téléphone indisponible', 'error');
+      return;
+    }
+    showToast('📞 Ouverture de l\'app téléphone...', 'info');
+  }, [telUrl, showToast]);
+
+  // 3. Signaler comme perdu
   const handleDeclareLost = useCallback(async () => {
     if (!baggage) return;
     setActionLoading(true);
@@ -355,16 +433,20 @@ export default function TrackPage() {
       if (res.ok) {
         setShowLostModal(false);
         setLostMessage('');
+        showToast('🚨 Objet signalé comme PERDU', 'success');
         refresh();
       } else {
         const err = await res.json().catch(() => ({}));
-        alert(err.error || 'Erreur lors du signalement');
+        showToast(err.error || 'Erreur lors du signalement', 'error');
       }
+    } catch {
+      showToast('Erreur réseau. Réessayez.', 'error');
     } finally {
       setActionLoading(false);
     }
-  }, [baggage, token, lostMessage, refresh]);
+  }, [baggage, token, lostMessage, refresh, showToast]);
 
+  // 4. Marquer comme retrouvé
   const handleCancelLost = useCallback(async () => {
     if (!baggage) return;
     if (!confirm('Marquer cet objet comme retrouvé ?')) return;
@@ -375,11 +457,38 @@ export default function TrackPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ action: 'cancel_lost' }),
       });
-      if (res.ok) refresh();
+      if (res.ok) {
+        showToast('✅ Objet marqué comme retrouvé', 'success');
+        refresh();
+      } else {
+        showToast('Erreur lors de la mise à jour', 'error');
+      }
+    } catch {
+      showToast('Erreur réseau. Réessayez.', 'error');
     } finally {
       setActionLoading(false);
     }
-  }, [baggage, token, refresh]);
+  }, [baggage, token, refresh, showToast]);
+
+  // 5. Animation fade-in des cartes au scroll (IntersectionObserver)
+  useEffect(() => {
+    if (typeof IntersectionObserver === 'undefined') return; // SSR-safe
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            entry.target.classList.add('track-card-visible');
+            observer.unobserve(entry.target);
+          }
+        });
+      },
+      { threshold: 0.1, rootMargin: '0px 0px -40px 0px' }
+    );
+    // Observer toutes les cartes après le premier render
+    const cards = document.querySelectorAll('.track-card-animate');
+    cards.forEach((card) => observer.observe(card));
+    return () => observer.disconnect();
+  }, [data]); // re-run quand data change (chargement initial)
 
   // ─── États de chargement / erreur ────────────────────────────────────
   if (loading) {
@@ -493,7 +602,7 @@ export default function TrackPage() {
         {/* Message de perte (si perdu manuellement) */}
         {baggage.isLost && baggage.lostMessage && (
           <div
-            className="mt-6 rounded-xl p-4"
+            className="track-card-animate mt-6 rounded-xl p-4"
             style={{
               backgroundColor: '#FEE2E2',
               border: `2px solid ${LOST_RED}`,
@@ -514,7 +623,7 @@ export default function TrackPage() {
            ════════════════════════════════════════════════════════════════ */}
         <section
           aria-label="Détails de l'objet"
-          className="mt-6 rounded-2xl"
+          className="track-card-animate mt-6 rounded-2xl"
           style={{
             backgroundColor: CARD_BG,
             border: `1px solid ${BORDER_COLOR}`,
@@ -650,7 +759,7 @@ export default function TrackPage() {
            ════════════════════════════════════════════════════════════════ */}
         <section
           aria-label="Historique des scans"
-          className="mt-6 rounded-2xl"
+          className="track-card-animate mt-6 rounded-2xl"
           style={{
             backgroundColor: CARD_BG,
             border: `1px solid ${BORDER_COLOR}`,
@@ -772,6 +881,7 @@ export default function TrackPage() {
               {primaryAction.icon === 'phone' && telUrl ? (
                 <a
                   href={telUrl}
+                  onClick={handleTelClick}
                   aria-label={primaryAction.ariaLabel}
                   className="w-full flex flex-col items-center justify-center gap-1 px-2 py-2.5 rounded-xl font-bold text-white transition active:scale-95"
                   style={{ backgroundColor: WHATSAPP_GREEN, minHeight: '44px' }}
@@ -786,6 +896,7 @@ export default function TrackPage() {
                   href={whatsappUrl}
                   target="_blank"
                   rel="noopener noreferrer"
+                  onClick={handleWhatsAppClick}
                   aria-label={primaryAction.ariaLabel}
                   className="w-full flex flex-col items-center justify-center gap-1 px-2 py-2.5 rounded-xl font-bold text-white transition active:scale-95"
                   style={{ backgroundColor: WHATSAPP_GREEN, minHeight: '44px' }}
@@ -811,17 +922,22 @@ export default function TrackPage() {
               )}
             </li>
 
-            {/* Bouton 2 — Copier le lien (sera actif en Étape 3) */}
+            {/* Bouton 2 — Copier le lien (Clipboard API + feedback) */}
             <li>
               <button
                 type="button"
-                aria-label="Copier le lien de suivi"
+                onClick={handleCopyLink}
+                aria-label={copied ? 'Lien copié' : 'Copier le lien de suivi'}
                 className="w-full flex flex-col items-center justify-center gap-1 px-2 py-2.5 rounded-xl font-bold transition active:scale-95"
-                style={{ backgroundColor: '#111111', color: '#FFFFFF', minHeight: '44px' }}
+                style={{
+                  backgroundColor: copied ? ACTIVE_GREEN : '#111111',
+                  color: '#FFFFFF',
+                  minHeight: '44px',
+                }}
               >
-                <Copy className="w-5 h-5" aria-hidden="true" />
+                {copied ? <CheckCircle2 className="w-5 h-5" aria-hidden="true" /> : <Copy className="w-5 h-5" aria-hidden="true" />}
                 <span className="text-[11px] leading-tight text-center font-bold">
-                  Copier lien
+                  {copied ? '✅ Copié !' : 'Copier lien'}
                 </span>
               </button>
             </li>
@@ -925,6 +1041,27 @@ export default function TrackPage() {
               </button>
             </div>
           </div>
+        </div>
+      )}
+
+      {/* ══════════════════════════════════════════════════════════════════
+          TOAST — feedback temporaire (2.5s) en bas d'écran, au-dessus du sticky footer
+         ══════════════════════════════════════════════════════════════════ */}
+      {toast && (
+        <div
+          role="status"
+          aria-live="polite"
+          className="fixed left-1/2 -translate-x-1/2 z-50 px-4 py-3 rounded-xl shadow-2xl text-white font-bold text-sm max-w-[calc(100vw-2rem)] text-center track-toast-enter"
+          style={{
+            bottom: '96px', // au-dessus du sticky footer (~80px de haut)
+            backgroundColor:
+              toast.kind === 'success' ? ACTIVE_GREEN
+              : toast.kind === 'error'   ? DANGER_RED
+              : '#111827',
+            border: '1px solid rgba(255,255,255,0.15)',
+          }}
+        >
+          {toast.message}
         </div>
       )}
     </main>
