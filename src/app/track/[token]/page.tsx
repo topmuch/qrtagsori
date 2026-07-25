@@ -1,20 +1,65 @@
 'use client';
 
-import { useEffect, useState, useCallback } from 'react';
+/**
+ * ════════════════════════════════════════════════════════════════════════
+ *  QRTags — Page de suivi /track/[token]
+ *  ÉTAPE 2 — Logique dynamique server-side
+ *  ✓ Comparaison de dates (today vs expiresAt) → statut ACTIF/PERDU
+ *  ✓ maskName() appliqué au propriétaire
+ *  ✓ Génération conditionnelle des URLs WhatsApp/WAME
+ *    - ACTIF + hôtel : wa.me/[HOTEL_PHONE]?text=Objet trouvé chambre [ROOM]...
+ *    - PERDU         : wa.me/[OWNER_PHONE]?text=Bonjour [MASKED], j'ai trouvé votre [OBJECT]...
+ *  ✓ objectInfo parsé depuis customData via API
+ *
+ *  ⏸️ Étape 3 (interactions client-side) à venir :
+ *    - Clipboard API + feedback "✅ Copié !"
+ *    - Handlers onClick sur les boutons du sticky footer
+ *    - Auto-refresh
+ * ════════════════════════════════════════════════════════════════════════
+ */
+
+import { useEffect, useState, useCallback, useMemo } from 'react';
 import { useParams } from 'next/navigation';
 import {
-  MapPin, Clock, Eye, Activity, AlertTriangle, CheckCircle2,
-  Share2, Copy, Flag, ArrowLeft, Loader2, MessageCircle, X,
+  MapPin, Clock, AlertTriangle, CheckCircle2,
+  Copy, Flag, ArrowLeft, Loader2, MessageCircle, X,
+  Package, Tag, Palette, FileText, Gift, ExternalLink, Phone,
 } from 'lucide-react';
 import QRTagsLogo from '@/components/qrtags/QRTagsLogo';
+import { maskName, normalizePhoneForUrl } from '@/lib/privacy';
 
-// ─── Design tokens QRTags (fond jaune moutarde + cartes blanches) ───
-const QRTAGS_BG       = '#E3B23C';
-const QRTAGS_CARD     = '#FFFFFF';
-const QRTAGS_INK      = '#111111';
-const QRTAGS_RED      = '#DC2626';
-const QRTAGS_GREEN    = '#16A34A';
-const CARD_CLASS      = 'bg-white rounded-xl p-6 shadow-xl border-2 border-black';
+// ─── Design tokens (const pour cohérence) ────────────────────────────────
+const PAGE_BG       = '#F9FAFB';
+const CARD_BG       = '#FFFFFF';
+const BORDER_COLOR  = '#E5E7EB';
+const TITLE_COLOR   = '#111827';
+const LABEL_COLOR   = '#374151';
+const VALUE_COLOR   = '#000000';
+const WHATSAPP_GREEN= '#25D366';
+const DANGER_RED    = '#DC2626';
+const ACTIVE_GREEN  = '#10B981';
+const LOST_RED      = '#EF4444';
+const REWARD_FLUO   = '#22C55E';
+
+// ─── Types ───────────────────────────────────────────────────────────────
+interface ObjectInfo {
+  object_name:        string | null;
+  object_description: string | null;
+  category:           string | null;
+  category_label:     string | null;
+  brand:              string | null;
+  model:              string | null;
+  color:              string | null;
+  reward:             string | null;
+  message_to_finder:  string | null;
+  photo:              string | null;
+  city:               string | null;
+  country:            string | null;
+  hotel_phone:        string | null;
+  hotel_room:         string | null;
+  check_in_date:      string | null;
+  check_out_date:     string | null;
+}
 
 interface ScanEntry {
   id: string;
@@ -32,6 +77,7 @@ interface BaggageTracking {
   type: string;
   travelerName: string;
   travelerFirstName: string | null;
+  travelerLastName: string | null;
   whatsappOwner: string | null;
   status: string;
   createdAt: string | null;
@@ -42,8 +88,12 @@ interface BaggageTracking {
   isLost: boolean;
   lostReportedAt: string | null;
   lostMessage: string | null;
+  declaredLostAt: string | null;
+  foundAt: string | null;
   agency: string | null;
+  agencyType: string | null;
   trackingToken: string;
+  objectInfo: ObjectInfo;
 }
 
 interface TrackResponse {
@@ -53,29 +103,129 @@ interface TrackResponse {
   scans?: ScanEntry[];
 }
 
+// ─── Helpers ─────────────────────────────────────────────────────────────
 function formatDate(iso: string | null): string {
-  if (!iso) return 'Jamais';
+  if (!iso) return '—';
   try {
     return new Date(iso).toLocaleString('fr-FR', {
-      dateStyle: 'long',
-      timeStyle: 'short',
+      day: '2-digit', month: 'long', year: 'numeric',
+      hour: '2-digit', minute: '2-digit',
     });
   } catch {
-    return 'Date invalide';
+    return '—';
   }
 }
 
+function formatDateShort(iso: string | null): string {
+  if (!iso) return '—';
+  try {
+    return new Date(iso).toLocaleString('fr-FR', {
+      day: '2-digit', month: '2-digit', year: '2-digit',
+      hour: '2-digit', minute: '2-digit',
+    });
+  } catch {
+    return '—';
+  }
+}
+
+/**
+ * Détermine si l'objet est "actif" (séjour en cours) ou "perdu" (garantie expirée).
+ *
+ * Règle métier :
+ *   - Si `baggage.isLost` est vrai (signalement manuel) → PERDU
+ *   - Si `expiresAt` existe ET `now > expiresAt`         → PERDU (garantie expirée)
+ *   - Sinon                                              → ACTIF
+ *
+ * On utilise `expiresAt` comme date de référence (équivalent `checkOutDate`
+ * mentionné dans le cahier des charges). Si `objectInfo.check_out_date` est
+ * aussi présent, on prend le max des deux (sécurité).
+ */
+function computeIsActive(baggage: BaggageTracking | undefined, objectInfo: ObjectInfo | null): boolean {
+  if (!baggage) return true;
+  if (baggage.isLost) return false;
+
+  const now = new Date();
+  const candidates: Date[] = [];
+  if (baggage.expiresAt) candidates.push(new Date(baggage.expiresAt));
+  if (objectInfo?.check_out_date) {
+    const d = new Date(objectInfo.check_out_date);
+    if (!isNaN(d.getTime())) candidates.push(d);
+  }
+  if (candidates.length === 0) return true; // pas de date d'expiration → on considère actif
+
+  // now doit être <= au plus tard des dates d'expiration
+  return candidates.every((d) => !isNaN(d.getTime()) && now <= d);
+}
+
+/**
+ * Construit l'URL wa.me avec message pré-rempli selon le contexte.
+ *
+ * - ACTIF + hôtel avec hotel_phone : wa.me/[HOTEL_PHONE]?text=Objet trouvé chambre [ROOM]...
+ * - ACTIF (sans hôtel)             : wa.me/[OWNER_PHONE]?text=Bonjour [MASKED]...
+ * - PERDU                          : wa.me/[OWNER_PHONE]?text=Bonjour [MASKED], j'ai trouvé votre [OBJECT]...
+ */
+function buildWhatsAppUrl(opts: {
+  isActive: boolean;
+  isHotelContext: boolean;
+  hotelPhone: string | null;
+  hotelRoom: string | null;
+  ownerPhone: string | null;
+  ownerMaskedName: string;
+  objectName: string;
+  reference: string;
+}): string | null {
+  const {
+    isActive, isHotelContext, hotelPhone, hotelRoom,
+    ownerPhone, ownerMaskedName, objectName, reference,
+  } = opts;
+
+  // Cas 1 : ACTIF + contexte hôtel + téléphone réception connu
+  if (isActive && isHotelContext && hotelPhone) {
+    const phoneDigits = normalizePhoneForUrl(hotelPhone);
+    if (!phoneDigits) return null;
+    const message =
+      `Bonjour, je viens de trouver un objet QRTags dans votre établissement.\n\n` +
+      `📱 Référence : ${reference}\n` +
+      `🏠 Chambre / Lieu : ${hotelRoom || 'non précisée'}\n` +
+      `🎒 Objet : ${objectName}\n\n` +
+      `Pouvez-vous le conserver à la réception et prévenir le propriétaire ? Merci !`;
+    return `https://wa.me/${phoneDigits}?text=${encodeURIComponent(message)}`;
+  }
+
+  // Cas 2 & 3 : contact direct du propriétaire
+  const phoneDigits = normalizePhoneForUrl(ownerPhone);
+  if (!phoneDigits) return null;
+
+  const message = isActive
+    ? `Bonjour ${ownerMaskedName}, je vous informe que votre objet "${objectName}" (réf. ${reference}) est en sécurité. Pouvez-vous me rappeler pour organiser la restitution ?`
+    : `Bonjour ${ownerMaskedName}, j'ai trouvé votre objet "${objectName}" (réf. ${reference}). Comment pouvons-nous organiser la restitution ?`;
+
+  return `https://wa.me/${phoneDigits}?text=${encodeURIComponent(message)}`;
+}
+
+/**
+ * Construit l'URL tel: pour appeler la réception de l'hôtel (fallback si pas de WhatsApp).
+ */
+function buildTelUrl(phone: string | null): string | null {
+  if (!phone) return null;
+  const digits = phone.replace(/[^\d+]/g, '');
+  return digits ? `tel:${digits}` : null;
+}
+
+// ════════════════════════════════════════════════════════════════════════
+//  COMPOSANT PRINCIPAL
+// ════════════════════════════════════════════════════════════════════════
 export default function TrackPage() {
   const params = useParams();
   const token = (params?.token as string) || '';
 
   const [data, setData] = useState<TrackResponse | null>(null);
   const [loading, setLoading] = useState(true);
-  const [copied, setCopied] = useState(false);
   const [showLostModal, setShowLostModal] = useState(false);
   const [lostMessage, setLostMessage] = useState('');
   const [actionLoading, setActionLoading] = useState(false);
 
+  // ─── Récupération des données depuis l'API ─────────────────────────────
   const refresh = useCallback(async () => {
     if (!token) return;
     try {
@@ -92,46 +242,106 @@ export default function TrackPage() {
 
   useEffect(() => {
     refresh();
-    // Auto-refresh toutes les 30 secondes pour suivre en temps réel
-    const interval = setInterval(refresh, 30000);
+    // Auto-refresh toutes les 60s pour suivre en quasi-temps-réel
+    const interval = setInterval(refresh, 60000);
     return () => clearInterval(interval);
   }, [refresh]);
 
-  const handleShareWhatsApp = () => {
-    if (!data?.baggage) return;
-    const trackUrl = `${window.location.origin}/track/${data.baggage.trackingToken}`;
-    const objectName = data.baggage.reference;
-    const message =
-      `📍 Je suis mon objet (${objectName}) avec QRTags !\n\n` +
-      `Si je le perds, je pourrai le retrouver grâce à ce lien de suivi sécurisé.\n\n` +
-      `🔗 ${trackUrl}\n\n` +
-      `Protégez vos objets aussi : ${window.location.origin}`;
-    const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(message)}`;
-    window.open(whatsappUrl, '_blank');
-  };
+  // ════════════════════════════════════════════════════════════════════════
+  //  LOGIQUE DYNAMIQUE — calculée une fois les données chargées
+  // ════════════════════════════════════════════════════════════════════════
+  const baggage = data?.baggage;
+  const objectInfo = baggage?.objectInfo ?? null;
+  const scans = data?.scans ?? [];
 
-  const handleCopyLink = async () => {
-    if (!data?.baggage) return;
-    const trackUrl = `${window.location.origin}/track/${data.baggage.trackingToken}`;
-    try {
-      await navigator.clipboard.writeText(trackUrl);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
-    } catch {
-      // Fallback mobile
-      const input = document.createElement('input');
-      input.value = trackUrl;
-      document.body.appendChild(input);
-      input.select();
-      document.execCommand('copy');
-      document.body.removeChild(input);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
+  // 1. Statut actif/perdu (server-side logic appliquée côté client via computeIsActive)
+  const isActive = useMemo(
+    () => computeIsActive(baggage, objectInfo),
+    [baggage, objectInfo]
+  );
+
+  // 2. Détection du contexte hôtel (agencyType "hotel" OU présence hotel_phone dans objectInfo)
+  const isHotelContext = useMemo(() => {
+    if (!baggage) return false;
+    if (baggage.agencyType === 'hotel') return true;
+    if (objectInfo?.hotel_phone) return true;
+    if (objectInfo?.hotel_room) return true;
+    return false;
+  }, [baggage, objectInfo]);
+
+  // 3. Nom du propriétaire masqué ("Amina Diop" → "Amina D.")
+  const ownerMaskedName = useMemo(
+    () => maskName(baggage?.travelerName ?? null),
+    [baggage?.travelerName]
+  );
+
+  // 4. Titre affiché : object_name prioritaire, fallback sur référence
+  const objectDisplayName = useMemo(() => {
+    if (objectInfo?.object_name && objectInfo.object_name.trim()) {
+      return objectInfo.object_name.trim();
     }
-  };
+    return baggage?.reference ?? 'Objet';
+  }, [objectInfo?.object_name, baggage?.reference]);
 
-  const handleDeclareLost = async () => {
-    if (!data?.baggage) return;
+  // 5. Récompense (badge vert fluo si présente)
+  const hasReward = useMemo(() => {
+    return Boolean(objectInfo?.reward && String(objectInfo.reward).trim());
+  }, [objectInfo?.reward]);
+
+  // 6. URL WhatsApp/WAME dynamique
+  const whatsappUrl = useMemo(() => {
+    if (!baggage) return null;
+    return buildWhatsAppUrl({
+      isActive,
+      isHotelContext,
+      hotelPhone: objectInfo?.hotel_phone ?? null,
+      hotelRoom:  objectInfo?.hotel_room  ?? null,
+      ownerPhone: baggage.whatsappOwner,
+      ownerMaskedName,
+      objectName: objectDisplayName,
+      reference:  baggage.reference,
+    });
+  }, [baggage, isActive, isHotelContext, objectInfo, ownerMaskedName, objectDisplayName]);
+
+  // 7. URL tel: (pour bouton "Appeler Réception Hôtel" en mode ACTIF hôtel)
+  const telUrl = useMemo(() => {
+    if (!isActive || !isHotelContext) return null;
+    return buildTelUrl(objectInfo?.hotel_phone ?? null);
+  }, [isActive, isHotelContext, objectInfo?.hotel_phone]);
+
+  // 8. URL de suivi (pour copier/partager) — calculée côté client
+  const trackUrl = useMemo(() => {
+    if (!baggage?.trackingToken) return '';
+    if (typeof window !== 'undefined') {
+      return `${window.location.origin}/track/${baggage.trackingToken}`;
+    }
+    return `https://qrtags.pro/track/${baggage.trackingToken}`;
+  }, [baggage?.trackingToken]);
+
+  // 9. 3 derniers scans max
+  const recentScans = useMemo(() => scans.slice(0, 3), [scans]);
+
+  // 10. Libellé du bouton principal selon contexte
+  const primaryAction = useMemo(() => {
+    if (isActive && isHotelContext) {
+      return {
+        label: 'Appeler Hôtel',
+        ariaLabel: 'Appeler la réception de l\'hôtel',
+        icon: 'phone' as const,
+      };
+    }
+    return {
+      label: 'WhatsApp',
+      ariaLabel: 'Contacter via WhatsApp',
+      icon: 'whatsapp' as const,
+    };
+  }, [isActive, isHotelContext]);
+
+  // ════════════════════════════════════════════════════════════════════════
+  //  ACTIONS (handlers — seront pleinement actifs en Étape 3)
+  // ════════════════════════════════════════════════════════════════════════
+  const handleDeclareLost = useCallback(async () => {
+    if (!baggage) return;
     setActionLoading(true);
     try {
       const res = await fetch(`/api/track/${token}`, {
@@ -153,10 +363,10 @@ export default function TrackPage() {
     } finally {
       setActionLoading(false);
     }
-  };
+  }, [baggage, token, lostMessage, refresh]);
 
-  const handleCancelLost = async () => {
-    if (!data?.baggage) return;
+  const handleCancelLost = useCallback(async () => {
+    if (!baggage) return;
     if (!confirm('Marquer cet objet comme retrouvé ?')) return;
     setActionLoading(true);
     try {
@@ -165,312 +375,518 @@ export default function TrackPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ action: 'cancel_lost' }),
       });
-      if (res.ok) {
-        refresh();
-      }
+      if (res.ok) refresh();
     } finally {
       setActionLoading(false);
     }
-  };
+  }, [baggage, token, refresh]);
 
-  // ─── États de chargement / erreur ────────────────────────────────
+  // ─── États de chargement / erreur ────────────────────────────────────
   if (loading) {
     return (
-      <main className="min-h-screen flex items-center justify-center" style={{ backgroundColor: QRTAGS_BG }}>
+      <main className="min-h-screen flex items-center justify-center font-sans" style={{ backgroundColor: PAGE_BG, fontFamily: 'Inter, system-ui, sans-serif' }}>
         <div className="text-center">
-          <Loader2 className="w-12 h-12 mx-auto mb-4 animate-spin text-black" />
-          <p className="text-lg font-bold text-black">Chargement du suivi...</p>
+          <Loader2 className="w-12 h-12 mx-auto mb-4 animate-spin" style={{ color: TITLE_COLOR }} />
+          <p className="text-lg font-bold" style={{ color: TITLE_COLOR }}>Chargement du suivi...</p>
         </div>
       </main>
     );
   }
 
-  if (!data || data.status !== 'active' || !data.baggage) {
+  if (!data || data.status !== 'active' || !baggage) {
     return (
-      <main className="min-h-screen flex items-center justify-center p-4" style={{ backgroundColor: QRTAGS_BG }}>
-        <div className={`${CARD_CLASS} max-w-md w-full text-center`}>
-          <AlertTriangle className="w-12 h-12 mx-auto mb-4" style={{ color: QRTAGS_RED }} />
-          <h1 className="text-2xl font-black text-black mb-3">Lien invalide</h1>
-          <p className="text-black/70 mb-6">
-            Ce lien de suivi n'existe pas, a été désactivé, ou l'objet a été supprimé.
+      <main className="min-h-screen flex items-center justify-center p-4 font-sans" style={{ backgroundColor: PAGE_BG, fontFamily: 'Inter, system-ui, sans-serif' }}>
+        <div
+          className="max-w-md w-full text-center rounded-2xl p-6"
+          style={{ backgroundColor: CARD_BG, border: `1px solid ${BORDER_COLOR}` }}
+        >
+          <AlertTriangle className="w-12 h-12 mx-auto mb-4" style={{ color: DANGER_RED }} />
+          <h1 className="text-2xl font-black mb-3" style={{ color: TITLE_COLOR }}>Lien invalide</h1>
+          <p className="mb-6" style={{ color: LABEL_COLOR }}>
+            Ce lien de suivi n&apos;existe pas, a été désactivé, ou l&apos;objet a été supprimé.
           </p>
           <a
             href="/"
-            className="inline-block px-6 py-3 rounded-lg bg-black text-[#E3B23C] font-bold"
+            className="inline-block px-6 py-3 rounded-xl font-bold text-white"
+            style={{ backgroundColor: TITLE_COLOR }}
           >
-            Retour à l'accueil
+            Retour à l&apos;accueil
           </a>
         </div>
       </main>
     );
   }
 
-  const baggage = data.baggage;
-  const scans = data.scans || [];
-  const trackUrl = `${typeof window !== 'undefined' ? window.location.origin : 'https://qrtags.com'}/track/${baggage.trackingToken}`;
-
+  // ════════════════════════════════════════════════════════════════════════
+  //  RENDU
+  // ════════════════════════════════════════════════════════════════════════
   return (
-    <main className="min-h-screen py-8 px-4" style={{ backgroundColor: QRTAGS_BG, color: QRTAGS_INK }}>
-      <div className="max-w-2xl mx-auto">
-        {/* Header */}
-        <div className="text-center mb-8">
-          <div className="bg-white inline-block px-6 py-3 rounded-lg mb-4 shadow-lg border-2 border-black">
-            <QRTagsLogo size="md" variant="light" />
-          </div>
-          <h1 className="text-3xl font-black text-black mb-2">📍 SUIVI DE MON OBJET</h1>
-          <p className="text-black/80">Suivez votre objet en temps réel</p>
-        </div>
-
-        {/* Carte principale : objet + statut */}
-        <div className={`${CARD_CLASS} mb-6`}>
-          <div className="flex items-center justify-between mb-4 gap-3 flex-wrap">
-            <div>
-              <h2 className="text-2xl font-bold text-black break-all">
-                {baggage.reference}
-              </h2>
-              <p className="text-sm text-black/60 mt-1">
-                {baggage.agency ? `Agence : ${baggage.agency}` : 'Tag individuel'}
-                {' • '}
-                Activé le {formatDate(baggage.createdAt)}
-              </p>
+    <main
+      className="min-h-screen pb-24 font-sans antialiased"
+      style={{
+        backgroundColor: PAGE_BG,
+        color: TITLE_COLOR,
+        fontFamily: 'Inter, system-ui, -apple-system, sans-serif',
+      }}
+    >
+      {/* ══════════════════════════════════════════════════════════════════
+          BLOC 1 : EN-TÊTE STATUT DYNAMIQUE — STICKY TOP
+         ══════════════════════════════════════════════════════════════════ */}
+      <header
+        className="sticky top-0 z-30 w-full px-4 py-5 shadow-lg"
+        style={{
+          backgroundColor: isActive ? ACTIVE_GREEN : LOST_RED,
+          color: '#FFFFFF',
+        }}
+      >
+        <div className="max-w-2xl mx-auto">
+          {/* Logo discret + référence */}
+          <div className="flex items-center justify-between mb-3">
+            <div className="bg-white/95 inline-block px-3 py-1.5 rounded-md">
+              <QRTagsLogo size="sm" variant="light" />
             </div>
-            <span
-              className="px-3 py-1 rounded-full text-sm font-bold text-white"
-              style={{ backgroundColor: baggage.isLost ? QRTAGS_RED : QRTAGS_GREEN }}
-            >
-              {baggage.isLost ? '🚨 PERDU' : '✅ ACTIF'}
+            <span className="text-xs font-bold text-white/90 tracking-wide">
+              {baggage.reference}
             </span>
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <p className="text-black/60 text-sm">Propriétaire</p>
-              <p className="text-black font-bold">{baggage.travelerName || 'Anonyme'}</p>
-            </div>
-            <div>
-              <p className="text-black/60 text-sm">Expire le</p>
-              <p className="text-black font-bold">
-                {baggage.expiresAt ? formatDate(baggage.expiresAt) : '—'}
-              </p>
-            </div>
-          </div>
-        </div>
-
-        {/* Statistiques de suivi */}
-        <div className={`${CARD_CLASS} mb-6`}>
-          <h3 className="text-lg font-bold text-black mb-4">📊 STATISTIQUES DE SUIVI</h3>
-
-          <div className="grid grid-cols-3 gap-4">
-            <div className="text-center p-4 bg-gray-50 rounded-lg border border-gray-200">
-              <Eye className="w-5 h-5 mx-auto mb-1" style={{ color: QRTAGS_INK }} />
-              <p className="text-3xl font-black text-black">{baggage.scanCount}</p>
-              <p className="text-xs text-black/70 mt-1">Scans</p>
-            </div>
-            <div className="text-center p-4 bg-gray-50 rounded-lg border border-gray-200">
-              <Activity className="w-5 h-5 mx-auto mb-1" style={{ color: QRTAGS_INK }} />
-              <p className="text-3xl font-black text-black">{scans.length}</p>
-              <p className="text-xs text-black/70 mt-1">Activités</p>
-            </div>
-            <div className="text-center p-4 bg-gray-50 rounded-lg border border-gray-200">
-              {baggage.isLost ? (
-                <>
-                  <AlertTriangle className="w-5 h-5 mx-auto mb-1" style={{ color: QRTAGS_RED }} />
-                  <p className="text-3xl font-black" style={{ color: QRTAGS_RED }}>🚨</p>
-                  <p className="text-xs text-black/70 mt-1">Perdu</p>
-                </>
-              ) : (
-                <>
-                  <CheckCircle2 className="w-5 h-5 mx-auto mb-1" style={{ color: QRTAGS_GREEN }} />
-                  <p className="text-3xl font-black" style={{ color: QRTAGS_GREEN }}>✅</p>
-                  <p className="text-xs text-black/70 mt-1">Sûr</p>
-                </>
-              )}
-            </div>
+          {/* Statut principal */}
+          <div className="flex items-center gap-2 mb-2">
+            <span className="text-2xl" aria-hidden="true">
+              {isActive ? '📱' : '🚨'}
+            </span>
+            <span
+              className="text-sm font-black uppercase tracking-wider"
+              style={{ textShadow: '0 1px 2px rgba(0,0,0,0.2)' }}
+            >
+              {isActive ? 'ACTIF — En cours de séjour' : 'PERDU — Garantie expirée'}
+            </span>
           </div>
 
-          <div className="mt-4 pt-4 border-t-2 border-gray-200">
-            <p className="text-sm text-black/60 flex items-center gap-1">
-              <Clock className="w-4 h-4" /> Dernière activité
+          {/* Titre objet H1 (32px mobile) */}
+          <h1
+            className="font-black leading-tight mb-1"
+            style={{ fontSize: 'clamp(1.75rem, 7vw, 2.25rem)', color: '#FFFFFF' }}
+          >
+            {objectDisplayName}
+          </h1>
+
+          {/* Propriétaire masqué */}
+          <p className="text-sm font-semibold text-white/90 flex items-center gap-1.5">
+            <span aria-hidden="true">👤</span>
+            Propriétaire : <span className="font-bold">{ownerMaskedName}</span>
+          </p>
+
+          {/* Date d'expiration (info complémentaire) */}
+          {baggage.expiresAt && (
+            <p className="text-xs text-white/80 mt-1">
+              {isActive ? 'Valable jusqu\'au' : 'Expiré le'}{' '}
+              <span className="font-bold">{formatDate(baggage.expiresAt)}</span>
             </p>
-            <p className="text-black font-bold">{formatDate(baggage.lastScanDate)}</p>
-
-            {baggage.lastScanLocation && (
-              <>
-                <p className="text-sm text-black/60 mt-2 flex items-center gap-1">
-                  <MapPin className="w-4 h-4" /> Dernière position connue
-                </p>
-                <p className="text-black font-bold">📍 {baggage.lastScanLocation}</p>
-              </>
-            )}
-          </div>
+          )}
         </div>
+      </header>
 
-        {/* Message personnalisé de perte (si l'objet est perdu) */}
+      {/* Conteneur central */}
+      <div className="max-w-2xl mx-auto px-4">
+
+        {/* Message de perte (si perdu manuellement) */}
         {baggage.isLost && baggage.lostMessage && (
           <div
-            className="mb-6 p-4 rounded-xl border-2"
-            style={{ backgroundColor: '#FEE2E2', borderColor: QRTAGS_RED, color: QRTAGS_INK }}
+            className="mt-6 rounded-xl p-4"
+            style={{
+              backgroundColor: '#FEE2E2',
+              border: `2px solid ${LOST_RED}`,
+            }}
           >
-            <p className="text-sm font-bold mb-1" style={{ color: QRTAGS_RED }}>
-              🚨 Message du propriétaire :
+            <p className="text-sm font-black mb-1 flex items-center gap-1.5" style={{ color: LOST_RED }}>
+              <AlertTriangle className="w-4 h-4" aria-hidden="true" />
+              Message du propriétaire :
             </p>
-            <p className="text-sm italic">"{baggage.lostMessage}"</p>
+            <p className="text-sm italic" style={{ color: TITLE_COLOR }}>
+              &ldquo;{baggage.lostMessage}&rdquo;
+            </p>
           </div>
         )}
 
-        {/* Historique des scans */}
-        <div className={`${CARD_CLASS} mb-6`}>
-          <h3 className="text-lg font-bold text-black mb-4">📜 HISTORIQUE DES SCANS</h3>
+        {/* ════════════════════════════════════════════════════════════════
+            BLOC 2 : FICHE DÉTAIL VERTICALE AVEC ICÔNES
+           ════════════════════════════════════════════════════════════════ */}
+        <section
+          aria-label="Détails de l'objet"
+          className="mt-6 rounded-2xl"
+          style={{
+            backgroundColor: CARD_BG,
+            border: `1px solid ${BORDER_COLOR}`,
+            padding: '16px',
+          }}
+        >
+          <h2
+            className="text-base font-black mb-4 flex items-center gap-2"
+            style={{ color: TITLE_COLOR }}
+          >
+            <Package className="w-4 h-4" aria-hidden="true" />
+            INFORMATIONS DE L&apos;OBJET
+          </h2>
 
-          {scans.length === 0 ? (
+          <ul className="space-y-3">
+
+            {/* Nom objet */}
+            <li className="flex items-center gap-3 py-2.5 border-b" style={{ borderColor: BORDER_COLOR }}>
+              <span className="flex-shrink-0 w-9 h-9 rounded-lg flex items-center justify-center" style={{ backgroundColor: '#F3F4F6' }} aria-hidden="true">
+                <Package className="w-4 h-4" style={{ color: LABEL_COLOR }} />
+              </span>
+              <div className="flex-1 min-w-0 flex items-baseline justify-between gap-2">
+                <span className="text-sm font-bold" style={{ color: LABEL_COLOR }}>Nom</span>
+                <span className="text-base font-bold text-right truncate" style={{ color: VALUE_COLOR }}>
+                  {objectDisplayName}
+                </span>
+              </div>
+            </li>
+
+            {/* Catégorie */}
+            {(objectInfo?.category_label || objectInfo?.category) && (
+              <li className="flex items-center gap-3 py-2.5 border-b" style={{ borderColor: BORDER_COLOR }}>
+                <span className="flex-shrink-0 w-9 h-9 rounded-lg flex items-center justify-center" style={{ backgroundColor: '#F3F4F6' }} aria-hidden="true">
+                  <Tag className="w-4 h-4" style={{ color: LABEL_COLOR }} />
+                </span>
+                <div className="flex-1 min-w-0 flex items-baseline justify-between gap-2">
+                  <span className="text-sm font-bold" style={{ color: LABEL_COLOR }}>Catégorie</span>
+                  <span className="text-base font-bold text-right" style={{ color: VALUE_COLOR }}>
+                    {objectInfo?.category_label || objectInfo?.category}
+                  </span>
+                </div>
+              </li>
+            )}
+
+            {/* Marque & Modèle (sur même ligne) */}
+            {(objectInfo?.brand || objectInfo?.model) && (
+              <li className="flex items-center gap-3 py-2.5 border-b" style={{ borderColor: BORDER_COLOR }}>
+                <span className="flex-shrink-0 w-9 h-9 rounded-lg flex items-center justify-center" style={{ backgroundColor: '#F3F4F6' }} aria-hidden="true">
+                  <Tag className="w-4 h-4" style={{ color: LABEL_COLOR }} />
+                </span>
+                <div className="flex-1 min-w-0 flex items-baseline justify-between gap-2">
+                  <span className="text-sm font-bold" style={{ color: LABEL_COLOR }}>Marque &amp; Modèle</span>
+                  <span className="text-base font-bold text-right" style={{ color: VALUE_COLOR }}>
+                    {objectInfo?.brand || '—'}{objectInfo?.brand && objectInfo?.model ? ' · ' : ''}{objectInfo?.model || ''}
+                  </span>
+                </div>
+              </li>
+            )}
+
+            {/* Couleur */}
+            {objectInfo?.color && (
+              <li className="flex items-center gap-3 py-2.5 border-b" style={{ borderColor: BORDER_COLOR }}>
+                <span className="flex-shrink-0 w-9 h-9 rounded-lg flex items-center justify-center" style={{ backgroundColor: '#F3F4F6' }} aria-hidden="true">
+                  <Palette className="w-4 h-4" style={{ color: LABEL_COLOR }} />
+                </span>
+                <div className="flex-1 min-w-0 flex items-baseline justify-between gap-2">
+                  <span className="text-sm font-bold" style={{ color: LABEL_COLOR }}>Couleur</span>
+                  <span className="text-base font-bold text-right" style={{ color: VALUE_COLOR }}>
+                    {objectInfo.color}
+                  </span>
+                </div>
+              </li>
+            )}
+
+            {/* Description */}
+            {objectInfo?.object_description && (
+              <li className="flex items-start gap-3 py-2.5 border-b" style={{ borderColor: BORDER_COLOR }}>
+                <span className="flex-shrink-0 w-9 h-9 rounded-lg flex items-center justify-center mt-0.5" style={{ backgroundColor: '#F3F4F6' }} aria-hidden="true">
+                  <FileText className="w-4 h-4" style={{ color: LABEL_COLOR }} />
+                </span>
+                <div className="flex-1 min-w-0">
+                  <span className="text-sm font-bold block mb-1" style={{ color: LABEL_COLOR }}>Description</span>
+                  <span className="text-sm block leading-relaxed" style={{ color: VALUE_COLOR }}>
+                    {objectInfo.object_description}
+                  </span>
+                </div>
+              </li>
+            )}
+
+            {/* Récompense — Badge Vert Fluo */}
+            {hasReward && (
+              <li className="flex items-center gap-3 py-2.5">
+                <span className="flex-shrink-0 w-9 h-9 rounded-lg flex items-center justify-center" style={{ backgroundColor: '#DCFCE7' }} aria-hidden="true">
+                  <Gift className="w-4 h-4" style={{ color: REWARD_FLUO }} />
+                </span>
+                <div className="flex-1 min-w-0 flex items-center justify-between gap-2">
+                  <span className="text-sm font-bold" style={{ color: LABEL_COLOR }}>Récompense</span>
+                  <span
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-black shadow-md"
+                    style={{
+                      backgroundColor: REWARD_FLUO,
+                      color: '#FFFFFF',
+                      border: '2px solid #16A34A',
+                      boxShadow: '0 4px 12px rgba(34, 197, 94, 0.4)',
+                    }}
+                  >
+                    <Gift className="w-3.5 h-3.5" aria-hidden="true" />
+                    {objectInfo?.reward}
+                  </span>
+                </div>
+              </li>
+            )}
+          </ul>
+
+          {/* Message du propriétaire au trouveur (si présent) */}
+          {objectInfo?.message_to_finder && (
+            <div
+              className="mt-4 rounded-xl p-3"
+              style={{ backgroundColor: '#FFFBEB', border: `1px solid #F59E0B` }}
+            >
+              <p className="text-xs font-black uppercase tracking-wider mb-1" style={{ color: '#92400E' }}>
+                💬 Message du propriétaire
+              </p>
+              <p className="text-sm italic" style={{ color: TITLE_COLOR }}>
+                &ldquo;{objectInfo.message_to_finder}&rdquo;
+              </p>
+            </div>
+          )}
+        </section>
+
+        {/* ════════════════════════════════════════════════════════════════
+            BLOC 3 : HISTORIQUE DES SCANS CONDENSÉ (3 max)
+           ════════════════════════════════════════════════════════════════ */}
+        <section
+          aria-label="Historique des scans"
+          className="mt-6 rounded-2xl"
+          style={{
+            backgroundColor: CARD_BG,
+            border: `1px solid ${BORDER_COLOR}`,
+            padding: '16px',
+          }}
+        >
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-base font-black flex items-center gap-2" style={{ color: TITLE_COLOR }}>
+              <Clock className="w-4 h-4" aria-hidden="true" />
+              DERNIERS SCANS
+            </h2>
+            <span
+              className="text-xs font-bold px-2.5 py-1 rounded-full"
+              style={{ backgroundColor: '#F3F4F6', color: LABEL_COLOR }}
+            >
+              {baggage.scanCount} au total
+            </span>
+          </div>
+
+          {recentScans.length === 0 ? (
             <div className="text-center py-8">
-              <p className="text-4xl mb-2">👁️</p>
-              <p className="text-black font-bold">Aucun scan pour le moment</p>
-              <p className="text-sm text-black/70 mt-2">
-                Si quelqu'un trouve votre objet et scanne le QR code, vous serez notifié ici.
+              <p className="text-4xl mb-2" aria-hidden="true">👁️</p>
+              <p className="font-bold" style={{ color: TITLE_COLOR }}>Aucun scan pour le moment</p>
+              <p className="text-sm mt-2" style={{ color: LABEL_COLOR }}>
+                Si quelqu&apos;un trouve votre objet et scanne le QR code, vous serez notifié ici.
               </p>
             </div>
           ) : (
-            <div className="space-y-3">
-              {scans.map((scan, idx) => (
-                <div
+            <ul className="space-y-3">
+              {recentScans.map((scan) => (
+                <li
                   key={scan.id}
-                  className="p-4 bg-gray-50 rounded-lg border-l-4"
-                  style={{ borderColor: QRTAGS_INK }}
+                  className="rounded-xl p-3"
+                  style={{ backgroundColor: '#F9FAFB', border: `1px solid ${BORDER_COLOR}` }}
                 >
-                  <div className="flex items-center justify-between mb-2 gap-2 flex-wrap">
-                    <p className="text-sm font-bold text-black flex items-center gap-1">
-                      📅 {formatDate(scan.scannedAt)}
-                    </p>
-                    <span className="text-xs bg-black text-[#E3B23C] px-2 py-1 rounded-full font-bold">
-                      Scan #{scans.length - idx}
+                  <div className="flex items-center gap-1.5 mb-1.5">
+                    <Clock className="w-3.5 h-3.5" style={{ color: LABEL_COLOR }} aria-hidden="true" />
+                    <span className="text-xs font-bold" style={{ color: TITLE_COLOR }}>
+                      {formatDateShort(scan.scannedAt)}
                     </span>
                   </div>
+
                   {scan.location && (
-                    <p className="text-sm text-black/80 flex items-center gap-1">
-                      <MapPin className="w-3 h-3" /> {scan.location}
-                    </p>
+                    <div className="flex items-center gap-1.5 mb-1">
+                      <MapPin className="w-3.5 h-3.5 flex-shrink-0" style={{ color: LABEL_COLOR }} aria-hidden="true" />
+                      <span className="text-sm font-semibold" style={{ color: VALUE_COLOR }}>
+                        {scan.location}
+                      </span>
+                    </div>
                   )}
+
                   {scan.finderName && (
-                    <p className="text-sm text-black/80 mt-1">
-                      👤 Trouveur : {scan.finderName}
-                      {scan.finderPhone ? ` • ${scan.finderPhone}` : ''}
+                    <div className="flex items-center gap-1.5">
+                      <span className="text-xs" aria-hidden="true">👤</span>
+                      <span className="text-xs" style={{ color: LABEL_COLOR }}>
+                        Trouveur : <span className="font-bold" style={{ color: VALUE_COLOR }}>{maskName(scan.finderName)}</span>
+                      </span>
+                    </div>
+                  )}
+
+                  {scan.message && (
+                    <p className="text-xs italic mt-1.5" style={{ color: LABEL_COLOR }}>
+                      &ldquo;{scan.message}&rdquo;
                     </p>
                   )}
-                  {scan.message && (
-                    <p className="text-sm text-black/80 mt-2 italic">💬 "{scan.message}"</p>
-                  )}
+
                   {scan.latitude && scan.longitude && (
                     <a
                       href={`https://www.google.com/maps?q=${scan.latitude},${scan.longitude}`}
                       target="_blank"
-                      rel="noreferrer"
-                      className="text-xs underline mt-2 inline-block"
-                      style={{ color: QRTAGS_INK }}
+                      rel="noopener noreferrer"
+                      className="mt-2 inline-flex items-center gap-1 text-xs font-bold underline"
+                      style={{ color: '#2563EB' }}
                     >
-                      🗺️ Voir sur Google Maps
+                      <MapPin className="w-3 h-3" aria-hidden="true" />
+                      Voir sur Google Maps
+                      <ExternalLink className="w-3 h-3" aria-hidden="true" />
                     </a>
                   )}
-                </div>
+                </li>
               ))}
-            </div>
+            </ul>
           )}
-        </div>
+        </section>
 
-        {/* Actions rapides */}
-        <div className={`${CARD_CLASS} mb-6`}>
-          <h3 className="text-lg font-bold text-black mb-4">🎯 ACTIONS RAPIDES</h3>
-
-          <div className="space-y-3">
-            {/* Partager sur WhatsApp */}
-            <button
-              type="button"
-              onClick={handleShareWhatsApp}
-              className="w-full px-6 py-4 rounded-lg font-bold text-lg bg-green-600 text-white hover:bg-green-700 transition flex items-center justify-center gap-2"
-            >
-              <MessageCircle className="w-5 h-5" /> Partager ce lien sur WhatsApp
-            </button>
-
-            {/* Copier le lien */}
-            <button
-              type="button"
-              onClick={handleCopyLink}
-              className="w-full px-6 py-4 rounded-lg font-bold text-lg bg-black text-[#E3B23C] hover:bg-gray-900 transition flex items-center justify-center gap-2"
-            >
-              {copied ? <CheckCircle2 className="w-5 h-5" /> : <Copy className="w-5 h-5" />}
-              {copied ? 'Lien copié !' : 'Copier le lien de suivi'}
-            </button>
-
-            {/* Afficher l'URL pour référence */}
-            <div className="p-3 bg-gray-50 rounded-lg border border-gray-200">
-              <p className="text-xs text-black/60 mb-1">Votre lien privé de suivi :</p>
-              <p className="text-xs font-mono text-black break-all">{trackUrl}</p>
-              <p className="text-xs text-black/60 mt-2">
-                ⚠️ <strong>Gardez ce lien secret.</strong> Il vous permet de suivre votre objet.
-              </p>
-            </div>
-
-            {/* Signaler comme perdu / annuler */}
-            {baggage.isLost ? (
-              <button
-                type="button"
-                onClick={handleCancelLost}
-                disabled={actionLoading}
-                className="w-full px-6 py-4 rounded-lg font-bold text-lg bg-white text-black border-2 border-black hover:bg-gray-100 transition flex items-center justify-center gap-2 disabled:opacity-50"
-              >
-                {actionLoading ? <Loader2 className="w-5 h-5 animate-spin" /> : <CheckCircle2 className="w-5 h-5" />}
-                J'ai retrouvé mon objet
-              </button>
-            ) : (
-              <button
-                type="button"
-                onClick={() => setShowLostModal(true)}
-                disabled={actionLoading}
-                className="w-full px-6 py-4 rounded-lg font-bold text-lg text-white transition flex items-center justify-center gap-2 disabled:opacity-50"
-                style={{ backgroundColor: QRTAGS_RED }}
-              >
-                <Flag className="w-5 h-5" /> Signaler comme PERDU
-              </button>
-            )}
-          </div>
-        </div>
-
-        {/* Footer */}
-        <div className="text-center mb-8">
+        {/* Bas de page */}
+        <footer className="mt-6 mb-2 text-center">
           <a
             href="/"
-            className="inline-flex items-center gap-2 text-black/70 hover:text-black text-sm"
+            className="inline-flex items-center gap-1.5 text-xs font-semibold"
+            style={{ color: LABEL_COLOR }}
           >
-            <ArrowLeft className="w-4 h-4" /> Retour à l'accueil
+            <ArrowLeft className="w-3.5 h-3.5" aria-hidden="true" />
+            Retour à l&apos;accueil
           </a>
-          <p className="text-black/70 text-sm mt-2">
-            Propulsé par <span className="font-bold text-black">QRTags</span>
+          <p className="text-xs mt-1.5" style={{ color: LABEL_COLOR }}>
+            Propulsé par <span className="font-black" style={{ color: TITLE_COLOR }}>QRTags</span>
           </p>
-        </div>
+        </footer>
       </div>
+
+      {/* ══════════════════════════════════════════════════════════════════
+          BLOC 4 : BANDEAU D'ACTIONS FIXE (STICKY FOOTER)
+         ══════════════════════════════════════════════════════════════════ */}
+      <nav
+        aria-label="Actions rapides"
+        className="fixed bottom-0 left-0 right-0 z-40 shadow-2xl"
+        style={{
+          backgroundColor: CARD_BG,
+          borderTop: `1px solid ${BORDER_COLOR}`,
+          boxShadow: '0 -4px 20px rgba(0, 0, 0, 0.08)',
+        }}
+      >
+        <div className="max-w-2xl mx-auto px-3 py-3">
+          <ul className="grid grid-cols-3 gap-2">
+
+            {/* Bouton 1 — WhatsApp / Appeler Hôtel */}
+            <li>
+              {primaryAction.icon === 'phone' && telUrl ? (
+                <a
+                  href={telUrl}
+                  aria-label={primaryAction.ariaLabel}
+                  className="w-full flex flex-col items-center justify-center gap-1 px-2 py-2.5 rounded-xl font-bold text-white transition active:scale-95"
+                  style={{ backgroundColor: WHATSAPP_GREEN, minHeight: '44px' }}
+                >
+                  <Phone className="w-5 h-5" aria-hidden="true" />
+                  <span className="text-[11px] leading-tight text-center font-bold">
+                    {primaryAction.label}
+                  </span>
+                </a>
+              ) : whatsappUrl ? (
+                <a
+                  href={whatsappUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  aria-label={primaryAction.ariaLabel}
+                  className="w-full flex flex-col items-center justify-center gap-1 px-2 py-2.5 rounded-xl font-bold text-white transition active:scale-95"
+                  style={{ backgroundColor: WHATSAPP_GREEN, minHeight: '44px' }}
+                >
+                  <MessageCircle className="w-5 h-5" aria-hidden="true" />
+                  <span className="text-[11px] leading-tight text-center font-bold">
+                    {primaryAction.label}
+                  </span>
+                </a>
+              ) : (
+                <button
+                  type="button"
+                  disabled
+                  aria-label="Contact indisponible"
+                  className="w-full flex flex-col items-center justify-center gap-1 px-2 py-2.5 rounded-xl font-bold text-white opacity-50 cursor-not-allowed"
+                  style={{ backgroundColor: WHATSAPP_GREEN, minHeight: '44px' }}
+                >
+                  <MessageCircle className="w-5 h-5" aria-hidden="true" />
+                  <span className="text-[11px] leading-tight text-center font-bold">
+                    Indispo.
+                  </span>
+                </button>
+              )}
+            </li>
+
+            {/* Bouton 2 — Copier le lien (sera actif en Étape 3) */}
+            <li>
+              <button
+                type="button"
+                aria-label="Copier le lien de suivi"
+                className="w-full flex flex-col items-center justify-center gap-1 px-2 py-2.5 rounded-xl font-bold transition active:scale-95"
+                style={{ backgroundColor: '#111111', color: '#FFFFFF', minHeight: '44px' }}
+              >
+                <Copy className="w-5 h-5" aria-hidden="true" />
+                <span className="text-[11px] leading-tight text-center font-bold">
+                  Copier lien
+                </span>
+              </button>
+            </li>
+
+            {/* Bouton 3 — Signaler PERDU / J'ai retrouvé */}
+            <li>
+              {baggage.isLost ? (
+                <button
+                  type="button"
+                  onClick={handleCancelLost}
+                  disabled={actionLoading}
+                  aria-label="Marquer comme retrouvé"
+                  className="w-full flex flex-col items-center justify-center gap-1 px-2 py-2.5 rounded-xl font-bold text-white transition active:scale-95 disabled:opacity-50"
+                  style={{ backgroundColor: ACTIVE_GREEN, minHeight: '44px' }}
+                >
+                  {actionLoading ? <Loader2 className="w-5 h-5 animate-spin" aria-hidden="true" /> : <CheckCircle2 className="w-5 h-5" aria-hidden="true" />}
+                  <span className="text-[11px] leading-tight text-center font-bold">
+                    Retrouvé
+                  </span>
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => setShowLostModal(true)}
+                  disabled={actionLoading}
+                  aria-label="Signaler comme perdu"
+                  className="w-full flex flex-col items-center justify-center gap-1 px-2 py-2.5 rounded-xl font-bold text-white transition active:scale-95 disabled:opacity-50"
+                  style={{ backgroundColor: DANGER_RED, minHeight: '44px' }}
+                >
+                  <Flag className="w-5 h-5" aria-hidden="true" />
+                  <span className="text-[11px] leading-tight text-center font-bold">
+                    Signaler
+                  </span>
+                </button>
+              )}
+            </li>
+          </ul>
+        </div>
+      </nav>
 
       {/* Modal : Signaler comme perdu */}
       {showLostModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
-          <div className="bg-white rounded-xl p-6 max-w-md w-full border-2 border-black shadow-2xl">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 font-sans" style={{ fontFamily: 'Inter, system-ui, sans-serif' }}>
+          <div
+            className="rounded-2xl p-6 max-w-md w-full shadow-2xl"
+            style={{ backgroundColor: CARD_BG, border: `1px solid ${BORDER_COLOR}` }}
+          >
             <div className="flex items-start justify-between mb-4">
-              <h3 className="text-xl font-bold text-black flex items-center gap-2">
-                <AlertTriangle className="w-5 h-5" style={{ color: QRTAGS_RED }} />
+              <h3 className="text-xl font-bold flex items-center gap-2" style={{ color: TITLE_COLOR }}>
+                <AlertTriangle className="w-5 h-5" style={{ color: DANGER_RED }} aria-hidden="true" />
                 Signaler comme PERDU
               </h3>
               <button
                 type="button"
                 onClick={() => setShowLostModal(false)}
-                className="text-black/60 hover:text-black"
                 aria-label="Fermer"
+                className="hover:opacity-70"
+                style={{ color: LABEL_COLOR }}
               >
                 <X className="w-5 h-5" />
               </button>
             </div>
 
-            <p className="text-sm text-black/80 mb-4">
-              Décrivez brièvement les circonstances de la perte. Ce message sera visible par vous
-              sur cette page de suivi.
+            <p className="text-sm mb-4" style={{ color: LABEL_COLOR }}>
+              Décrivez brièvement les circonstances de la perte. Ce message sera visible sur cette page de suivi.
             </p>
 
             <textarea
@@ -478,14 +894,19 @@ export default function TrackPage() {
               value={lostMessage}
               onChange={(e) => setLostMessage(e.target.value)}
               placeholder="Ex : Perdu dans le hall de la gare de Dakar, vers 14h le 21/07."
-              className="w-full px-4 py-3 border-2 border-black rounded-lg bg-gray-50 text-black placeholder-gray-400 focus:outline-none focus:border-[#E3B23C] focus:ring-2 focus:ring-[#E3B23C] resize-none"
+              className="w-full px-4 py-3 rounded-xl bg-gray-50 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 resize-none"
+              style={{
+                border: `1px solid ${BORDER_COLOR}`,
+                color: VALUE_COLOR,
+              }}
             />
 
             <div className="flex gap-3 mt-4">
               <button
                 type="button"
                 onClick={() => setShowLostModal(false)}
-                className="flex-1 px-4 py-3 rounded-lg font-bold bg-gray-200 text-black hover:bg-gray-300 transition"
+                className="flex-1 px-4 py-3 rounded-xl font-bold transition"
+                style={{ backgroundColor: '#F3F4F6', color: TITLE_COLOR }}
               >
                 Annuler
               </button>
@@ -493,8 +914,8 @@ export default function TrackPage() {
                 type="button"
                 onClick={handleDeclareLost}
                 disabled={actionLoading}
-                className="flex-1 px-4 py-3 rounded-lg font-bold text-white disabled:opacity-50 transition"
-                style={{ backgroundColor: QRTAGS_RED }}
+                className="flex-1 px-4 py-3 rounded-xl font-bold text-white disabled:opacity-50 transition"
+                style={{ backgroundColor: DANGER_RED }}
               >
                 {actionLoading ? (
                   <Loader2 className="w-5 h-5 mx-auto animate-spin" />
