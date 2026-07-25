@@ -25,7 +25,7 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import {
   Star, Package, MapPin, Clock, Loader2, AlertTriangle,
-  ArrowLeft, ShoppingBag, BadgeCheck, ShieldCheck,
+  ArrowLeft, ShoppingBag, BadgeCheck, ShieldCheck, X, Filter,
 } from 'lucide-react';
 import QRTagsLogo from '@/components/qrtags/QRTagsLogo';
 import { PublicNavigation, PublicFooter } from '@/components/public/PublicLayout';
@@ -96,7 +96,13 @@ function StarRow({ rating, size = 18 }: { rating: number; size?: number }) {
 // ════════════════════════════════════════════════════════════════════════
 //  COMPOSANT — Carte d'un avis
 // ════════════════════════════════════════════════════════════════════════
-function ReviewCard({ review }: { review: PublicReview }) {
+function ReviewCard({
+  review,
+  onPhotoClick,
+}: {
+  review: PublicReview;
+  onPhotoClick?: (src: string) => void;
+}) {
   const hasObject = review.objectName || review.objectPhoto || review.objectCategory;
 
   return (
@@ -134,12 +140,30 @@ function ReviewCard({ review }: { review: PublicReview }) {
           style={{ backgroundColor: '#FEF9E7', borderColor: QRTAGS_BG }}
         >
           {review.objectPhoto ? (
-            <img
-              src={review.objectPhoto}
-              alt={review.objectName || 'Objet retrouvé'}
-              className="w-16 h-16 object-cover rounded-lg border-2 border-black flex-shrink-0"
-              loading="lazy"
-            />
+            <button
+              type="button"
+              onClick={() => onPhotoClick?.(review.objectPhoto!)}
+              className="relative flex-shrink-0 group"
+              aria-label="Agrandir la photo de l'objet retrouvé"
+            >
+              <img
+                src={review.objectPhoto}
+                alt={review.objectName || 'Objet retrouvé'}
+                className="w-16 h-16 object-cover rounded-lg border-2 border-black transition group-hover:opacity-80 group-hover:scale-105"
+                loading="lazy"
+              />
+              <span
+                className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition pointer-events-none"
+                aria-hidden="true"
+              >
+                <span
+                  className="px-2 py-0.5 rounded-full text-[10px] font-bold"
+                  style={{ backgroundColor: 'rgba(0,0,0,0.8)', color: 'white' }}
+                >
+                  Agrandir
+                </span>
+              </span>
+            </button>
           ) : (
             <div
               className="w-16 h-16 rounded-lg border-2 border-black flex items-center justify-center flex-shrink-0"
@@ -215,6 +239,11 @@ export default function AvisPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  // ─── Filtres + tri + lightbox ──────────────────────────────────────────
+  const [minRating, setMinRating] = useState<number>(0); // 0 = tous
+  const [sortBy, setSortBy] = useState<'recent' | 'best'>('recent');
+  const [lightboxPhoto, setLightboxPhoto] = useState<string | null>(null);
+
   useEffect(() => {
     async function load() {
       try {
@@ -231,6 +260,30 @@ export default function AvisPage() {
     }
     load();
   }, []);
+
+  // ─── Fermeture lightbox (Escape + scroll lock) ─────────────────────────
+  useEffect(() => {
+    if (!lightboxPhoto) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setLightboxPhoto(null);
+    };
+    document.addEventListener('keydown', onKey);
+    document.body.style.overflow = 'hidden';
+    return () => {
+      document.removeEventListener('keydown', onKey);
+      document.body.style.overflow = '';
+    };
+  }, [lightboxPhoto]);
+
+  // ─── Avis filtrés + triés (mémoïsés pour éviter le recompute inutile) ──
+  const filteredReviews = (() => {
+    if (!data) return [];
+    const list = data.reviews.filter((r) => r.rating >= minRating);
+    if (sortBy === 'best') {
+      return [...list].sort((a, b) => b.rating - a.rating || +new Date(b.createdAt) - +new Date(a.createdAt));
+    }
+    return [...list].sort((a, b) => +new Date(b.createdAt) - +new Date(a.createdAt));
+  })();
 
   // ─── SEO : injecte les données structurées Schema.org/Review ─────────────
   // Permet à Google d'afficher les étoiles dans les résultats de recherche
@@ -376,9 +429,96 @@ export default function AvisPage() {
           </div>
         ) : (
           <>
-            {data.reviews.map((review) => (
-              <ReviewCard key={review.id} review={review} />
-            ))}
+            {/* ─── Barre de filtres + tri ─── */}
+            {data && data.reviews.length > 0 && (
+              <div
+                className="mb-8 p-4 rounded-xl flex flex-wrap items-center gap-3 justify-between"
+                style={{ backgroundColor: QRTAGS_CARD, border: `2px solid ${QRTAGS_INK}` }}
+              >
+                <div className="flex items-center gap-2 flex-wrap">
+                  <Filter className="w-4 h-4" style={{ color: QRTAGS_INK }} aria-hidden="true" />
+                  <span className="text-xs font-bold uppercase tracking-wider" style={{ color: QRTAGS_INK }}>
+                    Filtrer :
+                  </span>
+                  {[
+                    { v: 0, label: 'Tous' },
+                    { v: 5, label: '5 ★' },
+                    { v: 4, label: '4+ ★' },
+                    { v: 3, label: '3+ ★' },
+                  ].map((opt) => (
+                    <button
+                      key={opt.v}
+                      type="button"
+                      onClick={() => setMinRating(opt.v)}
+                      className="px-3 py-1 rounded-full text-xs font-bold transition"
+                      style={{
+                        backgroundColor: minRating === opt.v ? QRTAGS_INK : 'transparent',
+                        color: minRating === opt.v ? QRTAGS_BG : QRTAGS_INK,
+                        border: `1px solid ${QRTAGS_INK}`,
+                      }}
+                      aria-pressed={minRating === opt.v}
+                    >
+                      {opt.label}
+                    </button>
+                  ))}
+                </div>
+                <div className="flex items-center gap-2 flex-wrap">
+                  <span className="text-xs font-bold uppercase tracking-wider" style={{ color: QRTAGS_INK }}>
+                    Trier :
+                  </span>
+                  {[
+                    { v: 'recent' as const, label: 'Récents' },
+                    { v: 'best' as const, label: 'Mieux notés' },
+                  ].map((opt) => (
+                    <button
+                      key={opt.v}
+                      type="button"
+                      onClick={() => setSortBy(opt.v)}
+                      className="px-3 py-1 rounded-full text-xs font-bold transition"
+                      style={{
+                        backgroundColor: sortBy === opt.v ? QRTAGS_INK : 'transparent',
+                        color: sortBy === opt.v ? QRTAGS_BG : QRTAGS_INK,
+                        border: `1px solid ${QRTAGS_INK}`,
+                      }}
+                      aria-pressed={sortBy === opt.v}
+                    >
+                      {opt.label}
+                    </button>
+                  ))}
+                </div>
+                <span className="text-xs font-bold" style={{ color: QRTAGS_INK, opacity: 0.7 }}>
+                  {filteredReviews.length} avis{filteredReviews.length !== data.reviews.length ? ` (sur ${data.reviews.length})` : ''}
+                </span>
+              </div>
+            )}
+
+            {filteredReviews.length > 0 ? (
+              filteredReviews.map((review) => (
+                <ReviewCard
+                  key={review.id}
+                  review={review}
+                  onPhotoClick={(src) => setLightboxPhoto(src)}
+                />
+              ))
+            ) : (
+              <div className={`${CARD_CLASS} text-center`}>
+                <p className="text-4xl mb-3" aria-hidden="true">🔍</p>
+                <h2 className="text-xl font-bold mb-2" style={{ color: QRTAGS_INK }}>
+                  Aucun avis ne correspond à ce filtre
+                </h2>
+                <p className="text-sm mb-4" style={{ color: QRTAGS_INK, opacity: 0.7 }}>
+                  Essayez d&apos;élargir votre recherche.
+                </p>
+                <button
+                  type="button"
+                  onClick={() => { setMinRating(0); setSortBy('recent'); }}
+                  className="inline-block px-6 py-3 rounded-lg font-bold"
+                  style={{ backgroundColor: QRTAGS_INK, color: QRTAGS_BG }}
+                >
+                  Réinitialiser les filtres
+                </button>
+              </div>
+            )}
 
             {/* CTA bas de page */}
             <div className="text-center mt-12 mb-4">
@@ -438,6 +578,35 @@ export default function AvisPage() {
       </div>
 
       <PublicFooter />
+
+      {/* ─── Lightbox photo (objet retrouvé) ─── */}
+      {lightboxPhoto && (
+        <div
+          className="fixed inset-0 z-[100] flex items-center justify-center p-4"
+          style={{ backgroundColor: 'rgba(0,0,0,0.85)' }}
+          onClick={() => setLightboxPhoto(null)}
+          role="dialog"
+          aria-modal="true"
+          aria-label="Photo agrandie de l'objet retrouvé"
+        >
+          <button
+            type="button"
+            className="absolute top-4 right-4 p-2 rounded-full"
+            style={{ backgroundColor: 'rgba(255,255,255,0.15)', color: 'white' }}
+            onClick={() => setLightboxPhoto(null)}
+            aria-label="Fermer"
+          >
+            <X className="w-6 h-6" />
+          </button>
+          <img
+            src={lightboxPhoto}
+            alt="Objet retrouvé (agrandi)"
+            className="max-w-full max-h-full object-contain rounded-lg shadow-2xl"
+            style={{ border: '3px solid white' }}
+            onClick={(e) => e.stopPropagation()}
+          />
+        </div>
+      )}
     </main>
   );
 }

@@ -266,6 +266,281 @@ const MARQUEE_ITEMS = [
 ];
 
 // ════════════════════════════════════════════════════════════════════
+// COMPOSANT — Bandeau de stats live (objets retrouvés)
+// Récupère les données depuis /api/stats/public (cache 5 min)
+// ════════════════════════════════════════════════════════════════════
+interface PublicStats {
+  totalFound: number;
+  foundThisMonth: number;
+  totalScans: number;
+  totalProtected: number;
+  averageRating: number;
+  totalReviews: number;
+}
+
+function LiveStatsBar() {
+  const [stats, setStats] = useState<PublicStats | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    async function load() {
+      try {
+        const res = await fetch('/api/stats/public', { cache: 'no-store' });
+        if (!res.ok) return;
+        const json: PublicStats = await res.json();
+        if (!cancelled) setStats(json);
+      } catch {
+        // Silencieux : on garde le fallback statique
+      }
+    }
+    load();
+    return () => { cancelled = true; };
+  }, []);
+
+  // ─── Fallback statique avant chargement ou en cas d'erreur ───
+  const totalFound = stats?.totalFound ?? 0;
+  const foundThisMonth = stats?.foundThisMonth ?? 0;
+  const totalScans = stats?.totalScans ?? 0;
+  const averageRating = stats?.averageRating ?? 0;
+  const totalReviews = stats?.totalReviews ?? 0;
+
+  // Si on n'a pas encore de données live, on affiche les valeurs "marketing"
+  // (98% / < 2h) plutôt que des zéros
+  const hasLive = stats !== null && (totalFound > 0 || totalReviews > 0);
+
+  const scansDisplay = totalScans > 1000 ? `${(totalScans / 1000).toFixed(1)}k` : totalScans.toString();
+  const ratingDisplay = totalReviews > 0 ? `${averageRating.toFixed(1)}/5 ★` : '—';
+  const reviewsLabel = totalReviews > 0 ? `${totalReviews} avis vérifiés` : 'Avis vérifiés';
+
+  const items = hasLive
+    ? [
+        { value: foundThisMonth.toString(), label: 'Retrouvés ce mois-ci', accent: COLORS.greenDark },
+        { value: totalFound.toString(), label: 'Objets retrouvés au total', accent: COLORS.accentDark },
+        { value: scansDisplay, label: 'Scans QR effectués', accent: COLORS.text },
+        { value: ratingDisplay, label: reviewsLabel, accent: COLORS.accentDark },
+      ]
+    : [
+        { value: '98%', label: 'Objets retrouvés', accent: COLORS.greenDark },
+        { value: '< 2h', label: 'Délai moyen retour', accent: COLORS.accentDark },
+        { value: 'Sans app', label: 'Aucune installation', accent: COLORS.text },
+        { value: '3 langues', label: 'FR · EN · AR', accent: COLORS.accentDark },
+      ];
+
+  return (
+    <section
+      className="py-10 px-5"
+      style={{
+        background: COLORS.text,
+        color: 'white',
+      }}
+      aria-label="Statistiques QRTags en temps réel"
+    >
+      <div className="max-w-screen-2xl mx-auto">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+          {items.map((item, i) => (
+            <motion.div
+              key={i}
+              initial={{ opacity: 0, y: 10 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ delay: i * 0.08 }}
+              className="text-center"
+            >
+              <div
+                className="text-3xl md:text-5xl font-black mb-1"
+                style={{ color: item.accent }}
+              >
+                {item.value}
+              </div>
+              <div className="text-xs md:text-sm font-medium" style={{ color: 'rgba(255,255,255,0.7)' }}>
+                {item.label}
+              </div>
+            </motion.div>
+          ))}
+        </div>
+        {hasLive && (
+          <p className="text-center text-xs mt-6" style={{ color: 'rgba(255,255,255,0.4)' }}>
+            Données en temps réel · mises à jour automatiquement
+          </p>
+        )}
+      </div>
+    </section>
+  );
+}
+
+// ════════════════════════════════════════════════════════════════════
+// COMPOSANT — Témoignages live depuis /api/reviews/public
+// Si au moins 3 avis vérifiés sont publiés, on les affiche en priorité.
+// Sinon on garde les témoignages marketing statiques (TESTIMONIALS).
+// ════════════════════════════════════════════════════════════════════
+interface LiveReview {
+  id: string;
+  name: string;
+  rating: number;
+  content: string;
+  objectName: string | null;
+  objectCategory: string | null;
+  finderName: string | null;
+  createdAt: string;
+}
+
+function LiveTestimonials() {
+  const [reviews, setReviews] = useState<LiveReview[]>([]);
+  const [loaded, setLoaded] = useState(false);
+
+  useEffect(() => {
+    let cancelled = false;
+    async function load() {
+      try {
+        const res = await fetch('/api/reviews/public', { cache: 'no-store' });
+        if (!res.ok) return;
+        const json = await res.json();
+        if (!cancelled && Array.isArray(json.reviews)) {
+          setReviews(json.reviews);
+        }
+      } catch {
+        // Silencieux
+      } finally {
+        if (!cancelled) setLoaded(true);
+      }
+    }
+    load();
+    return () => { cancelled = true; };
+  }, []);
+
+  // Tant qu'on n'a pas chargé, on affiche les témoignages statiques
+  // (pas de flash visuel)
+  const useLive = loaded && reviews.length >= 3;
+  const displayReviews = useLive ? reviews.slice(0, 6) : [];
+
+  return (
+    <section id="temoignages" className="py-20 lg:py-28 px-5" style={{ background: COLORS.bgAlt }}>
+      <div className="max-w-screen-2xl mx-auto">
+        <div className="text-center mb-14">
+          <div
+            className="inline-block px-4 py-1.5 rounded-full text-sm font-bold mb-4"
+            style={{ background: COLORS.bgWarm, color: COLORS.accentDark, border: `1px solid ${COLORS.borderAccent}` }}
+          >
+            TÉMOIGNAGES
+          </div>
+          <h2 className="text-3xl md:text-5xl font-black mb-4" style={{ color: COLORS.text }}>
+            Ils ont <span style={{ color: COLORS.accentDark }}>retrouvé</span> ce qui comptait le{' '}
+            <span style={{ color: COLORS.greenDark }}>plus.</span>
+          </h2>
+          {useLive && (
+            <p className="text-sm" style={{ color: COLORS.textMuted }}>
+              Avis vérifiés publiés par les propriétaires ·{' '}
+              <Link href="/avis" className="font-bold underline hover:no-underline" style={{ color: COLORS.accentDark }}>
+                Voir tous les avis
+              </Link>
+            </p>
+          )}
+        </div>
+
+        <div className="grid md:grid-cols-3 gap-6">
+          {useLive ? (
+            displayReviews.map((r, i) => (
+              <motion.div
+                key={r.id}
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ delay: i * 0.1 }}
+                className="rounded-2xl p-6 flex flex-col"
+                style={{ background: COLORS.card, border: `1px solid ${COLORS.border}` }}
+              >
+                {/* Étoiles + objet retrouvé */}
+                <div className="flex items-center justify-between mb-3">
+                  <div className="flex items-center gap-0.5">
+                    {[1, 2, 3, 4, 5].map((s) => (
+                      <span
+                        key={s}
+                        className="text-lg"
+                        style={{ color: s <= r.rating ? COLORS.greenDark : '#D1D5DB' }}
+                        aria-hidden="true"
+                      >
+                        ★
+                      </span>
+                    ))}
+                  </div>
+                  {r.objectName && (
+                    <span
+                      className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded"
+                      style={{ background: COLORS.green + '22', color: COLORS.greenDark }}
+                    >
+                      {r.objectName}
+                    </span>
+                  )}
+                </div>
+
+                <div className="text-4xl mb-2" style={{ color: COLORS.green }}>&laquo;</div>
+                <p className="text-sm mb-6 flex-1" style={{ color: COLORS.text }}>
+                  {r.content}
+                </p>
+                <div className="flex items-center gap-3 pt-3" style={{ borderTop: `1px solid ${COLORS.border}` }}>
+                  <div
+                    className="w-10 h-10 rounded-full flex items-center justify-center font-bold text-sm"
+                    style={{ background: COLORS.green, color: 'white' }}
+                  >
+                    {r.name.split(' ').map((n) => n[0]).slice(0, 2).join('').toUpperCase()}
+                  </div>
+                  <div className="min-w-0">
+                    <div className="text-sm font-bold truncate" style={{ color: COLORS.text }}>{r.name}</div>
+                    <div className="text-xs" style={{ color: COLORS.textMuted }}>
+                      {r.finderName ? `Merci à ${r.finderName.split(' ')[0]}` : 'Propriétaire QRTags'}
+                    </div>
+                  </div>
+                </div>
+              </motion.div>
+            ))
+          ) : (
+            TESTIMONIALS.map((t, i) => (
+              <motion.div
+                key={i}
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ delay: i * 0.1 }}
+                className="rounded-2xl p-6"
+                style={{ background: COLORS.card, border: `1px solid ${COLORS.border}` }}
+              >
+                {/* Badge type */}
+                <div
+                  className="inline-block px-3 py-1 rounded-lg text-xs font-bold mb-4"
+                  style={{
+                    background: t.type === 'finder' ? COLORS.green + '22' : COLORS.accent + '22',
+                    color: t.type === 'finder' ? COLORS.greenDark : COLORS.accentDark,
+                  }}
+                >
+                  {t.type === 'finder' ? 'Trouveur' : 'Propriétaire'}
+                </div>
+                <div className="text-4xl mb-2" style={{ color: t.type === 'finder' ? COLORS.green : COLORS.accent }}>&laquo;</div>
+                <p className="text-sm mb-6" style={{ color: COLORS.text }}>{t.text}</p>
+                <div className="flex items-center gap-3">
+                  <div
+                    className="w-10 h-10 rounded-full flex items-center justify-center font-bold text-sm"
+                    style={{
+                      background: t.type === 'finder' ? COLORS.green : COLORS.accent,
+                      color: t.type === 'finder' ? 'white' : COLORS.text,
+                    }}
+                  >
+                    {t.avatar}
+                  </div>
+                  <div>
+                    <div className="text-sm font-bold" style={{ color: COLORS.text }}>{t.name}</div>
+                    <div className="text-xs" style={{ color: COLORS.textMuted }}>{t.role}</div>
+                  </div>
+                </div>
+              </motion.div>
+            ))
+          )}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+// ════════════════════════════════════════════════════════════════════
 // PAGE
 // ════════════════════════════════════════════════════════════════════
 export default function HomePage() {
@@ -569,6 +844,9 @@ export default function HomePage() {
           </div>
         </div>
       </section>
+
+      {/* ═══ STATS LIVE — Compteur objets retrouvés ce mois + total ═══ */}
+      <LiveStatsBar />
 
       {/* ═══ COMMENT ÇA MARCHE — Tabs Trouveur / Propriétaire ═══ */}
       <section id="comment" className="py-20 lg:py-28 px-5" style={{ background: COLORS.bg }}>
@@ -918,65 +1196,8 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* ═══ TÉMOIGNAGES ═══ */}
-      <section id="temoignages" className="py-20 lg:py-28 px-5" style={{ background: COLORS.bgAlt }}>
-        <div className="max-w-screen-2xl mx-auto">
-          <div className="text-center mb-14">
-            <div
-              className="inline-block px-4 py-1.5 rounded-full text-sm font-bold mb-4"
-              style={{ background: COLORS.bgWarm, color: COLORS.accentDark, border: `1px solid ${COLORS.borderAccent}` }}
-            >
-              TÉMOIGNAGES
-            </div>
-            <h2 className="text-3xl md:text-5xl font-black mb-4" style={{ color: COLORS.text }}>
-              Ils ont <span style={{ color: COLORS.accentDark }}>retrouvé</span> ce qui comptait le{' '}
-              <span style={{ color: COLORS.greenDark }}>plus.</span>
-            </h2>
-          </div>
-
-          <div className="grid md:grid-cols-3 gap-6">
-            {TESTIMONIALS.map((t, i) => (
-              <motion.div
-                key={i}
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ delay: i * 0.1 }}
-                className="rounded-2xl p-6"
-                style={{ background: COLORS.card, border: `1px solid ${COLORS.border}` }}
-              >
-                {/* Badge type */}
-                <div
-                  className="inline-block px-3 py-1 rounded-lg text-xs font-bold mb-4"
-                  style={{
-                    background: t.type === 'finder' ? COLORS.green + '22' : COLORS.accent + '22',
-                    color: t.type === 'finder' ? COLORS.greenDark : COLORS.accentDark,
-                  }}
-                >
-                  {t.type === 'finder' ? 'Trouveur' : 'Propriétaire'}
-                </div>
-                <div className="text-4xl mb-2" style={{ color: t.type === 'finder' ? COLORS.green : COLORS.accent }}>&laquo;</div>
-                <p className="text-sm mb-6" style={{ color: COLORS.text }}>{t.text}</p>
-                <div className="flex items-center gap-3">
-                  <div
-                    className="w-10 h-10 rounded-full flex items-center justify-center font-bold text-sm"
-                    style={{
-                      background: t.type === 'finder' ? COLORS.green : COLORS.accent,
-                      color: t.type === 'finder' ? 'white' : COLORS.text,
-                    }}
-                  >
-                    {t.avatar}
-                  </div>
-                  <div>
-                    <div className="text-sm font-bold" style={{ color: COLORS.text }}>{t.name}</div>
-                    <div className="text-xs" style={{ color: COLORS.textMuted }}>{t.role}</div>
-                  </div>
-                </div>
-              </motion.div>
-            ))}
-          </div>
-        </div>
-      </section>
+      {/* ═══ TÉMOIGNAGES (live depuis /api/reviews/public) ═══ */}
+      <LiveTestimonials />
 
       {/* ═══ BOUTIQUE — Nos Packs de Stickers ═══ */}
       <section id="tarifs" className="py-20 lg:py-28 px-5" style={{ background: '#111111' }}>
