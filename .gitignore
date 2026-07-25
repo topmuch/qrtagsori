@@ -97,3 +97,11 @@ public/logo-source-qrtags.jpeg
 .env.*.local
 prisma/db/
 db/
+
+# ═══ QRTags — Empêcher bun.lock d'être committé ═══
+# Coolify détecte bun.lock et utilise bun install (qui échoue sur
+# sharp, prisma, lightningcss). On force npm en excluant bun.lock.
+bun.lock
+bun.lockb
+**/bun.lock
+**/bun.lockb
