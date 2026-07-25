@@ -99,3 +99,48 @@ Stage Summary:
 - All routes use `import { db } from '@/lib/db'`
 - Lint passes cleanly
 - Routes follow existing project patterns (NextRequest/NextResponse, rate-limit.ts, CRON_SECRET auth)
+---
+Task ID: deploy-fix-bun
+Agent: Main Orchestrator
+Task: Diagnostiquer et corriger l'échec de déploiement Coolify (bun install au lieu de npm)
+
+Work Log:
+- Analyse des logs de déploiement : `#9 [6/9] RUN bun install` + `migrated lockfile from package-lock.json` + `Deployment failed`
+- Identification de 4 sources de détection bun par Coolify :
+  1. `mini-services/tracking-ws/bun.lock` (57 lignes, lockfile bun committé par erreur)
+  2. `package.json` start script : `"start": "NODE_ENV=production bun .next/standalone/server.js"`
+  3. `start.sh` : `bun run db:push` + `bun run prisma/seed.ts`
+  4. `mini-services/tracking-ws/package.json` dev script : `"dev": "bun --hot index.ts"`
+- Suppression de `mini-services/tracking-ws/bun.lock`
+- `package.json` : `bun .next/standalone/server.js` → `node .next/standalone/server.js`
+- `start.sh` : remplacement de toutes les références `bun run X` par `npx X` / `npx tsx X`
+- `mini-services/tracking-ws/package.json` : `bun --hot index.ts` → `tsx watch index.ts`
+- Suppression de `bun-types` des devDependencies (aucun `import 'bun'` dans le code)
+- `.gitignore` : ajout de `bun.lock`, `bun.lockb`, `**/bun.lock`, `**/bun.lockb`
+- `nixpacks.toml` : ajout de `NIXPACKS_PACKAGE_MANAGER = 'npm'` dans `[variables]` + commentaires détaillés
+- Vérification build local : `npx next build` → ✓ 157 pages, 0 erreur, exit 0
+- Commit créé : `37d2a04 fix(deploy): éliminer toutes les références bun → force npm sur Coolify`
+- Push impossible : pas de credentials GitHub configurés dans cet environnement
+
+Stage Summary:
+- 6 fichiers modifiés, 19 insertions, 64 suppressions
+- Build local vérifié ✓ (157 pages compilées en 24.4s)
+- Commit 37d2a04 prêt à pousser sur origin/main
+- Action utilisateur requise : `cd qrtagsori && git push origin main` depuis un terminal avec credentials GitHub
+- Après push, Coolify va re-déclencher un build avec `npm install` au lieu de `bun install`
+
+---
+Task ID: deploy-fix-bun-push
+Agent: Main Orchestrator
+Task: Pousser le fix de déploiement sur origin/main
+
+Work Log:
+- Utilisateur a fourni un GitHub PAT (ghp_***)
+- Configuration temporaire du remote avec le token : `git remote set-url origin https://x-access-token:***@github.com/topmuch/qrtagsori.git`
+- Push réussi : `eb4f744..37d2a04  main -> main`
+- Nettoyage du remote URL pour retirer le token (retour à https://github.com/topmuch/qrtagsori.git)
+
+Stage Summary:
+- Commit 37d2a04 poussé sur origin/main ✓
+- Coolify va automatiquement re-déclencher un build avec npm (plus de bun install)
+- Remote URL nettoyée pour sécurité

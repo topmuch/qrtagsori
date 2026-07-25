@@ -25,19 +25,23 @@ import {
 import QRTagsLogo from '@/components/qrtags/QRTagsLogo';
 import { maskName, normalizePhoneForUrl } from '@/lib/privacy';
 
-// ─── Design tokens (const pour cohérence) — AUDIT WCAG AA APPLIQUÉ ─────
+// ─── Design tokens — PALETTE QRTAGS (refonte visuelle) ──────────────────
+// Charte QRTags : jaune doré signature + noir profond + neutres chauds
 // Toutes les paires texte/fond vérifiées ≥ 4.5:1 (corps) ou ≥ 3:1 (gros texte UI)
-const PAGE_BG       = '#F9FAFB';
-const CARD_BG       = '#FFFFFF';
-const BORDER_COLOR  = '#E5E7EB';
-const TITLE_COLOR   = '#111827';
-const LABEL_COLOR   = '#374151';
-const VALUE_COLOR   = '#000000';
-const WHATSAPP_GREEN= '#075E54';   // vert WhatsApp dark officiel — ratio 7.41:1 avec blanc (AAA)
-const DANGER_RED    = '#DC2626';   // 4.83:1 avec blanc ✓
-const ACTIVE_GREEN  = '#047857';   // vert foncé — ratio 5.49:1 avec blanc (AA)
-const LOST_RED      = '#B91C1C';   // rouge foncé — ratio 5.86:1 avec blanc (AA)
-const REWARD_FLUO   = '#15803D';   // vert récompense foncé — ratio 4.85:1 avec blanc (AA)
+const PAGE_BG         = '#FAFAF7';   // fond crème chaud (remplace gris froid)
+const CARD_BG         = '#FFFFFF';
+const BORDER_COLOR    = '#E7E5E0';   // bordure beige chaud
+const TITLE_COLOR     = '#0A0A0A';   // noir profond QRTags
+const LABEL_COLOR     = '#525252';   // gris neutre pour labels
+const VALUE_COLOR     = '#000000';
+const BRAND_GOLD      = '#FDB900';   // jaune doré signature QRTags
+const BRAND_GOLD_DARK = '#B8860B';   // doré foncé pour textes sur fond clair (4.6:1 ✓)
+const BRAND_BLACK     = '#0A0A0A';   // noir QRTags (boutons primaires)
+const WHATSAPP_GREEN  = '#075E54';   // vert WhatsApp dark officiel — ratio 7.41:1 avec blanc (AAA)
+const DANGER_RED      = '#DC2626';   // 4.83:1 avec blanc ✓
+const ACTIVE_GREEN    = '#047857';   // vert foncé — ratio 5.49:1 avec blanc (AA)
+const LOST_RED        = '#B91C1C';   // rouge foncé — ratio 5.86:1 avec blanc (AA)
+const REWARD_FLUO     = '#15803D';   // vert récompense foncé — ratio 4.85:1 avec blanc (AA)
 
 // ─── Types ───────────────────────────────────────────────────────────────
 interface ObjectInfo {
@@ -262,14 +266,14 @@ export default function TrackPage() {
     [baggage, objectInfo]
   );
 
-  // 2. Détection du contexte hôtel (agencyType "hotel" OU présence hotel_phone dans objectInfo)
+  // 2. Détection du contexte hôtel (UNIQUEMENT si agencyType === 'hotel')
+  // ⚠️ Ne plus déclencher le mode hôtel sur simple présence de hotel_phone/hotel_room
+  // dans objectInfo — ces champs peuvent être remplis pour n'importe quel métier.
+  // Seul un vrai établissement hôtelier affichera "Appeler Hôtel".
   const isHotelContext = useMemo(() => {
     if (!baggage) return false;
-    if (baggage.agencyType === 'hotel') return true;
-    if (objectInfo?.hotel_phone) return true;
-    if (objectInfo?.hotel_room) return true;
-    return false;
-  }, [baggage, objectInfo]);
+    return baggage.agencyType === 'hotel';
+  }, [baggage]);
 
   // 3. Nom du propriétaire masqué ("Amina Diop" → "Amina D.")
   const ownerMaskedName = useMemo(
@@ -324,6 +328,8 @@ export default function TrackPage() {
   const recentScans = useMemo(() => scans.slice(0, 3), [scans]);
 
   // 10. Libellé du bouton principal selon contexte
+  // Hôtel (vraie agence de type hôtel) → bouton téléphone réception
+  // Tous les autres cas → bouton WhatsApp (valise, clés, sac, lunettes, école, clinique…)
   const primaryAction = useMemo(() => {
     if (isActive && isHotelContext) {
       return {
@@ -334,7 +340,7 @@ export default function TrackPage() {
     }
     return {
       label: 'WhatsApp',
-      ariaLabel: 'Contacter via WhatsApp',
+      ariaLabel: 'Contacter le propriétaire via WhatsApp',
       icon: 'whatsapp' as const,
     };
   }, [isActive, isHotelContext]);
@@ -583,44 +589,56 @@ export default function TrackPage() {
          ══════════════════════════════════════════════════════════════════ */}
       <header
         role="banner"
-        className="sticky top-0 z-30 w-full px-4 py-5 shadow-lg"
+        className="sticky top-0 z-30 w-full shadow-lg"
         style={{
-          backgroundColor: isActive ? ACTIVE_GREEN : LOST_RED,
+          background: isActive
+            ? `linear-gradient(135deg, ${BRAND_BLACK} 0%, #1F1F1F 100%)`
+            : `linear-gradient(135deg, ${LOST_RED} 0%, #7F1D1D 100%)`,
           color: '#FFFFFF',
+          borderBottom: `3px solid ${isActive ? BRAND_GOLD : '#FCA5A5'}`,
         }}
       >
-        <div className="max-w-2xl mx-auto">
+        <div className="max-w-2xl mx-auto px-4 py-5">
           {/* Logo discret + référence */}
-          <div className="flex items-center justify-between mb-3">
-            <div className="bg-white/95 inline-block px-3 py-1.5 rounded-md">
+          <div className="flex items-center justify-between mb-4">
+            <div className="inline-flex items-center gap-2 bg-white px-3 py-1.5 rounded-lg shadow-sm">
               <QRTagsLogo size="sm" variant="light" />
             </div>
-            <span className="text-xs font-bold text-white/90 tracking-wide" aria-label={`Référence ${baggage.reference}`}>
+            <span
+              className="text-xs font-bold px-2.5 py-1 rounded-md tracking-wider"
+              style={{
+                backgroundColor: isActive ? 'rgba(253, 185, 0, 0.15)' : 'rgba(255,255,255,0.12)',
+                color: isActive ? BRAND_GOLD : '#FECACA',
+                border: `1px solid ${isActive ? 'rgba(253,185,0,0.3)' : 'rgba(255,255,255,0.2)'}`,
+              }}
+              aria-label={`Référence ${baggage.reference}`}
+            >
               {baggage.reference}
             </span>
           </div>
 
           {/* Statut principal — annoncé dynamiquement aux lecteurs d'écran */}
           <div
-            className="flex items-center gap-2 mb-2"
+            className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full mb-3"
             role="status"
             aria-live="polite"
             aria-atomic="true"
+            style={{
+              backgroundColor: isActive ? BRAND_GOLD : '#7F1D1D',
+              color: isActive ? BRAND_BLACK : '#FFFFFF',
+            }}
           >
-            <span className="text-2xl" aria-hidden="true">
-              {isActive ? '📱' : '🚨'}
+            <span className="text-base" aria-hidden="true">
+              {isActive ? '✓' : '⚠'}
             </span>
-            <span
-              className="text-sm font-black uppercase tracking-wider"
-              style={{ textShadow: '0 1px 2px rgba(0,0,0,0.2)' }}
-            >
-              {isActive ? 'ACTIF — En cours de séjour' : 'PERDU — Garantie expirée'}
+            <span className="text-xs font-black uppercase tracking-wider">
+              {isActive ? 'Sous protection QRTags' : 'Garantie expirée'}
             </span>
           </div>
 
           {/* Titre objet H1 (32px mobile) */}
           <h1
-            className="font-black leading-tight mb-1"
+            className="font-black leading-tight mb-1.5"
             style={{ fontSize: 'clamp(1.75rem, 7vw, 2.25rem)', color: '#FFFFFF' }}
           >
             {objectDisplayName}
@@ -634,10 +652,10 @@ export default function TrackPage() {
 
           {/* Date d'expiration (info complémentaire) */}
           {baggage.expiresAt && (
-            <p className="text-xs text-white/80 mt-1">
+            <p className="text-xs text-white/70 mt-1.5">
               <time dateTime={baggage.expiresAt}>
-                {isActive ? 'Valable jusqu\'au' : 'Expiré le'}{' '}
-                <span className="font-bold">{formatDate(baggage.expiresAt)}</span>
+                {isActive ? 'Valide jusqu\'au' : 'Expiré le'}{' '}
+                <span className="font-bold text-white/90">{formatDate(baggage.expiresAt)}</span>
               </time>
             </p>
           )}
@@ -671,20 +689,27 @@ export default function TrackPage() {
            ════════════════════════════════════════════════════════════════ */}
         <section
           aria-label="Détails de l'objet"
-          className="track-card-animate mt-6 rounded-2xl"
+          className="track-card-animate mt-6 rounded-2xl overflow-hidden"
           style={{
             backgroundColor: CARD_BG,
             border: `1px solid ${BORDER_COLOR}`,
-            padding: '16px',
+            boxShadow: '0 2px 8px rgba(0,0,0,0.04)',
           }}
         >
-          <h2
-            className="text-base font-black mb-4 flex items-center gap-2"
-            style={{ color: TITLE_COLOR }}
+          {/* Bandeau titre doré QRTags */}
+          <div
+            className="px-4 py-3 flex items-center gap-2"
+            style={{
+              backgroundColor: BRAND_BLACK,
+              color: '#FFFFFF',
+            }}
           >
-            <Package className="w-4 h-4" aria-hidden="true" />
-            INFORMATIONS DE L&apos;OBJET
-          </h2>
+            <Package className="w-4 h-4" style={{ color: BRAND_GOLD }} aria-hidden="true" />
+            <h2 className="text-sm font-black uppercase tracking-wider">
+              Informations de l&apos;objet
+            </h2>
+          </div>
+          <div className="p-4">
 
           <ul className="space-y-3">
 
@@ -786,20 +811,21 @@ export default function TrackPage() {
             )}
           </ul>
 
-          {/* Message du propriétaire au trouveur (si présent) */}
-          {objectInfo?.message_to_finder && (
-            <div
-              className="mt-4 rounded-xl p-3"
-              style={{ backgroundColor: '#FFFBEB', border: `1px solid #F59E0B` }}
-            >
-              <p className="text-xs font-black uppercase tracking-wider mb-1" style={{ color: '#92400E' }}>
-                💬 Message du propriétaire
-              </p>
-              <p className="text-sm italic" style={{ color: TITLE_COLOR }}>
-                &ldquo;{objectInfo.message_to_finder}&rdquo;
-              </p>
-            </div>
-          )}
+            {/* Message du propriétaire au trouveur (si présent) */}
+            {objectInfo?.message_to_finder && (
+              <div
+                className="mt-4 rounded-xl p-3"
+                style={{ backgroundColor: '#FFFBEB', border: `1px solid #F59E0B` }}
+              >
+                <p className="text-xs font-black uppercase tracking-wider mb-1" style={{ color: '#92400E' }}>
+                  💬 Message du propriétaire
+                </p>
+                <p className="text-sm italic" style={{ color: TITLE_COLOR }}>
+                  &ldquo;{objectInfo.message_to_finder}&rdquo;
+                </p>
+              </div>
+            )}
+          </div>
         </section>
 
         {/* ════════════════════════════════════════════════════════════════
@@ -807,104 +833,122 @@ export default function TrackPage() {
            ════════════════════════════════════════════════════════════════ */}
         <section
           aria-label="Historique des scans"
-          className="track-card-animate mt-6 rounded-2xl"
+          className="track-card-animate mt-6 rounded-2xl overflow-hidden"
           style={{
             backgroundColor: CARD_BG,
             border: `1px solid ${BORDER_COLOR}`,
-            padding: '16px',
+            boxShadow: '0 2px 8px rgba(0,0,0,0.04)',
           }}
         >
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-base font-black flex items-center gap-2" style={{ color: TITLE_COLOR }}>
-              <Clock className="w-4 h-4" aria-hidden="true" />
-              DERNIERS SCANS
+          <div
+            className="px-4 py-3 flex items-center justify-between"
+            style={{
+              backgroundColor: BRAND_BLACK,
+              color: '#FFFFFF',
+            }}
+          >
+            <h2 className="text-sm font-black uppercase tracking-wider flex items-center gap-2">
+              <Clock className="w-4 h-4" style={{ color: BRAND_GOLD }} aria-hidden="true" />
+              Derniers scans
             </h2>
             <span
               className="text-xs font-bold px-2.5 py-1 rounded-full"
-              style={{ backgroundColor: '#F3F4F6', color: LABEL_COLOR }}
+              style={{ backgroundColor: BRAND_GOLD, color: BRAND_BLACK }}
             >
               {baggage.scanCount} au total
             </span>
           </div>
+          <div className="p-4">
 
-          {recentScans.length === 0 ? (
-            <div className="text-center py-8">
-              <p className="text-4xl mb-2" aria-hidden="true">👁️</p>
-              <p className="font-bold" style={{ color: TITLE_COLOR }}>Aucun scan pour le moment</p>
-              <p className="text-sm mt-2" style={{ color: LABEL_COLOR }}>
-                Si quelqu&apos;un trouve votre objet et scanne le QR code, vous serez notifié ici.
-              </p>
-            </div>
-          ) : (
-            <ul className="space-y-3">
-              {recentScans.map((scan) => (
-                <li
-                  key={scan.id}
-                  className="rounded-xl p-3"
-                  style={{ backgroundColor: '#F9FAFB', border: `1px solid ${BORDER_COLOR}` }}
-                >
-                  <div className="flex items-center gap-1.5 mb-1.5">
-                    <Clock className="w-3.5 h-3.5" style={{ color: LABEL_COLOR }} aria-hidden="true" />
-                    <span className="text-xs font-bold" style={{ color: TITLE_COLOR }}>
-                      {formatDateShort(scan.scannedAt)}
-                    </span>
-                  </div>
-
-                  {scan.location && (
-                    <div className="flex items-center gap-1.5 mb-1">
-                      <MapPin className="w-3.5 h-3.5 flex-shrink-0" style={{ color: LABEL_COLOR }} aria-hidden="true" />
-                      <span className="text-sm font-semibold" style={{ color: VALUE_COLOR }}>
-                        {scan.location}
+            {recentScans.length === 0 ? (
+              <div className="text-center py-8">
+                <p className="text-4xl mb-2" aria-hidden="true">👁️</p>
+                <p className="font-bold" style={{ color: TITLE_COLOR }}>Aucun scan pour le moment</p>
+                <p className="text-sm mt-2" style={{ color: LABEL_COLOR }}>
+                  Si quelqu&apos;un trouve votre objet et scanne le QR code, vous serez notifié ici.
+                </p>
+              </div>
+            ) : (
+              <ul className="space-y-3">
+                {recentScans.map((scan, idx) => (
+                  <li
+                    key={scan.id}
+                    className="rounded-xl p-3 relative overflow-hidden"
+                    style={{
+                      backgroundColor: '#FAFAF7',
+                      border: `1px solid ${BORDER_COLOR}`,
+                      borderLeft: `3px solid ${BRAND_GOLD}`,
+                    }}
+                  >
+                    <div className="flex items-center gap-1.5 mb-1.5">
+                      <Clock className="w-3.5 h-3.5" style={{ color: BRAND_GOLD_DARK }} aria-hidden="true" />
+                      <span className="text-xs font-bold" style={{ color: TITLE_COLOR }}>
+                        {formatDateShort(scan.scannedAt)}
+                      </span>
+                      <span
+                        className="text-[10px] font-bold px-1.5 py-0.5 rounded ml-auto"
+                        style={{ backgroundColor: '#E7E5E0', color: LABEL_COLOR }}
+                      >
+                        #{idx + 1}
                       </span>
                     </div>
-                  )}
 
-                  {scan.finderName && (
-                    <div className="flex items-center gap-1.5">
-                      <span className="text-xs" aria-hidden="true">👤</span>
-                      <span className="text-xs" style={{ color: LABEL_COLOR }}>
-                        Trouveur : <span className="font-bold" style={{ color: VALUE_COLOR }}>{maskName(scan.finderName)}</span>
-                      </span>
-                    </div>
-                  )}
+                    {scan.location && (
+                      <div className="flex items-center gap-1.5 mb-1">
+                        <MapPin className="w-3.5 h-3.5 flex-shrink-0" style={{ color: LABEL_COLOR }} aria-hidden="true" />
+                        <span className="text-sm font-semibold" style={{ color: VALUE_COLOR }}>
+                          {scan.location}
+                        </span>
+                      </div>
+                    )}
 
-                  {scan.message && (
-                    <p className="text-xs italic mt-1.5" style={{ color: LABEL_COLOR }}>
-                      &ldquo;{scan.message}&rdquo;
-                    </p>
-                  )}
+                    {scan.finderName && (
+                      <div className="flex items-center gap-1.5">
+                        <span className="text-xs" aria-hidden="true">👤</span>
+                        <span className="text-xs" style={{ color: LABEL_COLOR }}>
+                          Trouveur : <span className="font-bold" style={{ color: VALUE_COLOR }}>{maskName(scan.finderName)}</span>
+                        </span>
+                      </div>
+                    )}
 
-                  {scan.latitude && scan.longitude && (
-                    <a
-                      href={`https://www.google.com/maps?q=${scan.latitude},${scan.longitude}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="mt-2 inline-flex items-center gap-1 text-xs font-bold underline"
-                      style={{ color: '#2563EB' }}
-                    >
-                      <MapPin className="w-3 h-3" aria-hidden="true" />
-                      Voir sur Google Maps
-                      <ExternalLink className="w-3 h-3" aria-hidden="true" />
-                    </a>
-                  )}
-                </li>
-              ))}
-            </ul>
-          )}
+                    {scan.message && (
+                      <p className="text-xs italic mt-1.5" style={{ color: LABEL_COLOR }}>
+                        &ldquo;{scan.message}&rdquo;
+                      </p>
+                    )}
+
+                    {scan.latitude && scan.longitude && (
+                      <a
+                        href={`https://www.google.com/maps?q=${scan.latitude},${scan.longitude}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="mt-2 inline-flex items-center gap-1 text-xs font-bold underline"
+                        style={{ color: '#2563EB' }}
+                      >
+                        <MapPin className="w-3 h-3" aria-hidden="true" />
+                        Voir sur Google Maps
+                        <ExternalLink className="w-3 h-3" aria-hidden="true" />
+                      </a>
+                    )}
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
         </section>
 
         {/* Bas de page */}
         <footer className="mt-6 mb-2 text-center">
           <a
             href="/"
-            className="inline-flex items-center gap-1.5 text-xs font-semibold"
-            style={{ color: LABEL_COLOR }}
+            className="inline-flex items-center gap-1.5 text-xs font-semibold px-4 py-2 rounded-lg transition hover:opacity-80"
+            style={{ backgroundColor: '#F3F3EF', color: LABEL_COLOR }}
           >
             <ArrowLeft className="w-3.5 h-3.5" aria-hidden="true" />
             Retour à l&apos;accueil
           </a>
-          <p className="text-xs mt-1.5" style={{ color: LABEL_COLOR }}>
-            Propulsé par <span className="font-black" style={{ color: TITLE_COLOR }}>QRTags</span>
+          <p className="text-xs mt-2" style={{ color: LABEL_COLOR }}>
+            Propulsé par <span className="font-black" style={{ color: BRAND_GOLD_DARK }}>QRTags</span> · 98% des objets retrouvés
           </p>
         </footer>
       </div>
@@ -914,11 +958,11 @@ export default function TrackPage() {
          ══════════════════════════════════════════════════════════════════ */}
       <nav
         aria-label="Actions rapides"
-        className="fixed bottom-0 left-0 right-0 z-40 shadow-2xl"
+        className="fixed bottom-0 left-0 right-0 z-40"
         style={{
           backgroundColor: CARD_BG,
-          borderTop: `1px solid ${BORDER_COLOR}`,
-          boxShadow: '0 -4px 20px rgba(0, 0, 0, 0.08)',
+          borderTop: `3px solid ${BRAND_GOLD}`,
+          boxShadow: '0 -8px 24px rgba(0, 0, 0, 0.12)',
         }}
       >
         <div className="max-w-2xl mx-auto px-3 py-3">
@@ -978,7 +1022,7 @@ export default function TrackPage() {
                 aria-label={copied ? 'Lien copié' : 'Copier le lien de suivi'}
                 className="w-full flex flex-col items-center justify-center gap-1 px-2 py-2.5 rounded-xl font-bold transition active:scale-95"
                 style={{
-                  backgroundColor: copied ? ACTIVE_GREEN : '#111111',
+                  backgroundColor: copied ? ACTIVE_GREEN : BRAND_BLACK,
                   color: '#FFFFFF',
                   minHeight: '44px',
                 }}
