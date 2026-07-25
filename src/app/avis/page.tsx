@@ -25,7 +25,7 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import {
   Star, Package, MapPin, Clock, Loader2, AlertTriangle,
-  ArrowLeft, MessageCircle,
+  ArrowLeft, ShoppingBag,
 } from 'lucide-react';
 import QRTagsLogo from '@/components/qrtags/QRTagsLogo';
 import { PublicNavigation, PublicFooter } from '@/components/public/PublicLayout';
@@ -323,12 +323,12 @@ export default function AvisPage() {
                 Vous aussi, protégez vos objets avec QRTags
               </p>
               <Link
-                href="/inscrire"
+                href="/#tarifs"
                 className="inline-flex items-center gap-2 px-8 py-4 rounded-lg font-bold text-lg transition hover:opacity-90 active:scale-[0.98]"
                 style={{ backgroundColor: QRTAGS_INK, color: QRTAGS_BG }}
               >
-                <MessageCircle className="w-5 h-5" aria-hidden="true" />
-                Activer mon QR code
+                <ShoppingBag className="w-5 h-5" aria-hidden="true" />
+                Acheter des tags
               </Link>
             </div>
           </>

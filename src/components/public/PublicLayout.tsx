@@ -41,6 +41,7 @@ export function PublicNavigation() {
             <a href="/#solutions" className="text-sm font-medium text-slate-600 hover:text-slate-900 transition-colors">Solutions</a>
             <a href="/#comment" className="text-sm font-medium text-slate-600 hover:text-slate-900 transition-colors">Comment ça marche</a>
             <a href="/#tarifs" className="text-sm font-medium text-slate-600 hover:text-slate-900 transition-colors">Tarifs</a>
+            <Link href="/avis" className="text-sm font-medium text-slate-600 hover:text-slate-900 transition-colors">Avis</Link>
             <Link href="/contact" className="text-sm font-medium text-slate-600 hover:text-slate-900 transition-colors">Contact</Link>
           </div>
 
@@ -74,6 +75,7 @@ export function PublicNavigation() {
               <a href="/#solutions" className="text-slate-600 hover:text-slate-900 font-medium py-2" onClick={() => setIsOpen(false)}>Solutions</a>
               <a href="/#comment" className="text-slate-600 hover:text-slate-900 font-medium py-2" onClick={() => setIsOpen(false)}>Comment ça marche</a>
               <a href="/#tarifs" className="text-slate-600 hover:text-slate-900 font-medium py-2" onClick={() => setIsOpen(false)}>Tarifs</a>
+              <Link href="/avis" className="text-slate-600 hover:text-slate-900 font-medium py-2" onClick={() => setIsOpen(false)}>Avis</Link>
               <Link href="/contact" className="text-slate-600 hover:text-slate-900 font-medium py-2" onClick={() => setIsOpen(false)}>Contact</Link>
               <hr className="border-slate-100 my-1" />
               <Link href="/login" onClick={() => setIsOpen(false)}>

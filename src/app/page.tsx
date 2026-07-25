@@ -339,6 +339,7 @@ export default function HomePage() {
               <a href="#contact-whatsapp" className="px-4 py-2 text-sm font-medium hover:text-[#c89a00] transition-colors">Comment suis-je contacté ?</a>
               <a href="#tarifs" className="px-4 py-2 text-sm font-medium hover:text-[#c89a00] transition-colors">Tarifs</a>
               <a href="#temoignages" className="px-4 py-2 text-sm font-medium hover:text-[#c89a00] transition-colors">Témoignages</a>
+              <Link href="/avis" className="px-4 py-2 text-sm font-medium hover:text-[#c89a00] transition-colors">Avis</Link>
             </div>
 
             <div className="hidden md:flex items-center gap-3">
@@ -368,6 +369,7 @@ export default function HomePage() {
               <a href="#contact-whatsapp" onClick={() => setMenuOpen(false)} className="block px-4 py-2 text-sm">Comment suis-je contacté ?</a>
               <a href="#tarifs" onClick={() => setMenuOpen(false)} className="block px-4 py-2 text-sm">Tarifs</a>
               <a href="#temoignages" onClick={() => setMenuOpen(false)} className="block px-4 py-2 text-sm">Témoignages</a>
+              <Link href="/avis" onClick={() => setMenuOpen(false)} className="block px-4 py-2 text-sm">Avis</Link>
               <a href="#tracker" onClick={() => setMenuOpen(false)} className="block px-4 py-2 text-sm text-[#c89a00]">Suivre un objet</a>
               <Link href="#tarifs" onClick={() => setMenuOpen(false)} className="block px-4 py-3 text-sm font-bold text-center rounded-lg" style={{ background: COLORS.accent, color: COLORS.text }}>
                 Protéger mes objets
