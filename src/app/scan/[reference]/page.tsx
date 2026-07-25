@@ -523,21 +523,40 @@ export default function FinderPage() {
           </p>
         </div>
 
+        {/* ═════ BANDEAU RÉCOMPENSE — flashy doré, attire immédiatement l'œil du trouveur ═════ */}
+        {hasReward && (
+          <div
+            className="reward-pulse reward-shimmer relative overflow-hidden mb-5 rounded-2xl text-center"
+            style={{
+              background: 'linear-gradient(135deg, #F59E0B 0%, #F97316 50%, #DC2626 100%)',
+              border: '3px solid #111',
+              boxShadow: '0 10px 28px rgba(217, 119, 6, 0.45)',
+            }}
+          >
+            <div className="relative z-10 px-5 py-4 md:py-5">
+              <div className="flex items-center justify-center gap-2 mb-1">
+                <Gift className="w-5 h-5 md:w-6 md:h-6 text-white drop-shadow" />
+                <span className="text-white text-xs md:text-sm font-black uppercase tracking-wider drop-shadow">
+                  Récompense offerte
+                </span>
+              </div>
+              <p className="text-white font-black leading-none drop-shadow-lg"
+                 style={{ fontSize: 'clamp(2rem, 8vw, 3rem)', textShadow: '2px 2px 0 rgba(0,0,0,0.35)' }}>
+                {objInfo!.reward}
+              </p>
+              <p className="text-white/95 text-xs md:text-sm font-bold mt-1.5 drop-shadow">
+                💰 À vous qui aiderez à retrouver cet objet
+              </p>
+            </div>
+          </div>
+        )}
+
         {/* ═════ Carte : infos de l'objet ═════ */}
         <div className={`${CARD_CLASS} mb-6`}>
           <div className="flex items-center justify-between mb-4 gap-3 flex-wrap">
             <h2 className="text-xl font-bold text-black flex items-center gap-2">
               <Package className="w-5 h-5" /> OBJET
             </h2>
-            {hasReward && (
-              <span
-                className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full text-base font-black text-white shadow-lg"
-                style={{ backgroundColor: QRTAGS_GREEN, border: '2px solid #14532d' }}
-              >
-                <Gift className="w-4 h-4" />
-                Récompense : {objInfo!.reward}
-              </span>
-            )}
           </div>
 
           {/* Icône catégorie + nom objet — grande tucale visuelle */}
@@ -625,9 +644,49 @@ export default function FinderPage() {
             )}
 
             {objInfo?.message_to_finder && (
-              <div className="mt-4 p-3 rounded-lg" style={{ backgroundColor: '#FEF3C7', border: '2px solid #111' }}>
-                <p className="text-xs text-black/60 uppercase font-bold mb-1">💬 Message du propriétaire</p>
-                <p className="text-black text-sm italic">"{objInfo.message_to_finder}"</p>
+              <div
+                className="mt-4 relative overflow-hidden rounded-xl"
+                style={{
+                  background: 'linear-gradient(135deg, #FFFBEB 0%, #FEF3C7 60%, #FDE68A 100%)',
+                  border: '3px solid #B45309',
+                  boxShadow: '0 6px 16px rgba(180, 83, 9, 0.18)',
+                }}
+              >
+                {/* Barre verticale décorative à gauche pour signaler l'importance */}
+                <div
+                  className="absolute top-0 left-0 h-full w-1.5"
+                  style={{ background: 'linear-gradient(180deg, #F59E0B, #DC2626)' }}
+                />
+                <div className="relative px-5 py-4 pl-7">
+                  <div className="flex items-center gap-2 mb-2">
+                    <div
+                      className="flex items-center justify-center w-8 h-8 rounded-full flex-shrink-0"
+                      style={{ backgroundColor: '#DC2626', border: '2px solid #7F1D1D' }}
+                    >
+                      <MessageCircle className="w-4 h-4 text-white" />
+                    </div>
+                    <p
+                      className="text-xs uppercase font-black tracking-wider"
+                      style={{ color: '#7C2D12' }}
+                    >
+                      Message du propriétaire
+                    </p>
+                  </div>
+                  <p
+                    className="font-bold leading-relaxed"
+                    style={{
+                      color: '#1C1917',
+                      fontSize: '1.05rem',
+                      fontStyle: 'italic',
+                      lineHeight: 1.5,
+                    }}
+                  >
+                    &ldquo;{objInfo.message_to_finder}&rdquo;
+                  </p>
+                  <p className="mt-2 text-xs font-bold flex items-center gap-1" style={{ color: '#92400E' }}>
+                    ✉️ Merci de lire ce message avant toute chose.
+                  </p>
+                </div>
               </div>
             )}
           </div>

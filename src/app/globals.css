@@ -826,6 +826,45 @@ body * {
   }
 }
 
+/* ═══ Reward pulse — bandeau récompense flashy doré, attire l'œil du trouveur ═══ */
+@keyframes reward-pulse {
+  0%, 100% {
+    transform: scale(1);
+    box-shadow: 0 10px 28px rgba(217, 119, 6, 0.45), 0 0 0 0 rgba(245, 158, 11, 0.6);
+  }
+  50% {
+    transform: scale(1.015);
+    box-shadow: 0 14px 36px rgba(217, 119, 6, 0.55), 0 0 0 16px rgba(245, 158, 11, 0);
+  }
+}
+
+.reward-pulse {
+  animation: reward-pulse 2.4s ease-in-out infinite;
+}
+
+.reward-pulse:hover {
+  animation-play-state: paused;
+}
+
+/* Brillances diagonales qui traversent le bandeau récompense */
+@keyframes reward-shimmer {
+  0%   { transform: translateX(-120%) skewX(-18deg); }
+  60%  { transform: translateX(220%)  skewX(-18deg); }
+  100% { transform: translateX(220%)  skewX(-18deg); }
+}
+
+.reward-shimmer::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 35%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.55), transparent);
+  animation: reward-shimmer 3.2s ease-in-out infinite;
+  pointer-events: none;
+}
+
 .wa-pulse:not(:disabled):not(.disabled) {
   animation: wa-pulse 2.2s ease-in-out infinite;
 }
@@ -837,6 +876,8 @@ body * {
 @media (prefers-reduced-motion: reduce) {
   .cta-pulse,
   .wa-pulse,
+  .reward-pulse,
+  .reward-shimmer::after,
   .animate-marquee,
   .animate-marquee-slow {
     animation: none;
