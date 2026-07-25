@@ -507,24 +507,40 @@ model Checklist {
 }
 
 // Review model - user reviews/testimonials for social proof
+// ────────────────────────────────────────────────────────────────────────
+// NOTE (2026-07-26) : les avis postés depuis la page /track/[token] sont
+// publiés IMMÉDIATEMENT (isApproved=true par défaut). Aucune modération
+// admin n'est requise, conformément à la demande produit.
+// Les avis legacy soumis via le formulaire générique restent modérés.
+// ────────────────────────────────────────────────────────────────────────
 model Review {
-  id          String   @id @default(cuid())
-  name        String   // Reviewer name (public)
-  location    String?  // City/country
-  rating      Int      // 1-5 stars
-  title       String?  // Short title
-  content     String   // Review text
-  baggageRef  String?  // Optional reference to the baggage
-  isFeatured  Boolean  @default(false) // Show on landing page
-  isApproved  Boolean  @default(false) // Admin must approve
-  response    String?  // Admin reply
-  language    String   @default("fr") // "fr" | "en" | "ar"
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id              String   @id @default(cuid())
+  name            String   // Reviewer name (public) — masqué côté UI via maskName()
+  location        String?  // City/country
+  rating          Int      // 1-5 stars
+  title           String?  // Short title
+  content         String   // Review text
+  baggageRef      String?  // Optional reference to the baggage
+  // ─── Champs ajoutés pour les avis postés depuis /track/[token] ───
+  // Permettent d'afficher la photo de l'objet retrouvé + le nom du trouveur
+  // sur la page publique /avis.
+  trackingToken   String?  // Token de suivi (pour faire le lien avec le baggage)
+  finderName      String?  // Nom du trouveur (masqué côté UI)
+  objectName      String?  // Nom de l'objet retrouvé (ex: "lunettes de soleil")
+  objectPhoto     String?  // URL de la photo de l'objet (depuis baggage.objectInfo.photo)
+  objectCategory  String?  // Catégorie de l'objet (ex: "Accessoires")
+  // ──────────────────────────────────────────────────────────────────
+  isFeatured      Boolean  @default(false) // Show on landing page
+  isApproved      Boolean  @default(true)  // Publication immédiate par défaut
+  response        String?  // Admin reply
+  language        String   @default("fr") // "fr" | "en" | "ar"
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
 
   @@index([isApproved])
   @@index([isFeatured])
   @@index([createdAt])
+  @@index([trackingToken])
 }
 
 // LossAlert model - proactive loss detection alerts

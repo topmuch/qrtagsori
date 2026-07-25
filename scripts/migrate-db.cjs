@@ -121,4 +121,36 @@ try {
   console.log('  ℹ️  TagSale: table existe déjà ou erreur');
 }
 
+// ─── Review — ajout des nouveaux champs pour avis postés depuis /track/[token] ───
+// trackingToken, finderName, objectName, objectPhoto, objectCategory
+// + changement de la valeur par défaut de isApproved (true → publication immédiate)
+const reviewColumns = [
+  { table: 'Review', column: 'trackingToken', type: 'TEXT' },
+  { table: 'Review', column: 'finderName', type: 'TEXT' },
+  { table: 'Review', column: 'objectName', type: 'TEXT' },
+  { table: 'Review', column: 'objectPhoto', type: 'TEXT' },
+  { table: 'Review', column: 'objectCategory', type: 'TEXT' },
+];
+for (const m of reviewColumns) {
+  try {
+    const exists = execSync(`sqlite3 "${DB_PATH}" "PRAGMA table_info(${m.table});"`, { encoding: 'utf-8' });
+    if (!exists.includes(m.column)) {
+      execSync(`sqlite3 "${DB_PATH}" "ALTER TABLE ${m.table} ADD COLUMN ${m.column} ${m.type};"`, { encoding: 'utf-8' });
+      console.log(`  ✅ ${m.table}.${m.column} ajouté`);
+      added++;
+    } else {
+      skipped++;
+    }
+  } catch (e) {
+    console.log(`  ℹ️  ${m.table}.${m.column}: existe déjà ou erreur`);
+  }
+}
+
+// Création d'index pour la nouvelle colonne trackingToken (si pas déjà présent)
+try {
+  execSync(`sqlite3 "${DB_PATH}" "CREATE INDEX IF NOT EXISTS Review_trackingToken_idx ON Review(trackingToken);"`, { encoding: 'utf-8' });
+} catch (e) {
+  // Index peut déjà exister
+}
+
 console.log(`\n📊 Migration terminée: ${added} ajoutée(s), ${skipped} existante(s), ${errors} erreur(s)`);

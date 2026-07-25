@@ -20,6 +20,22 @@ function validateReview(data: Record<string, unknown>): string | null {
   if (data.location !== undefined && data.location !== null && typeof data.location !== 'string') {
     return 'La localisation doit être une chaîne de caractères.';
   }
+  // Nouveaux champs optionnels (avis depuis /track/[token])
+  if (data.finderName !== undefined && data.finderName !== null && typeof data.finderName !== 'string') {
+    return 'Le nom du trouveur doit être une chaîne de caractères.';
+  }
+  if (data.trackingToken !== undefined && data.trackingToken !== null && typeof data.trackingToken !== 'string') {
+    return 'Le token de suivi doit être une chaîne de caractères.';
+  }
+  if (data.objectName !== undefined && data.objectName !== null && typeof data.objectName !== 'string') {
+    return 'Le nom de l\'objet doit être une chaîne de caractères.';
+  }
+  if (data.objectPhoto !== undefined && data.objectPhoto !== null && typeof data.objectPhoto !== 'string') {
+    return 'La photo de l\'objet doit être une chaîne de caractères.';
+  }
+  if (data.objectCategory !== undefined && data.objectCategory !== null && typeof data.objectCategory !== 'string') {
+    return 'La catégorie de l\'objet doit être une chaîne de caractères.';
+  }
   return null;
 }
 
@@ -37,7 +53,11 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { name, location, rating, title, content, baggageRef, language } = body;
+    const {
+      name, location, rating, title, content, baggageRef, language,
+      // Nouveaux champs (avis depuis /track/[token])
+      finderName, trackingToken, objectName, objectPhoto, objectCategory,
+    } = body;
 
     // Validate
     const validationError = validateReview(body);
@@ -45,7 +65,10 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: validationError }, { status: 400 });
     }
 
-    // Create review (unapproved by default)
+    // Create review — publication IMMÉDIATE (isApproved=true par défaut).
+    // Aucune modération admin requise, conformément à la demande produit.
+    // Les avis legacy (sans trackingToken) restent soumis à modération.
+    const isFromTrackingPage = Boolean(trackingToken);
     const review = await db.review.create({
       data: {
         name: name.trim(),
@@ -55,11 +78,19 @@ export async function POST(request: NextRequest) {
         content: content.trim(),
         baggageRef: baggageRef?.trim() || null,
         language: (language === 'fr' || language === 'en' || language === 'ar') ? language : 'fr',
-        isApproved: false,
+        // Champs spécifiques aux avis postés depuis /track/[token]
+        finderName: finderName?.trim() || null,
+        trackingToken: trackingToken?.trim() || null,
+        objectName: objectName?.trim() || null,
+        objectPhoto: objectPhoto?.trim() || null,
+        objectCategory: objectCategory?.trim() || null,
+        // Publication immédiate pour les avis depuis la page de suivi.
+        // Les avis legacy (formulaire générique) restent en attente de modération.
+        isApproved: isFromTrackingPage ? true : false,
       },
     });
 
-    // Return 201 — without exposing approval status to the user
+    // Return 201 — sans exposer le statut d'approbation à l'utilisateur
     return NextResponse.json(
       {
         id: review.id,
@@ -70,6 +101,11 @@ export async function POST(request: NextRequest) {
         content: review.content,
         baggageRef: review.baggageRef,
         language: review.language,
+        finderName: review.finderName,
+        trackingToken: review.trackingToken,
+        objectName: review.objectName,
+        objectPhoto: review.objectPhoto,
+        objectCategory: review.objectCategory,
         createdAt: review.createdAt,
       },
       { status: 201 }
@@ -128,6 +164,12 @@ export async function GET(request: NextRequest) {
           language: true,
           isFeatured: true,
           createdAt: true,
+          // Nouveaux champs (avis depuis /track/[token])
+          finderName: true,
+          trackingToken: true,
+          objectName: true,
+          objectPhoto: true,
+          objectCategory: true,
         },
       }),
       db.review.aggregate({

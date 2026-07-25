@@ -125,6 +125,7 @@ export function PublicFooter() {
             <ul className="space-y-2 text-white/50 text-sm">
               <li><Link href="/contact" className="hover:text-white transition-colors">Contact</Link></li>
               <li><Link href="/a-propos" className="hover:text-white transition-colors">À propos</Link></li>
+              <li><Link href="/avis" className="hover:text-white transition-colors">Avis ⭐</Link></li>
               <li><Link href="/devenir-partenaire" className="hover:text-white transition-colors">Partenaires</Link></li>
             </ul>
           </div>

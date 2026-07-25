@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { X, Star, Send, Loader2 } from 'lucide-react';
+import { X, Star, Send, Loader2, Package } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 
 interface ReviewModalProps {
@@ -9,44 +9,71 @@ interface ReviewModalProps {
   onClose: () => void;
   reference?: string;
   lang: string;
+  // ─── Champs spécifiques aux avis postés depuis /track/[token] ───
+  // Permettent d'associer l'avis à l'objet retrouvé + au trouveur.
+  trackingToken?: string;
+  finderName?: string;        // Nom du trouveur (sera stocké en clair, masqué côté UI)
+  objectName?: string;        // Nom de l'objet retrouvé
+  objectPhoto?: string;       // URL de la photo de l'objet
+  objectCategory?: string;    // Catégorie de l'objet
+  reviewerName?: string;      // Pré-rempli avec le nom du propriétaire (masqué côté UI)
+  // ─── Callback de succès ───
+  // Appelé après une soumission réussie (avant onClose) pour permettre au
+  // parent de marquer l'avis comme publié (ex: setHasReviewed(true)).
+  onSubmitted?: () => void;
 }
 
-const LABELS: Record<string, { title: string; placeholder: string; submit: string; success: string; error: string; heading: string; name: string; location: string }> = {
+const LABELS: Record<string, { title: string; placeholder: string; submit: string; success: string; error: string; heading: string; name: string; location: string; reviewerNameDefault: string }> = {
   fr: {
     heading: 'Laisser un avis',
     title: 'Titre (optionnel)',
     placeholder: 'Partagez votre expérience avec QRTags...',
     submit: 'Envoyer mon avis',
-    success: 'Merci ! Votre avis sera publié après vérification.',
+    success: 'Merci ! Votre avis est publié immédiatement.',
     error: 'Erreur lors de l\'envoi. Réessayez.',
     name: 'Votre nom',
     location: 'Ville / Pays (optionnel)',
+    reviewerNameDefault: 'Propriétaire',
   },
   en: {
     heading: 'Leave a review',
     title: 'Title (optional)',
     placeholder: 'Share your experience with QRTags...',
     submit: 'Submit review',
-    success: 'Thank you! Your review will be published after verification.',
+    success: 'Thank you! Your review is published immediately.',
     error: 'Error submitting. Please try again.',
     name: 'Your name',
     location: 'City / Country (optional)',
+    reviewerNameDefault: 'Owner',
   },
   ar: {
     heading: 'اترك تقييم',
     title: 'العنوان (اختياري)',
     placeholder: 'شارك تجربتك مع QRTags...',
     submit: 'إرسال التقييم',
-    success: 'شكراً! سيتم نشر تقييمك بعد التحقق.',
+    success: 'شكراً! يتم نشر تقييمك على الفور.',
     error: 'خطأ في الإرسال. حاول مرة أخرى.',
     name: 'اسمك',
     location: 'المدينة / الدولة (اختياري)',
+    reviewerNameDefault: 'المالك',
   },
 };
 
-export function ReviewModal({ show, onClose, reference, lang }: ReviewModalProps) {
+export function ReviewModal({
+  show,
+  onClose,
+  reference,
+  lang,
+  trackingToken,
+  finderName,
+  objectName,
+  objectPhoto,
+  objectCategory,
+  reviewerName,
+  onSubmitted,
+}: ReviewModalProps) {
   const labels = LABELS[lang] || LABELS.fr;
-  const [name, setName] = useState('');
+  const [name, setName] = useState(reviewerName || '');
   const [location, setLocation] = useState('');
   const [rating, setRating] = useState(0);
   const [hoveredRating, setHoveredRating] = useState(0);
@@ -71,13 +98,20 @@ export function ReviewModal({ show, onClose, reference, lang }: ReviewModalProps
           content: content.trim(),
           baggageRef: reference,
           language: lang,
+          // Nouveaux champs (avis depuis /track/[token])
+          trackingToken: trackingToken || undefined,
+          finderName: finderName || undefined,
+          objectName: objectName || undefined,
+          objectPhoto: objectPhoto || undefined,
+          objectCategory: objectCategory || undefined,
         }),
       });
       if (!res.ok) throw new Error();
       toast({ title: labels.success });
+      onSubmitted?.();  // notifie le parent avant fermeture
       onClose();
       // Reset form
-      setName(''); setLocation(''); setRating(0); setTitle(''); setContent('');
+      setName(reviewerName || ''); setLocation(''); setRating(0); setTitle(''); setContent('');
     } catch {
       toast({ title: labels.error, variant: 'destructive' });
     } finally {
@@ -96,6 +130,33 @@ export function ReviewModal({ show, onClose, reference, lang }: ReviewModalProps
             <X className="w-4 h-4" />
           </button>
         </div>
+
+        {/* ─── Bandeau objet retrouvé (si avis depuis /track/[token]) ─── */}
+        {objectName && (
+          <div className="mb-4 p-3 bg-[#fef9e7] border-2 border-[#c5a643] rounded-xl flex items-center gap-3">
+            {objectPhoto ? (
+              <img
+                src={objectPhoto}
+                alt={objectName}
+                className="w-14 h-14 object-cover rounded-lg border-2 border-[#1a1a1a] flex-shrink-0"
+                loading="lazy"
+              />
+            ) : (
+              <div className="w-14 h-14 bg-white rounded-lg border-2 border-[#1a1a1a] flex items-center justify-center flex-shrink-0">
+                <Package className="w-6 h-6 text-[#1a1a1a]" />
+              </div>
+            )}
+            <div className="min-w-0 flex-1">
+              <p className="text-xs text-[#1a1a1a]/60 uppercase tracking-wider font-bold">
+                Objet retrouvé
+              </p>
+              <p className="text-sm font-bold text-[#1a1a1a] truncate">{objectName}</p>
+              {objectCategory && (
+                <p className="text-xs text-[#1a1a1a]/70">{objectCategory}</p>
+              )}
+            </div>
+          </div>
+        )}
 
         <form onSubmit={handleSubmit} className="space-y-3">
           {/* Name */}

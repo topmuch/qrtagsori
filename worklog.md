@@ -254,3 +254,78 @@ Stage Summary:
 - Pages concernées : homepage (header + footer), devenir-partenaire, voyageurs-standard, inscrire, inscription, success, scan, suivi, track, checklist, shop, auth (login/agence/admin), 404, reset-password, verify-email, forgot-password, et toutes les pages via PublicLayout (a-propos, cgu, contact, confidentialite, mentions-legales, demo, fonctionnalites/*, etapes/*)
 - Cache-buster bumped (LOGO_VERSION + CACHE_NAME) pour forcer refresh chez tous les visiteurs ✓
 - Favicon + PWA icons régénérés pour cohérence marque ✓
+
+---
+Task ID: reviews-from-tracking-page
+Agent: Main Orchestrator
+Task: Ajouter un système d'avis publié IMMÉDIATEMENT depuis /track/[token] après qu'un objet a été retrouvé, avec page publique /avis dédiée
+
+Work Log:
+- Analyse infrastructure existante :
+  • ReviewModal.tsx existe (formulaire générique) — étendu avec nouveaux champs
+  • /api/reviews route POST/GET existe — étendue
+  • Review model Prisma existe — étendu avec 5 nouveaux champs
+  • Publication était modérée (isApproved=false par défaut) → passé à true
+- Schéma Prisma — ajout de 5 champs au model Review :
+  • trackingToken (String?) — lien vers baggage
+  • finderName (String?) — nom du trouveur (masqué côté UI via maskName)
+  • objectName (String?) — nom de l'objet retrouvé
+  • objectPhoto (String?) — URL photo objet (depuis objectInfo.photo)
+  • objectCategory (String?) — catégorie objet
+  • isApproved default false → true (publication immédiate)
+  • Index ajouté sur trackingToken
+- Script de migration SQL scripts/migrate-db.cjs :
+  • Ajout ALTER TABLE pour les 5 nouveaux champs Review
+  • Création d'index Review_trackingToken_idx
+- API /api/reviews/route.ts :
+  • POST étendu pour accepter finderName, trackingToken, objectName, objectPhoto, objectCategory
+  • Logique : isApproved=true si trackingToken présent (avis depuis /track/[token]), false sinon (avis legacy générique)
+  • Validation des nouveaux champs (types string optionnels)
+  • GET étendu pour retourner les nouveaux champs
+- API /api/reviews/public/route.ts (NOUVEAU) :
+  • GET publique sans rate limit
+  • Retourne les avis publiés (isApproved=true) avec champs publics only
+  • Limite 50 avis + agrégat stats (averageRating + totalReviews)
+- ReviewModal.tsx — refactor complet :
+  • Ajout props : trackingToken, finderName, objectName, objectPhoto, objectCategory, reviewerName, onSubmitted
+  • Bandeau "Objet retrouvé" en haut de la modale avec photo + nom + catégorie (fond jaune doré)
+  • reviewerName pré-rempli avec maskName du propriétaire
+  • onSubmitted callback pour permettre au parent de marquer l'avis comme publié
+- Page /track/[token] — ajout du bouton "Laisser un avis" :
+  • Visible UNIQUEMENT après que l'objet a été marqué retrouvé
+    (baggage.foundAt existe OU baggage.declaredLostAt && !baggage.isLost)
+  • Bouton vert avec icône étoile
+  • Anti-double-post via state hasReviewed
+  • Passe les bons champs à ReviewModal : trackingToken, finderName (du dernier scan), objectName, objectPhoto, objectCategory
+  • onSubmitted → setHasReviewed(true) + toast succès "Votre avis est publié sur /avis"
+  • Import de Star (lucide-react) + ReviewModal
+- Page publique /avis (NOUVEAU src/app/avis/page.tsx) :
+  • Design QRTags signature — jaune moutarde #E3B23C + cartes blanches border-2 border-black
+  • Header : logo QRTags + titre "⭐ AVIS QRTAGS" + stats globales (note moyenne + nombre d'avis)
+  • Liste des avis sous forme de cartes empilées :
+    - Étoiles 1-5 (vert QRTAGS_GREEN)
+    - Bandeau "Objet retrouvé" avec photo + nom + catégorie (si présent)
+    - Titre (optionnel)
+    - Message du propriétaire entre guillemets
+    - Pied : nom du propriétaire + "Merci à {finderName masqué}" + localisation + date
+  • États : loading (spinner), error (retry), empty (message + CTA)
+  • CTA bas de page : "Activer mon QR code" → /inscrire
+  • Utilise PublicNavigation + PublicFooter pour cohérence
+- Footer PublicLayout.tsx — ajout lien "Avis ⭐" dans section Entreprise
+- Sitemap src/app/sitemap.ts — ajout /avis (changeFrequency: 'daily', priority: 0.8)
+
+Vérifications :
+- TypeScript : 0 erreur sur les fichiers modifiés
+- ESLint : 0 erreur sur nouveaux fichiers (avis/page.tsx, ReviewModal.tsx, route.ts)
+  • 2 warnings préexistants dans track/[token] (react-hooks/preserve-manual-memoization) — non touchés
+- Next.js build : SUCCESS, page /avis pré-rendue en statique ✓
+- Prisma client regénéré avec nouveaux champs Review
+- Script migrate-db.cjs met à jour SQLite automatiquement au prochain déploiement
+
+Stage Summary:
+- Flux complet propriétaire → trouveur → avis public opérationnel ✓
+- Publication immédiate sans modération admin (conforme demande) ✓
+- Page /avis dédiée avec design QRTags signature cohérent ✓
+- Photo de l'objet + nom du trouveur masqué (RGPD) affichés sur l'avis ✓
+- Footer + sitemap mis à jour ✓
+- Aucune régression sur l'existant (ReviewModal étendu, pas cassé)

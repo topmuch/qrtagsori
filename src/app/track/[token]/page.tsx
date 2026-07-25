@@ -24,9 +24,10 @@ import { useParams } from 'next/navigation';
 import {
   MapPin, Clock, Eye, Activity, AlertTriangle, CheckCircle2,
   Copy, Flag, ArrowLeft, Loader2, MessageCircle, X,
-  Package, Tag, Palette, FileText, Gift, ExternalLink,
+  Package, Tag, Palette, FileText, Gift, ExternalLink, Star,
 } from 'lucide-react';
 import QRTagsLogo from '@/components/qrtags/QRTagsLogo';
+import { ReviewModal } from '@/components/ReviewModal';
 import { maskName } from '@/lib/privacy';
 
 // ─── Design tokens QRTags (PALETTE SIGNATURE — non négociable) ──────────
@@ -169,6 +170,8 @@ export default function TrackPage() {
   const [actionLoading, setActionLoading] = useState(false);
   const [copied, setCopied] = useState(false);            // feedback bouton Copier lien
   const [toast, setToast] = useState<{ message: string; kind: 'success' | 'error' | 'info' } | null>(null);
+  const [showReviewModal, setShowReviewModal] = useState(false);  // modale avis
+  const [hasReviewed, setHasReviewed] = useState(false);             // évite le double-post
   const copyTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const toastTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -237,6 +240,33 @@ export default function TrackPage() {
 
   // 6. 3 derniers scans max
   const recentScans = useMemo(() => scans.slice(0, 3), [scans]);
+
+  // 7. Dernier trouveur (pour attribuer l'avis au bon trouveur)
+  // On prend le scan le plus récent contenant un finderName ou finderPhone.
+  const lastFinder = useMemo(() => {
+    const withFinder = scans.find((s) => s.finderName || s.finderPhone);
+    if (!withFinder) return null;
+    return {
+      name: withFinder.finderName || null,
+      phone: withFinder.finderPhone || null,
+    };
+  }, [scans]);
+
+  // 8. L'objet peut-il recevoir un avis ?
+  // Conditions :
+  //   - L'objet a été marqué retrouvé (baggage.foundAt existe OU baggage.isLost=false
+  //     après avoir été perdu)
+  //   - Pas encore d'avis posté depuis cette session (évite le double-post)
+  //   - Un trouveur est identifié OU non — l'avis est autorisé même sans trouveur
+  //     identifié (le propriétaire peut remercier anonymement)
+  const canLeaveReview = useMemo(() => {
+    if (hasReviewed) return false;
+    // L'objet doit avoir été marqué retrouvé : soit foundAt existe, soit
+    // l'objet était perdu et a été annulé (isLost=false ET declaredLostAt existe).
+    if (baggage?.foundAt) return true;
+    if (baggage?.declaredLostAt && !baggage?.isLost) return true;
+    return false;
+  }, [hasReviewed, baggage?.foundAt, baggage?.isLost, baggage?.declaredLostAt]);
 
   // ════════════════════════════════════════════════════════════════════════
   //  TOAST — helper pour afficher un feedback temporaire en bas d'écran
@@ -927,6 +957,26 @@ export default function TrackPage() {
                 Signaler comme PERDU
               </button>
             )}
+
+            {/* ─── Bouton "Laisser un avis" ─── */}
+            {/* Visible UNIQUEMENT après que l'objet a été marqué retrouvé. */}
+            {/* L'avis est publié immédiatement sur la page publique /avis. */}
+            {canLeaveReview && (
+              <button
+                type="button"
+                onClick={() => setShowReviewModal(true)}
+                className="w-full px-6 py-4 rounded-lg font-bold text-lg transition flex items-center justify-center gap-2 hover:opacity-90 active:scale-[0.98]"
+                style={{
+                  backgroundColor: hasReviewed ? '#DCFCE7' : QRTAGS_GREEN,
+                  color: '#FFFFFF',
+                  border: '2px solid #15803D',
+                }}
+                aria-label="Laisser un avis sur le trouveur"
+              >
+                <Star className="w-5 h-5 fill-current" aria-hidden="true" />
+                {hasReviewed ? '✅ Avis publié — Merci !' : 'Laisser un avis'}
+              </button>
+            )}
           </div>
         </section>
 
@@ -1032,6 +1082,28 @@ export default function TrackPage() {
           </div>
         </div>
       )}
+
+      {/* ══════════════════════════════════════════════════════════════════
+          MODALE AVIS — déclenchée par le bouton "Laisser un avis"
+          Visible uniquement après que l'objet a été marqué retrouvé.
+          L'avis est publié immédiatement (isApproved=true côté API).
+         ══════════════════════════════════════════════════════════════════ */}
+      <ReviewModal
+        show={showReviewModal}
+        onClose={() => setShowReviewModal(false)}
+        onSubmitted={() => {
+          setHasReviewed(true);
+          showToast('⭐ Votre avis est publié sur /avis', 'success');
+        }}
+        reference={baggage?.reference}
+        lang="fr"
+        trackingToken={baggage?.trackingToken}
+        finderName={lastFinder?.name || undefined}
+        objectName={objectDisplayName || undefined}
+        objectPhoto={objectInfo?.photo || undefined}
+        objectCategory={objectInfo?.category_label || objectInfo?.category || undefined}
+        reviewerName={ownerMaskedName || undefined}
+      />
 
       {/* ══════════════════════════════════════════════════════════════════
           TOAST — feedback temporaire (2.5s)
