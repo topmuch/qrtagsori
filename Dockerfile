@@ -27,7 +27,8 @@ RUN cp -r .next/static .next/standalone/.next/ && \
     cp -r scripts .next/standalone/scripts && \
     cp package.json .next/standalone/package.json
 
-RUN mkdir -p /app/data
+RUN mkdir -p /app/data /app/data/backups /app/public/uploads/damage && \
+    chmod -R 777 /app/data /app/public/uploads/damage
 RUN chmod +x init-db.sh
 
 EXPOSE 3000

@@ -7,6 +7,8 @@
  * on the first API request.
  *
  * Strategy:
+ * - Ensure the SQLite database directory exists (fixes SQLITE_CANTOPEN on fresh
+ *   Coolify deploys where /app/data may not be present yet)
  * - Check if trackingToken column exists via PRAGMA
  * - If missing, ALTER TABLE ADD COLUMN for each missing QRTags column
  * - Also ensure superadmin exists
@@ -15,6 +17,8 @@
  */
 
 import { PrismaClient } from '@prisma/client';
+import { mkdirSync, existsSync } from 'fs';
+import { dirname } from 'path';
 
 const QRTAGS_BAGGAGE_COLUMNS: Array<[string, string]> = [
   ['activatedAt',      'DATETIME'],
@@ -42,6 +46,31 @@ const SUPERADMIN_EMAIL = 'admin@qrtags.com';
 
 let migrationStarted = false;
 let migrationPromise: Promise<void> | null = null;
+
+/**
+ * Ensures the parent directory of DATABASE_URL exists before Prisma tries to
+ * open the SQLite file. Without this, Prisma throws SQLITE_CANTOPEN (errno 14)
+ * on fresh Coolify deploys where /app/data has not been created by init-db.sh
+ * (init-db.sh runs as CMD, but Prisma opens the connection at module load).
+ */
+function ensureDbDirectoryExists(): void {
+  const dbUrl = process.env.DATABASE_URL || 'file:/app/data/qrtags.db';
+  // Strip the `file:` prefix
+  const dbPath = dbUrl.replace(/^file:/, '');
+  // Skip if it's a memory or non-file DB
+  if (!dbPath || dbPath === ':memory:' || dbPath.startsWith('postgresql:') || dbPath.startsWith('mysql:')) {
+    return;
+  }
+  const parentDir = dirname(dbPath);
+  try {
+    if (!existsSync(parentDir)) {
+      mkdirSync(parentDir, { recursive: true });
+      console.log(`[migration] Created DB directory: ${parentDir}`);
+    }
+  } catch (err) {
+    console.error(`[migration] Could not create DB directory ${parentDir}:`, err instanceof Error ? err.message : err);
+  }
+}
 
 async function getExistingColumns(prisma: PrismaClient, tableName: string): Promise<string[]> {
   try {
@@ -113,6 +142,12 @@ export async function runMigrationIfNeeded(prisma: PrismaClient): Promise<void> 
 }
 
 async function doMigration(prisma: PrismaClient): Promise<void> {
+  // ─── 0. Ensure the DB parent directory exists BEFORE any query ─────────
+  // This fixes SQLITE_CANTOPEN on fresh deploys where /app/data does not
+  // exist yet (init-db.sh creates it via `mkdir -p`, but Prisma's lazy
+  // migration may run before that).
+  ensureDbDirectoryExists();
+
   try {
     // ─── 1. Ensure critical tables exist ─────────────────────────────
     // On a fresh DB (e.g. after deploy without `prisma db push`), critical
@@ -133,8 +168,11 @@ async function doMigration(prisma: PrismaClient): Promise<void> {
       try {
         // Use execSync to run prisma db push synchronously.
         // This creates all tables from schema.prisma.
+        //
+        // ⚠️ Use `npx` (not `bunx`) — Coolify containers use node, not bun.
+        // Previous versions used bunx which crashed silently on Coolify.
         const { execSync } = require('child_process');
-        execSync('bunx prisma db push --skip-generate --accept-data-loss', {
+        execSync('npx prisma db push --skip-generate --accept-data-loss', {
           stdio: 'inherit',
           cwd: process.cwd(),
           env: process.env,

@@ -10,9 +10,26 @@ echo "  DATABASE_URL: ${DATABASE_URL:-file:/app/data/qrtags.db}"
 echo "══════════════════════════════════════════════════"
 
 mkdir -p /app/data /app/data/backups /app/public/uploads/damage
+chmod -R 777 /app/data /app/public/uploads/damage 2>/dev/null || true
+
+# ─── Verify /app/data is writable (Coolify sometimes mounts volumes RO) ──
+if [ ! -w /app/data ]; then
+  echo "❌ FATAL: /app/data is not writable. Aborting."
+  echo "  Owner: $(stat -c '%U:%G' /app/data 2>/dev/null || echo 'unknown')"
+  echo "  Perms: $(stat -c '%a' /app/data 2>/dev/null || echo 'unknown')"
+  echo "  Current user: $(id)"
+  exit 1
+fi
+echo "✅ /app/data writable (user: $(id -u):$(id -g))"
 
 DB_FILE=$(echo "${DATABASE_URL:-file:/app/data/qrtags.db}" | sed 's/^file://')
 SCHEMA_PATH="/app/prisma/schema.prisma"
+
+# ─── Touch the DB file preemptively so SQLite never sees a missing parent ──
+if [ ! -f "$DB_FILE" ]; then
+  echo "📄 Creating empty DB file: $DB_FILE"
+  touch "$DB_FILE" 2>/dev/null || echo "⚠️ Could not touch $DB_FILE (will rely on Prisma)"
+fi
 
 # ════════════════════════════════════════════════════════════════════
 # ÉTAPE 1 : Vérifier si la DB a un schéma obsolète (hard reset si oui)
