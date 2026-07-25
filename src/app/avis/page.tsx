@@ -25,7 +25,7 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import {
   Star, Package, MapPin, Clock, Loader2, AlertTriangle,
-  ArrowLeft, ShoppingBag,
+  ArrowLeft, ShoppingBag, BadgeCheck, ShieldCheck,
 } from 'lucide-react';
 import QRTagsLogo from '@/components/qrtags/QRTagsLogo';
 import { PublicNavigation, PublicFooter } from '@/components/public/PublicLayout';
@@ -103,10 +103,22 @@ function ReviewCard({ review }: { review: PublicReview }) {
     <article className={`${CARD_CLASS} mb-6`}>
       {/* En-tête : étoiles + date + finder */}
       <div className="flex items-start justify-between gap-3 mb-4 flex-wrap">
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-3 flex-wrap">
           <StarRow rating={review.rating} />
           <span className="text-sm font-bold" style={{ color: QRTAGS_INK }}>
             {review.rating}/5
+          </span>
+          <span
+            className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-bold uppercase tracking-wider"
+            style={{
+              backgroundColor: '#DCFCE7',
+              color: QRTAGS_GREEN,
+              border: `1px solid ${QRTAGS_GREEN}`,
+            }}
+            title="Avis laissé par le propriétaire depuis son lien de suivi authentique"
+          >
+            <BadgeCheck className="w-3.5 h-3.5" aria-hidden="true" />
+            Achat vérifié
           </span>
         </div>
         <span className="text-xs flex items-center gap-1" style={{ color: QRTAGS_INK, opacity: 0.6 }}>
@@ -219,6 +231,57 @@ export default function AvisPage() {
     }
     load();
   }, []);
+
+  // ─── SEO : injecte les données structurées Schema.org/Review ─────────────
+  // Permet à Google d'afficher les étoiles dans les résultats de recherche
+  // (rich snippets). Nécessite un AggregateRating + un Review par avis.
+  useEffect(() => {
+    if (!data || data.reviews.length === 0) return;
+
+    const jsonLd = {
+      '@context': 'https://schema.org',
+      '@type': 'Product',
+      name: 'QRTags — Étiquette QR pour objets perdus',
+      description:
+        "Étiquette QR intelligente pour valise, clés, sac, lunettes, téléphone. Sans app, sans batterie. Alerte WhatsApp instantanée avec la position du trouveur.",
+      brand: { '@type': 'Brand', name: 'QRTags' },
+      aggregateRating: {
+        '@type': 'AggregateRating',
+        ratingValue: data.stats.averageRating.toFixed(1),
+        reviewCount: data.stats.totalReviews,
+        bestRating: 5,
+        worstRating: 1,
+      },
+      review: data.reviews.slice(0, 20).map((r) => ({
+        '@type': 'Review',
+        author: { '@type': 'Person', name: r.name },
+        datePublished: r.createdAt,
+        reviewRating: {
+          '@type': 'Rating',
+          ratingValue: r.rating,
+          bestRating: 5,
+          worstRating: 1,
+        },
+        ...(r.title ? { name: r.title } : {}),
+        reviewBody: r.content,
+      })),
+    };
+
+    let scriptTag = document.getElementById('avis-jsonld') as HTMLScriptElement | null;
+    if (!scriptTag) {
+      scriptTag = document.createElement('script');
+      scriptTag.id = 'avis-jsonld';
+      scriptTag.type = 'application/ld+json';
+      document.head.appendChild(scriptTag);
+    }
+    scriptTag.textContent = JSON.stringify(jsonLd);
+
+    return () => {
+      // Cleanup on unmount: remove the JSON-LD block
+      const existing = document.getElementById('avis-jsonld');
+      if (existing) existing.remove();
+    };
+  }, [data]);
 
   return (
     <main
@@ -334,16 +397,43 @@ export default function AvisPage() {
           </>
         )}
 
-        {/* Lien retour */}
-        <div className="text-center mt-12">
-          <Link
-            href="/"
-            className="inline-flex items-center gap-2 text-sm hover:underline"
-            style={{ color: QRTAGS_INK, opacity: 0.7 }}
+        {/* Lien retour + RGPD */}
+        <div className="text-center mt-12 space-y-6">
+          {/* RGPD — Droit à l'effacement */}
+          <div
+            className="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-xs"
+            style={{
+              backgroundColor: 'rgba(255,255,255,0.5)',
+              color: QRTAGS_INK,
+              border: `1px solid ${QRTAGS_INK}`,
+            }}
           >
-            <ArrowLeft className="w-4 h-4" aria-hidden="true" />
-            Retour à l&apos;accueil
-          </Link>
+            <ShieldCheck className="w-4 h-4 flex-shrink-0" aria-hidden="true" />
+            <span>
+              Vous souhaitez demander la suppression d&apos;un avis ?
+              {' '}
+              <Link
+                href="/contact?subject=suppression-avis"
+                className="font-bold underline hover:no-underline"
+                style={{ color: QRTAGS_INK }}
+              >
+                Contactez-nous
+              </Link>
+              {' '}
+              (droit RGPD à l&apos;effacement).
+            </span>
+          </div>
+
+          <div>
+            <Link
+              href="/"
+              className="inline-flex items-center gap-2 text-sm hover:underline"
+              style={{ color: QRTAGS_INK, opacity: 0.7 }}
+            >
+              <ArrowLeft className="w-4 h-4" aria-hidden="true" />
+              Retour à l&apos;accueil
+            </Link>
+          </div>
         </div>
       </div>
 

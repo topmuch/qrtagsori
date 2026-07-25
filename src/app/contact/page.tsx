@@ -1,7 +1,8 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import Link from 'next/link';
+import { useSearchParams } from 'next/navigation';
 import PublicLayout from '@/components/public/PublicLayout';
 import { Button } from "@/components/ui/button";
 import {
@@ -14,14 +15,29 @@ import {
 } from "lucide-react";
 
 function ContactContent() {
+  const searchParams = useSearchParams();
+  const initialSubject = searchParams.get('subject') || '';
+
   const [formData, setFormData] = useState({
     name: '',
     email: '',
-    subject: '',
+    subject: initialSubject,
     message: ''
   });
   const [submitted, setSubmitted] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+
+  // Si on arrive via ?subject=suppression-avis, pré-remplir aussi le message
+  useEffect(() => {
+    if (initialSubject === 'suppression-avis' && !formData.message) {
+      setFormData((prev) => ({
+        ...prev,
+        subject: 'Demande de suppression d\'avis — RGPD',
+        message: 'Bonjour, je demande la suppression de l\'avis suivant conformément à mon droit RGPD à l\'effacement.\n\nIdentifiant de l\'avis (si connu) : \nMotif : ',
+      }));
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [initialSubject]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -253,7 +269,9 @@ function ContactContent() {
 export default function ContactPage() {
   return (
     <PublicLayout>
-      <ContactContent />
+      <Suspense fallback={null}>
+        <ContactContent />
+      </Suspense>
     </PublicLayout>
   );
 }
