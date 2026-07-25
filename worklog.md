@@ -177,3 +177,51 @@ Stage Summary:
 - Nouvelle identité visuelle QRTags (noir + doré) cohérente avec layout.tsx ✓
 - Contrastes WCAG AA préservés (4.5:1+ sur tous les textes)
 - Push réussi : 37d2a04..8e22ebe main -> main
+
+---
+Task ID: track-restore-old-design
+Agent: Main Orchestrator
+Task: Restaurer l'ancien design QRTags (jaune moutarde + bordures noires) sur /track/[token] + supprimer l'incohérence "Appeler Hôtel"
+
+Work Log:
+- Diagnostic utilisateur (screenshot 1 vs 2) :
+  • Page actuelle (commit 8e22ebe) = fond crème + cartes sans bordure noire + header sticky noir = NON aligné avec /inscrire
+  • Ancienne page (commit e9304d1) = fond #E3B23C + cartes blanches border-2 border-black = alignée avec /inscrire ✓
+- Incohérences boutons "Appeler" identifiées :
+  1. Bouton "WhatsApp" du sticky footer ouvrait WhatsApp vers le propriétaire — mais le visiteur EST le propriétaire (il consulte SON propre lien de suivi) → se contacter soi-même n'a aucun sens
+  2. Bouton "Appeler Hôtel" apparaissait dans le sticky footer pour les objets d'agences type "hotel" — mais l'utilisateur vient d'activer le QR code sans avoir déclaré de perte, donc appeler l'hôtel n'a aucun sens à ce stade
+- Refonte complète de src/app/track/[token]/page.tsx (1181 → 1058 lignes) :
+  • Restauration palette QRTags signature : QRTAGS_BG=#E3B23C, QRTAGS_CARD=#FFFFFF, QRTAGS_INK=#111111, QRTAGS_RED=#DC2626, QRTAGS_GREEN=#16A34A
+  • Classe CARD_CLASS = 'bg-white rounded-xl p-6 shadow-xl border-2 border-black' — STRICTEMENT identique à /inscrire
+  • Header centré : logo QRTags (badge blanc bordé noir) + titre "📍 SUIVI DE MON OBJET" + sous-titre italique
+  • 5 cartes empilées (au lieu de sticky header + sticky footer) :
+    1. Identité du tag (référence + statut ACTIF/PERDU + propriétaire masqué + expiration)
+    2. Informations de l'objet (photo + nom + catégorie + marque/modèle + couleur + description + récompense + message propriétaire) — UNIQUEMENT si au moins un champ est renseigné
+    3. Statistiques de suivi (grille 3 colonnes : Scans / Activités / Sûr + dernière activité + dernière position)
+    4. Historique des scans (3 derniers, avec finder name + finder phone affichés en texte brut)
+    5. Actions rapides (WhatsApp partager + Copier lien + URL privée + Signaler PERDU/J'ai retrouvé)
+  • SUPPRESSION du sticky footer avec "Appeler Hôtel" / "WhatsApp propriétaire"
+  • SUPPRESSION des helpers buildWhatsAppUrl + buildTelUrl + isHotelContext + telUrl + primaryAction
+  • Le bouton WhatsApp devient "Partager ce lien sur WhatsApp" — intention : partager avec amis/famille, PAS contacter le propriétaire
+  • Suppression de l'import Phone (lucide-react) — plus utilisé
+- Conservation des features modernes :
+  • Object info (nom, catégorie, marque, modèle, couleur, description, récompense, message, photo)
+  • maskName() pour propriétaire + trouveur
+  • IntersectionObserver fade-in
+  • Auto-refresh 60s
+  • Clipboard API + fallback execCommand
+  • Toast feedback (success/error/info)
+  • Modale accessible (Escape, focus trap, aria-modal, aria-labelledby, aria-describedby)
+  • Skip link clavier
+  • computeIsActive() avec gestion expiresAt + check_out_date
+- Vérifications :
+  • TypeScript : 0 erreur sur src/app/track/[token]/page.tsx (erreurs préexistantes ailleurs non touchées)
+  • ESLint : 2 warnings préexistants (react-hooks/preserve-manual-memoization sur hasReward et objectDisplayName) — déjà présents dans la version précédente
+
+Stage Summary:
+- Design QRTags signature restauré : jaune moutarde #E3B23C + cartes blanches border-2 border-black ✓
+- Cohérence visuelle avec /inscrire retrouvée (même palette, même CARD_CLASS, même header logo badge) ✓
+- Incohérence "Appeler Hôtel" supprimée — plus aucun bouton contextualisé hôtel ✓
+- Incohérence "WhatsApp vers soi-même" supprimée — le bouton WhatsApp devient partage de lien ✓
+- Features modernes conservées (object info, photo, reward, accessibility, fade-in, auto-refresh, toast) ✓
+- Types et contrat API préservés (GET /api/track/[token], POST declare_lost/cancel_lost) ✓
