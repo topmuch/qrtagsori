@@ -401,16 +401,6 @@ export default function HomePage() {
             className="relative overflow-hidden"
             style={{ background: COLORS.bgWarm, padding: '32px 0 40px 0' }}
           >
-            {/* Fade edges */}
-            <div
-              className="absolute left-0 top-0 bottom-0 w-32 z-10 pointer-events-none"
-              style={{ background: `linear-gradient(to right, ${COLORS.bgWarm}, transparent)` }}
-            />
-            <div
-              className="absolute right-0 top-0 bottom-0 w-32 z-10 pointer-events-none"
-              style={{ background: `linear-gradient(to left, ${COLORS.bgWarm}, transparent)` }}
-            />
-
             {/* Titre au-dessus du défilement */}
             <div className="px-6 md:px-12 mb-5 flex items-center justify-between">
               <p className="text-xs md:text-sm font-bold uppercase tracking-wider" style={{ color: COLORS.accentDark }}>
@@ -425,26 +415,26 @@ export default function HomePage() {
               </div>
             </div>
 
-            {/* Bande de cards qui défile en continu (45s, plus lent) — cards 500x500 */}
+            {/* Bande de cards qui défile en continu (45s, plus lent) — cards 300x300 */}
             <div className="flex animate-marquee-slow">
               {MARQUEE_ITEMS.concat(MARQUEE_ITEMS).map((item, i) => (
                 <div
                   key={`hero-card-${i}`}
-                  className="flex-shrink-0 mx-4 rounded-2xl overflow-hidden shadow-md hover:shadow-xl transition-shadow"
+                  className="flex-shrink-0 mx-3 rounded-2xl overflow-hidden shadow-md hover:shadow-xl transition-shadow"
                   style={{
                     background: COLORS.card,
                     border: `1px solid ${COLORS.border}`,
-                    width: 'min(500px, 85vw)',
+                    width: 'min(300px, 85vw)',
                   }}
                 >
-                  {/* Image carrée 500x500 */}
-                  <div className="relative" style={{ height: 'min(500px, 85vw)' }}>
+                  {/* Image carrée 300x300 */}
+                  <div className="relative" style={{ height: 'min(300px, 85vw)' }}>
                     <Image
                       src={item.image}
                       alt={item.name}
                       fill
                       className="object-cover"
-                      sizes="500px"
+                      sizes="300px"
                     />
                     {/* Badge QR en bas à droite de l'image */}
                     <div
@@ -455,8 +445,8 @@ export default function HomePage() {
                     </div>
                   </div>
                   {/* Texte (bas) — sobre : juste le nom, pas de description répétitive */}
-                  <div className="p-5">
-                    <h3 className="text-lg font-bold" style={{ color: COLORS.text }}>
+                  <div className="p-4">
+                    <h3 className="text-base font-bold" style={{ color: COLORS.text }}>
                       {item.name}
                     </h3>
                   </div>

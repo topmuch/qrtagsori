@@ -816,8 +816,27 @@ body * {
   animation-play-state: paused;
 }
 
+/* ═══ WhatsApp pulse — battement vert pour attirer l'œil sur le bouton de contact trouveur ═══ */
+@keyframes wa-pulse {
+  0%, 100% {
+    box-shadow: 0 8px 20px rgba(22, 163, 74, 0.35), 0 0 0 0 rgba(22, 163, 74, 0.5);
+  }
+  50% {
+    box-shadow: 0 10px 24px rgba(22, 163, 74, 0.4), 0 0 0 12px rgba(22, 163, 74, 0);
+  }
+}
+
+.wa-pulse:not(:disabled):not(.disabled) {
+  animation: wa-pulse 2.2s ease-in-out infinite;
+}
+
+.wa-pulse:hover:not(:disabled) {
+  animation-play-state: paused;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .cta-pulse,
+  .wa-pulse,
   .animate-marquee,
   .animate-marquee-slow {
     animation: none;
