@@ -20,13 +20,15 @@ import {
   Image as ImageIcon,
   WifiOff,
   ShieldCheck,
+  Search,
 } from 'lucide-react';
 import QRTagsLogo from '@/components/qrtags/QRTagsLogo';
 import { OBJECT_CATEGORIES, getObjectCategory } from '@/lib/agency-types';
 import { useTranslation } from '@/hooks/useTranslation';
 import { Language, LANGUAGE_NAMES } from '@/lib/i18n';
+import { COUNTRIES, COUNTRY_MAP, getDialCode, type CountryInfo } from '@/lib/phone';
 
-// ─── Design tokens QRTags (CONSERVÉS TELS QUELS) ─────────────────────
+// ─── Design tokens QRTags (STRICTEMENT CONSERVÉS) ───────────────────
 const QRTAGS_BG       = '#E3B23C';   // fond de page jaune moutarde
 const QRTAGS_CARD     = '#FFFFFF';   // cartes blanches
 const QRTAGS_INK      = '#111111';   // texte noir
@@ -41,6 +43,187 @@ const INPUT_CLASS =
 const CARD_CLASS =
   'bg-white rounded-xl p-6 shadow-xl border-2 border-black';
 
+// ─── NOUVEAU : PhoneInput custom QRTags (mêmes couleurs que les autres inputs) ───
+// On NE réutilise PAS le PhoneInput existant (qui a un style bleu) — on en crée un
+// qui respecte strictement la palette QRTags (bordure noire, fond gris clair, focus doré).
+interface QRTagsPhoneInputProps {
+  countryCode: string;
+  onCountryChange: (code: string) => void;
+  value: string; // format international complet, ex: '+221771234567'
+  onChange: (fullNumber: string) => void;
+  placeholder?: string;
+  disabled?: boolean;
+  detecting?: boolean; // affiche un loader pendant la détection IP
+}
+
+function QRTagsPhoneInput({
+  countryCode,
+  onCountryChange,
+  value,
+  onChange,
+  placeholder = '77 123 45 67',
+  disabled = false,
+  detecting = false,
+}: QRTagsPhoneInputProps) {
+  const [isOpen, setIsOpen] = useState(false);
+  const [search, setSearch] = useState('');
+  const dropdownRef = useRef<HTMLDivElement>(null);
+  const searchInputRef = useRef<HTMLInputElement>(null);
+
+  const selected = COUNTRY_MAP[countryCode.toUpperCase()] ?? COUNTRIES[0];
+  const dialDigits = selected.dial.replace('+', '');
+
+  // Extract local number from full value (strip dial code)
+  const getLocalNumber = (fullValue: string): string => {
+    const digits = fullValue.replace(/\D/g, '');
+    if (digits.startsWith(dialDigits)) {
+      return digits.slice(dialDigits.length);
+    }
+    if (digits.startsWith('00')) {
+      return digits.slice(2);
+    }
+    if (fullValue.startsWith('+')) {
+      const withoutPlus = fullValue.slice(1).replace(/\D/g, '');
+      if (withoutPlus.startsWith(dialDigits)) {
+        return withoutPlus.slice(dialDigits.length);
+      }
+      return withoutPlus;
+    }
+    return digits;
+  };
+
+  const localNumber = getLocalNumber(value);
+
+  const handleLocalChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const input = e.target.value.replace(/[^\d\s]/g, '');
+    const cleanLocal = input.replace(/\s/g, '');
+    onChange(`+${dialDigits}${cleanLocal}`);
+  };
+
+  const handleCountrySelect = (country: CountryInfo) => {
+    onCountryChange(country.code);
+    setIsOpen(false);
+    setSearch('');
+    const newDialDigits = country.dial.replace('+', '');
+    const cleanLocal = localNumber.replace(/\s/g, '');
+    if (cleanLocal) {
+      onChange(`+${newDialDigits}${cleanLocal}`);
+    }
+  };
+
+  const filtered = search
+    ? COUNTRIES.filter(c =>
+        c.name.toLowerCase().includes(search.toLowerCase()) ||
+        c.dial.includes(search) ||
+        c.code.toLowerCase().includes(search.toLowerCase())
+      )
+    : COUNTRIES;
+
+  // Close dropdown on outside click
+  useEffect(() => {
+    const handleClick = (e: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
+        setIsOpen(false);
+        setSearch('');
+      }
+    };
+    document.addEventListener('mousedown', handleClick);
+    return () => document.removeEventListener('mousedown', handleClick);
+  }, []);
+
+  useEffect(() => {
+    if (isOpen && searchInputRef.current) {
+      searchInputRef.current.focus();
+    }
+  }, [isOpen]);
+
+  // Format local number with spaces
+  function formatLocalNumber(raw: string): string {
+    const digits = raw.replace(/\s/g, '');
+    return digits.replace(/(\d{1,2})(?=\d)/g, '$1 ');
+  }
+
+  return (
+    <div className="w-full min-w-0">
+      <div className="flex items-stretch gap-0 min-w-0">
+        {/* Country selector button — style QRTags (bordure noire, fond gris) */}
+        <div ref={dropdownRef} className="relative flex-shrink-0">
+          <button
+            type="button"
+            onClick={() => !disabled && setIsOpen(!isOpen)}
+            disabled={disabled}
+            className="flex items-center gap-1 px-2 sm:px-3 rounded-l-lg border-2 border-r-0 border-black bg-gray-50 text-black hover:bg-gray-100 transition-colors min-h-[48px] disabled:opacity-60 disabled:cursor-not-allowed"
+          >
+            {detecting ? (
+              <Loader2 className="w-4 h-4 animate-spin" />
+            ) : (
+              <span className="text-lg leading-none">{selected.flag}</span>
+            )}
+            <span className="text-sm font-bold whitespace-nowrap">{selected.dial}</span>
+            <ChevronDown className={`w-3.5 h-3.5 opacity-70 transition-transform flex-shrink-0 ${isOpen ? 'rotate-180' : ''}`} />
+          </button>
+
+          {/* Dropdown — style QRTags */}
+          {isOpen && (
+            <div className="absolute top-full left-0 mt-1 w-64 sm:w-72 max-h-72 overflow-hidden rounded-xl shadow-2xl z-50 border-2 border-black bg-white">
+              {/* Search */}
+              <div className="p-2 border-b-2 border-black">
+                <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-gray-100">
+                  <Search className="w-4 h-4 opacity-60" />
+                  <input
+                    ref={searchInputRef}
+                    type="text"
+                    value={search}
+                    onChange={(e) => setSearch(e.target.value)}
+                    placeholder="Rechercher un pays..."
+                    className="w-full bg-transparent text-sm text-black placeholder-gray-500 focus:outline-none"
+                  />
+                </div>
+              </div>
+              {/* Country list */}
+              <div className="overflow-y-auto max-h-56">
+                {filtered.length === 0 ? (
+                  <div className="px-4 py-3 text-sm text-black/50">
+                    Aucun pays trouvé
+                  </div>
+                ) : (
+                  filtered.map((c) => (
+                    <button
+                      key={c.code}
+                      type="button"
+                      onClick={() => handleCountrySelect(c)}
+                      className={`w-full flex items-center gap-3 px-4 py-2.5 text-left transition-colors ${
+                        c.code === selected.code
+                          ? 'bg-black text-[#E3B23C]'
+                          : 'text-black hover:bg-gray-100'
+                      }`}
+                    >
+                      <span className="text-lg">{c.flag}</span>
+                      <span className="flex-1 text-sm font-medium truncate">{c.name}</span>
+                      <span className="text-sm font-mono opacity-60">{c.dial}</span>
+                    </button>
+                  ))
+                )}
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Phone number input — style QRTags */}
+        <input
+          type="tel"
+          placeholder={placeholder}
+          value={localNumber ? formatLocalNumber(localNumber) : ''}
+          onChange={handleLocalChange}
+          disabled={disabled}
+          className="flex-1 min-w-0 rounded-r-lg border-2 border-black bg-gray-50 text-black placeholder-gray-400 focus:outline-none focus:border-[#E3B23C] focus:ring-2 focus:ring-[#E3B23C] px-3 sm:px-4 py-3 text-base min-h-[48px] w-0 disabled:opacity-60 disabled:cursor-not-allowed"
+        />
+      </div>
+    </div>
+  );
+}
+
+// ─── Language selector — CONSERVÉ ───────────────────────────────────
 function LanguageSelector({ lang, setLang }: { lang: Language; setLang: (l: Language) => void }) {
   const [isOpen, setIsOpen] = useState(false);
   return (
@@ -78,7 +261,8 @@ function InscrireContent() {
   const qrFromUrl = searchParams.get('qr') || '';
   const { lang, setLang } = useTranslation();
 
-  const [step, setStep] = useState<1 | 2>(1);
+  // ─── 3 étapes (au lieu de 2 + toggle) ───
+  const [step, setStep] = useState<1 | 2 | 3>(1);
   const [loading, setLoading] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [acceptTerms, setAcceptTerms] = useState(false);
@@ -86,37 +270,36 @@ function InscrireContent() {
   const [photoPreview, setPhotoPreview] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // ─── NOUVEAU : toggle pour afficher/masquer les détails optionnels ───
-  const [showAdvanced, setShowAdvanced] = useState(false);
+  // ─── NOUVEAU : pays du téléphone (détecté via IP) ───
+  const [phoneCountry, setPhoneCountry] = useState('FR');
+  const [countryDetecting, setCountryDetecting] = useState(true);
 
-  // ─── NOUVEAU (Étape 2) : suivi des champs « touchés » pour validation inline ───
-  // On ne montre l'erreur qu'après que l'utilisateur a interagi avec le champ.
+  // ─── Suivi des champs « touchés » pour validation inline ───
   const [touched, setTouched] = useState<Record<string, boolean>>({});
-
   const markTouched = (field: string) =>
     setTouched((prev) => ({ ...prev, [field]: true }));
 
-  // ─── NOUVEAU (Étape 3) : méta-données photo (tailles avant/après compression) ───
+  // ─── Méta-données photo ───
   const [photoMeta, setPhotoMeta] = useState<{
     originalSizeKB: number;
     compressedSizeKB: number;
     isProcessing: boolean;
   } | null>(null);
 
-  // ─── NOUVEAU (Étape 3) : indicateur « brouillon restauré » ───
+  // ─── Indicateur « brouillon restauré » ───
   const [draftRestored, setDraftRestored] = useState(false);
 
-  // ─── NOUVEAU (Étape 4) : erreur de soumission (affichée inline, plus de alert) ───
+  // ─── Erreur de soumission ───
   const [submitError, setSubmitError] = useState<string | null>(null);
 
-  // ─── NOUVEAU (Étape 4) : phase de soumission pour affiner le loader ───
+  // ─── Phase de soumission ───
   const [submitPhase, setSubmitPhase] = useState<'idle' | 'sending' | 'redirecting'>('idle');
 
   const [formData, setFormData] = useState({
     reference: qrFromUrl.toUpperCase(),
     firstName: '',
     lastName: '',
-    whatsapp: '',
+    whatsapp: '', // format international complet, ex: '+221771234567'
     email: '',
     objectName: '',
     objectDescription: '',
@@ -128,9 +311,37 @@ function InscrireContent() {
 
   const [categoryData, setCategoryData] = useState<Record<string, string>>({});
 
-  // ─── Restauration brouillon (localStorage) — ÉTENDU (Étape 3) ───
-  // Restaure désormais : formData, selectedCategory, categoryData, touched,
-  // showAdvanced, acceptTerms, acceptPrivacy, photoPreview.
+  // ─── NOUVEAU : détection IP au montage → pré-sélection du pays téléphone ───
+  // On NE détecte que si l'utilisateur n'a pas déjà un brouillon sauvegardé
+  // (pour ne pas écraser son choix précédent).
+  useEffect(() => {
+    const draft = localStorage.getItem('qrtags_draft');
+    let hasDraft = false;
+    if (draft) {
+      try {
+        const saved = JSON.parse(draft);
+        if (saved.formData?.reference === formData.reference && saved.phoneCountry) {
+          hasDraft = true;
+        }
+      } catch {}
+    }
+    if (hasDraft) {
+      setCountryDetecting(false);
+      return;
+    }
+    fetch('/api/detect-country', { cache: 'no-store' })
+      .then((res) => res.ok ? res.json() : null)
+      .then((data) => {
+        if (data?.countryCode) {
+          setPhoneCountry(String(data.countryCode).toUpperCase());
+        }
+      })
+      .catch(() => {})
+      .finally(() => setCountryDetecting(false));
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // ─── Restauration brouillon (localStorage) — ÉTENDU avec phoneCountry ───
   useEffect(() => {
     const draft = localStorage.getItem('qrtags_draft');
     if (draft) {
@@ -141,12 +352,14 @@ function InscrireContent() {
           setSelectedCategory(saved.selectedCategory || null);
           setCategoryData(saved.categoryData || {});
           if (saved.touched) setTouched(saved.touched);
-          if (typeof saved.showAdvanced === 'boolean') setShowAdvanced(saved.showAdvanced);
           if (typeof saved.acceptTerms === 'boolean') setAcceptTerms(saved.acceptTerms);
           if (typeof saved.acceptPrivacy === 'boolean') setAcceptPrivacy(saved.acceptPrivacy);
           if (typeof saved.photoPreview === 'string') setPhotoPreview(saved.photoPreview);
+          if (typeof saved.phoneCountry === 'string') setPhoneCountry(saved.phoneCountry);
+          if (typeof saved.step === 'number' && [1, 2, 3].includes(saved.step)) {
+            setStep(saved.step);
+          }
           setDraftRestored(true);
-          // Masquer la bannière « brouillon restauré » après 6 s
           setTimeout(() => setDraftRestored(false), 6000);
         }
       } catch {}
@@ -154,8 +367,7 @@ function InscrireContent() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // ─── Sauvegarde auto (localStorage) — ÉTENDU (Étape 3) ───
-  // On persiste tout l'état pertinent pour pouvoir reprendre plus tard.
+  // ─── Sauvegarde auto (localStorage) — ÉTENDUE avec phoneCountry et step ───
   useEffect(() => {
     if (formData.reference) {
       try {
@@ -166,20 +378,19 @@ function InscrireContent() {
             selectedCategory,
             categoryData,
             touched,
-            showAdvanced,
             acceptTerms,
             acceptPrivacy,
-            photoPreview, // data URL déjà compressée — peu volumineuse
+            photoPreview,
+            phoneCountry,
+            step,
             savedAt: Date.now(),
           })
         );
-      } catch {
-        // localStorage peut être plein (photo trop grosse) — on ignore silencieusement
-      }
+      } catch {}
     }
-  }, [formData, selectedCategory, categoryData, touched, showAdvanced, acceptTerms, acceptPrivacy, photoPreview]);
+  }, [formData, selectedCategory, categoryData, touched, acceptTerms, acceptPrivacy, photoPreview, phoneCountry, step]);
 
-  // ─── NOUVEAU (Étape 3) : effacer le brouillon manuellement ───
+  // ─── Effacer le brouillon manuellement ───
   const clearDraft = () => {
     localStorage.removeItem('qrtags_draft');
     setFormData({
@@ -198,24 +409,21 @@ function InscrireContent() {
     setCategoryData({});
     setSelectedCategory(null);
     setTouched({});
-    setShowAdvanced(false);
     setAcceptTerms(false);
     setAcceptPrivacy(false);
     setPhotoPreview(null);
     setPhotoMeta(null);
-    if (fileInputRef.current) fileInputRef.current.value = '';
+    setStep(1);
     setDraftRestored(false);
   };
 
   const missingReference = !formData.reference;
   const selectedCat = selectedCategory ? getObjectCategory(selectedCategory) : null;
 
-  // ─── NOUVEAU (Étape 2) : fonctions de validation par champ ───
-  // Regex WhatsApp : + optionnel, puis 9 à 15 chiffres (espaces/tirets autorisés en saisie).
+  // ─── Regex & validators ───
   const WHATSAPP_REGEX = /^\+?[0-9][0-9\s\-]{8,18}[0-9]$/;
   const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
-  // Nettoie un numéro WhatsApp pour extraire uniquement les chiffres + le « + » éventuel.
   function cleanWhatsapp(raw: string): string {
     const trimmed = raw.trim();
     const hasPlus = trimmed.startsWith('+');
@@ -252,12 +460,11 @@ function InscrireContent() {
     return null;
   }
   function validateEmail(v: string): string | null {
-    if (!v.trim()) return null; // optionnel
+    if (!v.trim()) return null;
     if (!EMAIL_REGEX.test(v.trim())) return 'Adresse email invalide';
     return null;
   }
 
-  // ─── NOUVEAU : erreurs calculées (pour désactiver bouton + afficher inline) ───
   const errors = {
     firstName: validateFirstName(formData.firstName),
     lastName: validateLastName(formData.lastName),
@@ -268,30 +475,28 @@ function InscrireContent() {
   };
   const hasErrors = Object.values(errors).some(Boolean);
 
-  // ─── Compteur des champs essentiels valides (pas juste remplis) ───
-  // Essentiels : firstName, lastName, whatsapp, objectName, objectDescription
-  const essentialValidFlags = [
+  // Champs essentiels étape 2 : firstName, lastName, whatsapp, objectName, objectDescription
+  const step2ValidFlags = [
     !errors.firstName,
     !errors.lastName,
     !errors.whatsapp,
     !errors.objectName,
     !errors.objectDescription,
   ];
-  const essentialFilled = essentialValidFlags.filter(Boolean).length;
-  const essentialTotal = essentialValidFlags.length;
+  const step2ValidCount = step2ValidFlags.filter(Boolean).length;
+  const step2Total = step2ValidFlags.length;
 
-  // ─── Validations — AMÉLIORÉES (basées sur erreurs et non plus juste « rempli ») ───
+  // ─── Validations par étape ───
   const canSubmitStep1 = !!selectedCategory;
-  const canSubmitStep2 =
-    !hasErrors && acceptTerms && acceptPrivacy;
+  const canSubmitStep2 = !errors.firstName && !errors.lastName && !errors.whatsapp &&
+                         !errors.objectName && !errors.objectDescription;
+  const canSubmitStep3 = acceptTerms && acceptPrivacy && !errors.email;
 
-  // Helper pour afficher conditionnellement un message d'erreur inline
   function fieldError(field: keyof typeof errors): string | null {
     if (!touched[field]) return null;
     return errors[field];
   }
 
-  // Helper : classes Tailwind dynamiques selon l'état du champ
   function inputClass(field: keyof typeof errors): string {
     const err = fieldError(field);
     if (err) {
@@ -303,9 +508,7 @@ function InscrireContent() {
     return INPUT_CLASS;
   }
 
-  // ─── NOUVEAU (Étape 3) : compression d'image côté client ───
-  // Redimensionne l'image à max 1024px de large et applique une qualité JPEG 0.8.
-  // Objectif : réduire le payload envoyé à l'API activate et éviter de saturer localStorage.
+  // ─── Compression d'image côté client ───
   const MAX_PHOTO_WIDTH = 1024;
   const JPEG_QUALITY = 0.8;
 
@@ -318,7 +521,6 @@ function InscrireContent() {
         const img = new Image();
         img.onerror = () => reject(new Error('Image invalide'));
         img.onload = () => {
-          // Calculer les nouvelles dimensions (conserver le ratio)
           let { width, height } = img;
           if (width > MAX_PHOTO_WIDTH) {
             height = Math.round((height * MAX_PHOTO_WIDTH) / width);
@@ -328,14 +530,9 @@ function InscrireContent() {
           canvas.width = width;
           canvas.height = height;
           const ctx = canvas.getContext('2d');
-          if (!ctx) {
-            reject(new Error('Canvas non supporté'));
-            return;
-          }
+          if (!ctx) { reject(new Error('Canvas non supporté')); return; }
           ctx.drawImage(img, 0, 0, width, height);
-          // Toujours exporter en JPEG (plus léger que PNG pour les photos)
           const dataUrl = canvas.toDataURL('image/jpeg', JPEG_QUALITY);
-          // Estimer la taille compressée (approx : base64 ~ 4/3 de la taille binaire)
           const base64Len = dataUrl.split(',')[1]?.length || 0;
           const compressedSizeKB = Math.round((base64Len * 3) / 4 / 1024);
           resolve({ dataUrl, originalSizeKB, compressedSizeKB });
@@ -349,7 +546,6 @@ function InscrireContent() {
   const handlePhotoChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    // Validation : type image + max 5 MB
     if (!file.type.startsWith('image/')) {
       alert('Veuillez sélectionner un fichier image (JPG, PNG, etc.)');
       return;
@@ -371,11 +567,11 @@ function InscrireContent() {
     }
   };
 
+  // ─── Submit handler robuste ───
   const doSubmit = async () => {
-    if (loading) return; // garde anti double-clic
+    if (loading) return;
     setSubmitError(null);
 
-    // Marquer tous les champs comme touchés pour révéler toute erreur résiduelle
     setTouched({
       firstName: true,
       lastName: true,
@@ -386,13 +582,13 @@ function InscrireContent() {
     });
     if (hasErrors) {
       setSubmitError('Veuillez corriger les champs en rouge avant de continuer.');
-      // Scroll vers la première erreur
+      setStep(2); // rediriger vers l'étape 2 où sont les champs essentiels
       setTimeout(() => {
         const firstErrorField = document.querySelector('[data-error="true"]');
         if (firstErrorField) {
           (firstErrorField as HTMLElement).scrollIntoView({ behavior: 'smooth', block: 'center' });
         }
-      }, 50);
+      }, 100);
       return;
     }
     if (!acceptTerms || !acceptPrivacy) {
@@ -404,8 +600,6 @@ function InscrireContent() {
     setSubmitPhase('sending');
 
     try {
-      // ─── Construire customData avec tous les champs du formulaire ───
-      // On normalise le numéro WhatsApp en format international propre (+221771234567)
       const cleanedWhatsapp = cleanWhatsapp(formData.whatsapp);
       const customData = {
         ...categoryData,
@@ -421,7 +615,6 @@ function InscrireContent() {
         photo: photoPreview || undefined,
       };
 
-      // ─── Timeout de sécurité : 30 s max ───
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 30000);
 
@@ -440,7 +633,6 @@ function InscrireContent() {
 
       clearTimeout(timeoutId);
 
-      // ─── Gestion fine des erreurs HTTP ───
       if (!response.ok) {
         let serverMessage = 'Erreur lors de l\'activation';
         try {
@@ -462,7 +654,6 @@ function InscrireContent() {
         return;
       }
 
-      // ─── Succès : préparer les données pour /success ───
       const data = await response.json();
       setSubmitPhase('redirecting');
 
@@ -483,8 +674,6 @@ function InscrireContent() {
         );
       } catch {}
 
-      // ─── Enrichir qrbag_my_references pour /mes-bagages ───
-      // Permet à l'utilisateur de retrouver ses objets activés sans compte.
       if (typeof window !== 'undefined') {
         try {
           const KEY = 'qrbag_my_references';
@@ -493,7 +682,6 @@ function InscrireContent() {
             refs.push(formData.reference);
             localStorage.setItem(KEY, JSON.stringify(refs));
           }
-          // ─── Stocker aussi un résumé par référence (utile pour /mes-bagages) ───
           const summaryKey = `qrbag_summary_${formData.reference}`;
           localStorage.setItem(
             summaryKey,
@@ -509,31 +697,19 @@ function InscrireContent() {
         } catch {}
       }
 
-      // ─── Nettoyage final du brouillon ( succès = on ne veut pas le restaurer ) ───
-      try {
-        localStorage.removeItem('qrtags_draft');
-      } catch {}
+      try { localStorage.removeItem('qrtags_draft'); } catch {}
 
-      // ─── Redirection vers /success ───
-      // Petit délai pour laisser l'utilisateur voir le checkmark de succès
       setTimeout(() => {
         router.push('/success?type=voyageur');
       }, 400);
     } catch (error: unknown) {
       console.error('[activate] Erreur:', error);
-      // Distinguer timeout/abort vs autre erreur réseau
-      const isAbort =
-        error instanceof DOMException && error.name === 'AbortError';
-      const isNetwork =
-        error instanceof TypeError && error.message.includes('fetch');
+      const isAbort = error instanceof DOMException && error.name === 'AbortError';
+      const isNetwork = error instanceof TypeError && error.message.includes('fetch');
       if (isAbort) {
-        setSubmitError(
-          'La requête a expiré (plus de 30 s). Vérifiez votre connexion internet et réessayez.'
-        );
+        setSubmitError('La requête a expiré (plus de 30 s). Vérifiez votre connexion internet et réessayez.');
       } else if (isNetwork) {
-        setSubmitError(
-          'Impossible de contacter le serveur QRTags. Vérifiez votre connexion internet.'
-        );
+        setSubmitError('Impossible de contacter le serveur QRTags. Vérifiez votre connexion internet.');
       } else {
         setSubmitError('Une erreur inattendue est survenue. Réessayez ou contactez le support.');
       }
@@ -542,10 +718,33 @@ function InscrireContent() {
     }
   };
 
+  // ─── Handler pour passer à l'étape suivante avec validation ───
+  const goToStep = (target: 1 | 2 | 3) => {
+    if (target > step) {
+      // Validation avant avancer
+      if (step === 1 && !canSubmitStep1) return;
+      if (step === 2 && !canSubmitStep2) {
+        // Marquer tous les champs essentiels comme touchés
+        setTouched({
+          firstName: true,
+          lastName: true,
+          whatsapp: true,
+          objectName: true,
+          objectDescription: true,
+        });
+        return;
+      }
+    }
+    setStep(target);
+    // Scroll to top sur changement d'étape
+    setTimeout(() => {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }, 50);
+  };
+
   // ─── UI ───────────────────────────────────────────────────────────
   return (
     <main className="min-h-screen py-8 px-4" style={{ backgroundColor: QRTAGS_BG, color: QRTAGS_INK }}>
-      {/* ─── NOUVEAU (Étape 4) : keyframes pour l'animation pulse du loader ─── */}
       <style>{`
         @keyframes qrtags-pulse {
           0%, 100% { opacity: 0.6; transform: translateX(-20%); }
@@ -565,19 +764,18 @@ function InscrireContent() {
           <h1 className="text-3xl font-black text-black mb-2">🎯 Activez votre QR code</h1>
           <p className="text-black/80">Protégez vos objets en 2 minutes</p>
 
-          {/* Barre de progression principale — CONSERVÉE */}
+          {/* Barre de progression principale — 3 étapes */}
           <div className="mt-4 flex gap-2 justify-center">
-            <div
-              className="h-2 w-20 rounded-full transition-all"
-              style={{ backgroundColor: step >= 1 ? '#111' : 'rgba(17,17,17,0.2)' }}
-            />
-            <div
-              className="h-2 w-20 rounded-full transition-all"
-              style={{ backgroundColor: step >= 2 ? '#111' : 'rgba(17,17,17,0.2)' }}
-            />
+            {[1, 2, 3].map((s) => (
+              <div
+                key={s}
+                className="h-2 w-16 rounded-full transition-all"
+                style={{ backgroundColor: step >= s ? '#111' : 'rgba(17,17,17,0.2)' }}
+              />
+            ))}
           </div>
           <p className="text-sm text-black/70 mt-2">
-            ÉTAPE {step} SUR 2 — {step === 1 ? 'QUEL OBJET ?' : 'VOS INFORMATIONS'}
+            ÉTAPE {step} SUR 3 — {step === 1 ? 'QUEL OBJET ?' : step === 2 ? 'VOS INFORMATIONS' : 'FINALISATION'}
           </p>
         </div>
 
@@ -591,10 +789,11 @@ function InscrireContent() {
           </div>
         )}
 
-        {/* ─── ÉTAPE 1 : Catégorie d'objet — CONSERVÉE ─────────────── */}
+        {/* ═══ ÉTAPE 1 : Catégorie d'objet ═══ */}
         {step === 1 && (
           <div className={CARD_CLASS}>
-            <h2 className="text-lg font-bold text-black mb-4">Quel type d'objet voulez-vous protéger ?</h2>
+            <h2 className="text-lg font-bold text-black mb-1">Quel type d'objet voulez-vous protéger ?</h2>
+            <p className="text-xs text-black/60 mb-4">Sélectionnez la catégorie la plus proche</p>
 
             <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
               {OBJECT_CATEGORIES.map((cat) => {
@@ -608,7 +807,7 @@ function InscrireContent() {
                     style={{
                       backgroundColor: isSelected ? '#111' : '#F9FAFB',
                       color: isSelected ? '#E3B23C' : '#111',
-                      border: `2px solid ${isSelected ? '#111' : '#111'}`,
+                      border: `2px solid #111`,
                     }}
                   >
                     <div className="text-3xl mb-2">{cat.icon}</div>
@@ -628,34 +827,30 @@ function InscrireContent() {
 
             <button
               type="button"
-              onClick={() => canSubmitStep1 && setStep(2)}
+              onClick={() => goToStep(2)}
               disabled={!canSubmitStep1}
               className="w-full py-4 px-6 rounded-lg font-bold text-base flex items-center justify-center gap-2 transition-all min-h-[56px] disabled:opacity-50 disabled:cursor-not-allowed hover:-translate-y-0.5"
-              style={{
-                backgroundColor: '#111',
-                color: '#E3B23C',
-                border: '2px solid #111',
-              }}
+              style={{ backgroundColor: '#111', color: '#E3B23C', border: '2px solid #111' }}
             >
               Suivant <ArrowRight className="w-5 h-5" />
             </button>
           </div>
         )}
 
-        {/* ─── ÉTAPE 2 : Formulaire restructuré en 4 sections ─────── */}
+        {/* ═══ ÉTAPE 2 : Contact + Objet (essentiels) ═══ */}
         {step === 2 && (
           <div className="space-y-6">
 
-            {/* ─── NOUVEAU : Progress bar champs essentiels ─── */}
+            {/* Progress bar champs essentiels */}
             <div
               className="rounded-xl p-4 border-2 border-black"
               style={{ backgroundColor: '#FFFFFF' }}
             >
               <div className="flex items-center justify-between mb-2">
                 <span className="text-sm font-bold text-black">
-                  Étape 2/2 — {essentialFilled}/{essentialTotal} champs essentiels remplis
+                  Étape 2/3 — {step2ValidCount}/{step2Total} champs essentiels remplis
                 </span>
-                {essentialFilled === essentialTotal && (
+                {step2ValidCount === step2Total && (
                   <CheckCircle2 className="w-5 h-5" style={{ color: QRTAGS_GREEN }} />
                 )}
               </div>
@@ -663,14 +858,14 @@ function InscrireContent() {
                 <div
                   className="h-full rounded-full transition-all duration-300"
                   style={{
-                    width: `${(essentialFilled / essentialTotal) * 100}%`,
-                    backgroundColor: essentialFilled === essentialTotal ? QRTAGS_GREEN : '#111111',
+                    width: `${(step2ValidCount / step2Total) * 100}%`,
+                    backgroundColor: step2ValidCount === step2Total ? QRTAGS_GREEN : '#111111',
                   }}
                 />
               </div>
             </div>
 
-            {/* Référence du tag — CONSERVÉ */}
+            {/* Référence du tag */}
             <div className={CARD_CLASS}>
               <label className="block text-sm font-bold text-black mb-1">Référence du tag</label>
               <input
@@ -682,7 +877,7 @@ function InscrireContent() {
               />
             </div>
 
-            {/* ═══ SECTION 1 : CONTACT (essentiel — toujours visible) ═══ */}
+            {/* Section Contact */}
             <div className={CARD_CLASS}>
               <h3 className="text-lg font-bold text-black mb-1">👤 VOS INFORMATIONS DE CONTACT</h3>
               <p className="text-xs text-black/60 mb-4">
@@ -690,7 +885,6 @@ function InscrireContent() {
               </p>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {/* Prénom */}
                 <div data-error={fieldError('firstName') ? 'true' : undefined}>
                   <label className="block text-sm font-bold text-black mb-1">Prénom *</label>
                   <input
@@ -712,7 +906,6 @@ function InscrireContent() {
                     </p>
                   )}
                 </div>
-                {/* Nom */}
                 <div data-error={fieldError('lastName') ? 'true' : undefined}>
                   <label className="block text-sm font-bold text-black mb-1">Nom *</label>
                   <input
@@ -736,16 +929,15 @@ function InscrireContent() {
                 </div>
               </div>
 
-              {/* WhatsApp */}
+              {/* WhatsApp avec QRTagsPhoneInput + détection IP */}
               <div className="mt-4" data-error={fieldError('whatsapp') ? 'true' : undefined}>
                 <label className="block text-sm font-bold text-black mb-1">Numéro WhatsApp *</label>
-                <input
-                  type="tel"
+                <QRTagsPhoneInput
+                  countryCode={phoneCountry}
+                  onCountryChange={setPhoneCountry}
                   value={formData.whatsapp}
-                  placeholder="+221 77 123 45 67"
-                  onBlur={() => markTouched('whatsapp')}
-                  onChange={(e) => setFormData({ ...formData, whatsapp: e.target.value })}
-                  className={inputClass('whatsapp')}
+                  onChange={(full) => setFormData({ ...formData, whatsapp: full })}
+                  detecting={countryDetecting}
                 />
                 {fieldError('whatsapp') ? (
                   <p className="text-xs mt-1 flex items-center gap-1" style={{ color: QRTAGS_RED }}>
@@ -758,13 +950,15 @@ function InscrireContent() {
                 ) : (
                   <p className="text-xs mt-1 flex items-center gap-1" style={{ color: QRTAGS_RED }}>
                     <AlertCircle className="w-3 h-3" />
-                    Le numéro WhatsApp est essentiel pour être contacté en cas de perte.
+                    {countryDetecting
+                      ? 'Détection de votre pays en cours...'
+                      : 'Le numéro WhatsApp est essentiel pour être contacté en cas de perte.'}
                   </p>
                 )}
               </div>
             </div>
 
-            {/* ═══ SECTION 2 : OBJET (essentiel — toujours visible) ═══ */}
+            {/* Section Objet */}
             <div className={CARD_CLASS}>
               <h3 className="text-lg font-bold text-black mb-1">
                 🏷️ DÉCRIRE VOTRE OBJET — {selectedCat?.icon} {selectedCat?.label}
@@ -796,7 +990,6 @@ function InscrireContent() {
                   )}
                 </div>
 
-                {/* Champs dynamiques selon la catégorie — CONSERVÉS */}
                 {selectedCat?.fields.map((field) => (
                   <div key={field.key}>
                     <label className="block text-sm font-bold text-black mb-1">{field.label}</label>
@@ -840,197 +1033,198 @@ function InscrireContent() {
               </div>
             </div>
 
-            {/* ═══ NOUVEAU : Toggle "Afficher les détails optionnels" ═══ */}
-            <button
-              type="button"
-              onClick={() => setShowAdvanced(!showAdvanced)}
-              className="w-full bg-white border-2 border-black rounded-xl p-4 flex items-center justify-between shadow-md hover:bg-gray-50 transition"
-            >
-              <span className="font-bold text-black flex items-center gap-2">
-                <Sparkles className="w-4 h-4" style={{ color: '#E3B23C' }} />
-                {showAdvanced ? 'Masquer les détails optionnels' : 'Afficher les détails optionnels'}
-              </span>
-              <ChevronDown
-                className={`w-5 h-5 text-black transition-transform ${showAdvanced ? 'rotate-180' : ''}`}
-              />
-            </button>
+            {/* Boutons d'action étape 2 */}
+            <div className="flex gap-4 pt-2">
+              <button
+                type="button"
+                onClick={() => goToStep(1)}
+                className="flex-1 px-6 py-4 border-2 border-black rounded-lg bg-white text-black font-bold text-base hover:bg-gray-100 transition flex items-center justify-center gap-2"
+              >
+                <ArrowLeft className="w-5 h-5" /> Précédent
+              </button>
+              <button
+                type="button"
+                onClick={() => goToStep(3)}
+                disabled={!canSubmitStep2}
+                className="flex-[2] px-8 py-4 rounded-lg bg-black text-[#E3B23C] font-bold text-base hover:bg-gray-900 transition flex items-center justify-center gap-2 shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                Suivant <ArrowRight className="w-5 h-5" />
+              </button>
+            </div>
+          </div>
+        )}
 
-            {/* ═══ SECTION 3 + 4 : masquées par défaut (toggle) ═══ */}
-            {showAdvanced && (
-              <div className="space-y-6 animate-in fade-in slide-in-from-top-2 duration-300">
+        {/* ═══ ÉTAPE 3 : Options + Photo + Confirmation ═══ */}
+        {step === 3 && (
+          <div className="space-y-6">
 
-                {/* ─── SECTION 3 : LOCALISATION & OPTIONS ─── */}
-                <div className={CARD_CLASS}>
-                  <h3 className="text-lg font-bold text-black mb-1">📍 LOCALISATION & OPTIONS</h3>
-                  <p className="text-xs text-black/60 mb-4">
-                    Facultatif — augmente les chances de récupération
-                  </p>
+            {/* Section Localisation & Options */}
+            <div className={CARD_CLASS}>
+              <h3 className="text-lg font-bold text-black mb-1">📍 LOCALISATION & OPTIONS</h3>
+              <p className="text-xs text-black/60 mb-4">
+                Facultatif — augmente les chances de récupération
+              </p>
 
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-                    <div>
-                      <label className="block text-sm font-bold text-black mb-1">Ville</label>
-                      <input
-                        type="text"
-                        value={formData.city}
-                        placeholder="Dakar"
-                        onChange={(e) => setFormData({ ...formData, city: e.target.value })}
-                        className={INPUT_CLASS}
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-bold text-black mb-1">Pays</label>
-                      <input
-                        type="text"
-                        value={formData.country}
-                        placeholder="Sénégal"
-                        onChange={(e) => setFormData({ ...formData, country: e.target.value })}
-                        className={INPUT_CLASS}
-                      />
-                    </div>
-                  </div>
-
-                  <div className="mb-4">
-                    <label className="block text-sm font-bold text-black mb-1">
-                      <Gift className="w-3 h-3 inline mr-1" />
-                      Récompense proposée (optionnel)
-                    </label>
-                    <input
-                      type="text"
-                      value={formData.reward}
-                      placeholder="Ex: 5000 FCFA"
-                      onChange={(e) => setFormData({ ...formData, reward: e.target.value })}
-                      className={INPUT_CLASS}
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-bold text-black mb-1">
-                      <MessageCircle className="w-3 h-3 inline mr-1" />
-                      Message au trouveur (optionnel)
-                    </label>
-                    <textarea
-                      value={formData.messageToFinder}
-                      placeholder="Merci de me contacter, je récompenserai généreusement !"
-                      rows={3}
-                      onChange={(e) => setFormData({ ...formData, messageToFinder: e.target.value })}
-                      className={`${INPUT_CLASS} resize-none`}
-                    />
-                  </div>
-
-                  {/* Email — déplacé ici (optionnel) */}
-                  <div className="mt-4" data-error={fieldError('email') ? 'true' : undefined}>
-                    <label className="block text-sm font-bold text-black mb-1">Email (optionnel)</label>
-                    <input
-                      type="email"
-                      value={formData.email}
-                      placeholder="marie@email.com"
-                      onBlur={() => markTouched('email')}
-                      onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                      className={inputClass('email')}
-                    />
-                    {fieldError('email') && (
-                      <p className="text-xs mt-1 flex items-center gap-1" style={{ color: QRTAGS_RED }}>
-                        <XCircle className="w-3 h-3" /> {fieldError('email')}
-                      </p>
-                    )}
-                    {touched.email && !errors.email && formData.email.trim() && (
-                      <p className="text-xs mt-1 flex items-center gap-1" style={{ color: QRTAGS_GREEN }}>
-                        <CheckCircle2 className="w-3 h-3" /> Email valide
-                      </p>
-                    )}
-                  </div>
-                </div>
-
-                {/* ─── SECTION 4 : PHOTO UPLOAD (Étape 3 enrichie) ─── */}
-                <div className={CARD_CLASS}>
-                  <h3 className="text-lg font-bold text-black mb-1">📸 PHOTO DE L'OBJET</h3>
-                  <p className="text-xs text-black/60 mb-4">
-                    Facultatif — facilite l'identification par le trouveur
-                  </p>
-
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                <div>
+                  <label className="block text-sm font-bold text-black mb-1">Ville</label>
                   <input
-                    ref={fileInputRef}
-                    type="file"
-                    accept="image/*"
-                    onChange={handlePhotoChange}
-                    className="hidden"
+                    type="text"
+                    value={formData.city}
+                    placeholder="Dakar"
+                    onChange={(e) => setFormData({ ...formData, city: e.target.value })}
+                    className={INPUT_CLASS}
                   />
-                  {photoPreview ? (
-                    <div className="space-y-3">
-                      <div className="relative">
-                        <img
-                          src={photoPreview}
-                          alt="Aperçu"
-                          className="w-full h-48 object-cover rounded-lg border-2 border-black"
-                        />
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setPhotoPreview(null);
-                            setPhotoMeta(null);
-                            if (fileInputRef.current) fileInputRef.current.value = '';
-                          }}
-                          className="absolute top-1 right-1 bg-red-500 text-white rounded-full w-7 h-7 flex items-center justify-center text-sm hover:bg-red-600 transition"
-                          aria-label="Supprimer la photo"
-                        >
-                          ✕
-                        </button>
-                      </div>
-
-                      {/* Méta-données compression (taille avant / après) */}
-                      {photoMeta && !photoMeta.isProcessing && (
-                        <div
-                          className="flex items-center gap-2 text-xs p-2 rounded-lg"
-                          style={{ backgroundColor: '#F0FDF4', color: QRTAGS_GREEN, border: '1px solid #BBF7D0' }}
-                        >
-                          <ImageIcon className="w-4 h-4 flex-shrink-0" />
-                          <span>
-                            Image compressée :{' '}
-                            <strong>{photoMeta.originalSizeKB} KB</strong> →{' '}
-                            <strong>{photoMeta.compressedSizeKB} KB</strong>
-                            {photoMeta.originalSizeKB > 0 && (
-                              <span className="ml-1">
-                                (−{Math.round(
-                                  ((photoMeta.originalSizeKB - photoMeta.compressedSizeKB) /
-                                    Math.max(photoMeta.originalSizeKB, 1)) *
-                                    100
-                                )}%)
-                              </span>
-                            )}
-                          </span>
-                        </div>
-                      )}
-
-                      {/* Bouton remplacer */}
-                      <button
-                        type="button"
-                        onClick={() => fileInputRef.current?.click()}
-                        className="w-full py-2 px-4 border-2 border-black rounded-lg bg-white text-black font-bold text-sm hover:bg-gray-100 transition flex items-center justify-center gap-2"
-                      >
-                        <RefreshCw className="w-4 h-4" /> Remplacer la photo
-                      </button>
-                    </div>
-                  ) : photoMeta?.isProcessing ? (
-                    <div className="border-2 border-dashed border-black rounded-lg p-6 text-center bg-gray-50">
-                      <Loader2 className="w-6 h-6 mx-auto mb-2 text-black animate-spin" />
-                      <p className="text-black font-semibold">Compression en cours...</p>
-                      <p className="text-xs text-gray-600 mt-1">Optimisation de l'image</p>
-                    </div>
-                  ) : (
-                    <div
-                      onClick={() => fileInputRef.current?.click()}
-                      className="border-2 border-dashed border-black rounded-lg p-6 text-center bg-gray-50 hover:bg-gray-100 transition cursor-pointer"
-                    >
-                      <Camera className="w-6 h-6 mx-auto mb-2 text-black" />
-                      <p className="text-black font-semibold">Ajouter une photo</p>
-                      <p className="text-xs text-gray-600 mt-1">JPG, PNG (max 5MB) — compression automatique</p>
-                    </div>
-                  )}
+                </div>
+                <div>
+                  <label className="block text-sm font-bold text-black mb-1">Pays</label>
+                  <input
+                    type="text"
+                    value={formData.country}
+                    placeholder="Sénégal"
+                    onChange={(e) => setFormData({ ...formData, country: e.target.value })}
+                    className={INPUT_CLASS}
+                  />
                 </div>
               </div>
-            )}
 
-            {/* ═══ SECTION 5 : CONFIRMATION — toujours visible ═══ */}
+              <div className="mb-4">
+                <label className="block text-sm font-bold text-black mb-1">
+                  <Gift className="w-3 h-3 inline mr-1" />
+                  Récompense proposée (optionnel)
+                </label>
+                <input
+                  type="text"
+                  value={formData.reward}
+                  placeholder="Ex: 5000 FCFA"
+                  onChange={(e) => setFormData({ ...formData, reward: e.target.value })}
+                  className={INPUT_CLASS}
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-bold text-black mb-1">
+                  <MessageCircle className="w-3 h-3 inline mr-1" />
+                  Message au trouveur (optionnel)
+                </label>
+                <textarea
+                  value={formData.messageToFinder}
+                  placeholder="Merci de me contacter, je récompenserai généreusement !"
+                  rows={3}
+                  onChange={(e) => setFormData({ ...formData, messageToFinder: e.target.value })}
+                  className={`${INPUT_CLASS} resize-none`}
+                />
+              </div>
+
+              <div className="mt-4" data-error={fieldError('email') ? 'true' : undefined}>
+                <label className="block text-sm font-bold text-black mb-1">Email (optionnel)</label>
+                <input
+                  type="email"
+                  value={formData.email}
+                  placeholder="marie@email.com"
+                  onBlur={() => markTouched('email')}
+                  onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                  className={inputClass('email')}
+                />
+                {fieldError('email') && (
+                  <p className="text-xs mt-1 flex items-center gap-1" style={{ color: QRTAGS_RED }}>
+                    <XCircle className="w-3 h-3" /> {fieldError('email')}
+                  </p>
+                )}
+                {touched.email && !errors.email && formData.email.trim() && (
+                  <p className="text-xs mt-1 flex items-center gap-1" style={{ color: QRTAGS_GREEN }}>
+                    <CheckCircle2 className="w-3 h-3" /> Email valide
+                  </p>
+                )}
+              </div>
+            </div>
+
+            {/* Section Photo */}
+            <div className={CARD_CLASS}>
+              <h3 className="text-lg font-bold text-black mb-1">📸 PHOTO DE L'OBJET</h3>
+              <p className="text-xs text-black/60 mb-4">
+                Facultatif — facilite l'identification par le trouveur
+              </p>
+
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*"
+                onChange={handlePhotoChange}
+                className="hidden"
+              />
+              {photoPreview ? (
+                <div className="space-y-3">
+                  <div className="relative">
+                    <img
+                      src={photoPreview}
+                      alt="Aperçu"
+                      className="w-full h-48 object-cover rounded-lg border-2 border-black"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setPhotoPreview(null);
+                        setPhotoMeta(null);
+                        if (fileInputRef.current) fileInputRef.current.value = '';
+                      }}
+                      className="absolute top-1 right-1 bg-red-500 text-white rounded-full w-7 h-7 flex items-center justify-center text-sm hover:bg-red-600 transition"
+                      aria-label="Supprimer la photo"
+                    >
+                      ✕
+                    </button>
+                  </div>
+
+                  {photoMeta && !photoMeta.isProcessing && (
+                    <div
+                      className="flex items-center gap-2 text-xs p-2 rounded-lg"
+                      style={{ backgroundColor: '#F0FDF4', color: QRTAGS_GREEN, border: '1px solid #BBF7D0' }}
+                    >
+                      <ImageIcon className="w-4 h-4 flex-shrink-0" />
+                      <span>
+                        Image compressée :{' '}
+                        <strong>{photoMeta.originalSizeKB} KB</strong> →{' '}
+                        <strong>{photoMeta.compressedSizeKB} KB</strong>
+                        {photoMeta.originalSizeKB > 0 && (
+                          <span className="ml-1">
+                            (−{Math.round(
+                              ((photoMeta.originalSizeKB - photoMeta.compressedSizeKB) /
+                                Math.max(photoMeta.originalSizeKB, 1)) *
+                                100
+                            )}%)
+                          </span>
+                        )}
+                      </span>
+                    </div>
+                  )}
+
+                  <button
+                    type="button"
+                    onClick={() => fileInputRef.current?.click()}
+                    className="w-full py-2 px-4 border-2 border-black rounded-lg bg-white text-black font-bold text-sm hover:bg-gray-100 transition flex items-center justify-center gap-2"
+                  >
+                    <RefreshCw className="w-4 h-4" /> Remplacer la photo
+                  </button>
+                </div>
+              ) : photoMeta?.isProcessing ? (
+                <div className="border-2 border-dashed border-black rounded-lg p-6 text-center bg-gray-50">
+                  <Loader2 className="w-6 h-6 mx-auto mb-2 text-black animate-spin" />
+                  <p className="text-black font-semibold">Compression en cours...</p>
+                  <p className="text-xs text-gray-600 mt-1">Optimisation de l'image</p>
+                </div>
+              ) : (
+                <div
+                  onClick={() => fileInputRef.current?.click()}
+                  className="border-2 border-dashed border-black rounded-lg p-6 text-center bg-gray-50 hover:bg-gray-100 transition cursor-pointer"
+                >
+                  <Camera className="w-6 h-6 mx-auto mb-2 text-black" />
+                  <p className="text-black font-semibold">Ajouter une photo</p>
+                  <p className="text-xs text-gray-600 mt-1">JPG, PNG (max 5MB) — compression automatique</p>
+                </div>
+              )}
+            </div>
+
+            {/* Section Confirmation */}
             <div className={CARD_CLASS}>
               <h3 className="text-lg font-bold text-black mb-4">✅ CONFIRMATION</h3>
 
@@ -1059,11 +1253,11 @@ function InscrireContent() {
               </div>
             </div>
 
-            {/* Boutons d'action — enrichis (Étape 4) */}
+            {/* Boutons d'action étape 3 */}
             <div className="flex gap-4 pt-2">
               <button
                 type="button"
-                onClick={() => setStep(1)}
+                onClick={() => goToStep(2)}
                 disabled={loading}
                 className="flex-1 px-6 py-4 border-2 border-black rounded-lg bg-white text-black font-bold text-base hover:bg-gray-100 transition flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
               >
@@ -1073,7 +1267,7 @@ function InscrireContent() {
               <button
                 type="button"
                 onClick={doSubmit}
-                disabled={loading || !canSubmitStep2}
+                disabled={loading || !canSubmitStep3}
                 className="flex-[2] px-8 py-4 rounded-lg bg-black text-[#E3B23C] font-bold text-base hover:bg-gray-900 transition flex items-center justify-center gap-2 shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {loading ? (
@@ -1089,7 +1283,7 @@ function InscrireContent() {
               </button>
             </div>
 
-            {/* ─── NOUVEAU (Étape 4) : message d'erreur de soumission inline ─── */}
+            {/* Message d'erreur de soumission inline */}
             {submitError && (
               <div
                 className="rounded-xl p-4 flex items-start gap-3 animate-in fade-in slide-in-from-top-2 duration-300"
@@ -1117,15 +1311,13 @@ function InscrireContent() {
           </div>
         )}
 
-        {/* ─── NOUVEAU (Étape 4) : overlay loader plein écran pendant la soumission ─── */}
+        {/* Overlay loader plein écran */}
         {loading && (
           <div
             className="fixed inset-0 z-50 flex items-center justify-center"
             style={{ backgroundColor: 'rgba(17, 17, 17, 0.75)' }}
           >
-            <div
-              className="bg-white rounded-2xl p-8 max-w-sm w-[calc(100%-2rem)] text-center shadow-2xl border-2 border-black"
-            >
+            <div className="bg-white rounded-2xl p-8 max-w-sm w-[calc(100%-2rem)] text-center shadow-2xl border-2 border-black">
               <div className="mb-4">
                 {submitPhase === 'redirecting' ? (
                   <CheckCircle2
@@ -1137,9 +1329,7 @@ function InscrireContent() {
                 )}
               </div>
               <h3 className="text-xl font-black text-black mb-1">
-                {submitPhase === 'redirecting'
-                  ? 'QR code activé !'
-                  : 'Activation en cours...'}
+                {submitPhase === 'redirecting' ? 'QR code activé !' : 'Activation en cours...'}
               </h3>
               <p className="text-sm text-black/60">
                 {submitPhase === 'redirecting'
@@ -1147,7 +1337,6 @@ function InscrireContent() {
                   : 'Nous protégeons votre objet. Patientez quelques instants.'}
               </p>
 
-              {/* Petit indicateur de progression visuelle */}
               {submitPhase === 'sending' && (
                 <div className="mt-4 h-1.5 w-full rounded-full bg-gray-200 overflow-hidden">
                   <div
@@ -1161,7 +1350,6 @@ function InscrireContent() {
                 </div>
               )}
 
-              {/* Sécurité : rappel que la donnée est chiffrée */}
               <div className="mt-4 flex items-center justify-center gap-1.5 text-xs text-black/50">
                 <ShieldCheck className="w-3 h-3" />
                 <span>Connexion sécurisée</span>
@@ -1170,8 +1358,8 @@ function InscrireContent() {
           </div>
         )}
 
-        {/* ─── NOUVEAU (Étape 4) : bannière réseau offline (si hors ligne) ─── */}
-        {typeof navigator !== 'undefined' && !navigator.onLine && step === 2 && (
+        {/* Bannière réseau offline */}
+        {typeof navigator !== 'undefined' && !navigator.onLine && (
           <div
             className="fixed bottom-4 left-1/2 -translate-x-1/2 z-40 max-w-md w-[calc(100%-2rem)] rounded-xl p-3 shadow-2xl border-2 flex items-center gap-3"
             style={{ backgroundColor: '#FEE2E2', borderColor: QRTAGS_RED }}
@@ -1186,7 +1374,7 @@ function InscrireContent() {
           </div>
         )}
 
-        {/* ─── NOUVEAU (Étape 3) : bannière « brouillon restauré » ─── */}
+        {/* Bannière « brouillon restauré » */}
         {draftRestored && (
           <div
             className="fixed bottom-4 left-1/2 -translate-x-1/2 z-50 max-w-md w-[calc(100%-2rem)] rounded-xl p-3 shadow-2xl border-2 flex items-center gap-3 animate-in fade-in slide-in-from-bottom-2 duration-300"
@@ -1207,7 +1395,7 @@ function InscrireContent() {
           </div>
         )}
 
-        {/* Footer — CONSERVÉ */}
+        {/* Footer */}
         <div className="text-center mt-8">
           <p className="text-black/70 text-sm">
             Propulsé par <span className="font-bold">QRTags</span>
