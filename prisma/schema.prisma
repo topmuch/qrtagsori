@@ -116,9 +116,27 @@ model Baggage {
   //   city, country, reward, message_to_finder, email, photo, ... }
   customData        String?
 
+  // ─── Qrioo — Multi-usage QR ───
+  // pack_type : type de pack (pratique = comportement QRTags existant, emotion, evenementiel, immobilier)
+  packType          String    @default("pratique") @map("pack_type")
+  // content_type : type de contenu attaché (text, audio, video, wifi, contact, url)
+  contentType       String?   @map("content_type")
+  // content_url : lien vers le fichier stocké (audio, video, image)
+  contentUrl        String?   @map("content_url")
+  // content_metadata : JSON pour données spécifiques au pack
+  // Emotion: { message, duration }
+  // Immobilier: { title, description, price, surface, rooms, images[], virtualTourUrl }
+  // Evenementiel: { eventName, eventDate, guestBookEnabled, playlistUrl }
+  // Pratique: { wifi_ssid, wifi_password, contact_name, contact_phone }
+  contentMetadata   String?   @map("content_metadata")
+  // batchId : lien vers le lot de génération (si généré en masse)
+  batchId           String?   @map("batch_id")
+
   agency            Agency?   @relation(fields: [agencyId], references: [id], onDelete: SetNull)
+  batch             Batch?    @relation(fields: [batchId], references: [id], onDelete: SetNull)
   scanLogs          ScanLog[]
   damageReports     DamageReport[]
+  guestMessages     GuestMessage[]
 }
 
 // ScanLog model - tracks all scans for audit
@@ -611,4 +629,44 @@ model Order {
 
   @@index([status])
   @@index([createdAt])
+}
+
+// ════════════════════════════════════════════════════════════════
+// QRIOO — Lots (Batches) pour génération en masse
+// ════════════════════════════════════════════════════════════════
+
+model Batch {
+  id              String    @id @default(cuid())
+  name            String    // Nom du lot (ex: "Lot Hajj 2026")
+  packType        String    @default("pratique") @map("pack_type") // "pratique" | "emotion" | "evenementiel" | "immobilier"
+  quantity        Int       // Nombre de QR codes dans le lot
+  agencyId        String?   @map("agency_id")                    // Agence assignée (optionnel)
+  status          String    @default("draft") // "draft" | "generated" | "distributed" | "completed"
+  pdfUrl          String?   @map("pdf_url")   // URL du PDF d'impression
+  createdAt       DateTime  @default(now()) @map("created_at")
+  updatedAt       DateTime  @updatedAt @map("updated_at")
+
+  baggages        Baggage[]
+
+  @@map("batches")
+}
+
+// ════════════════════════════════════════════════════════════════
+// QRIOO — Messages livre d'or (Pack Événementiel)
+// ════════════════════════════════════════════════════════════════
+
+model GuestMessage {
+  id              String    @id @default(cuid())
+  baggageId       String    @map("baggage_id")    // QR code de l'événement
+  authorName      String    @map("author_name")    // Nom de l'invité
+  content         String    // Texte du message
+  contentUrl      String?   @map("content_url")    // URL audio/vidéo si message vocal
+  contentType     String?   @map("content_type")   // "text" | "audio" | "video"
+  isModerated     Boolean   @default(false) @map("is_moderated")
+  createdAt       DateTime  @default(now()) @map("created_at")
+
+  baggage         Baggage   @relation(fields: [baggageId], references: [id], onDelete: Cascade)
+
+  @@index([baggageId])
+  @@map("guest_messages")
 }
