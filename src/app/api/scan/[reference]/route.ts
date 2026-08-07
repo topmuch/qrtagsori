@@ -63,7 +63,8 @@ export async function GET(
         if (!baggage.whatsappOwner || baggage.whatsappOwner.trim() === '') {
           return NextResponse.json({
             status: 'pending_activation',
-            message: 'Ce tag n\'est pas encore activé',
+            packType: 'pratique',
+            message: "Ce tag n'est pas encore activé",
           });
         }
 
@@ -237,7 +238,8 @@ export async function GET(
         if (!baggage.whatsappOwner || baggage.whatsappOwner.trim() === '') {
           return NextResponse.json({
             status: 'pending_activation',
-            message: 'Ce tag n\'est pas encore activé',
+            packType: 'pratique',
+            message: "Ce tag n'est pas encore activé",
           });
         }
 
