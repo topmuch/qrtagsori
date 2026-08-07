@@ -203,7 +203,7 @@ function DesignGeneration({ agencies }: { agencies: Agency[] }) {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          agencyId: agencyId || undefined,
+          agencyId: agencyId && agencyId !== '__none__' ? agencyId : undefined,
           quantity,
         }),
       });
@@ -362,7 +362,7 @@ function DesignGeneration({ agencies }: { agencies: Agency[] }) {
                 <SelectValue placeholder="Sans agence (stock général)" />
               </SelectTrigger>
               <SelectContent className="bg-white dark:bg-slate-900">
-                <SelectItem value="">Sans agence (stock général)</SelectItem>
+                <SelectItem value="__none__">Sans agence (stock général)</SelectItem>
                 {agencies.filter((a) => a.active).map((a) => (
                   <SelectItem key={a.id} value={a.id}>{a.name}</SelectItem>
                 ))}

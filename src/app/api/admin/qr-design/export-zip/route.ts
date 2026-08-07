@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { Readable } from 'stream';
+import { ZipArchive } from 'archiver';
 import { db } from '@/lib/db';
 import {
   composeQRWithDesign,
@@ -75,8 +76,7 @@ export async function POST(request: NextRequest) {
     const baseUrl = `${protocol}://${host}`;
 
     // Create ZIP archive (streaming)
-    const { default: Archiver } = await import('archiver');
-    const archive = new Archiver('zip', { zlib: { level: 6 } });
+    const archive = new ZipArchive({ zlib: { level: 6 } });
     const nodeStream = archive as unknown as Readable;
     const webStream = Readable.toWeb(nodeStream) as ReadableStream<Uint8Array>;
 
