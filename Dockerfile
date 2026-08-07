@@ -2,13 +2,15 @@
 # QRTags — Production Dockerfile (bun + Next.js standalone)
 # ═══════════════════════════════════════════════════════════════════════════
 
-FROM oven/bun:1-debian
+FROM oven/bun:1.3-debian
 
 # Install system dependencies
 RUN apt-get update && apt-get install -y --no-install-recommends \
     git \
     sqlite3 \
     ca-certificates \
+    build-essential \
+    python3 \
     && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
@@ -17,7 +19,7 @@ WORKDIR /app
 RUN git clone https://github.com/topmuch/qrtagsori.git .
 
 # Install dependencies
-RUN bun install --frozen-lockfile || bun install
+RUN bun install
 
 # Generate Prisma Client
 RUN bunx prisma generate
