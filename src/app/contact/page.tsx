@@ -1,225 +1,277 @@
 'use client';
 
-/**
- * QRTagsPro — Page Contact
- *
- * Formulaire de contact + carte Google Maps intégrée.
- */
-
-import { useState } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import Link from 'next/link';
+import { useSearchParams } from 'next/navigation';
+import PublicLayout from '@/components/public/PublicLayout';
+import { Button } from "@/components/ui/button";
 import {
-  ArrowRight, ArrowLeft, Mail, Phone, MapPin, Clock,
-  CheckCircle2, Loader2, Send, MessageCircle,
-} from 'lucide-react';
-import QRTagsLogo from '@/components/qrtags/QRTagsLogo';
+  Mail,
+  Phone,
+  MapPinned,
+  CheckCircle,
+  Clock,
+  MessageCircle
+} from "lucide-react";
 
-export default function ContactPage() {
-  const [form, setForm] = useState({
+function ContactContent() {
+  const searchParams = useSearchParams();
+  const initialSubject = searchParams.get('subject') || '';
+
+  const [formData, setFormData] = useState({
     name: '',
     email: '',
-    phone: '',
-    company: '',
-    subject: 'Demande d\'information',
-    message: '',
+    subject: initialSubject,
+    message: ''
   });
   const [submitted, setSubmitted] = useState(false);
-  const [sending, setSending] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  // Si on arrive via ?subject=suppression-avis, pré-remplir aussi le message
+  useEffect(() => {
+    if (initialSubject === 'suppression-avis' && !formData.message) {
+      setFormData((prev) => ({
+        ...prev,
+        subject: 'Demande de suppression d\'avis — RGPD',
+        message: 'Bonjour, je demande la suppression de l\'avis suivant conformément à mon droit RGPD à l\'effacement.\n\nIdentifiant de l\'avis (si connu) : \nMotif : ',
+      }));
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [initialSubject]);
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setSending(true);
-    setTimeout(() => {
-      const body = `Nom: ${form.name}\nEmail: ${form.email}\nTéléphone: ${form.phone}\nEntreprise: ${form.company}\nSujet: ${form.subject}\n\nMessage:\n${form.message}`;
-      window.location.href = `mailto:contact@qrtagspro.com?subject=${encodeURIComponent(form.subject)}&body=${encodeURIComponent(body)}`;
+    setSubmitting(true);
+
+    try {
+      await fetch('/api/messages', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          type: 'contact',
+          senderName: formData.name,
+          senderEmail: formData.email,
+          content: { subject: formData.subject, message: formData.message },
+        }),
+      });
       setSubmitted(true);
-      setSending(false);
-    }, 800);
+    } catch (error) {
+      console.error('Error sending message:', error);
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   return (
-    <div className="min-h-screen bg-white">
-      {/* Header */}
-      <header className="sticky top-0 z-50 bg-white/95 backdrop-blur border-b border-slate-200">
-        <div className="max-w-7xl mx-auto px-4 md:px-6 py-3 flex items-center justify-between">
-          <QRTagsLogo size="sm" href="/" withHover />
-          <nav className="hidden md:flex items-center gap-6 text-sm font-medium text-slate-700">
-            <Link href="/" className="hover:text-[#134288] transition">Accueil</Link>
-            <Link href="/metiers" className="hover:text-[#134288] transition">Métiers</Link>
-            <Link href="/tarifs" className="hover:text-[#134288] transition">Tarifs</Link>
-            <Link href="/blog" className="hover:text-[#134288] transition">Blog</Link>
-            <Link href="/demo" className="hover:text-[#134288] transition">Démo</Link>
-            <Link href="/contact" className="hover:text-[#134288] transition">Contact</Link>
-          </nav>
-          <Link href="/login" className="inline-flex items-center gap-1.5 px-4 py-2 text-sm font-bold bg-[#32ba5d] text-white rounded-lg hover:bg-[#28a54f] transition">
-            Connexion
-            <ArrowRight className="w-3.5 h-3.5" />
-          </Link>
-        </div>
-      </header>
-
-      {/* Hero */}
-      <section className="bg-gradient-to-br from-[#134288] to-[#0d3266] text-white py-16">
-        <div className="max-w-4xl mx-auto px-4 md:px-6 text-center">
-          <h1 className="text-4xl md:text-5xl font-black mb-4">Contactez-nous</h1>
-          <p className="text-lg md:text-xl text-blue-100 max-w-2xl mx-auto">
-            Une question, un projet, un devis ? Notre équipe vous répond sous 24h.
+    <>
+      {/* Hero section */}
+      <section className="text-center py-16 bg-gradient-to-r from-[#080c1a] via-[#1e3a2e] to-[#080c1a]">
+        <div className="max-w-4xl mx-auto px-4">
+          <h1 className="text-4xl md:text-5xl font-bold text-white mb-6">
+            Contactez-nous
+          </h1>
+          <p className="text-[#a0a8b8] max-w-2xl mx-auto text-xl leading-relaxed">
+            Une question ? Un projet ? Notre équipe est là pour vous accompagner.
           </p>
         </div>
       </section>
 
-      {/* Content: Form + Map */}
-      <section className="py-16">
-        <div className="max-w-6xl mx-auto px-4 md:px-6 grid md:grid-cols-2 gap-8">
-          {/* Left: Contact info + Form */}
-          <div className="space-y-6">
-            {/* Coordonnées */}
-            <div className="grid grid-cols-2 gap-4">
-              <div className="bg-slate-50 rounded-xl p-4 border border-slate-200">
-                <Mail className="w-6 h-6 text-[#134288] mb-2" />
-                <p className="text-xs font-bold text-slate-500 uppercase">Email</p>
-                <p className="text-sm text-slate-900 font-medium">contact@qrtagspro.com</p>
-              </div>
-              <div className="bg-slate-50 rounded-xl p-4 border border-slate-200">
-                <Phone className="w-6 h-6 text-[#134288] mb-2" />
-                <p className="text-xs font-bold text-slate-500 uppercase">Téléphone</p>
-                <p className="text-sm text-slate-900 font-medium">+33 1 23 45 67 89</p>
-              </div>
-              <div className="bg-slate-50 rounded-xl p-4 border border-slate-200">
-                <MapPin className="w-6 h-6 text-[#134288] mb-2" />
-                <p className="text-xs font-bold text-slate-500 uppercase">Adresse</p>
-                <p className="text-sm text-slate-900 font-medium">Paris, France</p>
-              </div>
-              <div className="bg-slate-50 rounded-xl p-4 border border-slate-200">
-                <Clock className="w-6 h-6 text-[#134288] mb-2" />
-                <p className="text-xs font-bold text-slate-500 uppercase">Horaires</p>
-                <p className="text-sm text-slate-900 font-medium">Lun–Ven, 9h–18h</p>
+      {/* Contenu principal */}
+      <section className="py-16 px-4">
+        <div className="max-w-6xl mx-auto">
+          <div className="grid lg:grid-cols-2 gap-12">
+            {/* Informations de contact */}
+            <div>
+              <h2 className="text-2xl font-bold text-white mb-8">Nos coordonnées</h2>
+
+              <div className="space-y-6">
+                {/* Adresse */}
+                <div className="flex items-start gap-4 p-4 bg-[#0a0f2c] rounded-xl border border-[#1a1a3a]">
+                  <div className="w-12 h-12 rounded-lg bg-[#1E40AF]/20 flex items-center justify-center border border-[#1E40AF]/30 shrink-0">
+                    <MapPinned className="w-6 h-6 text-[#1E40AF]" />
+                  </div>
+                  <div>
+                    <h3 className="font-semibold text-lg mb-1 text-white">Adresse</h3>
+                    <p className="text-[#a0a8b8]">43 Rue Maryse Bastié</p>
+                    <p className="text-[#a0a8b8]">78300 Poissy, France</p>
+                  </div>
+                </div>
+
+                {/* Téléphone */}
+                <div className="flex items-start gap-4 p-4 bg-[#0a0f2c] rounded-xl border border-[#1a1a3a]">
+                  <div className="w-12 h-12 rounded-lg bg-[#1E40AF]/20 flex items-center justify-center border border-[#1E40AF]/30 shrink-0">
+                    <Phone className="w-6 h-6 text-[#1E40AF]" />
+                  </div>
+                  <div>
+                    <h3 className="font-semibold text-lg mb-1 text-white">Téléphone</h3>
+                    <a href="tel:+33745349339" className="text-[#a0a8b8] hover:text-[#1E40AF] transition-colors">
+                      +33 7 45 34 93 39
+                    </a>
+                  </div>
+                </div>
+
+                {/* Email */}
+                <div className="flex items-start gap-4 p-4 bg-[#0a0f2c] rounded-xl border border-[#1a1a3a]">
+                  <div className="w-12 h-12 rounded-lg bg-[#1E40AF]/20 flex items-center justify-center border border-[#1E40AF]/30 shrink-0">
+                    <Mail className="w-6 h-6 text-[#1E40AF]" />
+                  </div>
+                  <div>
+                    <h3 className="font-semibold text-lg mb-1 text-white">Email</h3>
+                    <a href="mailto:contact@qrtags.com" className="text-[#a0a8b8] hover:text-[#1E40AF] transition-colors">
+                      contact@qrtags.com
+                    </a>
+                  </div>
+                </div>
+
+                {/* Horaires */}
+                <div className="flex items-start gap-4 p-4 bg-[#0a0f2c] rounded-xl border border-[#1a1a3a]">
+                  <div className="w-12 h-12 rounded-lg bg-[#1E40AF]/20 flex items-center justify-center border border-[#1E40AF]/30 shrink-0">
+                    <Clock className="w-6 h-6 text-[#1E40AF]" />
+                  </div>
+                  <div>
+                    <h3 className="font-semibold text-lg mb-1 text-white">Horaires</h3>
+                    <p className="text-[#a0a8b8]">Lundi - Vendredi : 9h - 18h</p>
+                    <p className="text-[#a0a8b8]">Support 24/7 pour les urgences</p>
+                  </div>
+                </div>
+
+                {/* WhatsApp */}
+                <div className="flex items-start gap-4 p-4 bg-[#0a0f2c] rounded-xl border border-[#1a1a3a]">
+                  <div className="w-12 h-12 rounded-lg bg-[#25D366]/20 flex items-center justify-center border border-[#25D366]/30 shrink-0">
+                    <MessageCircle className="w-6 h-6 text-[#25D366]" />
+                  </div>
+                  <div>
+                    <h3 className="font-semibold text-lg mb-1 text-white">WhatsApp</h3>
+                    <a
+                      href="https://wa.me/33745349339"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-[#a0a8b8] hover:text-[#25D366] transition-colors"
+                    >
+                      +33 7 45 34 93 39
+                    </a>
+                    <p className="text-[#a0a8b8] text-sm mt-1">Réponse rapide garantie</p>
+                  </div>
+                </div>
               </div>
             </div>
 
-            {/* Form */}
-            {submitted ? (
-              <div className="bg-white rounded-2xl p-8 shadow-xl border-2 border-[#32ba5d] text-center">
-                <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-[#32ba5d]/15 mb-4">
-                  <CheckCircle2 className="w-10 h-10 text-[#32ba5d]" />
-                </div>
-                <h2 className="text-xl font-bold text-slate-900 mb-2">Message envoyé !</h2>
-                <p className="text-sm text-slate-600 mb-4">
-                  Votre client email s'est ouvert. Nous vous répondons sous 24h.
-                </p>
-                <button
-                  onClick={() => setSubmitted(false)}
-                  className="text-sm font-semibold text-[#134288] hover:underline"
-                >
-                  ← Envoyer un autre message
-                </button>
+            {/* Formulaire de contact */}
+            <div>
+              <h2 className="text-2xl font-bold text-white mb-8">Envoyez-nous un message</h2>
+
+              <div className="bg-[#0a0f2c] rounded-xl p-6 border border-[#1a1a3a]">
+                {submitted ? (
+                  <div className="text-center py-12">
+                    <CheckCircle className="w-20 h-20 text-[#1E40AF] mx-auto mb-6" />
+                    <h3 className="text-2xl font-semibold mb-3 text-white">Message envoyé !</h3>
+                    <p className="text-[#a0a8b8] mb-6">
+                      Nous avons bien reçu votre message et vous répondrons dans les plus brefs délais.
+                    </p>
+                    <Button
+                      onClick={() => {
+                        setSubmitted(false);
+                        setFormData({ name: '', email: '', subject: '', message: '' });
+                      }}
+                      className="bg-[#1E40AF] hover:bg-[#e01e5a] text-white"
+                    >
+                      Envoyer un autre message
+                    </Button>
+                  </div>
+                ) : (
+                  <form onSubmit={handleSubmit} className="space-y-5">
+                    <div className="grid md:grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-sm font-medium mb-2 text-white">Nom *</label>
+                        <input
+                          type="text"
+                          placeholder="Votre nom"
+                          value={formData.name}
+                          onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                          className="w-full px-4 py-3 rounded-lg bg-[#080c1a] border border-[#1a1a3a] text-white placeholder-[#a0a8b8] focus:outline-none focus:border-[#1E40AF]"
+                          required
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium mb-2 text-white">Email *</label>
+                        <input
+                          type="email"
+                          placeholder="votre@email.com"
+                          value={formData.email}
+                          onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                          className="w-full px-4 py-3 rounded-lg bg-[#080c1a] border border-[#1a1a3a] text-white placeholder-[#a0a8b8] focus:outline-none focus:border-[#1E40AF]"
+                          required
+                        />
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium mb-2 text-white">Sujet</label>
+                      <input
+                        type="text"
+                        placeholder="Objet de votre message"
+                        value={formData.subject}
+                        onChange={(e) => setFormData({ ...formData, subject: e.target.value })}
+                        className="w-full px-4 py-3 rounded-lg bg-[#080c1a] border border-[#1a1a3a] text-white placeholder-[#a0a8b8] focus:outline-none focus:border-[#1E40AF]"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium mb-2 text-white">Message *</label>
+                      <textarea
+                        placeholder="Décrivez votre demande..."
+                        value={formData.message}
+                        onChange={(e) => setFormData({ ...formData, message: e.target.value })}
+                        className="w-full px-4 py-3 rounded-lg bg-[#080c1a] border border-[#1a1a3a] text-white placeholder-[#a0a8b8] focus:outline-none focus:border-[#1E40AF] min-h-[160px]"
+                        required
+                      />
+                    </div>
+
+                    <Button
+                      type="submit"
+                      disabled={submitting}
+                      className="w-full bg-[#1E40AF] hover:bg-[#e01e5a] text-white py-4 font-bold text-lg disabled:opacity-50"
+                    >
+                      {submitting ? 'Envoi en cours...' : 'Envoyer le message'}
+                    </Button>
+
+                    <p className="text-[#a0a8b8] text-sm text-center">
+                      Nous répondons généralement sous 24h ouvrées.
+                    </p>
+                  </form>
+                )}
               </div>
-            ) : (
-              <form onSubmit={handleSubmit} className="bg-white rounded-2xl p-6 shadow-xl border-2 border-slate-200 space-y-4">
-                <h2 className="text-lg font-bold text-slate-900 mb-2">Envoyez-nous un message</h2>
-                <div className="grid grid-cols-2 gap-3">
-                  <input
-                    type="text" required placeholder="Nom *"
-                    value={form.name}
-                    onChange={(e) => setForm({ ...form, name: e.target.value })}
-                    className="px-4 py-2.5 rounded-lg bg-slate-50 border border-slate-300 text-sm text-slate-900 focus:outline-none focus:border-[#32ba5d] focus:ring-2 focus:ring-[#32ba5d]/30"
-                  />
-                  <input
-                    type="text" placeholder="Entreprise"
-                    value={form.company}
-                    onChange={(e) => setForm({ ...form, company: e.target.value })}
-                    className="px-4 py-2.5 rounded-lg bg-slate-50 border border-slate-300 text-sm text-slate-900 focus:outline-none focus:border-[#32ba5d] focus:ring-2 focus:ring-[#32ba5d]/30"
-                  />
-                </div>
-                <div className="grid grid-cols-2 gap-3">
-                  <input
-                    type="email" required placeholder="Email *"
-                    value={form.email}
-                    onChange={(e) => setForm({ ...form, email: e.target.value })}
-                    className="px-4 py-2.5 rounded-lg bg-slate-50 border border-slate-300 text-sm text-slate-900 focus:outline-none focus:border-[#32ba5d] focus:ring-2 focus:ring-[#32ba5d]/30"
-                  />
-                  <input
-                    type="tel" placeholder="Téléphone"
-                    value={form.phone}
-                    onChange={(e) => setForm({ ...form, phone: e.target.value })}
-                    className="px-4 py-2.5 rounded-lg bg-slate-50 border border-slate-300 text-sm text-slate-900 focus:outline-none focus:border-[#32ba5d] focus:ring-2 focus:ring-[#32ba5d]/30"
-                  />
-                </div>
-                <select
-                  value={form.subject}
-                  onChange={(e) => setForm({ ...form, subject: e.target.value })}
-                  className="w-full px-4 py-2.5 rounded-lg bg-slate-50 border border-slate-300 text-sm text-slate-900 focus:outline-none focus:border-[#32ba5d] focus:ring-2 focus:ring-[#32ba5d]/30"
-                >
-                  <option>Demande d'information</option>
-                  <option>Demande de devis</option>
-                  <option>Support technique</option>
-                  <option>Partenariat</option>
-                  <option>Autre</option>
-                </select>
-                <textarea
-                  rows={4} required placeholder="Votre message *"
-                  value={form.message}
-                  onChange={(e) => setForm({ ...form, message: e.target.value })}
-                  className="w-full px-4 py-2.5 rounded-lg bg-slate-50 border border-slate-300 text-sm text-slate-900 focus:outline-none focus:border-[#32ba5d] focus:ring-2 focus:ring-[#32ba5d]/30 resize-none"
-                />
-                <button
-                  type="submit"
-                  disabled={sending}
-                  className="w-full py-3 bg-[#32ba5d] text-white font-bold rounded-lg hover:bg-[#28a54f] hover:-translate-y-0.5 transition-all shadow-lg disabled:opacity-60 flex items-center justify-center gap-2"
-                >
-                  {sending ? <Loader2 className="w-5 h-5 animate-spin" /> : <Send className="w-4 h-4" />}
-                  {sending ? 'Envoi...' : 'Envoyer'}
-                </button>
-              </form>
-            )}
-          </div>
-
-          {/* Right: Google Map */}
-          <div className="space-y-6">
-            <div className="bg-white rounded-2xl overflow-hidden shadow-xl border-2 border-slate-200">
-              <iframe
-                src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d2624.999!2d2.3522!3d48.8566!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x47e66e1f06e2b70f%3A0x40b82c3688c4460!2sParis%2C%20France!5e0!3m2!1sfr!2sfr!4v1700000000000"
-                width="100%"
-                height="400"
-                style={{ border: 0 }}
-                allowFullScreen
-                loading="lazy"
-                referrerPolicy="no-referrer-when-downgrade"
-                title="QRTagsPro - Paris"
-              />
-            </div>
-
-            {/* WhatsApp direct */}
-            <div className="bg-[#134288] rounded-2xl p-6 text-white text-center">
-              <MessageCircle className="w-10 h-10 mx-auto mb-3 text-[#32ba5d]" />
-              <h3 className="font-bold mb-2">Contact direct WhatsApp</h3>
-              <p className="text-sm text-blue-100 mb-4">
-                Pour une réponse rapide, contactez-nous directement sur WhatsApp.
-              </p>
-              <a
-                href="https://wa.me/33123456789?text=Bonjour%20QRTagsPro%2C%20je%20souhaite%20des%20informations"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center gap-2 px-5 py-2.5 bg-[#32ba5d] text-white font-bold rounded-lg hover:bg-[#28a54f] transition"
-              >
-                <MessageCircle className="w-4 h-4" />
-                Discuter sur WhatsApp
-              </a>
             </div>
           </div>
         </div>
       </section>
 
-      {/* Footer */}
-      <footer className="bg-[#0d3266] text-white py-8">
-        <div className="max-w-7xl mx-auto px-4 text-center">
-          <Link href="/" className="inline-flex items-center gap-2 text-sm text-blue-200 hover:text-[#32ba5d]">
-            <ArrowLeft className="w-4 h-4" />
-            Retour à l'accueil
-          </Link>
-          <p className="mt-4 text-xs text-blue-300">© {new Date().getFullYear()} QRTagsPro</p>
+      {/* Map section */}
+      <section className="py-16 px-4 bg-[#0a0f2c]">
+        <div className="max-w-6xl mx-auto text-center">
+          <h2 className="text-2xl font-bold text-white mb-6">Nous trouver</h2>
+          <p className="text-[#a0a8b8] mb-8">Notre bureau est situé à Poissy, dans les Yvelines (78).</p>
+          <a
+            href="https://maps.google.com/?q=43+Rue+Maryse+Bastié+78300+Poissy+France"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-2 bg-[#1E40AF] text-white px-6 py-3 rounded-lg font-medium hover:bg-[#e01e5a] transition-colors"
+          >
+            <MapPinned className="w-5 h-5" />
+            Voir sur Google Maps
+          </a>
         </div>
-      </footer>
-    </div>
+      </section>
+    </>
+  );
+}
+
+export default function ContactPage() {
+  return (
+    <PublicLayout>
+      <Suspense fallback={null}>
+        <ContactContent />
+      </Suspense>
+    </PublicLayout>
   );
 }

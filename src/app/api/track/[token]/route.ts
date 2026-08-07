@@ -2,9 +2,26 @@ import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 
 /**
+ * Parse customData (JSON string) en toute sécurité.
+ * Retourne {} si la valeur est absente ou invalide.
+ */
+function parseCustomData(raw: string | null | undefined): Record<string, unknown> {
+  if (!raw) return {};
+  try {
+    const parsed = JSON.parse(raw);
+    return (parsed && typeof parsed === 'object' && !Array.isArray(parsed))
+      ? parsed as Record<string, unknown>
+      : {};
+  } catch {
+    return {};
+  }
+}
+
+/**
  * GET /api/track/[token]
  * Renvoie les données de suivi complètes pour le propriétaire :
  *   - infos objet (référence, type, statut, dates, photo, etc.)
+ *   - objectInfo parsé depuis customData (object_name, category, brand, model, color, etc.)
  *   - stats (scanCount, dernière activité, dernière position)
  *   - 10 derniers ScanLog
  *
@@ -21,7 +38,7 @@ export async function GET(
     const baggage = await prisma.baggage.findUnique({
       where: { trackingToken: token },
       include: {
-        agency: { select: { id: true, name: true } },
+        agency: { select: { id: true, name: true, agencyType: true } },
         scanLogs: {
           orderBy: { createdAt: 'desc' },
           take: 10,
@@ -37,6 +54,28 @@ export async function GET(
     }
 
     const isLost = Boolean(baggage.isLost) || Boolean(baggage.declaredLostAt && !baggage.foundAt);
+
+    // ─── objectInfo : champs utiles du formulaire d'inscription ───
+    const cd = parseCustomData(baggage.customData);
+    const objectInfo = {
+      object_name:       (cd.object_name       as string | null) ?? null,
+      object_description:(cd.object_description as string | null) ?? null,
+      category:          (cd.category          as string | null) ?? null,
+      category_label:    (cd.category_label    as string | null) ?? null,
+      brand:             (cd.brand             as string | null) ?? null,
+      model:             (cd.model             as string | null) ?? null,
+      color:             (cd.color             as string | null) ?? null,
+      reward:            (cd.reward            as string | null) ?? null,
+      message_to_finder: (cd.message_to_finder as string | null) ?? null,
+      photo:             (cd.photo             as string | null) ?? null,
+      city:              (cd.city              as string | null) ?? null,
+      country:           (cd.country           as string | null) ?? null,
+      // Champs spécifiques au contexte hôtel (pour bouton "Appeler Réception Hôtel")
+      hotel_phone:       (cd.hotel_phone       as string | null) ?? null,
+      hotel_room:        (cd.hotel_room        as string | null) ?? null,
+      check_in_date:     (cd.check_in_date     as string | null) ?? null,
+      check_out_date:    (cd.check_out_date    as string | null) ?? null,
+    };
 
     return NextResponse.json({
       status: 'active',
@@ -59,7 +98,9 @@ export async function GET(
         declaredLostAt: baggage.declaredLostAt?.toISOString() || null,
         foundAt: baggage.foundAt?.toISOString() || null,
         agency: baggage.agency?.name || null,
+        agencyType: baggage.agency?.agencyType || null,
         trackingToken: baggage.trackingToken,
+        objectInfo,
       },
       scans: baggage.scanLogs.map((s) => ({
         id: s.id,

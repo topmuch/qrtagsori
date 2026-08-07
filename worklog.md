@@ -100,319 +100,232 @@ Stage Summary:
 - Lint passes cleanly
 - Routes follow existing project patterns (NextRequest/NextResponse, rate-limit.ts, CRON_SECRET auth)
 ---
-Task ID: qrtagspro-v1
-Agent: fullstack-refactor
-Task: QRTagsPro V1 — refonte B2B (hôtel) — cleanup particulier + landing + dashboard hôtel
+Task ID: deploy-fix-bun
+Agent: Main Orchestrator
+Task: Diagnostiquer et corriger l'échec de déploiement Coolify (bun install au lieu de npm)
 
 Work Log:
-
-**Phase 1 — Cleanup (suppression du workflow particulier)**
-
-App pages deleted (`rm -rf`):
-- /inscrire, /inscription, /mes-bagages, /success, /suivi, /checklist, /share,
-  /etapes, /fonctionnalites, /features, /metiers, /agency, /a-propos, /assistance,
-  /contact, /devenir-partenaire, /cgu, /confidentialite, /mentions-legales,
-  /demo, /expired, /offline, /voyageurs-standard, /workflow, /dashboard, /track
-
-API routes deleted:
-- /api/activate, /api/suivi, /api/share, /api/checklist,
-  /api/baggage/[ref]/{verify-pin,regenerate-pin,transit-mode,share,export-pdf,
-  connection-alert,damage}, /api/landing, /api/ai/*, /api/loss-detection,
-  /api/loss-alerts, /api/feedback, /api/emergency-contacts, /api/voyageurs,
-  /api/reviews, /api/notify, /api/push, /api/scan/{notify,chat,[reference]},
-  /api/advertisements, /api/reports
-
-Components deleted:
-- TrackingWidget, SocialShareButtons, LossAlertBanner, LeafletMap, suivi/*,
-  inscrire/*, PreDepartureAlert, finder/*, pwa-registration, PWARegister,
-  ReviewModal, TestimonialsSection, LatestNewsWidget, public/*,
-  AdvertisementBanner
-
-Hooks deleted:
-- useTrackingSocket, useAudioAlert, usePWAInstallPrompt, usePushNotification
-
-Libs deleted:
-- transport, groq, ai-services, aviationstack, wakit, whatsapp-message,
-  web-push, emergency-contacts, checklist, checklist-catalog, i18n (stubbed),
-  scan-context, country-utils, country-data, qr-server (kept — see notes),
-  error-monitor, logger-metrics (inlined into logger.ts),
-  rate-limit (kept — see notes), landing-data
-
-Other directories deleted:
-- public/locales/, messages/, mini-services/, examples/, __tests__/
-- scripts/ cleaned (kept only migrate-qrtags-columns.cjs)
-- src/types/ai.ts removed (unused)
-
-**Phase 1 — Stubbed files (kept for backward compatibility)**
-
-- `src/lib/i18n.ts` — simplified to a stub: keeps `Language` type, `LANGUAGE_NAMES`,
-  `LANGUAGE_DIRECTION`, and FR-only no-op helpers (loadTranslations → {} etc.).
-  Required by `src/components/ui/LanguageSelector.tsx` (kept).
-- `src/hooks/useTranslation.ts` — stub: returns identity `t()` and fixed lang='fr'.
-  Required by `src/app/admin/monitoring/page.tsx` (don't touch admin).
-- `src/lib/logger.ts` — inlined `logMetric()` (previously imported from
-  `logger-metrics.ts`). Same signature, logs a single line to stdout.
-- `src/lib/rate-limit.ts` — KEPT as-is (used by /api/baggage-status/[reference]
-  which is in the keep list). Documented exception in worklog.
-- `src/lib/qr-server.ts` — KEPT as-is (used by /api/admin/baggages/export-zip
-  for superadmin QR ZIP export). Documented exception in worklog.
-- `src/components/admin/ExtendValidityModal.tsx` — KEPT as-is (used by
-  /admin/baggage/[id] page — admin pages must NOT be touched).
-
-**Phase 2 — Landing page (`src/app/page.tsx`)**
-
-Complete rewrite. New QRTagsPro landing page (FR only, black/yellow design):
-- Header: QRTagsLogo + nav (Comment ça marche / Métiers / Avantages / Démo) +
-  Espace agence + Superadmin buttons
-- Hero: black bg with subtle yellow radial pattern, big title, subtitle,
-  CTA "Demander une démo" (yellow) + "Espace agence" (outline)
-- "Comment ça marche" — 4 cards (Superadmin génère QR / staff check-in /
-  trouveur scanne / vous gérez la restitution) with numbered icons
-- "Métiers" — 6 cards (Hôtels ✓Disponible / Écoles / Cliniques / Loueurs auto /
-  Consignes / Autres métiers) with badges (Disponible / Bientôt / Sur devis)
-- "Avantages" — 3 columns (Contrôle total / Dashboard temps réel /
-  Notifications WhatsApp)
-- "Demande de démo" — form (company / metier / email / phone / message) with
-  stub submit (alert "Merci, nous vous contacterons sous 24h." + form clear)
-- Footer: QRTagsPro logo + tagline + links (Espace agence / Superadmin / Contact)
-
-Design tokens respected:
-- Background black `#111111` for hero/header/footer
-- Accent mustard yellow `#E3B23C`
-- Cards: white with 2px black border + shadow-xl
-- Inputs: `bg-gray-50` + 2px black border + focus yellow + ring yellow
-- Primary button: black bg + yellow text + hover -translate-y-0.5
-- Secondary button: white bg + 2px black border + hover -translate-y-0.5
-
-**Phase 3 — Dashboard hôtel (`src/app/agence/tableau-de-bord/page.tsx`)**
-
-Complete rewrite. New hotel dashboard with:
-- 4 stat cards: QR en stock (yellow), QR actifs (green), Check-out aujourd'hui
-  (orange), Perdus cette semaine (red) — computed client-side from
-  `/api/agency/baggages?agencyId=X` response (filters on status +
-  parseCustomData(b) for departure_date)
-- "Demander plus de QR" — yellow card with current stock + alert "Stock bas !"
-  if <50 + button POST /api/messages (type='qr_request', agencyId, content
-  with agency name + stock count)
-- "Check-out aujourd'hui" — list of active baggages whose customData.departure_date
-  (or Baggage.departureDate) matches today's ISO date, with "Check-out" button
-  (PATCH /api/baggage/[reference] to status=expired, fallback DELETE)
-- "Clients actuels" — table (Client / Chambre / Arrivée / Départ / Statut /
-  Actions). StatusBadge shows "Expire bientôt" if departure within 24h,
-  otherwise "Actif". Capped to 20 rows + "+ N autres" hint.
-- "Objets perdus récents" — 5 most recent isLost=true baggages with reference,
-  client name (from customData), reported date, last scan location.
-- Empty states for each section (e.g. "Aucun client actif. Faites un check-in
-  pour commencer." with link to /agence/check-in)
-
-Helper `parseCustomData(b)` safely JSON.parses `b.customData` string.
-`HotelCustomData` interface: { client_name, room_number, arrival_date,
-departure_date, phone }.
-
-**Sidebar update (`src/app/agence/layout.tsx`)**
-
-- Replaced menu items with: Tableau de bord, Check-in (new), QR actifs
-  (=/agence/baggages), Objets perdus, Trouvailles, Assistance, Profil
-- Removed: Traçabilité QR, Bagages (renamed to QR actifs), Rapports, Blog QRTags,
-  Page publique link, "Commander des QR" button (replaced by "Demander plus de
-  QR" card inside dashboard)
-- Removed `AdvertisementBanner` import + usage (component was deleted in Phase 1)
-- Sidebar now uses #E3B23C as active background (black text) and #E3B23C as
-  hover accent text on white/40 backgrounds
-- Header simplified: removed search "Commander des QR" / "Page publique" widgets
-  (kept search bar, theme toggle, notifications bell, user avatar)
-- Footer of sidebar: kept "Contacter" shortcut + Déconnexion
-
-**Check-in page (`src/app/agence/check-in/page.tsx`) — NEW**
-
-V1 stub: simple form (reference QR / client_name / room_number / arrival_date /
-departure_date / phone) → PATCH /api/baggage/[reference] with status=activated,
-customData JSON, departureDate (schema column), expiresAt.
-Real QR-scanning flow will be added in a later iteration.
-
-**Schema changes (`prisma/schema.prisma`)**
-
-- `Agency.contactPhone String?` — WhatsApp réception phone (finder scan →
-  wa.me click-to-chat)
-- `Baggage.departureDate DateTime?` — hotel check-out date (for cron auto-expire)
-- Ran `npx prisma generate` (client updated)
-- Ran `npx prisma db push --skip-generate --accept-data-loss` (DB synced)
-
-**Migration script (`scripts/migrate-qrtags-columns.cjs`)**
-
-- Added `Baggage.departureDate` to BAGGAGE_COLUMNS list
-- Added new AGENCY_COLUMNS list with `contactPhone`
-- Migration loop now also iterates Agency table (with tableExists guard)
-- Added new index `idx_baggage_departureDate` for cron auto-expire queries
-- Tested locally against `prisma/qrbag.db` — all columns OK, indexes OK,
-  superadmin created
-
-**init-db.sh**
-
-- Updated final verification step to count 6 columns on Baggage (added
-  `departureDate`) and to check Agency.contactPhone column presence
-- Migration script reference unchanged (`scripts/migrate-qrtags-columns.cjs`)
-
-**TypeScript verification**
-
-- `./node_modules/.bin/tsc --noEmit -p tsconfig.json`:
-  - Pre-existing errors: 69 lines (schema mismatches in API routes I did NOT
-    touch — flightNumber/destination on Baggage type, tagLot model missing,
-    baggageIndex null vs number, validityExtendedAt column missing, etc.)
-  - After my changes: 48 lines (all pre-existing; my new files page.tsx,
-    agence/layout.tsx, agence/tableau-de-bord/page.tsx, agence/check-in/page.tsx
-    have ZERO TypeScript errors)
-- `bun run lint` (eslint) on the 4 new files: 0 errors
+- Analyse des logs de déploiement : `#9 [6/9] RUN bun install` + `migrated lockfile from package-lock.json` + `Deployment failed`
+- Identification de 4 sources de détection bun par Coolify :
+  1. `mini-services/tracking-ws/bun.lock` (57 lignes, lockfile bun committé par erreur)
+  2. `package.json` start script : `"start": "NODE_ENV=production bun .next/standalone/server.js"`
+  3. `start.sh` : `bun run db:push` + `bun run prisma/seed.ts`
+  4. `mini-services/tracking-ws/package.json` dev script : `"dev": "bun --hot index.ts"`
+- Suppression de `mini-services/tracking-ws/bun.lock`
+- `package.json` : `bun .next/standalone/server.js` → `node .next/standalone/server.js`
+- `start.sh` : remplacement de toutes les références `bun run X` par `npx X` / `npx tsx X`
+- `mini-services/tracking-ws/package.json` : `bun --hot index.ts` → `tsx watch index.ts`
+- Suppression de `bun-types` des devDependencies (aucun `import 'bun'` dans le code)
+- `.gitignore` : ajout de `bun.lock`, `bun.lockb`, `**/bun.lock`, `**/bun.lockb`
+- `nixpacks.toml` : ajout de `NIXPACKS_PACKAGE_MANAGER = 'npm'` dans `[variables]` + commentaires détaillés
+- Vérification build local : `npx next build` → ✓ 157 pages, 0 erreur, exit 0
+- Commit créé : `37d2a04 fix(deploy): éliminer toutes les références bun → force npm sur Coolify`
+- Push impossible : pas de credentials GitHub configurés dans cet environnement
 
 Stage Summary:
-- Particulier workflow fully removed (≈140 files deleted)
-- Landing QRTagsPro live at `/` (FR only, black/yellow design)
-- Dashboard hôtel live at `/agence/tableau-de-bord` (4 stats + clients actuels
-  + check-out aujourd'hui + demander plus de QR + perdus récents)
-- Sidebar updated (Check-in / QR actifs / Perdus / Trouvailles / Assistance / Profil)
-- New stub page `/agence/check-in` (manual QR activation form)
-- Schema V1: Agency.contactPhone + Baggage.departureDate
-- Migration script idempotent, tested locally
-- Pre-existing TS errors unchanged (48 lines in untouched API routes)
-- New code: 0 TS errors, 0 ESLint errors
-
-Notes / deviations from initial instructions:
-- Kept `src/lib/rate-limit.ts` (used by `/api/baggage-status/[reference]` — kept API)
-- Kept `src/lib/qr-server.ts` (used by `/api/admin/baggages/export-zip` — kept API for superadmin QR ZIP export)
-- Kept `src/components/admin/ExtendValidityModal.tsx` (used by `/admin/baggage/[id]` — admin pages must NOT be touched)
-- Kept `prisma/seed.ts` as-is (broken pre-existing — flightNumber schema mismatch — but unused, no build impact)
-- Did not modify `src/lib/agency-types.ts` per final instruction ("keep them all but mark school/medical/etc as 'coming soon' in the UI. The schema stays the same.").
+- 6 fichiers modifiés, 19 insertions, 64 suppressions
+- Build local vérifié ✓ (157 pages compilées en 24.4s)
+- Commit 37d2a04 prêt à pousser sur origin/main
+- Action utilisateur requise : `cd qrtagsori && git push origin main` depuis un terminal avec credentials GitHub
+- Après push, Coolify va re-déclencher un build avec `npm install` au lieu de `bun install`
 
 ---
-Task ID: qrtagspro-v2-school-dashboard
-Agent: full-stack-developer
-Task: V2 — Dashboard multi-métiers (école + hôtel)
+Task ID: deploy-fix-bun-push
+Agent: Main Orchestrator
+Task: Pousser le fix de déploiement sur origin/main
 
 Work Log:
-
-**File 1 — `src/app/agence/tableau-de-bord/page.tsx` (rewrite)**
-
-Le dashboard s'adapte maintenant selon `agencyType` (récupéré via `useAgency()`).
-
-- Interface `HotelCustomData` renommée en `CustomData` et étendue pour couvrir tous les
-  métiers : champs communs (agencyType, notes, checked_in_at) + hôtel (client_name,
-  client_first_name, client_last_name, room_number, arrival_date, departure_date, phone,
-  email) + école (student_first_name, student_last_name, student_name, class_name,
-  parent_name, parent_phone, parent_email, school_year).
-
-- `parseCustomData(b)` retourne désormais `CustomData | null` (au lieu de
-  `HotelCustomData | null`).
-
-- Nouveaux helpers ajoutés :
-  - `getDisplayName(b, cd)` → retourne `student_name` (école) ou `client_name` (hôtel),
-    sinon la combinaison student_first/last, sinon travelerFirstName/travelerLastName,
-    sinon `b.reference` (fallback).
-  - `getSubInfo(cd)` → `"Chambre X"` (hôtel) ou `class_name` (école, ex. "6ème B"),
-    sinon chaîne vide.
-  - `getDepartureISO(b, cd)` → préfère `customData.departure_date`, sinon
-    `b.departureDate` (colonne schéma V1) tronquée en yyyy-mm-dd.
-  - `getArrivalISO(b, cd)` → `arrival_date` (hôtel) ou `checked_in_at` (école) ou
-    `b.createdAt` (fallback).
-
-- Nouvel objet `LABELS` (interface `DashboardLabels`) construit via
-  `buildLabels(agencyType)` et mémoïsé. Deux variantes :
-  - **school** : itemsActive='Cartables actifs', itemsActiveDesc='Élèves enregistrés
-    cette année', clientsTitle='Élèves enregistrés', checkOutToday='Fin d'année
-    scolaire', checkOutTodaySubtitle='…30 prochains jours', checkOutTodayEmpty='Aucune
-    fin d'année scolaire imminente.', emptyClients='Aucun élève enregistré…',
-    colClient='Élève', colSub='Classe', colArrival='Enregistré le',
-    colDeparture='Fin année', headerTag='École'.
-  - **hotel (défaut)** : itemsActive='QR actifs', itemsActiveDesc='Clients actuellement
-    à l\'hôtel', clientsTitle='Clients actuels', checkOutToday='Check-out
-    aujourd\'hui', checkOutTodayEmpty='Aucun check-out prévu aujourd\'hui.',
-    emptyClients='Aucun client actif…', colClient='Client', colSub='Chambre',
-    colArrival='Arrivée', colDeparture='Départ', headerTag='Hôtel'.
-  - Le fallback hôtel couvre aussi luggage_locker, car_rental, medical, generic.
-
-- `useAgency()` déstructuré pour récupérer `agencyType` en plus de `agencyId`/`agencyName`.
-
-- Memo `todayCheckouts` rendu multi-métier :
-  - **school** : filtre les baggages actifs dont `departureDate` (30 juin de l'année
-    scolaire) tombe dans les 30 prochains jours (>= now ET <= now + 30j).
-  - **hotel** : inchangé — `departure_date === today` (ISO yyyy-mm-dd).
-
-- En-tête de page : sous-titre passé de `"{agencyName} — Vue d'ensemble de votre activité
-  hôtelière."` à `"{agencyName} — {LABELS.headerTag}"` (donc "École" ou "Hôtel").
-
-- Carte de stats "QR actifs" / "Cartables actifs" → utilise `LABELS.itemsActive` et
-  `LABELS.itemsActiveDesc`. Sous-titre de la carte check-out : `formatDateFR(today)`
-  (hôtel) ou "30 prochains jours" (école).
-
-- Section "Check-out aujourd'hui" / "Fin d'année scolaire proche" :
-  - Titre, sous-titre et message vide pilotés par LABELS.
-  - Pour l'hôtel, le sous-titre reste "Clients dont le départ est prévu le {date}.".
-  - 3 occurrences de `cd?.client_name || [travelerFirstName, …].join(' ') || reference`
-    remplacées par `getDisplayName(b, cd)` (lignes ~483, ~555, ~620 dans la V1).
-  - `Chambre ${cd?.room_number || '—'}` remplacé par `getSubInfo(cd)` (avec préfixe
-    '— ' si vide).
-
-- Section "Clients actuels" / "Élèves enregistrés" :
-  - Titre, sous-titre, message vide → LABELS.
-  - En-têtes de tableau → LABELS.colClient / colSub / colArrival / colDeparture.
-  - Cellule "Client/Élève" → `getDisplayName(b, cd)`.
-  - Cellule "Chambre/Classe" → `getSubInfo(cd) || '—'`.
-  - Cellule "Arrivée/Enregistré le" → `formatDateFR(getArrivalISO(b, cd))` (gère
-    arrival_date pour hôtel et checked_in_at pour école).
-  - Cellule "Départ/Fin année" → `formatDateFR(getDepartureISO(b, cd))`.
-  - Bouton "Check-out" → `LABELS.checkOutButton` (bien que la valeur soit identique
-    pour les deux métiers, on utilise le LABELS pour cohérence).
-
-- Bloc info de pied de page : phrase finale adaptée — "Le check-out auto s'effectue à
-  la fin de l'année scolaire (30 juin — cron job)." (école) vs "à la date de départ"
-  (hôtel).
-
-- Commentaire d'en-tête de fichier mis à jour : "QRTagsPro V2 — Dashboard multi-métiers
-  (école + hôtel)" avec description des deux variantes de labels et note sur le fallback
-  hôtel pour les autres métiers.
-
-- Composant renommé `HotelDashboardPage` → `AgencyDashboardPage` (export par défaut,
-  aucun impact sur les imports).
-
-**File 2 — `src/app/agence/layout.tsx` (vérification)**
-
-- Vérifié : aucun "Bagages" (pluriel) dans la sidebar — le menu utilise déjà "QR actifs"
-  (href `/agence/baggages`), "Tableau de bord", "Check-in", "Objets perdus",
-  "Trouvailles", "Assistance", "Profil". Aucun changement nécessaire.
-- Le contexte `AgencyContext` expose déjà `agencyType` (depuis
-  `user?.agency?.agencyType`), consommé par le dashboard via `useAgency()`. Aucun
-  changement nécessaire.
-
-**TypeScript / lint**
-
-- `npx tsc --noEmit -p tsconfig.json` : 0 erreur dans les fichiers touchés
-  (`tableau-de-bord/page.tsx`, `agence/layout.tsx`). Les 33 erreurs restantes sont toutes
-  pré-existantes dans des fichiers non touchés (admin/*, seed.ts, declare-lost,
-  mark-found — problèmes de colonnes legacy flightNumber/destination/validityExtendedAt
-  et de modèle tagLot absent).
-- `npx eslint src/app/agence/tableau-de-bord/page.tsx` : 0 erreur.
+- Utilisateur a fourni un GitHub PAT (ghp_***)
+- Configuration temporaire du remote avec le token : `git remote set-url origin https://x-access-token:***@github.com/topmuch/qrtagsori.git`
+- Push réussi : `eb4f744..37d2a04  main -> main`
+- Nettoyage du remote URL pour retirer le token (retour à https://github.com/topmuch/qrtagsori.git)
 
 Stage Summary:
-- Le dashboard `/agence/tableau-de-bord` est désormais multi-métier : hôtel ET école.
-- Helpers `getDisplayName` / `getSubInfo` / `getDepartureISO` / `getArrivalISO`
-  centralisent la logique de lecture de customData pour les deux métiers.
-- L'objet `LABELS` (mémoïsé) pilote tous les libellés visibles : titres de cartes,
-  titres de sections, en-têtes de tableau, messages vides, boutons.
-- La section "Check-out aujourd'hui" devient "Fin d'année scolaire proche" pour les
-  écoles (departureDate dans les 30 prochains jours), avec message vide dédié.
-- Sidebar layout.tsx déjà conforme (aucun "Bagages" pluriel) — pas de changement.
-- 0 nouvelle erreur TypeScript ou ESLint introduite.
+- Commit 37d2a04 poussé sur origin/main ✓
+- Coolify va automatiquement re-déclencher un build avec npm (plus de bun install)
+- Remote URL nettoyée pour sécurité
 
-Notes / deviations:
-- Le path `/agent-ctx` (racine FS) n'est pas inscriptible dans le sandbox (propriété
-  root). Le work record agent a été écrit dans `/home/z/agent-ctx/` à la place —
-  équivalent fonctionnel, même convention de nommage `{task id}-{agent name}.md`.
-- `LABELS` contient 2 clés supplémentaires non listées dans le spec initial
-  (`checkOutTodaySubtitle`, `clientsSubtitle`, `headerTag`) pour éviter des ternaires
-  éparses dans le JSX et garder la logique de labellisation centralisée. Les clés du
-  spec (itemsActive, itemsActiveDesc, clientsTitle, checkOutToday, emptyClients,
-  checkOutButton, colClient, colSub, colArrival, colDeparture) sont toutes présentes
-  avec les valeurs exactes demandées.
-- Le composant `StatusBadge` (badge "Expire bientôt" / "Actif") n'a pas été modifié —
-  il reste calibré sur 24h, ce qui convient à l'hôtel. Pour l'école, la fin d'année
-  (30 juin) est signalée par la section dédiée "Fin d'année scolaire proche", donc le
-  badge reste "Actif" la majeure partie de l'année (comportement attendu).
+---
+Task ID: track-redesign-urgent
+Agent: Main Orchestrator
+Task: Corriger vocabulaire hôtelier + refonte design palette QRTags
+
+Work Log:
+- Diagnostic utilisateur : page /track/[token] affichait "ACTIF — En cours de séjour" + "Appeler Hôtel" pour tous les objets, même hors contexte hôtel
+- Cause racine : isHotelContext se déclenchait sur simple présence de hotel_phone OU hotel_room dans objectInfo (ces champs peuvent être remplis pour n'importe quel métier — clinique, école, consigne)
+- Fix logique : isHotelContext = (agencyType === 'hotel') UNIQUEMENT
+- Fix vocabulaire :
+  • "ACTIF — En cours de séjour" → "Sous protection QRTags"
+  • "PERDU — Garantie expirée" → "Garantie expirée" (badge pill)
+  • "Valable jusqu'au" → "Valide jusqu'au"
+  • "Appeler Hôtel" ne s'affiche plus que pour les vraies agences hôtel
+- Refonte design — nouvelle palette QRTags :
+  • BRAND_GOLD #FDB900 (signature QRTags, déjà utilisée dans layout.tsx + manifest)
+  • BRAND_GOLD_DARK #B8860B (pour textes sur fond clair, 4.6:1 ✓ AA)
+  • BRAND_BLACK #0A0A0A (noir profond)
+  • PAGE_BG #FAFAF7 (crème chaud remplace gris froid)
+- Header sticky : dégradé noir (actif) ou rouge (perdu) + bordure dorée 3px + badge pill statut
+- Cards : bandeau titre noir avec icône dorée (signature QRTags), box-shadow subtile
+- Items de scan : border-left doré 3px + chip numéroté #1/#2/#3
+- Footer sticky : bordure supérieure dorée 3px signature
+- Build vérifié : 157 pages compilées, 0 erreur
+- Commit 8e22ebe poussé sur origin/main
+
+Stage Summary:
+- Vocabulaire générique pour tous métiers ✓
+- "Appeler Hôtel" réservé aux vraies agences hôtel ✓
+- Nouvelle identité visuelle QRTags (noir + doré) cohérente avec layout.tsx ✓
+- Contrastes WCAG AA préservés (4.5:1+ sur tous les textes)
+- Push réussi : 37d2a04..8e22ebe main -> main
+
+---
+Task ID: track-restore-old-design
+Agent: Main Orchestrator
+Task: Restaurer l'ancien design QRTags (jaune moutarde + bordures noires) sur /track/[token] + supprimer l'incohérence "Appeler Hôtel"
+
+Work Log:
+- Diagnostic utilisateur (screenshot 1 vs 2) :
+  • Page actuelle (commit 8e22ebe) = fond crème + cartes sans bordure noire + header sticky noir = NON aligné avec /inscrire
+  • Ancienne page (commit e9304d1) = fond #E3B23C + cartes blanches border-2 border-black = alignée avec /inscrire ✓
+- Incohérences boutons "Appeler" identifiées :
+  1. Bouton "WhatsApp" du sticky footer ouvrait WhatsApp vers le propriétaire — mais le visiteur EST le propriétaire (il consulte SON propre lien de suivi) → se contacter soi-même n'a aucun sens
+  2. Bouton "Appeler Hôtel" apparaissait dans le sticky footer pour les objets d'agences type "hotel" — mais l'utilisateur vient d'activer le QR code sans avoir déclaré de perte, donc appeler l'hôtel n'a aucun sens à ce stade
+- Refonte complète de src/app/track/[token]/page.tsx (1181 → 1058 lignes) :
+  • Restauration palette QRTags signature : QRTAGS_BG=#E3B23C, QRTAGS_CARD=#FFFFFF, QRTAGS_INK=#111111, QRTAGS_RED=#DC2626, QRTAGS_GREEN=#16A34A
+  • Classe CARD_CLASS = 'bg-white rounded-xl p-6 shadow-xl border-2 border-black' — STRICTEMENT identique à /inscrire
+  • Header centré : logo QRTags (badge blanc bordé noir) + titre "📍 SUIVI DE MON OBJET" + sous-titre italique
+  • 5 cartes empilées (au lieu de sticky header + sticky footer) :
+    1. Identité du tag (référence + statut ACTIF/PERDU + propriétaire masqué + expiration)
+    2. Informations de l'objet (photo + nom + catégorie + marque/modèle + couleur + description + récompense + message propriétaire) — UNIQUEMENT si au moins un champ est renseigné
+    3. Statistiques de suivi (grille 3 colonnes : Scans / Activités / Sûr + dernière activité + dernière position)
+    4. Historique des scans (3 derniers, avec finder name + finder phone affichés en texte brut)
+    5. Actions rapides (WhatsApp partager + Copier lien + URL privée + Signaler PERDU/J'ai retrouvé)
+  • SUPPRESSION du sticky footer avec "Appeler Hôtel" / "WhatsApp propriétaire"
+  • SUPPRESSION des helpers buildWhatsAppUrl + buildTelUrl + isHotelContext + telUrl + primaryAction
+  • Le bouton WhatsApp devient "Partager ce lien sur WhatsApp" — intention : partager avec amis/famille, PAS contacter le propriétaire
+  • Suppression de l'import Phone (lucide-react) — plus utilisé
+- Conservation des features modernes :
+  • Object info (nom, catégorie, marque, modèle, couleur, description, récompense, message, photo)
+  • maskName() pour propriétaire + trouveur
+  • IntersectionObserver fade-in
+  • Auto-refresh 60s
+  • Clipboard API + fallback execCommand
+  • Toast feedback (success/error/info)
+  • Modale accessible (Escape, focus trap, aria-modal, aria-labelledby, aria-describedby)
+  • Skip link clavier
+  • computeIsActive() avec gestion expiresAt + check_out_date
+- Vérifications :
+  • TypeScript : 0 erreur sur src/app/track/[token]/page.tsx (erreurs préexistantes ailleurs non touchées)
+  • ESLint : 2 warnings préexistants (react-hooks/preserve-manual-memoization sur hasReward et objectDisplayName) — déjà présents dans la version précédente
+
+Stage Summary:
+- Design QRTags signature restauré : jaune moutarde #E3B23C + cartes blanches border-2 border-black ✓
+- Cohérence visuelle avec /inscrire retrouvée (même palette, même CARD_CLASS, même header logo badge) ✓
+- Incohérence "Appeler Hôtel" supprimée — plus aucun bouton contextualisé hôtel ✓
+- Incohérence "WhatsApp vers soi-même" supprimée — le bouton WhatsApp devient partage de lien ✓
+- Features modernes conservées (object info, photo, reward, accessibility, fade-in, auto-refresh, toast) ✓
+- Types et contrat API préservés (GET /api/track/[token], POST declare_lost/cancel_lost) ✓
+
+---
+Task ID: logo-replace-all-pages
+Agent: Main Orchestrator
+Task: Remplacer le logo QRTags par le nouveau fichier fourni (log.jpg) sur toutes les pages (accueil, footer, etc.)
+
+Work Log:
+- Analyse centralisation logo : QRTagsLogo.tsx est l'unique source de vérité, référencé par 19 fichiers (27 sites de rendu)
+- Conversion log.jpg (335x100 JPEG) → public/logo.png (PNG optimisé, même dimensions)
+- Update src/components/qrtags/QRTagsLogo.tsx :
+  • LOGO_VERSION '20260725' → '20260726' (cache-buster pour forcer refresh navigateur)
+  • width={276} → width={335} (nouvelles dimensions intrinsèques pour éviter layout shift)
+- Update public/sw.js :
+  • CACHE_NAME 'qrbag-v2' → 'qrbag-v3' (invalide precache SW pour refetch du nouveau logo)
+- Cohérence marque — favicon & PWA icons aussi régénérés depuis le nouveau logo :
+  • public/favicon.png (32x32, crop centre du logo horizontal)
+  • public/apple-touch-icon.png (180x180)
+  • public/icons/icon-{72,96,128,144,152,192,384,512}.png (8 tailles PWA)
+  • public/icons/maskable-icon-{192,512}.png (avec padding 30% pour safe zone Android)
+  • public/icons/favicon-16x16.png
+- Vérifications :
+  • TypeScript : 0 erreur sur QRTagsLogo.tsx
+  • Fichiers générés valides (PNG optimisés, tailles conformes aux références dans layout.tsx + manifest.json)
+
+Stage Summary:
+- Nouveau logo propagé sur TOUS les sites de rendu via QRTagsLogo.tsx (27 sites / 19 fichiers) ✓
+- Pages concernées : homepage (header + footer), devenir-partenaire, voyageurs-standard, inscrire, inscription, success, scan, suivi, track, checklist, shop, auth (login/agence/admin), 404, reset-password, verify-email, forgot-password, et toutes les pages via PublicLayout (a-propos, cgu, contact, confidentialite, mentions-legales, demo, fonctionnalites/*, etapes/*)
+- Cache-buster bumped (LOGO_VERSION + CACHE_NAME) pour forcer refresh chez tous les visiteurs ✓
+- Favicon + PWA icons régénérés pour cohérence marque ✓
+
+---
+Task ID: reviews-from-tracking-page
+Agent: Main Orchestrator
+Task: Ajouter un système d'avis publié IMMÉDIATEMENT depuis /track/[token] après qu'un objet a été retrouvé, avec page publique /avis dédiée
+
+Work Log:
+- Analyse infrastructure existante :
+  • ReviewModal.tsx existe (formulaire générique) — étendu avec nouveaux champs
+  • /api/reviews route POST/GET existe — étendue
+  • Review model Prisma existe — étendu avec 5 nouveaux champs
+  • Publication était modérée (isApproved=false par défaut) → passé à true
+- Schéma Prisma — ajout de 5 champs au model Review :
+  • trackingToken (String?) — lien vers baggage
+  • finderName (String?) — nom du trouveur (masqué côté UI via maskName)
+  • objectName (String?) — nom de l'objet retrouvé
+  • objectPhoto (String?) — URL photo objet (depuis objectInfo.photo)
+  • objectCategory (String?) — catégorie objet
+  • isApproved default false → true (publication immédiate)
+  • Index ajouté sur trackingToken
+- Script de migration SQL scripts/migrate-db.cjs :
+  • Ajout ALTER TABLE pour les 5 nouveaux champs Review
+  • Création d'index Review_trackingToken_idx
+- API /api/reviews/route.ts :
+  • POST étendu pour accepter finderName, trackingToken, objectName, objectPhoto, objectCategory
+  • Logique : isApproved=true si trackingToken présent (avis depuis /track/[token]), false sinon (avis legacy générique)
+  • Validation des nouveaux champs (types string optionnels)
+  • GET étendu pour retourner les nouveaux champs
+- API /api/reviews/public/route.ts (NOUVEAU) :
+  • GET publique sans rate limit
+  • Retourne les avis publiés (isApproved=true) avec champs publics only
+  • Limite 50 avis + agrégat stats (averageRating + totalReviews)
+- ReviewModal.tsx — refactor complet :
+  • Ajout props : trackingToken, finderName, objectName, objectPhoto, objectCategory, reviewerName, onSubmitted
+  • Bandeau "Objet retrouvé" en haut de la modale avec photo + nom + catégorie (fond jaune doré)
+  • reviewerName pré-rempli avec maskName du propriétaire
+  • onSubmitted callback pour permettre au parent de marquer l'avis comme publié
+- Page /track/[token] — ajout du bouton "Laisser un avis" :
+  • Visible UNIQUEMENT après que l'objet a été marqué retrouvé
+    (baggage.foundAt existe OU baggage.declaredLostAt && !baggage.isLost)
+  • Bouton vert avec icône étoile
+  • Anti-double-post via state hasReviewed
+  • Passe les bons champs à ReviewModal : trackingToken, finderName (du dernier scan), objectName, objectPhoto, objectCategory
+  • onSubmitted → setHasReviewed(true) + toast succès "Votre avis est publié sur /avis"
+  • Import de Star (lucide-react) + ReviewModal
+- Page publique /avis (NOUVEAU src/app/avis/page.tsx) :
+  • Design QRTags signature — jaune moutarde #E3B23C + cartes blanches border-2 border-black
+  • Header : logo QRTags + titre "⭐ AVIS QRTAGS" + stats globales (note moyenne + nombre d'avis)
+  • Liste des avis sous forme de cartes empilées :
+    - Étoiles 1-5 (vert QRTAGS_GREEN)
+    - Bandeau "Objet retrouvé" avec photo + nom + catégorie (si présent)
+    - Titre (optionnel)
+    - Message du propriétaire entre guillemets
+    - Pied : nom du propriétaire + "Merci à {finderName masqué}" + localisation + date
+  • États : loading (spinner), error (retry), empty (message + CTA)
+  • CTA bas de page : "Activer mon QR code" → /inscrire
+  • Utilise PublicNavigation + PublicFooter pour cohérence
+- Footer PublicLayout.tsx — ajout lien "Avis ⭐" dans section Entreprise
+- Sitemap src/app/sitemap.ts — ajout /avis (changeFrequency: 'daily', priority: 0.8)
+
+Vérifications :
+- TypeScript : 0 erreur sur les fichiers modifiés
+- ESLint : 0 erreur sur nouveaux fichiers (avis/page.tsx, ReviewModal.tsx, route.ts)
+  • 2 warnings préexistants dans track/[token] (react-hooks/preserve-manual-memoization) — non touchés
+- Next.js build : SUCCESS, page /avis pré-rendue en statique ✓
+- Prisma client regénéré avec nouveaux champs Review
+- Script migrate-db.cjs met à jour SQLite automatiquement au prochain déploiement
+
+Stage Summary:
+- Flux complet propriétaire → trouveur → avis public opérationnel ✓
+- Publication immédiate sans modération admin (conforme demande) ✓
+- Page /avis dédiée avec design QRTags signature cohérent ✓
+- Photo de l'objet + nom du trouveur masqué (RGPD) affichés sur l'avis ✓
+- Footer + sitemap mis à jour ✓
+- Aucune régression sur l'existant (ReviewModal étendu, pas cassé)

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import bcrypt from 'bcryptjs';
 import { createSession, logLoginAttempt } from '@/lib/session';
+import { notifyAdminLogin } from '@/lib/in-app-notifications';
 
 export async function POST(request: NextRequest) {
   const { email, password, role } = await request.json();
@@ -81,23 +82,6 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // V4 — Vérifier que l'agence est active (si l'utilisateur est lié à une agence)
-    if (user.role === 'agency' && user.agencyId) {
-      if (!user.agency || !user.agency.active) {
-        await logLoginAttempt({
-          userId: user.id,
-          email,
-          success: false,
-          failureReason: 'Agence désactivée',
-        });
-
-        return NextResponse.json(
-          { error: 'Votre établissement a été désactivé. Contactez le support.' },
-          { status: 403 }
-        );
-      }
-    }
-
     if (role === 'agency' && user.role !== 'agency' && user.role !== 'superadmin') {
       await logLoginAttempt({
         userId: user.id,
@@ -121,6 +105,17 @@ export async function POST(request: NextRequest) {
       email,
       success: true,
     });
+
+    // Notification in-app : connexion admin/superadmin
+    // (évite le bruit pour les connexions agence — déjà loggées via LoginLog)
+    if (user.role === 'superadmin' || user.role === 'admin') {
+      await notifyAdminLogin({
+        id: user.id,
+        email: user.email,
+        name: user.name,
+        role: user.role,
+      });
+    }
 
     // Retourner les infos utilisateur (sans le mot de passe)
     return NextResponse.json({

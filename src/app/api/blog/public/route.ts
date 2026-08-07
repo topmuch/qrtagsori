@@ -3,30 +3,28 @@ import { db } from '@/lib/db';
 
 /**
  * GET /api/blog/public
- *
- * Liste les derniers articles publiés (PUBLIC, sans authentification).
- * Utilisé par la page d'accueil pour afficher le blog.
+ * Variante PUBLIQUE de /api/blog (pas d'auth requise).
+ * Utilisée pour afficher les derniers articles sur la home page et
+ * dans les zones publiques du site.
  *
  * Query params:
- *   limit: number (défaut 3)
- *   category: string (optionnel)
+ *   - limit (default 3, max 12)
+ *   - category (filtre optionnel)
  *
- * Retourne les articles avec: title, slug, excerpt, coverImage, category, publishedAt
+ * Ne renvoie que les champs publics : id, title, slug, excerpt, coverImage,
+ * category, publishedAt, author.name.
  */
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
-    const limit = parseInt(searchParams.get('limit') || '3');
     const category = searchParams.get('category');
+    const limit = Math.min(parseInt(searchParams.get('limit') || '3', 10), 12);
 
     const where: Record<string, unknown> = {
       status: 'published',
       publishedAt: { lte: new Date() },
     };
-
-    if (category && category !== 'all') {
-      where.category = category;
-    }
+    if (category && category !== 'all') where.category = category;
 
     const posts = await db.blogPost.findMany({
       where,
@@ -38,6 +36,7 @@ export async function GET(request: NextRequest) {
         coverImage: true,
         category: true,
         publishedAt: true,
+        author: { select: { name: true } },
       },
       orderBy: { publishedAt: 'desc' },
       take: limit,
@@ -45,7 +44,7 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json({ posts });
   } catch (error) {
-    console.error('[blog/public] Error:', error);
-    return NextResponse.json({ posts: [] }, { status: 500 });
+    console.error('[blog/public] error:', error);
+    return NextResponse.json({ posts: [] });
   }
 }

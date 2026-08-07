@@ -23,21 +23,6 @@ export interface SessionUser {
     email: string | null;
     phone: string | null;
     address: string | null;
-    agencyType: string | null;
-    contactPhone: string | null;
-    active: boolean;
-    customTypeId: string | null;
-    customType?: {
-      id: string;
-      key: string;
-      name: string;
-      icon: string;
-      fieldsSchema: string;
-      departureFieldKey: string | null;
-      finderMessage: string | null;
-      colClientLabel: string | null;
-      colSubLabel: string | null;
-    } | null;
   } | null;
 }
 
@@ -168,23 +153,6 @@ export async function getSession(): Promise<SessionUser | null> {
                 email: true,
                 phone: true,
                 address: true,
-                agencyType: true,
-                contactPhone: true,
-                active: true,
-                customTypeId: true,
-                customType: {
-                  select: {
-                    id: true,
-                    key: true,
-                    name: true,
-                    icon: true,
-                    fieldsSchema: true,
-                    departureFieldKey: true,
-                    finderMessage: true,
-                    colClientLabel: true,
-                    colSubLabel: true,
-                  },
-                },
               },
             },
           },

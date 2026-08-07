@@ -18,21 +18,6 @@ export interface User {
     email?: string | null;
     phone?: string | null;
     address?: string | null;
-    agencyType?: string | null;
-    contactPhone?: string | null;
-    active?: boolean;
-    customTypeId?: string | null;
-    customType?: {
-      id: string;
-      key: string;
-      name: string;
-      icon: string;
-      fieldsSchema: string;
-      departureFieldKey: string | null;
-      finderMessage: string | null;
-      colClientLabel: string | null;
-      colSubLabel: string | null;
-    } | null;
   } | null;
 }
 

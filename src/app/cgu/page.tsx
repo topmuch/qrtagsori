@@ -1,110 +1,200 @@
-'use client';
+import PublicLayout from '@/components/public/PublicLayout';
+import { Metadata } from 'next';
 
-import Link from 'next/link';
-import { ArrowLeft, FileText } from 'lucide-react';
-import QRTagsLogo from '@/components/qrtags/QRTagsLogo';
+export const metadata: Metadata = {
+  title: 'Conditions Générales d\'Utilisation',
+  description: 'CGU de QRTags - Conditions d\'utilisation de nos services de protection des bagages.',
+};
 
-export default function CguPage() {
+export default function CGU() {
   return (
-    <div className="min-h-screen bg-white">
-      <header className="sticky top-0 z-50 bg-white/95 backdrop-blur border-b border-slate-200">
-        <div className="max-w-[1600px] mx-auto px-4 md:px-6 py-3 flex items-center justify-between">
-          <QRTagsLogo size="sm" href="/" withHover />
-          <Link href="/" className="text-sm text-slate-500 hover:text-[#134288]">
-            <ArrowLeft className="w-4 h-4 inline mr-1" /> Accueil
-          </Link>
-        </div>
-      </header>
+    <PublicLayout>
+      <div className="min-h-screen py-20 px-4">
+        <div className="max-w-4xl mx-auto">
+          <h1 className="text-4xl font-bold text-slate-900 mb-8">Conditions Générales d&apos;Utilisation</h1>
+          
+          <div className="space-y-8 text-slate-700">
+            <section>
+              <h2 className="text-2xl font-semibold text-slate-900 mb-4">1. Objet</h2>
+              <p className="mb-4">
+                Les présentes Conditions Générales d&apos;Utilisation (CGU) ont pour objet de définir les modalités et conditions d&apos;utilisation des services proposés par QRTags, ainsi que de définir les droits et obligations des parties dans ce cadre.
+              </p>
+              <p>
+                En utilisant les services QRTags, vous acceptez sans réserve les présentes CGU. Si vous n&apos;acceptez pas ces conditions, veuillez ne pas utiliser nos services.
+              </p>
+            </section>
 
-      <div className="max-w-4xl mx-auto px-4 md:px-6 py-12">
-        <div className="flex items-center gap-3 mb-8">
-          <div className="w-12 h-12 rounded-xl bg-[#134288] flex items-center justify-center">
-            <FileText className="w-6 h-6 text-white" />
+            <section>
+              <h2 className="text-2xl font-semibold text-slate-900 mb-4">2. Description des services</h2>
+              <p className="mb-4">
+                QRTags propose un service de protection des bagages basé sur la technologie QR Code. Les services incluent :
+              </p>
+              <ul className="list-disc pl-6 space-y-2">
+                <li>Fourniture d&apos;autocollants QR Code à apposer sur les bagages</li>
+                <li>Plateforme de signalement et de suivi des bagages perdus ou trouvés</li>
+                <li>Notifications en temps réel lors du scan d&apos;un bagage</li>
+                <li>Interface de gestion pour les agences de voyage et organisateurs de pèlerinage</li>
+                <li>Service client pour faciliter la restitution des bagages</li>
+              </ul>
+            </section>
+
+            <section>
+              <h2 className="text-2xl font-semibold text-slate-900 mb-4">3. Inscription et compte utilisateur</h2>
+              <p className="mb-4">
+                L&apos;utilisation de certains services nécessite la création d&apos;un compte utilisateur. Lors de votre inscription, vous vous engagez à :
+              </p>
+              <ul className="list-disc pl-6 space-y-2 mb-4">
+                <li>Fournir des informations exactes et complètes</li>
+                <li>Maintenir la confidentialité de vos identifiants de connexion</li>
+                <li>Nous informer de toute utilisation non autorisée de votre compte</li>
+                <li>Ne pas créer plusieurs comptes pour une même personne</li>
+              </ul>
+              <p>
+                QRTags se réserve le droit de suspendre ou supprimer un compte en cas de non-respect des présentes CGU.
+              </p>
+            </section>
+
+            <section>
+              <h2 className="text-2xl font-semibold text-slate-900 mb-4">4. Utilisation des services</h2>
+              <p className="mb-4">En utilisant nos services, vous vous engagez à :</p>
+              <ul className="list-disc pl-6 space-y-2 mb-4">
+                <li>Utiliser les services uniquement à des fins licites</li>
+                <li>Ne pas tenter de contourner les mesures de sécurité</li>
+                <li>Ne pas utiliser les services pour nuire à autrui</li>
+                <li>Respecter les droits de propriété intellectuelle de QRTags</li>
+                <li>Signaler tout contenu ou comportement inapproprié</li>
+              </ul>
+              <p>
+                L&apos;utilisation des services QRTags à des fins frauduleuses ou malveillantes est strictement interdite et pourra faire l&apos;objet de poursuites judiciaires.
+              </p>
+            </section>
+
+            <section>
+              <h2 className="text-2xl font-semibold text-slate-900 mb-4">5. Activation et validité des QR codes</h2>
+              <p className="mb-4">
+                Chaque autocollant QRTags comporte un QR Code unique qui doit être activé pour être fonctionnel. Les conditions d&apos;activation sont les suivantes :
+              </p>
+              <ul className="list-disc pl-6 space-y-2 mb-4">
+                <li>L&apos;activation se fait via le site web QRTags en scannant le QR Code ou en saisissant la référence</li>
+                <li>Un QR Code actif est valide pour une durée déterminée selon le forfait choisi</li>
+                <li>La validité peut être prolongée en souscrivant à une extension</li>
+                <li>Un QR Code non activé n&apos;est pas fonctionnel</li>
+              </ul>
+              <p>
+                Il est de votre responsabilité d&apos;activer votre QR Code avant votre voyage pour bénéficier de la protection.
+              </p>
+            </section>
+
+            <section>
+              <h2 className="text-2xl font-semibold text-slate-900 mb-4">6. Signalement et restitution</h2>
+              <p className="mb-4">
+                En cas de perte ou de trouvaille d&apos;un bagage équipé d&apos;un QR Code QRTags :
+              </p>
+              <ul className="list-disc pl-6 space-y-2 mb-4">
+                <li>Le scan du QR Code déclenche une notification au propriétaire du bagage</li>
+                <li>Une messagerie sécurisée permet la communication entre les parties</li>
+                <li>QRTags facilite la mise en relation mais n&apos;assure pas le transport du bagage</li>
+                <li>Les informations personnelles restent protégées jusqu&apos;à consentement explicite</li>
+              </ul>
+              <p>
+                QRTags ne peut être tenu responsable en cas d&apos;impossibilité de restitution du bagage.
+              </p>
+            </section>
+
+            <section>
+              <h2 className="text-2xl font-semibold text-slate-900 mb-4">7. Tarifs et paiement</h2>
+              <p className="mb-4">
+                Les tarifs des services QRTags sont affichés sur le site et peuvent être modifiés à tout moment. Les conditions de paiement sont les suivantes :
+              </p>
+              <ul className="list-disc pl-6 space-y-2">
+                <li>Le paiement s&apos;effectue en ligne par carte bancaire ou autre moyen proposé</li>
+                <li>La souscription est ferme et définitive après confirmation du paiement</li>
+                <li>Les prix sont indiqués en euros TTC</li>
+                <li>Aucun remboursement n&apos;est effectué en cas de non-utilisation du service</li>
+              </ul>
+            </section>
+
+            <section>
+              <h2 className="text-2xl font-semibold text-slate-900 mb-4">8. Responsabilité</h2>
+              <p className="mb-4">
+                QRTags s&apos;engage à mettre en œuvre tous les moyens nécessaires pour assurer le bon fonctionnement de ses services. Toutefois, QRTags ne pourra être tenu responsable :
+              </p>
+              <ul className="list-disc pl-6 space-y-2 mb-4">
+                <li>Des dommages résultant d&apos;une utilisation non conforme aux services</li>
+                <li>De l&apos;impossibilité d&apos;accès au service en cas de force majeure</li>
+                <li>Des pertes ou vols de bagages non signalés via la plateforme</li>
+                <li>Des retards ou défauts de livraison des autocollants imputables aux transporteurs</li>
+              </ul>
+              <p>
+                La responsabilité de QRTags est limitée au montant des sommes versées par l&apos;utilisateur.
+              </p>
+            </section>
+
+            <section>
+              <h2 className="text-2xl font-semibold text-slate-900 mb-4">9. Propriété intellectuelle</h2>
+              <p className="mb-4">
+                L&apos;ensemble des éléments constituant le site QRTags (textes, images, logos, icônes, logiciels, QR Codes, etc.) est protégé par le droit de la propriété intellectuelle.
+              </p>
+              <p>
+                Toute reproduction, représentation ou utilisation non autorisée de ces éléments est strictement interdite et pourra faire l&apos;objet de poursuites judiciaires.
+              </p>
+            </section>
+
+            <section>
+              <h2 className="text-2xl font-semibold text-slate-900 mb-4">10. Protection des données</h2>
+              <p className="mb-4">
+                Les données personnelles collectées par QRTags sont traitées conformément à notre <a href="/confidentialite" className="text-[#b8860b] hover:underline">Politique de confidentialité</a> et dans le respect du Règlement Général sur la Protection des Données (RGPD).
+              </p>
+              <p>
+                Pour toute question relative à vos données personnelles, contactez-nous à : contact@qrtags.com
+              </p>
+            </section>
+
+            <section>
+              <h2 className="text-2xl font-semibold text-slate-900 mb-4">11. Modification des CGU</h2>
+              <p>
+                QRTags se réserve le droit de modifier les présentes CGU à tout moment. Les utilisateurs seront informés de toute modification substantielle par notification sur le site ou par email. L&apos;utilisation continue des services après modification vaut acceptation des nouvelles CGU.
+              </p>
+            </section>
+
+            <section>
+              <h2 className="text-2xl font-semibold text-slate-900 mb-4">12. Résiliation</h2>
+              <p className="mb-4">
+                Vous pouvez à tout moment demander la suppression de votre compte en contactant notre service client. En cas de résiliation :
+              </p>
+              <ul className="list-disc pl-6 space-y-2">
+                <li>Vos données seront supprimées dans un délai de 30 jours</li>
+                <li>Vos QR Codes actifs seront désactivés</li>
+                <li>Aucun remboursement ne sera effectué pour la période restante</li>
+              </ul>
+            </section>
+
+            <section>
+              <h2 className="text-2xl font-semibold text-slate-900 mb-4">13. Droit applicable et juridiction</h2>
+              <p>
+                Les présentes CGU sont soumises au droit français. En cas de litige relatif à l&apos;interprétation ou à l&apos;exécution des présentes CGU, et à défaut d&apos;accord amiable, les tribunaux français seront seuls compétents.
+              </p>
+            </section>
+
+            <section>
+              <h2 className="text-2xl font-semibold text-slate-900 mb-4">14. Contact</h2>
+              <p className="mb-4">
+                Pour toute question relative aux présentes CGU, vous pouvez nous contacter :
+              </p>
+              <p>
+                <strong>Email :</strong> <a href="mailto:contact@qrtags.com" className="text-[#b8860b] hover:underline">contact@qrtags.com</a><br />
+                <strong>Adresse :</strong> Poissy, France
+              </p>
+            </section>
           </div>
-          <h1 className="text-3xl font-black text-slate-900">Conditions d'utilisation</h1>
-        </div>
 
-        <div className="prose prose-slate max-w-none space-y-6">
-          <section className="bg-slate-50 rounded-2xl p-6 border border-slate-200">
-            <h2 className="text-xl font-bold text-slate-900 mb-3">1. Objet</h2>
-            <p className="text-sm text-slate-700 leading-relaxed">
-              Les présentes conditions d'utilisation régissent l'utilisation de la plateforme QRTagsPro,
-              service de gestion d'objets perdus via QR codes pour les entreprises. En utilisant le service,
-              vous acceptez sans réserve les présentes conditions.
+          <div className="mt-12 pt-8 border-t border-[#1a2238]">
+            <p className="text-[#a0a8b8] text-sm">
+              Dernière mise à jour : {new Date().toLocaleDateString('fr-FR')}
             </p>
-          </section>
-
-          <section className="bg-slate-50 rounded-2xl p-6 border border-slate-200">
-            <h2 className="text-xl font-bold text-slate-900 mb-3">2. Définitions</h2>
-            <ul className="text-sm text-slate-700 space-y-2 list-disc list-inside">
-              <li><strong>QRTagsPro</strong> : la plateforme SaaS éditée par QRTagsPro</li>
-              <li><strong>Établissement</strong> : l'entreprise cliente (hôtel, école, clinique, etc.)</li>
-              <li><strong>Client final</strong> : le client de l'établissement (voyageur, élève, patient)</li>
-              <li><strong>Trouveur</strong> : la personne qui trouve un objet étiqueté</li>
-              <li><strong>QR code</strong> : l'étiquette physique liée à la plateforme</li>
-            </ul>
-          </section>
-
-          <section className="bg-slate-50 rounded-2xl p-6 border border-slate-200">
-            <h2 className="text-xl font-bold text-slate-900 mb-3">3. Services proposés</h2>
-            <ul className="text-sm text-slate-700 space-y-2 list-disc list-inside">
-              <li>Génération de QR codes assignés à un établissement</li>
-              <li>Check-in des clients avec informations personnalisées par métier</li>
-              <li>Page trouveur avec contact WhatsApp WAME (click-to-chat)</li>
-              <li>Dashboard de suivi temps réel</li>
-              <li>Check-out automatique à la date de départ</li>
-              <li>Mode fidélisation (contact direct client après séjour avec opt-in)</li>
-              <li>Intégration PMS (Cloudbeds, Mews, Sirvoy)</li>
-            </ul>
-          </section>
-
-          <section className="bg-slate-50 rounded-2xl p-6 border border-slate-200">
-            <h2 className="text-xl font-bold text-slate-900 mb-3">4. Responsabilités</h2>
-            <p className="text-sm text-slate-700 leading-relaxed mb-3">
-              QRTagsPro est un outil de traçabilité et de contact. QRTagsPro ne garantit pas la restitution
-              effective des objets perdus. La responsabilité de QRTagsPro ne peut être engagée en cas de :
-            </p>
-            <ul className="text-sm text-slate-700 space-y-2 list-disc list-inside">
-              <li>Perte ou vol d'un objet malgré l'étiquette QR</li>
-              <li>Non-respect du trouveur des consignes affichées</li>
-              <li>Indisponibilité temporaire du service (maintenance, panne)</li>
-              <li>Données inexactes saisies par l'établissement</li>
-            </ul>
-          </section>
-
-          <section className="bg-slate-50 rounded-2xl p-6 border border-slate-200">
-            <h2 className="text-xl font-bold text-slate-900 mb-3">5. Tarifs</h2>
-            <p className="text-sm text-slate-700 leading-relaxed">
-              Les tarifs sont disponibles sur la page <Link href="/tarifs" className="text-[#134288] underline">Tarifs</Link>.
-              Les QR codes achetés sont valides 1 an à compter de la date de génération.
-              Le mode fidélisation (contact direct après séjour) est inclus dans toutes les formules.
-            </p>
-          </section>
-
-          <section className="bg-slate-50 rounded-2xl p-6 border border-slate-200">
-            <h2 className="text-xl font-bold text-slate-900 mb-3">6. Résiliation</h2>
-            <p className="text-sm text-slate-700 leading-relaxed">
-              L'établissement peut résilier son compte à tout moment. Les QR codes déjà activés restent
-              fonctionnels jusqu'à leur expiration. Aucun remboursement n'est dû pour les QR codes
-              non utilisés.
-            </p>
-          </section>
-
-          <section className="bg-slate-50 rounded-2xl p-6 border border-slate-200">
-            <h2 className="text-xl font-bold text-slate-900 mb-3">7. Contact</h2>
-            <p className="text-sm text-slate-700 leading-relaxed">
-              Email : contact@qrtagspro.com<br />
-              Voir aussi : <Link href="/contact" className="text-[#134288] underline">Page contact</Link>
-            </p>
-          </section>
-        </div>
-
-        <div className="mt-8 text-center">
-          <Link href="/" className="inline-flex items-center gap-2 text-sm text-slate-500 hover:text-[#134288]">
-            <ArrowLeft className="w-4 h-4" /> Retour à l'accueil
-          </Link>
+          </div>
         </div>
       </div>
-    </div>
+    </PublicLayout>
   );
 }

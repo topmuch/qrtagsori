@@ -1,855 +1,1451 @@
 'use client';
 
-/**
- * QRTagsPro V4 — Landing page professionnelle
- *
- * Charte: Bleu corporate #134288 + Vert #32ba5d
- *
- * Ordre des sections :
- *   1. Header sticky (logo + nav + CTA)
- *   2. Hero (titre fort + sous-titre + 2 CTA + visuel)
- *   3. Une solution par métier (6 cards)
- *   4. Comment ça marche (4 étapes)
- *   5. Démarrez en 3 étapes (onboarding)
- *   6. Pourquoi QRTagsPro ? (avantages clés)
- *   7. Blog & Actualités
- *   8. 🔒 Protection des données — RGPD
- *   9. Ils nous font confiance (partenaires)
- *  10. Footer
- */
-
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import dynamic from 'next/dynamic';
+import Image from 'next/image';
+import { motion } from 'framer-motion';
 import {
-  QrCode, ArrowRight, Building2, Users, Shield, Clock,
-  CheckCircle2, Sparkles, Phone, Mail, MapPin,
-  Hotel, GraduationCap, Stethoscope, Car, Luggage, Briefcase,
-  Zap, BarChart3, Bell, Lock,
+  Menu,
+  X,
+  Shield,
+  Search,
+  MessageCircle,
+  HandHelping,
+  ArrowRight,
+  CheckCircle2,
+  Sparkles,
+  Users,
+  ShoppingBag,
 } from 'lucide-react';
 import QRTagsLogo from '@/components/qrtags/QRTagsLogo';
-import RgpdBanner from '@/components/RgpdBanner';
+import TrackingWidget from '@/components/home/TrackingWidget';
+import BlogTeaserSection from '@/components/home/BlogTeaserSection';
 
-const CTA_DEMO_SUBJECT = 'Demande de démo QRTagsPro';
+const LandingChatbotWidget = dynamic(
+  () => import('@/components/finder/LandingChatbotWidget'),
+  { ssr: false, loading: () => null },
+);
 
-const METIERS = [
+// ════════════════════════════════════════════════════════════════════
+// QRTags — Landing ORIENTÉE OBJETS TROUVÉS / PARTICULIER
+// Accent sur : "Vous avez trouvé un objet ?" & "J'ai perdu quelque chose"
+// Messaging citoyen, finder-hero, pas B2B enterprise
+// ════════════════════════════════════════════════════════════════════
+const COLORS = {
+  bg: '#ffffff',
+  bgAlt: '#fafafa',
+  bgCream: '#fffdf5',
+  bgWarm: '#FFF8E7',      // Fond warm accent (trouvailles)
+  text: '#0d0d0f',
+  textMuted: '#525252',
+  accent: '#FDB900',
+  accentAlt: '#E3B23C',
+  accentDark: '#c89a00',
+  green: '#22C55E',        // Vert retrouvaille
+  greenDark: '#16A34A',
+  card: '#ffffff',
+  cardAlt: '#fffdf5',
+  border: '#e5e5e5',
+  borderAccent: 'rgba(253, 185, 0, 0.3)',
+};
+
+// ════════════════════════════════════════════════════════════════════
+// DONNÉES — Orientation PARTICULIER / OBJETS TROUVÉS
+// ════════════════════════════════════════════════════════════════════
+
+const FINDER_STEPS = [
   {
-    image: 'https://images.unsplash.com/photo-1564501049412-61c2a3083791?w=800&h=500&fit=crop',
-    title: 'Hôtels',
-    description: 'Étiquetez les bagages de vos clients dès le check-in. Contact direct avec votre réception en cas de perte.',
-    badge: 'Disponible',
-    href: '/metiers#hotel',
+    num: '01',
+    image: '/images/how-it-works/step-1-generation.png',
+    title: 'Vous trouvez un objet',
+    desc: 'Dans la rue, à l\'aéroport, dans un taxi, au café... Vous voyez un QR tag QRTags sur l\'objet perdu.',
+    color: COLORS.accent,
+    href: '/etapes/trouveur/vous-trouvez-un-objet',
   },
   {
-    image: 'https://images.unsplash.com/photo-1571260899304-425eee4c7efc?w=800&h=500&fit=crop',
-    title: 'Écoles',
-    description: 'Identifiez cartables et uniformes des élèves. Contact automatique des parents en cas de perte.',
-    badge: 'Disponible',
-    href: '/metiers#ecole',
+    num: '02',
+    image: '/images/how-it-works/step-3-scan-alert.png',
+    title: 'Scannez le QR code',
+    desc: 'Un simple scan avec votre téléphone — aucune app à installer, pas besoin de batterie ou de GPS sur l\'objet.',
+    color: COLORS.accentAlt,
+    href: '/etapes/trouveur/scannez-le-qr-code',
   },
   {
-    image: 'https://images.unsplash.com/photo-1631549916768-4119b2e5f926?w=800&h=500&fit=crop',
-    title: 'Cliniques',
-    description: 'Étiquetez les effets personnels des patients. Contact d\'urgence prévenu automatiquement.',
-    badge: 'Disponible',
-    href: '/metiers#clinique',
+    num: '03',
+    image: '/images/how-it-works/step-3-scan-alert.png',
+    title: 'Contactez le propriétaire',
+    desc: 'La page WAME s\'ouvre automatiquement avec votre position GPS. Un message WhatsApp pré-rempli est envoyé au propriétaire.',
+    color: COLORS.green,
+    href: '/etapes/trouveur/contactez-le-proprietaire',
   },
   {
-    image: 'https://images.unsplash.com/photo-1503376780353-7e6692767b70?w=800&h=500&fit=crop',
-    title: 'Loueurs auto',
-    description: 'Traçabilité des clés, documents et équipements. Contact direct du locataire.',
-    badge: 'Disponible',
-    href: '/metiers#loueur',
-  },
-  {
-    image: 'https://images.unsplash.com/photo-1530521954074-e64f6810b32d?w=800&h=500&fit=crop',
-    title: 'Consignes',
-    description: 'Étiquetage des bagages en consigne. Suivi par casier avec retrait programmé.',
-    badge: 'Disponible',
-    href: '/metiers#consigne',
-  },
-  {
-    image: 'https://images.unsplash.com/photo-1556761175-5973dc0f32e7?w=800&h=500&fit=crop',
-    title: 'Autres métiers',
-    description: 'Spa, gym, entreprise, événements... Créez votre métier sur-mesure sans coder.',
-    badge: 'Sur devis',
-    href: '/metiers#autre',
+    num: '04',
+    image: '/images/how-it-works/step-4-recovered.png',
+    title: 'L\'objet est rendu',
+    desc: 'Le propriétaire sait exactement où vous êtes. Vous rendez l\'objet en 2h en moyenne. Un geste simple qui change une vie.',
+    color: COLORS.greenDark,
+    href: '/etapes/trouveur/objet-est-rendu',
   },
 ];
 
-const STEPS = [
+const OWNER_STEPS = [
   {
-    num: 1,
-    emoji: '🔢',
-    visual: (
-      <div className="relative w-full h-full flex items-center justify-center">
-        <div className="grid grid-cols-3 gap-1">
-          {Array.from({ length: 9 }).map((_, i) => (
-            <div key={i} className="w-6 h-6 bg-[#134288] rounded flex items-center justify-center">
-              <QrCode className="w-4 h-4 text-white" />
-            </div>
-          ))}
-        </div>
-        <div className="absolute -bottom-1 -right-1 bg-[#32ba5d] text-white text-xs font-bold px-2 py-1 rounded-full shadow-lg">
-          ×500
-        </div>
-      </div>
-    ),
-    title: 'Génération des QR',
-    description: 'Le superadmin crée des lots de QR codes assignés à votre entreprise.',
+    num: '01',
+    image: '/images/how-it-works/step-1-generation.png',
+    title: 'Collez un QR tag',
+    desc: 'Commandez vos tags QRTags et collez-les sur vos objets : valise, clés, sac, lunettes, téléphone... Chaque tag est unique.',
+    color: COLORS.accent,
+    href: undefined as string | undefined,
   },
   {
-    num: 2,
-    emoji: '📋',
-    visual: (
-      <div className="w-full h-full flex items-center justify-center">
-        <div className="bg-white rounded-lg p-3 shadow-md border border-slate-200 w-32">
-          <div className="flex items-center gap-2 mb-2">
-            <div className="w-8 h-8 rounded bg-[#134288] flex items-center justify-center">
-              <QrCode className="w-4 h-4 text-white" />
-            </div>
-            <div className="flex-1">
-              <div className="h-2 bg-slate-200 rounded w-full mb-1" />
-              <div className="h-2 bg-slate-200 rounded w-2/3" />
-            </div>
-          </div>
-          <div className="space-y-1">
-            <div className="h-2 bg-[#32ba5d]/30 rounded w-full" />
-            <div className="h-2 bg-slate-100 rounded w-3/4" />
-            <div className="h-2 bg-slate-100 rounded w-1/2" />
-          </div>
-        </div>
-      </div>
-    ),
-    title: 'Check-in client',
-    description: 'Votre staff scanne le QR et saisit les infos client (nom, chambre, dates).',
+    num: '02',
+    image: '/images/how-it-works/step-2-activation.png',
+    title: 'Activez en 30 secondes',
+    desc: 'Scannez votre propre tag, entrez vos infos (prénom, WhatsApp) et l\'objet est protégé. Pas d\'app, pas de compte obligatoire.',
+    color: COLORS.accentAlt,
+    href: undefined as string | undefined,
   },
   {
-    num: 3,
-    emoji: '📱',
-    visual: (
-      <div className="w-full h-full flex items-center justify-center">
-        <div className="relative">
-          <div className="w-20 h-32 bg-slate-900 rounded-xl p-1.5 shadow-lg">
-            <div className="w-full h-full bg-white rounded-lg flex flex-col items-center justify-center p-2">
-              <QrCode className="w-8 h-8 text-[#134288] mb-1" />
-              <div className="w-full h-1.5 bg-[#32ba5d] rounded mb-1" />
-              <div className="w-2/3 h-1.5 bg-slate-200 rounded" />
-            </div>
-          </div>
-          <div className="absolute -top-2 -right-2 w-8 h-8 bg-[#32ba5d] rounded-full flex items-center justify-center shadow-lg">
-            <Bell className="w-4 h-4 text-white" />
-          </div>
-        </div>
-      </div>
-    ),
-    title: 'Le trouveur scanne',
-    description: 'En cas de perte, le trouveur scanne le QR et contacte votre réception via WhatsApp.',
+    num: '03',
+    image: '/images/how-it-works/step-3-scan-alert.png',
+    title: 'Recevez une alerte',
+    desc: 'Si quelqu\'un trouve votre objet, vous recevez un message WhatsApp avec la position exacte du trouveur. Instantané.',
+    color: COLORS.green,
+    href: undefined as string | undefined,
   },
   {
-    num: 4,
-    emoji: '✅',
-    visual: (
-      <div className="w-full h-full flex items-center justify-center">
-        <div className="bg-white rounded-lg p-3 shadow-md border border-slate-200 flex items-center gap-2">
-          <div className="w-10 h-10 rounded-full bg-[#32ba5d] flex items-center justify-center">
-            <CheckCircle2 className="w-6 h-6 text-white" />
-          </div>
-          <div className="flex-1">
-            <div className="h-2 bg-[#32ba5d]/30 rounded w-full mb-1" />
-            <div className="h-2 bg-slate-100 rounded w-2/3" />
-          </div>
-        </div>
-      </div>
-    ),
-    title: 'Restitution',
-    description: 'Votre réception reçoit le message, vérifie le client et organise la restitution.',
-  },
-];
-
-const AVANTAGES = [
-  {
-    icon: <Shield className="w-8 h-8" />,
-    title: 'Contrôle total',
-    description: 'Votre réception garde le contrôle. Le trouveur vous contacte, pas le client directement. Vous vérifiez etrelayez.',
-  },
-  {
-    icon: <BarChart3 className="w-8 h-8" />,
-    title: 'Dashboard temps réel',
-    description: 'Suivez les QR actifs, les check-out à venir, les objets perdus. Statistiques complètes par métier.',
-  },
-  {
-    icon: <Zap className="w-8 h-8" />,
-    title: 'Setup en 5 minutes',
-    description: 'Créez votre agence, générez vos QR, activez vos clients. Aucune installation, accessible partout.',
+    num: '04',
+    image: '/images/how-it-works/step-4-recovered.png',
+    title: 'Récupérez votre objet',
+    desc: 'Contactez le trouveur via WhatsApp, récupérez votre objet. 98% des objets étiquetés sont retrouvés.',
+    color: COLORS.greenDark,
+    href: undefined as string | undefined,
   },
 ];
 
 const STATS = [
-  { value: '6+', label: 'Métiers supportés' },
-  { value: '< 5min', label: 'Setup complet' },
-  { value: '100%', label: 'Sans installation' },
+  { value: '98%', label: 'Objets retrouvés' },
+  { value: '< 2h', label: 'Délai moyen retour' },
+  { value: 'Sans app', label: 'Aucune installation' },
+  { value: '3 langues', label: 'FR · EN · AR' },
 ];
 
-// ═══ BLOG SECTION ═══
-interface BlogPost {
+const TESTIMONIALS = [
+  {
+    name: 'Lucas Dupont',
+    role: 'Étudiant, Lyon',
+    text: 'J\'ai trouvé un sac à dos avec un QR tag dans le métro. J\'ai scanné, WhatsApp s\'est ouvert avec la position. Le propriétaire m\'a contacté en 5 minutes. Je lui ai rendu son sac le soir même. Impressionnant !',
+    avatar: 'LD',
+    type: 'finder',
+  },
+  {
+    name: 'Amira Bensaïd',
+    role: 'Voyageuse, Marseille',
+    text: 'Ma valise a été égarée à l\'aéroport. Quelqu\'un a scanné le tag QRTags — j\'ai reçu un WhatsApp avec sa position exacte. Je l\'ai récupérée 3h après. Sans QRTags, j\'aurais attendu des jours.',
+    avatar: 'AB',
+    type: 'owner',
+  },
+  {
+    name: 'Thomas Legrand',
+    role: 'Enseignant, Paris',
+    text: 'Mon fils a perdu ses lunettes à l\'école. Le QR tag était collé dessus. Une maman les a trouvées, a scanné, et m\'a envoyé un WhatsApp. Récupérées le lendemain matin. Magique.',
+    avatar: 'TL',
+    type: 'owner',
+  },
+];
+
+// ─── Packs Boutique — fetched dynamically from DB ───
+interface ShopProduct {
   id: string;
-  title: string;
+  name: string;
   slug: string;
-  excerpt: string | null;
-  coverImage: string | null;
-  category: string;
-  publishedAt: string;
+  price: number;
+  quantity: number;
+  description: string | null;
+  image: string | null;
+  active: boolean;
+  sortOrder: number;
 }
 
-const BLOG_CATEGORY_LABELS: Record<string, string> = {
-  actualites: '📰 Actualités',
-  conseils: '💡 Conseils',
-  hajj: '🧳 Voyage',
-  mises_a_jour: '🔄 Mises à jour',
-};
+// Default fallback packs (used before API fetch completes OR if API returns image: null)
+// Each pack has its own dedicated sachet image showing the correct sticker count.
+const SHOP_PACKS_FALLBACK = [
+  { quantity: 3, name: 'Pack 3 Stickers', slug: 'pack-3-stickers', price: 1500, desc: '3 étiquettes QR indestructibles. Idéal pour tester.', badge: '', image: '/images/shop/pack-3-stickers.png' },
+  { quantity: 5, name: 'Pack 5 Stickers', slug: 'pack-5-stickers', price: 3000, desc: '5 étiquettes QR indestructibles. Le plus populaire.', badge: 'POPULAIRE', image: '/images/shop/pack-5-stickers.png' },
+  { quantity: 10, name: 'Pack 10 Stickers', slug: 'pack-10-stickers', price: 4000, desc: '10 étiquettes QR indestructibles. Pour usage fréquent.', badge: '', image: '/images/shop/pack-10-stickers.png' },
+  { quantity: 15, name: 'Pack 15 Stickers', slug: 'pack-15-stickers', price: 5500, desc: '15 étiquettes QR indestructibles. Le plus économique.', badge: 'ÉCONOMIQUE', image: '/images/shop/pack-15-stickers.png' },
+];
 
-function BlogSection() {
-  const [posts, setPosts] = useState<BlogPost[]>([]);
-  const [loading, setLoading] = useState(true);
+// ─── Image fallback strategy ───
+// Production DB products often have either:
+//   • image: null (seed not re-run)
+//   • image: '/images/shop/product-XXXX.jpeg' pointing to a file that does NOT exist
+//     (uploaded via admin panel, but the upload failed silently or was lost)
+//   • slug variants like 'pack-5-stickers-' (trailing dash) or 'packs-10-stickers'
+//     that don't match SHOP_PACKS_FALLBACK slugs exactly.
+//
+// To ALWAYS show a sachet image we:
+//   1. Map quantity → local pack image (most reliable, the sachet shows the right number)
+//   2. Map slug → local pack image (handles edge cases where quantity differs)
+//   3. On <img> onError, swap the broken src to the quantity-mapped local image
+//      (instead of hiding it and showing the number fallback, which is less pretty)
+const PACK_IMAGE_BY_QUANTITY: Record<number, string> = Object.fromEntries(
+  SHOP_PACKS_FALLBACK.map(p => [p.quantity, p.image])
+);
+const PACK_IMAGE_BY_SLUG: Record<string, string> = Object.fromEntries(
+  SHOP_PACKS_FALLBACK.map(p => [p.slug, p.image])
+);
+// Generic sachet used when quantity is unknown (e.g. Pack Revendeur qty=35)
+const GENERIC_PACK_IMAGE = '/images/shop/pack-15-stickers.png';
+
+/**
+ * Resolve the best local image for a given product.
+ *
+ * CRITICAL: we NEVER trust DB-uploaded images (pattern: /images/shop/product-*.jpeg)
+ * because they are almost always broken uploads (admin panel saved the path but
+ * the file was never written, or was lost during deploy). We only trust the 4
+ * known-good local sachet images that ship with the codebase.
+ *
+ * Strategy (in order):
+ *   1. If DB image matches the known-good local pattern → use it as-is.
+ *   2. Otherwise resolve by quantity (most reliable — sachet shows the right number).
+ *   3. Then by slug, slug-without-trailing-dash, slug-without-s.
+ *   4. Finally fall back to the generic pack-15 sachet.
+ *
+ * This guarantees the <img src> is ALWAYS a valid local path from the first render,
+ * so there is no flash of broken image, no 30s-then-disappear bug, no need to rely
+ * on the onError swap (which can race with React re-renders).
+ */
+function resolvePackImage(p: { image: string | null; quantity: number; slug: string }): string {
+  // Only trust DB image if it matches one of our 4 known-good local sachet paths
+  if (p.image && /^\/images\/shop\/pack-(3|5|10|15)-stickers\.png$/.test(p.image)) {
+    return p.image;
+  }
+  return (
+    PACK_IMAGE_BY_QUANTITY[p.quantity] ||
+    PACK_IMAGE_BY_SLUG[p.slug] ||
+    PACK_IMAGE_BY_SLUG[p.slug.replace(/[-\s]+$/, '')] || // strip trailing dash: 'pack-5-stickers-' → 'pack-5-stickers'
+    PACK_IMAGE_BY_SLUG[p.slug.replace(/^packs-/, 'pack-')] || // 'packs-10-stickers' → 'pack-10-stickers'
+    GENERIC_PACK_IMAGE
+  );
+}
+
+/**
+ * Decide what to use as the <img src>. Returns the DB image ONLY if it's safe
+ * (one of the 4 known-good local paths). Otherwise returns the fallback.
+ *
+ * This prevents the "30-second disappear" bug where:
+ *   1. Initial render uses SHOP_PACKS_FALLBACK (sachets show).
+ *   2. API responds ~30s later with broken DB image URLs.
+ *   3. <img src> switches to broken URL → broken image icon.
+ *   4. onError swap may race with React re-renders and lose the swap.
+ *
+ * By NEVER using a DB image that doesn't match the safe pattern, we eliminate
+ * the broken-image state entirely.
+ */
+function getSafeImageSrc(p: { image: string | null; fallbackImage: string }): string {
+  if (p.image && /^\/images\/shop\/pack-(3|5|10|15)-stickers\.png$/.test(p.image)) {
+    return p.image;
+  }
+  return p.fallbackImage;
+}
+
+// ─── Bande défilante — Produits protégés ───
+const MARQUEE_ITEMS = [
+  { image: '/images/home/marquee-keychain.png', name: 'Porte-clés' },
+  { image: '/images/home/marquee-passport.png', name: 'Documents' },
+  { image: '/images/home/marquee-laptop.png', name: 'Ordinateur' },
+  { image: '/images/home/marquee-phone.png', name: 'Téléphone' },
+  { image: '/images/home/marquee-suitcase.png', name: 'Valise' },
+  { image: '/images/home/marquee-glasses.png', name: 'Lunettes' },
+  { image: '/images/home/marquee-wallet.png', name: 'Portefeuille' },
+  { image: '/images/home/marquee-bag.png', name: 'Sac à dos' },
+  { image: '/images/home/suitcase-qr.png', name: 'Bagages' },
+  { image: '/images/home/jacket-qr.png', name: 'Veste' },
+];
+
+// ════════════════════════════════════════════════════════════════════
+// COMPOSANT — Bandeau de stats live (objets retrouvés)
+// Récupère les données depuis /api/stats/public (cache 5 min)
+// ════════════════════════════════════════════════════════════════════
+interface PublicStats {
+  totalFound: number;
+  foundThisMonth: number;
+  totalScans: number;
+  totalProtected: number;
+  averageRating: number;
+  totalReviews: number;
+}
+
+function LiveStatsBar() {
+  const [stats, setStats] = useState<PublicStats | null>(null);
 
   useEffect(() => {
-    fetch('/api/blog/public?limit=3')
-      .then(res => res.json())
-      .then(data => {
-        setPosts(data.posts || []);
-        setLoading(false);
-      })
-      .catch(() => setLoading(false));
+    let cancelled = false;
+    async function load() {
+      try {
+        const res = await fetch('/api/stats/public', { cache: 'no-store' });
+        if (!res.ok) return;
+        const json: PublicStats = await res.json();
+        if (!cancelled) setStats(json);
+      } catch {
+        // Silencieux : on garde le fallback statique
+      }
+    }
+    load();
+    return () => { cancelled = true; };
   }, []);
 
-  if (loading) {
-    return (
-      <section className="py-16 bg-slate-50">
-        <div className="max-w-[1600px] mx-auto px-4 md:px-6">
-          <h2 className="text-3xl font-black text-slate-900 mb-2 text-center">Blog & Actualités</h2>
-          <p className="text-slate-500 text-center mb-8">Chargement...</p>
-        </div>
-      </section>
-    );
-  }
+  // ─── Fallback statique avant chargement ou en cas d'erreur ───
+  const totalFound = stats?.totalFound ?? 0;
+  const foundThisMonth = stats?.foundThisMonth ?? 0;
+  const totalScans = stats?.totalScans ?? 0;
+  const averageRating = stats?.averageRating ?? 0;
+  const totalReviews = stats?.totalReviews ?? 0;
 
-  if (posts.length === 0) {
-    return null; // Ne pas afficher la section s'il n'y a pas d'articles
-  }
+  // Si on n'a pas encore de données live, on affiche les valeurs "marketing"
+  // (98% / < 2h) plutôt que des zéros
+  const hasLive = stats !== null && (totalFound > 0 || totalReviews > 0);
+
+  const scansDisplay = totalScans > 1000 ? `${(totalScans / 1000).toFixed(1)}k` : totalScans.toString();
+  const ratingDisplay = totalReviews > 0 ? `${averageRating.toFixed(1)}/5 ★` : '—';
+  const reviewsLabel = totalReviews > 0 ? `${totalReviews} avis vérifiés` : 'Avis vérifiés';
+
+  const items = hasLive
+    ? [
+        { value: foundThisMonth.toString(), label: 'Retrouvés ce mois-ci', accent: COLORS.greenDark },
+        { value: totalFound.toString(), label: 'Objets retrouvés au total', accent: COLORS.accentDark },
+        { value: scansDisplay, label: 'Scans QR effectués', accent: COLORS.text },
+        { value: ratingDisplay, label: reviewsLabel, accent: COLORS.accentDark },
+      ]
+    : [
+        { value: '98%', label: 'Objets retrouvés', accent: COLORS.greenDark },
+        { value: '< 2h', label: 'Délai moyen retour', accent: COLORS.accentDark },
+        { value: 'Sans app', label: 'Aucune installation', accent: COLORS.text },
+        { value: '3 langues', label: 'FR · EN · AR', accent: COLORS.accentDark },
+      ];
 
   return (
-    <section className="py-16 bg-slate-50">
-      <div className="max-w-[1600px] mx-auto px-4 md:px-6">
-        <div className="text-center mb-10">
-          <h2 className="text-3xl md:text-4xl font-black text-slate-900 mb-3">Blog & Actualités</h2>
-          <p className="text-lg text-slate-600 max-w-2xl mx-auto">
-            Conseils, actualités et bonnes pratiques pour gérer les objets perdus
+    <section
+      className="py-10 px-5"
+      style={{
+        background: COLORS.text,
+        color: 'white',
+      }}
+      aria-label="Statistiques QRTags en temps réel"
+    >
+      <div className="max-w-screen-2xl mx-auto">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+          {items.map((item, i) => (
+            <motion.div
+              key={i}
+              initial={{ opacity: 0, y: 10 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ delay: i * 0.08 }}
+              className="text-center"
+            >
+              <div
+                className="text-3xl md:text-5xl font-black mb-1"
+                style={{ color: item.accent }}
+              >
+                {item.value}
+              </div>
+              <div className="text-xs md:text-sm font-medium" style={{ color: 'rgba(255,255,255,0.7)' }}>
+                {item.label}
+              </div>
+            </motion.div>
+          ))}
+        </div>
+        {hasLive && (
+          <p className="text-center text-xs mt-6" style={{ color: 'rgba(255,255,255,0.4)' }}>
+            Données en temps réel · mises à jour automatiquement
           </p>
+        )}
+      </div>
+    </section>
+  );
+}
+
+// ════════════════════════════════════════════════════════════════════
+// COMPOSANT — Témoignages live depuis /api/reviews/public
+// Si au moins 3 avis vérifiés sont publiés, on les affiche en priorité.
+// Sinon on garde les témoignages marketing statiques (TESTIMONIALS).
+// ════════════════════════════════════════════════════════════════════
+interface LiveReview {
+  id: string;
+  name: string;
+  rating: number;
+  content: string;
+  objectName: string | null;
+  objectCategory: string | null;
+  finderName: string | null;
+  createdAt: string;
+}
+
+function LiveTestimonials() {
+  const [reviews, setReviews] = useState<LiveReview[]>([]);
+  const [loaded, setLoaded] = useState(false);
+
+  useEffect(() => {
+    let cancelled = false;
+    async function load() {
+      try {
+        const res = await fetch('/api/reviews/public', { cache: 'no-store' });
+        if (!res.ok) return;
+        const json = await res.json();
+        if (!cancelled && Array.isArray(json.reviews)) {
+          setReviews(json.reviews);
+        }
+      } catch {
+        // Silencieux
+      } finally {
+        if (!cancelled) setLoaded(true);
+      }
+    }
+    load();
+    return () => { cancelled = true; };
+  }, []);
+
+  // Tant qu'on n'a pas chargé, on affiche les témoignages statiques
+  // (pas de flash visuel)
+  const useLive = loaded && reviews.length >= 3;
+  const displayReviews = useLive ? reviews.slice(0, 6) : [];
+
+  return (
+    <section id="temoignages" className="py-20 lg:py-28 px-5" style={{ background: COLORS.bgAlt }}>
+      <div className="max-w-screen-2xl mx-auto">
+        <div className="text-center mb-14">
+          <div
+            className="inline-block px-4 py-1.5 rounded-full text-sm font-bold mb-4"
+            style={{ background: COLORS.bgWarm, color: COLORS.accentDark, border: `1px solid ${COLORS.borderAccent}` }}
+          >
+            TÉMOIGNAGES
+          </div>
+          <h2 className="text-3xl md:text-5xl font-black mb-4" style={{ color: COLORS.text }}>
+            Ils ont <span style={{ color: COLORS.accentDark }}>retrouvé</span> ce qui comptait le{' '}
+            <span style={{ color: COLORS.greenDark }}>plus.</span>
+          </h2>
+          {useLive && (
+            <p className="text-sm" style={{ color: COLORS.textMuted }}>
+              Avis vérifiés publiés par les propriétaires ·{' '}
+              <Link href="/avis" className="font-bold underline hover:no-underline" style={{ color: COLORS.accentDark }}>
+                Voir tous les avis
+              </Link>
+            </p>
+          )}
         </div>
 
-        <div className="grid md:grid-cols-3 gap-8">
-          {posts.map((post) => (
-            <Link
-              key={post.id}
-              href={`/blog/${post.slug}`}
-              className="group bg-white rounded-2xl overflow-hidden border-2 border-slate-200 hover:border-[#32ba5d] hover:shadow-xl transition-all"
-            >
-              {/* Cover image — grand carré */}
-              <div className="relative aspect-square overflow-hidden bg-slate-100">
-                {post.coverImage ? (
-                  <img
-                    src={post.coverImage}
-                    alt={post.title}
-                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                    loading="lazy"
-                  />
-                ) : (
-                  <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-[#134288] to-[#0d3266]">
-                    <Sparkles className="w-16 h-16 text-[#32ba5d]/40" />
+        <div className="grid md:grid-cols-3 gap-6">
+          {useLive ? (
+            displayReviews.map((r, i) => (
+              <motion.div
+                key={r.id}
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ delay: i * 0.1 }}
+                className="rounded-2xl p-6 flex flex-col"
+                style={{ background: COLORS.card, border: `1px solid ${COLORS.border}` }}
+              >
+                {/* Étoiles + objet retrouvé */}
+                <div className="flex items-center justify-between mb-3">
+                  <div className="flex items-center gap-0.5">
+                    {[1, 2, 3, 4, 5].map((s) => (
+                      <span
+                        key={s}
+                        className="text-lg"
+                        style={{ color: s <= r.rating ? COLORS.greenDark : '#D1D5DB' }}
+                        aria-hidden="true"
+                      >
+                        ★
+                      </span>
+                    ))}
                   </div>
-                )}
-                {/* Badge catégorie */}
-                <div className="absolute top-3 left-3">
-                  <span className="px-3 py-1 bg-[#134288] text-white text-xs font-bold rounded-full shadow-lg">
-                    {BLOG_CATEGORY_LABELS[post.category] || post.category}
-                  </span>
+                  {r.objectName && (
+                    <span
+                      className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded"
+                      style={{ background: COLORS.green + '22', color: COLORS.greenDark }}
+                    >
+                      {r.objectName}
+                    </span>
+                  )}
                 </div>
-              </div>
 
-              {/* Contenu */}
-              <div className="p-5">
-                <p className="text-xs text-slate-400 mb-2">
-                  {new Date(post.publishedAt).toLocaleDateString('fr-FR', {
-                    day: 'numeric', month: 'long', year: 'numeric',
-                  })}
+                <div className="text-4xl mb-2" style={{ color: COLORS.green }}>&laquo;</div>
+                <p className="text-sm mb-6 flex-1" style={{ color: COLORS.text }}>
+                  {r.content}
                 </p>
-                <h3 className="text-lg font-bold text-slate-900 mb-2 group-hover:text-[#134288] transition-colors line-clamp-2">
-                  {post.title}
-                </h3>
-                {post.excerpt && (
-                  <p className="text-sm text-slate-600 line-clamp-3 leading-relaxed">
-                    {post.excerpt}
-                  </p>
-                )}
-                <p className="text-sm font-bold text-[#32ba5d] mt-3 inline-flex items-center gap-1">
-                  Lire l'article <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-1 transition-transform" />
-                </p>
-              </div>
-            </Link>
-          ))}
+                <div className="flex items-center gap-3 pt-3" style={{ borderTop: `1px solid ${COLORS.border}` }}>
+                  <div
+                    className="w-10 h-10 rounded-full flex items-center justify-center font-bold text-sm"
+                    style={{ background: COLORS.green, color: 'white' }}
+                  >
+                    {r.name.split(' ').map((n) => n[0]).slice(0, 2).join('').toUpperCase()}
+                  </div>
+                  <div className="min-w-0">
+                    <div className="text-sm font-bold truncate" style={{ color: COLORS.text }}>{r.name}</div>
+                    <div className="text-xs" style={{ color: COLORS.textMuted }}>
+                      {r.finderName ? `Merci à ${r.finderName.split(' ')[0]}` : 'Propriétaire QRTags'}
+                    </div>
+                  </div>
+                </div>
+              </motion.div>
+            ))
+          ) : (
+            TESTIMONIALS.map((t, i) => (
+              <motion.div
+                key={i}
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ delay: i * 0.1 }}
+                className="rounded-2xl p-6"
+                style={{ background: COLORS.card, border: `1px solid ${COLORS.border}` }}
+              >
+                {/* Badge type */}
+                <div
+                  className="inline-block px-3 py-1 rounded-lg text-xs font-bold mb-4"
+                  style={{
+                    background: t.type === 'finder' ? COLORS.green + '22' : COLORS.accent + '22',
+                    color: t.type === 'finder' ? COLORS.greenDark : COLORS.accentDark,
+                  }}
+                >
+                  {t.type === 'finder' ? 'Trouveur' : 'Propriétaire'}
+                </div>
+                <div className="text-4xl mb-2" style={{ color: t.type === 'finder' ? COLORS.green : COLORS.accent }}>&laquo;</div>
+                <p className="text-sm mb-6" style={{ color: COLORS.text }}>{t.text}</p>
+                <div className="flex items-center gap-3">
+                  <div
+                    className="w-10 h-10 rounded-full flex items-center justify-center font-bold text-sm"
+                    style={{
+                      background: t.type === 'finder' ? COLORS.green : COLORS.accent,
+                      color: t.type === 'finder' ? 'white' : COLORS.text,
+                    }}
+                  >
+                    {t.avatar}
+                  </div>
+                  <div>
+                    <div className="text-sm font-bold" style={{ color: COLORS.text }}>{t.name}</div>
+                    <div className="text-xs" style={{ color: COLORS.textMuted }}>{t.role}</div>
+                  </div>
+                </div>
+              </motion.div>
+            ))
+          )}
         </div>
       </div>
     </section>
   );
 }
 
+// ════════════════════════════════════════════════════════════════════
+// PAGE
+// ════════════════════════════════════════════════════════════════════
 export default function HomePage() {
-  return (
-    <div className="min-h-screen bg-white">
-      {/* ═══ HEADER ═══ */}
-      <header className="sticky top-0 z-50 bg-white/95 backdrop-blur border-b border-slate-200">
-        <div className="max-w-[1600px] mx-auto px-4 md:px-6 py-3 flex items-center justify-between">
-          <QRTagsLogo size="sm" href="/" withHover />
-          <nav className="hidden md:flex items-center gap-6 text-sm font-medium text-slate-700">
-            <Link href="/" className="hover:text-[#134288] transition">Accueil</Link>
-            <Link href="/metiers" className="hover:text-[#134288] transition">Métiers</Link>
-            <Link href="/tarifs" className="hover:text-[#134288] transition">Tarifs</Link>
-            <Link href="/blog" className="hover:text-[#134288] transition">Blog</Link>
-            <Link href="/demo" className="hover:text-[#134288] transition">Démo</Link>
-            <Link href="/contact" className="hover:text-[#134288] transition">Contact</Link>
-          </nav>
-          <div className="flex items-center gap-2">
-            <Link
-              href="/login"
-              className="hidden sm:inline-flex items-center px-4 py-2 text-sm font-semibold text-[#134288] hover:bg-slate-100 rounded-lg transition"
-            >
-              Connexion
-            </Link>
-            <Link
-              href="/onboarding"
-              className="inline-flex items-center gap-1.5 px-4 py-2 text-sm font-bold bg-[#32ba5d] text-white rounded-lg hover:bg-[#28a54f] transition"
-            >
-              S'inscrire
-              <ArrowRight className="w-3.5 h-3.5" />
-            </Link>
-          </div>
-        </div>
-      </header>
+  const [scrolled, setScrolled] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [activeTab, setActiveTab] = useState<'finder' | 'owner'>('finder');
+  const [shopProducts, setShopProducts] = useState<ShopProduct[]>([]);
 
-      {/* ═══ HERO ═══ */}
-      <section className="relative overflow-hidden bg-gradient-to-br from-[#134288] to-[#0d3266] text-white">
-        {/* Pattern décoratif */}
+  // Fetch active products from DB on mount
+  useEffect(() => {
+    fetch('/api/shop/products')
+      .then(res => res.json())
+      .then(data => {
+        if (Array.isArray(data) && data.length > 0) {
+          setShopProducts(data);
+        }
+      })
+      .catch(() => {
+        // Keep fallback if API fails
+      });
+  }, []);
+
+  // Use DB products if available, otherwise fallback.
+  // resolvePackImage() guarantees every product gets a working local sachet image
+  // even when DB image is null, broken, or points to a missing upload.
+  const displayPacks = shopProducts.length > 0
+    ? shopProducts.map(p => ({
+        quantity: p.quantity,
+        name: p.name,
+        slug: p.slug,
+        price: p.price,
+        desc: p.description || `${p.quantity} étiquettes QR indestructibles.`,
+        badge: p.quantity >= 10 ? 'ÉCONOMIQUE' : p.quantity === 5 ? 'POPULAIRE' : '',
+        image: p.image,                              // Original DB image (may be broken)
+        fallbackImage: resolvePackImage(p),          // Always a working local sachet
+      }))
+    : SHOP_PACKS_FALLBACK.map(p => ({ ...p, fallbackImage: p.image }));
+
+  useEffect(() => {
+    const onScroll = () => setScrolled(window.scrollY > 20);
+    window.addEventListener('scroll', onScroll);
+    return () => window.removeEventListener('scroll', onScroll);
+  }, []);
+
+  const currentSteps = activeTab === 'finder' ? FINDER_STEPS : OWNER_STEPS;
+
+  return (
+    <main style={{ background: COLORS.bg, color: COLORS.text, minHeight: '100vh' }}>
+      {/* ═══ NAVBAR ═══ */}
+      <nav
+        style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          zIndex: 50,
+          background: scrolled ? 'rgba(255,255,255,0.95)' : 'rgba(255,255,255,0.7)',
+          backdropFilter: scrolled ? 'blur(12px)' : 'blur(6px)',
+          borderBottom: scrolled ? `1px solid ${COLORS.border}` : '1px solid transparent',
+          transition: 'all 0.3s',
+        }}
+      >
+        <div className="max-w-screen-2xl mx-auto px-5 sm:px-6 lg:px-8">
+          <div className="flex items-center justify-between h-16 lg:h-20">
+            <Link href="/" className="flex items-center gap-2 group">
+              <QRTagsLogo size="md" variant="light" withHover />
+            </Link>
+
+            <div className="hidden md:flex items-center gap-1">
+              <a href="#comment" className="px-4 py-2 text-sm font-medium hover:text-[#c89a00] transition-colors">Comment ça marche</a>
+              <a href="#contact-whatsapp" className="px-4 py-2 text-sm font-medium hover:text-[#c89a00] transition-colors">Comment suis-je contacté ?</a>
+              <a href="#tarifs" className="px-4 py-2 text-sm font-medium hover:text-[#c89a00] transition-colors">Tarifs</a>
+              <a href="#temoignages" className="px-4 py-2 text-sm font-medium hover:text-[#c89a00] transition-colors">Témoignages</a>
+              <Link href="/avis" className="px-4 py-2 text-sm font-medium hover:text-[#c89a00] transition-colors">Avis</Link>
+            </div>
+
+            <div className="hidden md:flex items-center gap-3">
+              <a
+                href="#tracker"
+                className="px-4 py-2 text-sm font-medium hover:text-[#c89a00] transition-colors"
+              >
+                Suivre un objet
+              </a>
+              <Link
+                href="#tarifs"
+                className="px-5 py-2.5 rounded-lg text-sm font-bold transition-all hover:scale-105"
+                style={{ background: COLORS.accent, color: COLORS.text }}
+              >
+                Protéger mes objets
+              </Link>
+            </div>
+
+            <button className="md:hidden p-2" onClick={() => setMenuOpen(!menuOpen)} aria-label="Menu">
+              {menuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+            </button>
+          </div>
+
+          {menuOpen && (
+            <div className="md:hidden pb-4 space-y-2">
+              <a href="#comment" onClick={() => setMenuOpen(false)} className="block px-4 py-2 text-sm">Comment ça marche</a>
+              <a href="#contact-whatsapp" onClick={() => setMenuOpen(false)} className="block px-4 py-2 text-sm">Comment suis-je contacté ?</a>
+              <a href="#tarifs" onClick={() => setMenuOpen(false)} className="block px-4 py-2 text-sm">Tarifs</a>
+              <a href="#temoignages" onClick={() => setMenuOpen(false)} className="block px-4 py-2 text-sm">Témoignages</a>
+              <Link href="/avis" onClick={() => setMenuOpen(false)} className="block px-4 py-2 text-sm">Avis</Link>
+              <a href="#tracker" onClick={() => setMenuOpen(false)} className="block px-4 py-2 text-sm text-[#c89a00]">Suivre un objet</a>
+              <Link href="#tarifs" onClick={() => setMenuOpen(false)} className="block px-4 py-3 text-sm font-bold text-center rounded-lg" style={{ background: COLORS.accent, color: COLORS.text }}>
+                Protéger mes objets
+              </Link>
+            </div>
+          )}
+        </div>
+      </nav>
+
+      {/* ═══ HERO — Carrousel défilant EN HAUT + infos en dessous ═══ */}
+      <section id="objets" className="pt-24 pb-20 lg:pt-28 lg:pb-32 relative overflow-hidden">
         <div
-          className="absolute inset-0 opacity-10"
+          className="absolute inset-0 opacity-50"
           style={{
-            backgroundImage: 'radial-gradient(circle at 20% 30%, #32ba5d 0%, transparent 50%), radial-gradient(circle at 80% 70%, #32ba5d 0%, transparent 50%)',
+            background: `radial-gradient(ellipse at 20% 30%, ${COLORS.accent}22 0%, transparent 60%), radial-gradient(ellipse at 80% 70%, ${COLORS.green}11 0%, transparent 50%)`,
           }}
         />
 
-        <div className="relative max-w-[1600px] mx-auto px-4 md:px-6 py-16 md:py-24 grid md:grid-cols-2 gap-12 items-center">
-          <div>
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#32ba5d]/20 border border-[#32ba5d]/40 mb-6">
-              <Sparkles className="w-3.5 h-3.5 text-[#32ba5d]" />
-              <span className="text-xs font-semibold text-[#32ba5d]">Nouvelle version V3 — Métiers personnalisables</span>
-            </div>
-            <h1 className="text-4xl md:text-5xl lg:text-6xl font-black leading-tight mb-6">
-              La gestion d&apos;objets perdus,<br />
-              <span className="text-[#32ba5d]">simple et professionnelle</span>
-            </h1>
-            <p className="text-lg md:text-xl text-blue-100 mb-8 leading-relaxed">
-              Hôtels, écoles, cliniques, loueurs auto... Protégez les effets de vos clients
-              avec des QR codes traçables. Le trouveur vous contacte directement via WhatsApp.
-            </p>
-            <div className="flex flex-wrap gap-3">
-              <Link
-                href="/demande-demo"
-                className="inline-flex items-center gap-2 px-6 py-3 bg-[#32ba5d] text-white font-bold rounded-lg hover:bg-[#28a54f] hover:-translate-y-0.5 transition-all shadow-lg"
+        {/* ─── TOP : Carrousel défilant pleine largeur (immersif, cards 500x500) ─── */}
+        <motion.div
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.7 }}
+          style={{
+            width: '100vw',
+            marginLeft: 'calc(50% - 50vw)',
+            marginRight: 'calc(50% - 50vw)',
+          }}
+        >
+          <div
+            className="relative overflow-hidden"
+            style={{ background: COLORS.bgWarm, padding: '32px 0 40px 0' }}
+          >
+            {/* Titre au-dessus du défilement */}
+            <div className="px-6 md:px-12 mb-5 flex items-center justify-between">
+              <p className="text-xs md:text-sm font-bold uppercase tracking-wider" style={{ color: COLORS.accentDark }}>
+                Objets protégés par QRTags · défilement continu
+              </p>
+              <div
+                className="hidden md:flex items-center gap-2 px-3 py-1 rounded-full"
+                style={{ background: COLORS.card, border: `1px solid ${COLORS.border}` }}
               >
-                Demander une démo
-                <ArrowRight className="w-4 h-4" />
-              </Link>
-              <Link
-                href="/comment-ca-marche"
-                className="inline-flex items-center gap-2 px-6 py-3 bg-white/10 text-white font-bold rounded-lg border border-white/30 hover:bg-white/20 transition-all"
-              >
-                Voir comment ça marche
-              </Link>
+                <span className="w-2 h-2 rounded-full animate-pulse" style={{ background: COLORS.green }} />
+                <span className="text-xs font-bold" style={{ color: COLORS.textMuted }}>98% retrouvés</span>
+              </div>
             </div>
 
-            {/* Stats */}
-            <div className="grid grid-cols-3 gap-4 mt-12 pt-8 border-t border-white/20">
-              {STATS.map((s, i) => (
-                <div key={i}>
-                  <p className="text-3xl font-black text-[#32ba5d]">{s.value}</p>
-                  <p className="text-xs text-blue-200 mt-1">{s.label}</p>
+            {/* Bande de cards qui défile en continu (45s, plus lent) — cards 300x300 */}
+            <div className="flex animate-marquee-slow">
+              {MARQUEE_ITEMS.concat(MARQUEE_ITEMS).map((item, i) => (
+                <div
+                  key={`hero-card-${i}`}
+                  className="flex-shrink-0 mx-3 rounded-2xl overflow-hidden shadow-md hover:shadow-xl transition-shadow"
+                  style={{
+                    background: COLORS.card,
+                    border: `1px solid ${COLORS.border}`,
+                    width: 'min(300px, 85vw)',
+                  }}
+                >
+                  {/* Image carrée 300x300 */}
+                  <div className="relative" style={{ height: 'min(300px, 85vw)' }}>
+                    <Image
+                      src={item.image}
+                      alt={item.name}
+                      fill
+                      className="object-cover"
+                      sizes="300px"
+                    />
+                    {/* Badge QR en bas à droite de l'image */}
+                    <div
+                      className="absolute bottom-3 right-3 px-3 py-1.5 rounded-lg text-xs font-bold shadow-md"
+                      style={{ background: 'rgba(255,255,255,0.95)', color: COLORS.accentDark }}
+                    >
+                      QR Tag
+                    </div>
+                  </div>
+                  {/* Texte (bas) — sobre : juste le nom, pas de description répétitive */}
+                  <div className="p-4">
+                    <h3 className="text-base font-bold" style={{ color: COLORS.text }}>
+                      {item.name}
+                    </h3>
+                  </div>
                 </div>
               ))}
             </div>
+
+            {/* CTA flottant superposé au carrousel — 'Commander mes tags' */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.6 }}
+              className="absolute left-1/2 -translate-x-1/2 z-20"
+              style={{ bottom: '24px' }}
+            >
+              <Link
+                href="/#tarifs"
+                className="cta-pulse flex items-center gap-3 px-7 py-4 rounded-full font-black text-base shadow-2xl transition-all hover:scale-105 hover:shadow-2xl"
+                style={{
+                  background: COLORS.accent,
+                  color: COLORS.text,
+                  border: `3px solid ${COLORS.text}`,
+                  boxShadow: '0 10px 30px rgba(0,0,0,0.25)',
+                }}
+              >
+                <ShoppingBag className="w-5 h-5" />
+                Commander mes tags
+                <ArrowRight className="w-5 h-5" />
+              </Link>
+            </motion.div>
           </div>
+        </motion.div>
 
-          {/* Visuel: Objets avec QR codes */}
-          <div className="relative hidden md:block">
-            {/* Conteneur principal */}
-            <div className="relative">
-              {/* Valise avec QR */}
-              <div className="bg-white rounded-2xl p-6 shadow-2xl rotate-[-3deg] hover:rotate-0 transition-transform duration-500 mb-4">
-                <div className="flex items-center gap-4">
-                  {/* QR code visuel */}
-                  <div className="flex-shrink-0 w-24 h-24 rounded-xl bg-[#134288] p-2">
-                    <div className="w-full h-full bg-white rounded-lg flex items-center justify-center">
-                      <QrCode className="w-12 h-12 text-[#134288]" />
-                    </div>
-                  </div>
-                  <div>
-                    <p className="text-xs font-bold text-[#32ba5d] uppercase tracking-wide">Valise</p>
-                    <p className="text-lg font-bold text-slate-900">Marie Dupont</p>
-                    <p className="text-sm text-slate-500">Chambre 204 — Hôtel Radisson</p>
-                  </div>
-                  <span className="ml-auto text-xs px-3 py-1 rounded-full font-semibold bg-[#32ba5d]/15 text-[#28a54f]">
-                    ✅ Actif
-                  </span>
-                </div>
-              </div>
-
-              {/* Cartable avec QR */}
-              <div className="bg-white rounded-2xl p-6 shadow-2xl rotate-[2deg] hover:rotate-0 transition-transform duration-500 mb-4 ml-12">
-                <div className="flex items-center gap-4">
-                  <div className="flex-shrink-0 w-24 h-24 rounded-xl bg-[#32ba5d] p-2">
-                    <div className="w-full h-full bg-white rounded-lg flex items-center justify-center">
-                      <QrCode className="w-12 h-12 text-[#32ba5d]" />
-                    </div>
-                  </div>
-                  <div>
-                    <p className="text-xs font-bold text-[#134288] uppercase tracking-wide">Cartable</p>
-                    <p className="text-lg font-bold text-slate-900">Luc Martin</p>
-                    <p className="text-sm text-slate-500">6ème B — École Jules Ferry</p>
-                  </div>
-                  <span className="ml-auto text-xs px-3 py-1 rounded-full font-semibold bg-[#32ba5d]/15 text-[#28a54f]">
-                    ✅ Actif
-                  </span>
-                </div>
-              </div>
-
-              {/* Clés avec QR */}
-              <div className="bg-white rounded-2xl p-6 shadow-2xl rotate-[-1deg] hover:rotate-0 transition-transform duration-500 ml-6">
-                <div className="flex items-center gap-4">
-                  <div className="flex-shrink-0 w-24 h-24 rounded-xl bg-slate-800 p-2">
-                    <div className="w-full h-full bg-white rounded-lg flex items-center justify-center">
-                      <QrCode className="w-12 h-12 text-slate-800" />
-                    </div>
-                  </div>
-                  <div>
-                    <p className="text-xs font-bold text-slate-600 uppercase tracking-wide">Clés voiture</p>
-                    <p className="text-lg font-bold text-slate-900">Karim Benali</p>
-                    <p className="text-sm text-slate-500">Clio 5 — AB-123-CD</p>
-                  </div>
-                  <span className="ml-auto text-xs px-3 py-1 rounded-full font-semibold bg-[#32ba5d]/15 text-[#28a54f]">
-                    ✅ Actif
-                  </span>
-                </div>
-              </div>
+        {/* ─── BOTTOM : Grille 2 colonnes — texte + preview trouvaille ─── */}
+        <div className="max-w-screen-2xl mx-auto relative px-5 mt-16 lg:mt-24">
+          <div className="grid lg:grid-cols-2 gap-12 items-center">
+          <motion.div
+            initial={{ opacity: 0, y: 30 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.7 }}
+          >
+            {/* Badge citoyen */}
+            <div
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-full mb-6"
+              style={{ background: COLORS.bgWarm, border: `1px solid ${COLORS.borderAccent}` }}
+            >
+              <HandHelping className="w-4 h-4" style={{ color: COLORS.greenDark }} />
+              <span className="text-sm font-medium" style={{ color: COLORS.accentDark }}>
+                Rendre un objet perdu — geste citoyen
+              </span>
             </div>
 
-            {/* Badge flottant: notification WhatsApp */}
-            <div className="absolute -bottom-4 -left-4 bg-[#32ba5d] text-white p-4 rounded-xl shadow-xl -rotate-3 z-10">
-              <div className="flex items-center gap-2">
-                <Bell className="w-5 h-5" />
-                <div>
-                  <p className="text-xs font-bold">Objet trouvé !</p>
-                  <p className="text-xs opacity-90">WhatsApp envoyé ✅</p>
-                </div>
-              </div>
+            <h1 className="text-4xl md:text-5xl lg:text-6xl font-black leading-tight mb-6" style={{ color: COLORS.text }}>
+              Vous avez{' '}
+              <span style={{ color: COLORS.greenDark }}>trouvé</span>{' '}
+              un objet ?
+            </h1>
+            <p className="text-lg md:text-xl mb-3 max-w-xl" style={{ color: COLORS.textMuted }}>
+              Scannez le QR tag, contactez le propriétaire en 1 clic via WhatsApp.
+              Pas d&apos;app, pas de formulaire, pas de stress. Juste un geste simple.
+            </p>
+            <p className="text-base mb-8 max-w-xl" style={{ color: COLORS.textMuted }}>
+              Vous avez <strong style={{ color: COLORS.accentDark }}>perdu</strong> quelque chose ?
+              Collez un tag QRTags et toute personne qui trouve votre objet peut vous contacter instantanément
+              avec sa position GPS.
+            </p>
+
+            <div className="flex flex-col sm:flex-row gap-4 mb-10">
+              <a
+                href="#tracker"
+                className="px-6 py-4 rounded-xl font-bold text-base flex items-center justify-center gap-2 transition-all hover:scale-105"
+                style={{ background: COLORS.green, color: 'white' }}
+              >
+                <Search className="w-5 h-5" />
+                Suivre un objet perdu
+              </a>
+              <Link
+                href="#tarifs"
+                className="px-6 py-4 rounded-xl font-bold text-base flex items-center justify-center gap-2 border-2 transition-all hover:bg-[#fffdf5]"
+                style={{ borderColor: COLORS.accent, color: COLORS.text }}
+              >
+                <Sparkles className="w-5 h-5" style={{ color: COLORS.accentDark }} />
+                Protéger mes objets
+              </Link>
             </div>
 
-            {/* Badge flottant: QR code animé */}
-            <div className="absolute -top-4 -right-4 bg-[#134288] text-white p-3 rounded-xl shadow-xl rotate-6 z-10">
-              <div className="flex items-center gap-2">
-                <QrCode className="w-6 h-6 text-[#32ba5d]" />
-                <div>
-                  <p className="text-xs font-bold">QR scanné</p>
-                  <p className="text-xs opacity-90">Trouveur notifié</p>
-                </div>
-              </div>
+            {/* Stats inline */}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+              {STATS.map((s, i) => (
+                <motion.div
+                  key={i}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.2 + i * 0.1 }}
+                >
+                  <div className="text-2xl md:text-3xl font-black" style={{ color: COLORS.accentDark }}>
+                    {s.value}
+                  </div>
+                  <div className="text-xs md:text-sm" style={{ color: COLORS.textMuted }}>
+                    {s.label}
+                  </div>
+                </motion.div>
+              ))}
             </div>
+          </motion.div>
+
+          {/* Right : Formulaire "Suivre un objet" directement dans le hero
+              (colonne de droite sur desktop, sous le texte sur mobile).
+              L'utilisateur peut tracker son objet dès la landing, sans scroll. */}
+          <motion.div
+            id="tracker"
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 0.7, delay: 0.3 }}
+          >
+            <TrackingWidget inline />
+          </motion.div>
           </div>
         </div>
       </section>
 
-      {/* ═══ MÉTIERS ═══ */}
-      <section id="metiers" className="py-20 bg-slate-50">
-        <div className="max-w-[1600px] mx-auto px-4 md:px-6">
-          <div className="text-center mb-14">
-            <h2 className="text-3xl md:text-4xl font-black text-slate-900 mb-3">
-              Une solution par métier
+      {/* ═══ STATS LIVE — Compteur objets retrouvés ce mois + total ═══ */}
+      <LiveStatsBar />
+
+      {/* ═══ COMMENT ÇA MARCHE — Tabs Trouveur / Propriétaire ═══ */}
+      <section id="comment" className="py-20 lg:py-28 px-5" style={{ background: COLORS.bg }}>
+        <div className="max-w-screen-2xl mx-auto">
+          <div className="text-center mb-10">
+            <div
+              className="inline-block px-4 py-1.5 rounded-full text-sm font-bold mb-4"
+              style={{ background: COLORS.bgWarm, color: COLORS.accentDark, border: `1px solid ${COLORS.borderAccent}` }}
+            >
+              SIMPLE & RAPIDE
+            </div>
+            <h2 className="text-3xl md:text-5xl font-black mb-4" style={{ color: COLORS.text }}>
+              Comment ça <span style={{ color: COLORS.accentDark }}>marche</span> ?
             </h2>
-            <p className="text-lg text-slate-600 max-w-2xl mx-auto">
-              Chaque métier a son propre workflow, ses propres champs et son propre dashboard.
+            <p className="text-lg max-w-2xl mx-auto" style={{ color: COLORS.textMuted }}>
+              Que vous soyez le trouveur ou le propriétaire, QRTags rend la retrouvaille simple.
             </p>
           </div>
 
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {METIERS.map((m, i) => (
-              <Link
-                key={i}
-                href={m.href}
-                className="group block bg-white rounded-3xl overflow-hidden border-2 border-slate-200 hover:border-[#32ba5d] hover:shadow-2xl transition-all duration-300"
+          {/* Tabs : Trouveur / Propriétaire */}
+          <div className="flex justify-center gap-4 mb-12">
+            <button
+              onClick={() => setActiveTab('finder')}
+              className="px-6 py-3 rounded-xl font-bold text-sm transition-all"
+              style={{
+                background: activeTab === 'finder' ? COLORS.green : COLORS.card,
+                color: activeTab === 'finder' ? 'white' : COLORS.textMuted,
+                border: `2px solid ${activeTab === 'finder' ? COLORS.green : COLORS.border}`,
+              }}
+            >
+              J&apos;ai trouvé un objet
+            </button>
+            <button
+              onClick={() => setActiveTab('owner')}
+              className="px-6 py-3 rounded-xl font-bold text-sm transition-all"
+              style={{
+                background: activeTab === 'owner' ? COLORS.accent : COLORS.card,
+                color: activeTab === 'owner' ? COLORS.text : COLORS.textMuted,
+                border: `2px solid ${activeTab === 'owner' ? COLORS.accent : COLORS.border}`,
+              }}
+            >
+              J&apos;ai perdu un objet
+            </button>
+          </div>
+
+          {/* Steps — with real images */}
+          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
+            {currentSteps.map((step, i) => {
+              const card = (
+                <motion.div
+                  key={`${activeTab}-${i}`}
+                  initial={{ opacity: 0, y: 30 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: i * 0.1 }}
+                  className="rounded-2xl overflow-hidden transition-all hover:scale-105 hover:shadow-xl h-full"
+                  style={{ background: COLORS.card, border: `1px solid ${COLORS.border}` }}
+                >
+                  <div className="relative aspect-[4/3] overflow-hidden">
+                    <Image
+                      src={step.image}
+                      alt={step.title}
+                      fill
+                      className="object-cover"
+                      sizes="(max-width: 768px) 100vw, (max-width: 1024px) 50vw, 25vw"
+                    />
+                    <div
+                      className="absolute top-3 left-3 text-xs font-black px-2 py-1 rounded-lg"
+                      style={{ background: step.color, color: 'white' }}
+                    >
+                      Étape {step.num}
+                    </div>
+                    {step.href && (
+                      <div
+                        className="absolute bottom-3 right-3 text-xs font-bold px-2 py-1 rounded-lg flex items-center gap-1"
+                        style={{ background: 'rgba(255,255,255,0.95)', color: COLORS.text }}
+                      >
+                        Voir le détail
+                        <ArrowRight className="w-3 h-3" />
+                      </div>
+                    )}
+                  </div>
+                  <div className="p-5">
+                    <h3 className="text-lg font-bold mb-2" style={{ color: COLORS.text }}>{step.title}</h3>
+                    <p className="text-sm" style={{ color: COLORS.textMuted }}>{step.desc}</p>
+                  </div>
+                </motion.div>
+              );
+
+              // Si l'étape a une page dédiée (parcours trouveur), on wrappe dans un Link.
+              if (step.href) {
+                return (
+                  <Link key={`${activeTab}-${i}`} href={step.href} className="block h-full">
+                    {card}
+                  </Link>
+                );
+              }
+
+              return card;
+            })}
+          </div>
+        </div>
+      </section>
+
+      {/* ═══ COMMENT SUIS-JE CONTACTÉ ? — Mockup WhatsApp réaliste ═══ */}
+      <section id="contact-whatsapp" className="py-20 lg:py-28 px-5" style={{ background: COLORS.bgAlt }}>
+        <div className="max-w-screen-2xl mx-auto">
+          <div className="grid lg:grid-cols-2 gap-12 lg:gap-16 items-center">
+            {/* ─── Left : Explications ─── */}
+            <motion.div
+              initial={{ opacity: 0, x: -30 }}
+              whileInView={{ opacity: 1, x: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.6 }}
+            >
+              <div
+                className="inline-flex items-center gap-2 px-4 py-2 rounded-full mb-6"
+                style={{ background: '#25D36622', border: '1px solid #25D36655' }}
               >
-                {/* Image — format paysage large */}
-                <div className="relative h-56 overflow-hidden">
+                <MessageCircle className="w-4 h-4" style={{ color: '#25D366' }} />
+                <span className="text-sm font-bold" style={{ color: '#128C7E' }}>
+                  Alerte WhatsApp instantanée
+                </span>
+              </div>
+
+              <h2 className="text-3xl md:text-4xl lg:text-5xl font-black mb-6 leading-tight" style={{ color: COLORS.text }}>
+                Comment <span style={{ color: '#128C7E' }}>suis-je contacté</span> quand on trouve mon objet&nbsp;?
+              </h2>
+
+              <p className="text-lg mb-6" style={{ color: COLORS.textMuted }}>
+                Dès qu&apos;un trouveur scanne votre QR tag, vous recevez un WhatsApp avec sa position GPS exacte.
+                Pas de spam, pas d&apos;appel inconnu — juste un message clair, et vous décidez de la suite.
+              </p>
+
+              <ul className="space-y-3 mb-8">
+                {[
+                  { icon: '📍', text: 'Position GPS du trouveur envoyée automatiquement' },
+                  { icon: '💬', text: 'Message pré-rempli : référence, objet, heure du scan' },
+                  { icon: '🔒', text: 'Votre numéro reste invisible — le trouveur passe par QRTags' },
+                  { icon: '⚡', text: 'Notification en moins de 5 secondes après le scan' },
+                ].map((item, i) => (
+                  <li key={i} className="flex items-start gap-3">
+                    <span className="text-xl flex-shrink-0" aria-hidden="true">{item.icon}</span>
+                    <span className="text-base" style={{ color: COLORS.text }}>{item.text}</span>
+                  </li>
+                ))}
+              </ul>
+
+              <Link
+                href="#tarifs"
+                className="inline-flex items-center gap-2 px-6 py-3 rounded-xl font-bold transition-all hover:scale-105"
+                style={{ background: '#25D366', color: 'white' }}
+              >
+                <MessageCircle className="w-5 h-5" />
+                Recevoir mes alertes WhatsApp
+                <ArrowRight className="w-4 h-4" />
+              </Link>
+            </motion.div>
+
+            {/* ─── Right : Mockup WhatsApp réaliste ─── */}
+            <motion.div
+              initial={{ opacity: 0, scale: 0.9, rotate: 2 }}
+              whileInView={{ opacity: 1, scale: 1, rotate: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.7, delay: 0.2 }}
+              className="relative mx-auto"
+              style={{ maxWidth: '380px' }}
+            >
+              {/* Cadre téléphone */}
+              <div
+                className="rounded-[2.5rem] p-2.5 shadow-2xl"
+                style={{ background: '#1a1a1a', border: '8px solid #0a0a0a' }}
+              >
+                {/* Encoche */}
+                <div className="relative mx-auto mb-1" style={{ width: '120px', height: '22px', background: '#0a0a0a', borderRadius: '0 0 14px 14px' }} />
+
+                {/* Écran WhatsApp */}
+                <div
+                  className="rounded-[2rem] overflow-hidden"
+                  style={{ background: '#ECE5DD', height: '600px' }}
+                >
+                  {/* ─── Header vert WhatsApp ─── */}
+                  <div
+                    className="px-4 py-3 flex items-center gap-3"
+                    style={{ background: '#075E54', color: 'white' }}
+                  >
+                    {/* Avatar */}
+                    <div
+                      className="rounded-full flex items-center justify-center font-bold text-sm"
+                      style={{ width: '38px', height: '38px', background: '#FDB900', color: '#0d0d0f' }}
+                    >
+                      Q
+                    </div>
+                    <div className="flex-1">
+                      <div className="text-sm font-bold">Alerte QRTags</div>
+                      <div className="text-xs opacity-80">en ligne · vérifié</div>
+                    </div>
+                    <svg viewBox="0 0 24 24" fill="white" className="w-5 h-5 opacity-90" aria-hidden="true">
+                      <path d="M20 15.5c-1.25 0-2.45-.2-3.57-.57a1 1 0 0 0-1.02.24l-2.2 2.2a15.05 15.05 0 0 1-6.59-6.58l2.2-2.21a1 1 0 0 0 .25-1.02A11.36 11.36 0 0 1 8.5 4a1 1 0 0 0-1-1H4a1 1 0 0 0-1 1c0 9.39 7.61 17 17 17a1 1 0 0 0 1-1v-3.5a1 1 0 0 0-1-1z"/>
+                    </svg>
+                  </div>
+
+                  {/* ─── Zone de chat ─── */}
+                  <div className="px-3 py-4 space-y-2.5" style={{ height: 'calc(100% - 64px)', backgroundImage: 'url(\'data:image/svg+xml;utf8,<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"40\" height=\"40\"><circle cx=\"20\" cy=\"20\" r=\"1\" fill=\"%23d4cab1\" opacity=\"0.3\"/></svg>\')' }}>
+                    {/* Date separator */}
+                    <div className="flex justify-center">
+                      <span
+                        className="px-3 py-1 rounded-lg text-xs font-bold"
+                        style={{ background: '#E1F2FA', color: '#54656F' }}
+                      >Aujourd&rsquo;hui</span>
+                    </div>
+
+                    {/* Message entrant 1 — texte */}
+                    <div className="flex justify-start">
+                      <div
+                        className="rounded-xl rounded-tl-sm px-3 py-2 max-w-[80%] shadow-sm"
+                        style={{ background: 'white' }}
+                      >
+                        <p className="text-sm mb-1" style={{ color: '#111' }}>
+                          <strong>🔔 Objet trouvé !</strong>
+                        </p>
+                        <p className="text-sm mb-1" style={{ color: '#111' }}>
+                          Bonjour Amira 👋
+                        </p>
+                        <p className="text-sm" style={{ color: '#111' }}>
+                          Quelqu&rsquo;un vient de scanner votre valise <strong>Réf. QRT26-MLQGY7</strong>.
+                        </p>
+                        <div className="flex items-center justify-end gap-1 mt-1">
+                          <span className="text-[10px]" style={{ color: '#667781' }}>10:42</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Message entrant 2 — localisation */}
+                    <div className="flex justify-start">
+                      <div
+                        className="rounded-xl rounded-tl-sm overflow-hidden max-w-[80%] shadow-sm"
+                        style={{ background: 'white' }}
+                      >
+                        {/* Preview carte (gradient simulé) */}
+                        <div
+                          className="relative flex items-center justify-center"
+                          style={{
+                            height: '120px',
+                            background: 'linear-gradient(135deg, #c8e6c9 0%, #a5d6a7 35%, #81c784 70%, #66bb6a 100%)',
+                          }}
+                        >
+                          {/* Routes simulées */}
+                          <svg viewBox="0 0 200 120" className="absolute inset-0 w-full h-full" preserveAspectRatio="none" aria-hidden="true">
+                            <path d="M0,80 Q50,60 100,75 T200,70" stroke="white" strokeWidth="3" fill="none" opacity="0.7"/>
+                            <path d="M50,0 L60,120" stroke="white" strokeWidth="2" fill="none" opacity="0.5"/>
+                            <path d="M0,30 L200,45" stroke="white" strokeWidth="2" fill="none" opacity="0.5"/>
+                          </svg>
+                          {/* Pin centrale */}
+                          <div className="relative z-10 flex flex-col items-center">
+                            <svg viewBox="0 0 24 24" className="w-8 h-8" fill="#ea4335" aria-hidden="true">
+                              <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5a2.5 2.5 0 1 1 0-5 2.5 2.5 0 0 1 0 5z"/>
+                            </svg>
+                            <span className="mt-1 px-2 py-0.5 rounded text-[10px] font-bold" style={{ background: 'white', color: '#111' }}>
+                              Position GPS
+                            </span>
+                          </div>
+                        </div>
+                        <div className="px-3 py-2">
+                          <p className="text-sm font-bold" style={{ color: '#111' }}>📍 Gare Saint-Charles, Marseille</p>
+                          <p className="text-xs" style={{ color: '#667781' }}>Précision : 8 mètres · il y a 2 min</p>
+                          <div className="flex items-center justify-end gap-1 mt-1">
+                            <span className="text-[10px]" style={{ color: '#667781' }}>10:42</span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Message entrant 3 — message du trouveur */}
+                    <div className="flex justify-start">
+                      <div
+                        className="rounded-xl rounded-tl-sm px-3 py-2 max-w-[80%] shadow-sm"
+                        style={{ background: 'white' }}
+                      >
+                        <p className="text-sm" style={{ color: '#111' }}>
+                          « Bonjour, j&rsquo;ai trouvé votre valise à la sortie de la gare. Je peux vous la rendre tout de suite. — Lucas »
+                        </p>
+                        <div className="flex items-center justify-end gap-1 mt-1">
+                          <span className="text-[10px]" style={{ color: '#667781' }}>10:43</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Message sortant — votre réponse */}
+                    <div className="flex justify-end">
+                      <div
+                        className="rounded-xl rounded-tr-sm px-3 py-2 max-w-[80%] shadow-sm"
+                        style={{ background: '#DCF8C6' }}
+                      >
+                        <p className="text-sm" style={{ color: '#111' }}>
+                          Merci Lucas !! J&rsquo;arrive dans 15 minutes 🙏
+                        </p>
+                        <div className="flex items-center justify-end gap-1 mt-1">
+                          <span className="text-[10px]" style={{ color: '#667781' }}>10:44</span>
+                          {/* Double check bleu */}
+                          <svg viewBox="0 0 16 11" className="w-4 h-3" fill="#53bdeb" aria-hidden="true">
+                            <path d="M11.07 0.65l-0.36 0.36 3.46 3.46-3.5 3.5 0.36 0.36 3.86-3.86zM7.07 0.65l-0.36 0.36 3.46 3.46-3.5 3.5 0.36 0.36 3.86-3.86z"/>
+                          </svg>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Badge flottant — Stats */}
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ delay: 0.6 }}
+                className="absolute -top-4 -right-4 lg:-right-6 rounded-2xl px-4 py-3 shadow-xl"
+                style={{ background: 'white', border: '2px solid #25D366' }}
+              >
+                <div className="flex items-center gap-2">
+                  <div
+                    className="rounded-full flex items-center justify-center"
+                    style={{ width: '32px', height: '32px', background: '#25D366', color: 'white' }}
+                  >
+                    <CheckCircle2 className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <div className="text-xs font-bold" style={{ color: COLORS.text }}>98% rendus</div>
+                    <div className="text-[10px]" style={{ color: COLORS.textMuted }}>en moins de 2h</div>
+                  </div>
+                </div>
+              </motion.div>
+
+              {/* Badge flottant — Temps réel */}
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ delay: 0.8 }}
+                className="absolute -bottom-4 -left-4 lg:-left-6 rounded-2xl px-4 py-3 shadow-xl flex items-center gap-2"
+                style={{ background: '#FDB900', color: COLORS.text }}
+              >
+                <div className="w-2 h-2 rounded-full animate-pulse" style={{ background: COLORS.greenDark }} />
+                <span className="text-xs font-bold">Temps réel</span>
+              </motion.div>
+            </motion.div>
+          </div>
+        </div>
+      </section>
+
+      {/* ═══ TÉMOIGNAGES (live depuis /api/reviews/public) ═══ */}
+      <LiveTestimonials />
+
+      {/* ═══ BOUTIQUE — Nos Packs de Stickers ═══ */}
+      <section id="tarifs" className="py-20 lg:py-28 px-5" style={{ background: '#111111' }}>
+        <div className="max-w-screen-2xl mx-auto">
+          <div className="text-center mb-12">
+            <div
+              className="inline-block px-4 py-1.5 rounded-full text-sm font-bold mb-4"
+              style={{ background: '#E3B23C', color: '#000000', border: '2px solid #000000' }}
+            >
+              <ShoppingBag className="w-4 h-4 inline mr-1" />
+              CHECKOUT EXPRESS
+            </div>
+            <h2 className="text-3xl md:text-5xl font-black mb-4" style={{ color: '#FFFFFF' }}>
+              Nos Packs de <span style={{ color: '#E3B23C' }}>Stickers</span>
+            </h2>
+            <p className="text-lg max-w-2xl mx-auto" style={{ color: '#aaaaaa' }}>
+              Commandez en 4 champs. Pas de compte, pas de panier. Paiement à la livraison à Dakar.
+            </p>
+          </div>
+
+          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
+            {displayPacks.map((pack, i) => (
+              <motion.div
+                key={pack.slug}
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ delay: i * 0.1 }}
+                className="rounded-2xl relative overflow-hidden flex flex-col"
+                style={{
+                  background: '#E3B23C',
+                  border: '4px solid #000000',
+                }}
+              >
+                {/* Badge */}
+                {pack.badge && (
+                  <div
+                    className="absolute top-3 right-3 z-10 px-3 py-1 rounded-lg text-xs font-black"
+                    style={{ background: '#000000', color: '#E3B23C' }}
+                  >
+                    {pack.badge}
+                  </div>
+                )}
+
+                {/* Product image GRANDE (format portrait) — src TOUJOURS valide */}
+                <div className="relative w-full" style={{ aspectRatio: '3 / 4', background: '#000000' }}>
                   <img
-                    src={m.image}
-                    alt={m.title}
-                    className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
+                    src={getSafeImageSrc(pack)}
+                    alt={pack.name}
+                    className="w-full h-full object-cover"
                     loading="lazy"
+                    onError={(e) => {
+                      // Filet de sécurité ultime : si l'image locale elle-même
+                      // casse (ce qui ne devrait jamais arriver), on affiche
+                      // le chiffre doré sur fond noir.
+                      const img = e.currentTarget as HTMLImageElement;
+                      img.style.display = 'none';
+                      const num = img.parentElement?.querySelector('[data-fallback-number]') as HTMLElement | null;
+                      if (num) num.style.display = 'flex';
+                    }}
                   />
-                  <div className="absolute inset-0 bg-gradient-to-t from-[#134288]/90 via-[#134288]/30 to-transparent" />
-                  <div className="absolute bottom-4 left-5 right-5 flex items-center justify-between">
-                    <h3 className="text-2xl font-black text-white drop-shadow-lg">{m.title}</h3>
-                    <span className={`text-xs px-3 py-1 rounded-full font-bold ${
-                      m.badge === 'Disponible'
-                        ? 'bg-[#32ba5d] text-white'
-                        : 'bg-white/90 text-slate-700'
-                    }`}>
-                      {m.badge}
+                  {/* Number fallback — uniquement si même l'image locale casse */}
+                  <div
+                    data-fallback-number
+                    className="w-full h-full items-center justify-center"
+                    style={{ display: 'none' }}
+                  >
+                    <span className="text-7xl md:text-8xl font-black" style={{ color: '#E3B23C' }}>
+                      {pack.quantity}
                     </span>
                   </div>
                 </div>
-                {/* Description + CTA */}
-                <div className="p-6">
-                  <p className="text-sm text-slate-600 leading-relaxed mb-4">{m.description}</p>
-                  <span className="inline-flex items-center gap-1.5 text-sm font-bold text-[#134288] group-hover:text-[#32ba5d] transition-colors">
-                    En savoir plus <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
-                  </span>
-                </div>
-              </Link>
-            ))}
-          </div>
-        </div>
-      </section>
 
-      {/* ═══ COMMENT ÇA MARCHE ═══ */}
-      <section id="how" className="py-20 bg-white">
-        <div className="max-w-[1600px] mx-auto px-4 md:px-6">
-          <div className="text-center mb-14">
-            <h2 className="text-3xl md:text-4xl font-black text-slate-900 mb-3">
-              Comment ça marche ?
-            </h2>
-            <p className="text-lg text-slate-600 max-w-2xl mx-auto">
-              De la génération des QR à la restitution, un workflow simple en 4 étapes.
-            </p>
-          </div>
+                <div className="p-5 flex flex-col flex-1">
+                  <h3 className="text-lg font-black mb-2" style={{ color: '#000000' }}>
+                    {pack.name}
+                  </h3>
+                  <p className="text-sm mb-4 flex-1" style={{ color: '#000000', opacity: 0.8 }}>
+                    {pack.desc}
+                  </p>
 
-          <div className="grid md:grid-cols-4 gap-6">
-            {STEPS.map((step, i) => (
-              <div key={i} className="relative">
-                <div className="bg-white rounded-2xl p-6 border-2 border-slate-200 hover:border-[#32ba5d] transition-colors h-full">
-                  <div className="w-20 h-20 mx-auto mb-4 flex items-center justify-center">
-                    {step.visual}
+                  <div className="text-2xl font-black mb-4" style={{ color: '#000000' }}>
+                    {new Intl.NumberFormat('fr-FR').format(pack.price)} FCFA
                   </div>
-                  <div className="text-xs font-bold text-[#32ba5d] mb-2">ÉTAPE {step.num}</div>
-                  <h3 className="text-lg font-bold text-slate-900 mb-2">{step.title}</h3>
-                  <p className="text-sm text-slate-600">{step.description}</p>
+
+                  <Link
+                    href={`/shop/${pack.slug}`}
+                    className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl font-bold text-sm transition-all hover:scale-105"
+                    style={{ background: '#000000', color: '#E3B23C', border: '2px solid #E3B23C' }}
+                  >
+                    Commander maintenant
+                    <ArrowRight className="w-4 h-4" />
+                  </Link>
                 </div>
-                {i < STEPS.length - 1 && (
-                  <div className="hidden md:block absolute top-1/2 -right-3 transform -translate-y-1/2 text-slate-300 z-10">
-                    <ArrowRight className="w-6 h-6" />
-                  </div>
-                )}
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* ═══ ONBOARDING / INSCRIPTION ═══ */}
-      <section id="onboarding" className="py-20 bg-gradient-to-br from-[#134288] to-[#0d3266] text-white">
-        <div className="max-w-5xl mx-auto px-4 md:px-6">
-          <div className="text-center mb-12">
-            <h2 className="text-3xl md:text-4xl font-black mb-3">
-              Démarrez en 3 étapes
-            </h2>
-            <p className="text-lg text-blue-100 max-w-2xl mx-auto">
-              Que vous soyez superadmin ou gérant d'établissement, QRTagsPro
-              s'adapte à votre besoin.
-            </p>
-          </div>
-
-          <div className="grid md:grid-cols-3 gap-6 mb-12">
-            {/* Étape 1 — Superadmin */}
-            <div className="bg-white/10 backdrop-blur rounded-2xl p-6 border border-white/20">
-              <div className="w-12 h-12 rounded-xl bg-[#32ba5d] flex items-center justify-center text-white font-bold text-xl mb-4">
-                1
-              </div>
-              <h3 className="font-bold text-lg mb-2">Superadmin</h3>
-              <p className="text-sm text-blue-100 mb-4">
-                Créez les agences, générez les lots de QR, gérez les métiers personnalisés.
-              </p>
-              <Link
-                href="/admin/connexion"
-                className="inline-flex items-center gap-1.5 px-4 py-2 bg-white text-[#134288] text-sm font-bold rounded-lg hover:bg-blue-50 transition"
-              >
-                Espace superadmin
-                <ArrowRight className="w-3.5 h-3.5" />
-              </Link>
-            </div>
-
-            {/* Étape 2 — Agence */}
-            <div className="bg-white/10 backdrop-blur rounded-2xl p-6 border border-white/20">
-              <div className="w-12 h-12 rounded-xl bg-[#32ba5d] flex items-center justify-center text-white font-bold text-xl mb-4">
-                2
-              </div>
-              <h3 className="font-bold text-lg mb-2">Agence</h3>
-              <p className="text-sm text-blue-100 mb-4">
-                Connectez-vous, faites le check-in de vos clients, suivez vos QR actifs.
-              </p>
-              <Link
-                href="/agence/connexion"
-                className="inline-flex items-center gap-1.5 px-4 py-2 bg-[#32ba5d] text-white text-sm font-bold rounded-lg hover:bg-[#28a54f] transition"
-              >
-                Espace agence
-                <ArrowRight className="w-3.5 h-3.5" />
-              </Link>
-            </div>
-
-            {/* Étape 3 — Démo */}
-            <div className="bg-white/10 backdrop-blur rounded-2xl p-6 border border-white/20">
-              <div className="w-12 h-12 rounded-xl bg-[#32ba5d] flex items-center justify-center text-white font-bold text-xl mb-4">
-                3
-              </div>
-              <h3 className="font-bold text-lg mb-2">Pas encore client ?</h3>
-              <p className="text-sm text-blue-100 mb-4">
-                Créez votre compte établissement en 2 minutes et commencez à protéger
-                les effets de vos clients.
-              </p>
-              <Link
-                href="/onboarding"
-                className="inline-flex items-center gap-1.5 px-4 py-2 bg-[#32ba5d] text-white text-sm font-bold rounded-lg hover:bg-[#28a54f] transition"
-              >
-                S'inscrire maintenant
-                <ArrowRight className="w-3.5 h-3.5" />
-              </Link>
-            </div>
-          </div>
-
-          {/* Workflow résumé */}
-          <div className="bg-white/5 rounded-2xl p-6 border border-white/10">
-            <p className="text-sm font-bold text-[#32ba5d] mb-3 text-center">📋 WORKFLOW COMPLET</p>
-            <div className="grid md:grid-cols-4 gap-4 text-center text-sm">
-              <div>
-                <p className="font-bold text-white mb-1">1. Génération</p>
-                <p className="text-blue-200 text-xs">Superadmin génère QR → agence</p>
-              </div>
-              <div>
-                <p className="font-bold text-white mb-1">2. Check-in</p>
-                <p className="text-blue-200 text-xs">Agence scanne QR + infos client</p>
-              </div>
-              <div>
-                <p className="font-bold text-white mb-1">3. Perte → Scan</p>
-                <p className="text-blue-200 text-xs">Trouveur scanne → WhatsApp réception</p>
-              </div>
-              <div>
-                <p className="font-bold text-white mb-1">4. Restitution</p>
-                <p className="text-blue-200 text-xs">Réception vérifie + restitue</p>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* ═══ AVANTAGES ═══ */}
-      <section id="avantages" className="py-20 bg-white">
-        <div className="max-w-[1600px] mx-auto px-4 md:px-6">
-          <div className="text-center mb-14">
-            <h2 className="text-3xl md:text-4xl font-black text-slate-900 mb-3">
-              Pourquoi QRTagsPro ?
-            </h2>
-            <p className="text-lg text-slate-600 max-w-2xl mx-auto">
-              Pensé pour les entreprises, simple pour vos équipes.
-            </p>
-          </div>
-
-          <div className="grid md:grid-cols-3 gap-8">
-            {AVANTAGES.map((a, i) => (
-              <div key={i} className="text-center">
-                <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-br from-[#134288] to-[#0d3266] text-white mb-4">
-                  {a.icon}
-                </div>
-                <h3 className="text-xl font-bold text-slate-900 mb-2">{a.title}</h3>
-                <p className="text-sm text-slate-600 leading-relaxed">{a.description}</p>
-              </div>
+              </motion.div>
             ))}
           </div>
 
-          {/* Bandeau trust */}
-          <div className="mt-16 p-8 bg-gradient-to-r from-[#134288] to-[#0d3266] rounded-2xl text-white">
-            <div className="grid md:grid-cols-3 gap-6 text-center">
-              <div className="flex flex-col items-center">
-                <Lock className="w-8 h-8 text-[#32ba5d] mb-2" />
-                <p className="text-sm font-semibold">Confidentialité</p>
-                <p className="text-xs text-blue-200 mt-1">Le trouveur ne voit jamais les coordonnées client</p>
-              </div>
-              <div className="flex flex-col items-center">
-                <Clock className="w-8 h-8 text-[#32ba5d] mb-2" />
-                <p className="text-sm font-semibold">Auto-expiration</p>
-                <p className="text-xs text-blue-200 mt-1">Check-out automatique à la date de départ</p>
-              </div>
-              <div className="flex flex-col items-center">
-                <Bell className="w-8 h-8 text-[#32ba5d] mb-2" />
-                <p className="text-sm font-semibold">WhatsApp WAME</p>
-                <p className="text-xs text-blue-200 mt-1">Click-to-chat, aucune installation</p>
-              </div>
-            </div>
+          <div className="mt-8 text-center">
+            <p className="text-sm" style={{ color: '#aaaaaa' }}>
+              <Shield className="w-4 h-4 inline mr-1" style={{ color: '#E3B23C' }} />
+              Cash on Delivery — vous payez quand vous recevez. Zéro risque.
+            </p>
           </div>
         </div>
       </section>
 
-      {/* ═══ BLOG ═══ */}
-      <BlogSection />
-
-      {/* ═══ RGPD / CONFIDENTIALITÉ ═══ */}
-      <section className="py-12 bg-slate-100 border-t border-slate-200">
-        <div className="max-w-[1600px] mx-auto px-4 md:px-6">
-          <div className="bg-white rounded-2xl p-6 border-2 border-slate-200 shadow-sm">
-            <div className="flex items-start gap-4">
-              <div className="flex-shrink-0 w-12 h-12 rounded-xl bg-[#134288] flex items-center justify-center">
-                <Shield className="w-6 h-6 text-white" />
-              </div>
-              <div className="flex-1">
-                <h2 className="text-lg font-bold text-slate-900 mb-2">
-                  🔒 Protection des données — RGPD
-                </h2>
-                <p className="text-sm text-slate-600 leading-relaxed mb-3">
-                  QRTagsPro s'engage à protéger les données personnelles de vos clients conformément
-                  au Règlement Général sur la Protection des Données (RGPD). Voici nos engagements :
-                </p>
-                <div className="grid md:grid-cols-4 gap-4 mt-4">
-                  <div className="bg-slate-50 rounded-xl p-4 border border-slate-200">
-                    <CheckCircle2 className="w-5 h-5 text-[#32ba5d] mb-2" />
-                    <p className="text-xs font-bold text-slate-900">Confidentialité trouveur</p>
-                    <p className="text-xs text-slate-500 mt-1">
-                      Le trouveur ne voit jamais les coordonnées du client (nom, chambre, téléphone).
-                    </p>
-                  </div>
-                  <div className="bg-slate-50 rounded-xl p-4 border border-slate-200">
-                    <CheckCircle2 className="w-5 h-5 text-[#32ba5d] mb-2" />
-                    <p className="text-xs font-bold text-slate-900">Opt-in explicite</p>
-                    <p className="text-xs text-slate-500 mt-1">
-                      Le contact direct client après séjour nécessite l'accord explicite du client.
-                    </p>
-                  </div>
-                  <div className="bg-slate-50 rounded-xl p-4 border border-slate-200">
-                    <CheckCircle2 className="w-5 h-5 text-[#32ba5d] mb-2" />
-                    <p className="text-xs font-bold text-slate-900">Données chiffrées</p>
-                    <p className="text-xs text-slate-500 mt-1">
-                      Toutes les données sensibles sont chiffrées en base (bcrypt, AES-256).
-                    </p>
-                  </div>
-                  <div className="bg-slate-50 rounded-xl p-4 border border-slate-200">
-                    <CheckCircle2 className="w-5 h-5 text-[#32ba5d] mb-2" />
-                    <p className="text-xs font-bold text-slate-900">Suppression auto</p>
-                    <p className="text-xs text-slate-500 mt-1">
-                      Les données de démo sont supprimées après 2h. Les QR expirés sont archivés.
-                    </p>
-                  </div>
-                </div>
-                <div className="mt-4 flex flex-wrap gap-3 text-xs">
-                  <Link href="/confidentialite" className="text-[#134288] font-semibold hover:underline">
-                    Politique de confidentialité
-                  </Link>
-                  <span className="text-slate-300">|</span>
-                  <Link href="/cgu" className="text-[#134288] font-semibold hover:underline">
-                    Conditions d'utilisation
-                  </Link>
-                  <span className="text-slate-300">|</span>
-                  <Link href="/mentions-legales" className="text-[#134288] font-semibold hover:underline">
-                    Mentions légales
-                  </Link>
-                  <span className="text-slate-300">|</span>
-                  <a href="mailto:rgpd@qrtagspro.com" className="text-[#134288] font-semibold hover:underline">
-                    Contact DPO : rgpd@qrtagspro.com
-                  </a>
-                </div>
-              </div>
+      {/* ═══ SECTION PROFESSIONNELS — lien discret ═══ */}
+      <section className="py-16 lg:py-20 px-5" style={{ background: COLORS.bg }}>
+        <div className="max-w-3xl mx-auto">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            className="rounded-2xl p-8 text-center"
+            style={{ background: COLORS.bgAlt, border: `1px solid ${COLORS.border}` }}
+          >
+            <Users className="w-8 h-8 mb-4 mx-auto" style={{ color: COLORS.accentDark }} />
+            <h3 className="text-xl font-bold mb-3" style={{ color: COLORS.text }}>
+              Vous êtes un professionnel ?
+            </h3>
+            <p className="text-sm mb-6" style={{ color: COLORS.textMuted }}>
+              Hôtels, écoles, consignes, cliniques, loueurs — QRTags propose des solutions
+              adaptées à chaque métier avec dashboard, champs dynamiques et gestion multi-sites.
+            </p>
+            <div className="flex flex-col sm:flex-row gap-3 justify-center">
+              <Link
+                href="/devenir-partenaire"
+                className="px-6 py-3 rounded-xl font-bold text-sm inline-flex items-center justify-center gap-2 transition-all hover:scale-105"
+                style={{ background: COLORS.accent, color: COLORS.text }}
+              >
+                Devenir partenaire
+                <ArrowRight className="w-4 h-4" />
+              </Link>
+              <Link
+                href="/metiers/hotels"
+                className="px-6 py-3 rounded-xl font-bold text-sm inline-flex items-center justify-center gap-2 border-2 transition-all hover:bg-[#fffdf5]"
+                style={{ borderColor: COLORS.border, color: COLORS.text }}
+              >
+                Voir les métiers
+              </Link>
             </div>
-          </div>
+          </motion.div>
         </div>
       </section>
 
-      {/* ═══ PARTENAIRES ═══ */}
-      <section className="py-16 bg-white border-t border-slate-200">
-        <div className="max-w-5xl mx-auto px-4 md:px-6 text-center">
-          <h2 className="text-2xl font-black text-slate-900 mb-2">Ils nous font confiance</h2>
-          <p className="text-sm text-slate-500 mb-8">Intégrations et partenaires technologiques</p>
-          <div className="flex flex-wrap items-center justify-center gap-8 md:gap-12">
-            {/* Cloudbeds */}
-            <div className="flex flex-col items-center gap-2 opacity-70 hover:opacity-100 transition">
-              <div className="w-16 h-16 rounded-xl bg-[#134288] flex items-center justify-center text-white font-black text-xl">
-                CB
-              </div>
-              <span className="text-xs font-semibold text-slate-600">Cloudbeds</span>
+      {/* ═══ CTA FINAL — sobre, sans dupliquer le hero ═══ */}
+      <section className="py-14 lg:py-16 px-5" style={{ background: COLORS.bgAlt }}>
+        <div className="max-w-3xl mx-auto text-center">
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95 }}
+            whileInView={{ opacity: 1, scale: 1 }}
+            viewport={{ once: true }}
+            className="rounded-2xl p-8 shadow-lg"
+            style={{ background: `linear-gradient(145deg, ${COLORS.green}, ${COLORS.greenDark})`, color: 'white' }}
+          >
+            <h2 className="text-2xl md:text-3xl font-black mb-3">
+              Chaque objet perdu peut être retrouvé
+            </h2>
+            <p className="text-base md:text-lg mb-6 opacity-90">
+              Un geste citoyen, une technologie simple. Protégez vos affaires, rendez ce que vous trouvez.
+            </p>
+            <div className="flex flex-col sm:flex-row gap-3 justify-center">
+              <Link
+                href="#tarifs"
+                className="px-6 py-3 rounded-xl font-black text-base inline-flex items-center justify-center gap-2 transition-all hover:scale-105"
+                style={{ background: COLORS.accent, color: COLORS.text }}
+              >
+                Commander mes tags
+                <ArrowRight className="w-5 h-5" />
+              </Link>
+              <a
+                href="#tracker"
+                className="px-6 py-3 rounded-xl font-bold text-base inline-flex items-center justify-center gap-2 border-2 transition-all hover:bg-white/10"
+                style={{ borderColor: 'white', color: 'white' }}
+              >
+                <Search className="w-5 h-5" />
+                Suivre un objet
+              </a>
             </div>
-            {/* Mews */}
-            <div className="flex flex-col items-center gap-2 opacity-70 hover:opacity-100 transition">
-              <div className="w-16 h-16 rounded-xl bg-slate-800 flex items-center justify-center text-white font-black text-xl">
-                M
-              </div>
-              <span className="text-xs font-semibold text-slate-600">Mews</span>
-            </div>
-            {/* Sirvoy */}
-            <div className="flex flex-col items-center gap-2 opacity-70 hover:opacity-100 transition">
-              <div className="w-16 h-16 rounded-xl bg-[#32ba5d] flex items-center justify-center text-white font-black text-xl">
-                S
-              </div>
-              <span className="text-xs font-semibold text-slate-600">Sirvoy</span>
-            </div>
-            {/* Deliverback */}
-            <div className="flex flex-col items-center gap-2 opacity-70 hover:opacity-100 transition">
-              <div className="w-16 h-16 rounded-xl bg-orange-500 flex items-center justify-center text-white font-black text-xl">
-                DB
-              </div>
-              <span className="text-xs font-semibold text-slate-600">Deliverback</span>
-            </div>
-          </div>
+          </motion.div>
         </div>
       </section>
+
+      {/* ═══ DERNIERS ARTICLES DU BLOG ═══ */}
+      <BlogTeaserSection
+        limit={3}
+        title="Dernières actualités"
+        subtitle="Conseils, actualités et bonnes pratiques pour protéger vos objets du quotidien."
+        colors={{
+          bg: COLORS.bgAlt,
+          text: COLORS.text,
+          textMuted: COLORS.textMuted,
+          accentDark: COLORS.accentDark,
+          card: COLORS.card,
+          border: COLORS.border,
+        }}
+      />
 
       {/* ═══ FOOTER ═══ */}
-      <footer className="bg-[#0d3266] text-white py-12">
-        <div className="max-w-[1600px] mx-auto px-4 md:px-6">
-          <div className="grid md:grid-cols-4 gap-8">
+      <footer className="py-12 px-5 border-t" style={{ borderColor: COLORS.border, background: COLORS.bg }}>
+        <div className="max-w-screen-2xl mx-auto">
+          <div className="grid md:grid-cols-4 gap-8 mb-8">
             <div className="md:col-span-2">
-              <QRTagsLogo size="md" />
-              <p className="text-sm text-blue-200 mt-4 max-w-sm">
-                La solution de gestion d&apos;objets perdus pour les entreprises.
-                Simple, professionnelle, multi-métiers.
+              <QRTagsLogo size="md" variant="light" />
+              <p className="text-sm mt-4 max-w-md" style={{ color: COLORS.textMuted }}>
+                QRTags — étiquettes QR pour objets perdus. Trouvez, rendez, protégez.
+                Simple, rapide, citoyen. Sans app, sans batterie.
               </p>
             </div>
             <div>
-              <p className="text-sm font-bold mb-3">Accès</p>
-              <ul className="space-y-2 text-sm text-blue-200">
-                <li><Link href="/agence/connexion" className="hover:text-[#32ba5d]">Espace agence</Link></li>
-                <li><Link href="/login" className="hover:text-[#32ba5d]">Espace superadmin</Link></li>
-                <li><Link href="/tarifs" className="hover:text-[#32ba5d]">Tarifs</Link></li>
-                <li><Link href="/contact" className="hover:text-[#32ba5d]">Contact</Link></li>
-                <li><Link href="/demo" className="hover:text-[#32ba5d]">Démo interactive</Link></li>
+              <h4 className="font-bold mb-3 text-sm" style={{ color: COLORS.accentDark }}>Pour particuliers</h4>
+              <ul className="space-y-2 text-sm">
+                <li><a href="#comment" style={{ color: COLORS.textMuted }}>Comment ça marche</a></li>
+                <li><a href="#contact-whatsapp" style={{ color: COLORS.textMuted }}>Comment suis-je contacté ?</a></li>
+                <li><a href="#tracker" style={{ color: COLORS.textMuted }}>Suivre un objet</a></li>
+                <li><a href="#tarifs" style={{ color: COLORS.textMuted }}>Tarifs</a></li>
+                <li><Link href="#tarifs" style={{ color: COLORS.textMuted }}>Protéger mes objets</Link></li>
+                <li><Link href="/scan" style={{ color: COLORS.textMuted }}>Scanner un QR</Link></li>
               </ul>
             </div>
             <div>
-              <p className="text-sm font-bold mb-3">Contact</p>
-              <ul className="space-y-2 text-sm text-blue-200">
-                <li className="flex items-center gap-2"><Mail className="w-3.5 h-3.5" /> contact@qrtagspro.com</li>
-                <li className="flex items-center gap-2"><Phone className="w-3.5 h-3.5" /> +33 1 23 45 67 89</li>
+              <h4 className="font-bold mb-3 text-sm" style={{ color: COLORS.accentDark }}>Pour professionnels</h4>
+              <ul className="space-y-2 text-sm">
+                <li><Link href="/devenir-partenaire" style={{ color: COLORS.textMuted }}>Devenir partenaire</Link></li>
+                <li><Link href="/agence/connexion" style={{ color: COLORS.textMuted }}>Espace agence</Link></li>
+                <li><Link href="/admin/connexion" style={{ color: COLORS.textMuted }}>Espace admin</Link></li>
+                <li><Link href="/contact" style={{ color: COLORS.textMuted }}>Contact</Link></li>
               </ul>
             </div>
           </div>
-          <div className="mt-8 pt-6 border-t border-white/10 text-center text-xs text-blue-300">
-            © {new Date().getFullYear()} QRTagsPro. Tous droits réservés.
+          <div
+            className="pt-8 border-t flex flex-col md:flex-row justify-between items-center gap-4"
+            style={{ borderColor: COLORS.border }}
+          >
+            <p className="text-xs" style={{ color: COLORS.textMuted }}>
+              &copy; {new Date().getFullYear()} QRTags. Tous droits réservés.
+            </p>
+            <div className="flex gap-4 text-xs">
+              <Link href="/cgu" style={{ color: COLORS.textMuted }}>CGU</Link>
+              <Link href="/confidentialite" style={{ color: COLORS.textMuted }}>Confidentialité</Link>
+              <Link href="/mentions-legales" style={{ color: COLORS.textMuted }}>Mentions légales</Link>
+            </div>
           </div>
         </div>
       </footer>
 
-      {/* Bannière RGPD */}
-      <RgpdBanner />
-    </div>
+      <LandingChatbotWidget />
+    </main>
   );
 }

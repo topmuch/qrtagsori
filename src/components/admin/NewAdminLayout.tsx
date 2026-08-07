@@ -22,8 +22,7 @@ import {
   ShoppingBag,
   Scan,
   HelpCircle,
-  ChevronRight,
-  Sparkles,
+  ChevronRight
 } from "lucide-react";
 
 // Modern color palette - Orange & Black theme
@@ -77,7 +76,6 @@ export default function AdminLayout({ children, title, subtitle, unreadMessages 
     { label: "GESTION", icon: null, isCategory: true },
     { label: "Utilisateurs", icon: <Users className="w-5 h-5" />, href: "/admin/utilisateurs" },
     { label: "Agences", icon: <Building className="w-5 h-5" />, href: "/admin/agences" },
-    { label: "Métiers personnalisés", icon: <Sparkles className="w-5 h-5" />, href: "/admin/metiers" },
     { label: "PRODUITS", icon: null, isCategory: true },
     { label: "Génération QRTags", icon: <QrCode className="w-5 h-5" />, href: "/admin/generer" },
     { label: "Étiquettes", icon: <Layers className="w-5 h-5" />, href: "/admin/etiquettes" },

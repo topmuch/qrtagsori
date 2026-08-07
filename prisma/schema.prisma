@@ -62,37 +62,6 @@ model LoginLog {
   createdAt    DateTime  @default(now())
 }
 
-// ═══════════════════════════════════════════════════════════════════
-// QRTagsPro V3 — CustomAgencyType (métier générique personnalisable)
-// ═══════════════════════════════════════════════════════════════════
-// Permet au superadmin de créer un nouveau métier sans coder:
-//   - Schéma de champs dynamique (JSON)
-//   - Champ date de départ pour cron auto-checkout
-//   - Message WhatsApp personnalisé
-//   - Labels colonnes dashboard
-model CustomAgencyType {
-  id                String   @id @default(cuid())
-  key               String   @unique        // ex: "spa", "gym", "entreprise"
-  name              String                   // affichage (ex: "Spa & Thalasso")
-  icon              String   @default("💼")  // emoji
-  description       String?
-  // JSON string: tableau de champs
-  // [{ key, label, type, required, placeholder, options?, helper? }]
-  // type: "text" | "tel" | "email" | "date" | "datetime-local" | "textarea" | "number" | "select"
-  fieldsSchema      String
-  // Clé du champ (dans fieldsSchema) à utiliser comme date de départ
-  // pour le cron auto-checkout. Si null → pas d'auto-expiration
-  departureFieldKey String?
-  // Message WhatsApp personnalisé (optionnel). Variables: {reference}, {agencyName}, {finderName}, {finderPhone}, {location}
-  finderMessage     String?
-  // Labels personnalisés pour le dashboard (optionnel)
-  colClientLabel    String?  // ex: "Client", "Adhérent", "Participant"
-  colSubLabel       String?  // ex: "Dossier", "Badge", "Casier"
-  agencies          Agency[]
-  createdAt         DateTime @default(now())
-  updatedAt         DateTime @updatedAt
-}
-
 // Agency model - QRTags multi-business agencies (hotel, school, luggage_locker, car_rental, medical, generic)
 model Agency {
   id                 String    @id @default(cuid())
@@ -101,18 +70,7 @@ model Agency {
   email              String?
   phone              String?
   address            String?
-  // QRTagsPro V1 — WhatsApp reception phone (used by finder scan → wa.me click-to-chat)
-  contactPhone       String?
-  // QRTagsPro V4 — Logo de l'agence (base64 data URL ou URL externe)
-  // Affiché sur la page trouveur /scan/[reference]
-  logoUrl            String?
-  agencyType         String    @default("generic") // "hotel" | "school" | "luggage_locker" | "car_rental" | "medical" | "custom" | "generic"
-  customTypeId       String?   // Si agencyType = "custom", référence vers CustomAgencyType
-  customType         CustomAgencyType? @relation(fields: [customTypeId], references: [id], onDelete: SetNull)
-  // QRTagsPro V4 — PMS Integration (Property Management System)
-  pmsProvider        String?   // "CLOUDBEDS" | "MEWS" | "SIRVOY" | null
-  pmsApiKeys         String?   // JSON string: { apiKey, propertyId, baseUrl }
-  pmsPropertyId      String?   // ID de l'hôtel dans le PMS
+  agencyType         String    @default("generic") // "hotel" | "school" | "luggage_locker" | "car_rental" | "medical" | "generic"
   active             Boolean   @default(true)
   createdAt          DateTime  @default(now())
   baggages           Baggage[]
@@ -135,8 +93,6 @@ model Baggage {
   status            String    @default("in_stock")
   createdAt         DateTime  @default(now())
   expiresAt         DateTime?
-  // QRTagsPro V1 — Hotel check-out date (used by cron job for auto-expire)
-  departureDate     DateTime?
   lastScanDate      DateTime?
   lastLocation      String?
   declaredLostAt    DateTime?
@@ -160,9 +116,27 @@ model Baggage {
   //   city, country, reward, message_to_finder, email, photo, ... }
   customData        String?
 
+  // ─── Qrioo — Multi-usage QR ───
+  // pack_type : type de pack (pratique = comportement QRTags existant, emotion, evenementiel, immobilier)
+  packType          String    @default("pratique") @map("pack_type")
+  // content_type : type de contenu attaché (text, audio, video, wifi, contact, url)
+  contentType       String?   @map("content_type")
+  // content_url : lien vers le fichier stocké (audio, video, image)
+  contentUrl        String?   @map("content_url")
+  // content_metadata : JSON pour données spécifiques au pack
+  // Emotion: { message, duration }
+  // Immobilier: { title, description, price, surface, rooms, images[], virtualTourUrl }
+  // Evenementiel: { eventName, eventDate, guestBookEnabled, playlistUrl }
+  // Pratique: { wifi_ssid, wifi_password, contact_name, contact_phone }
+  contentMetadata   String?   @map("content_metadata")
+  // batchId : lien vers le lot de génération (si généré en masse)
+  batchId           String?   @map("batch_id")
+
   agency            Agency?   @relation(fields: [agencyId], references: [id], onDelete: SetNull)
+  batch             Batch?    @relation(fields: [batchId], references: [id], onDelete: SetNull)
   scanLogs          ScanLog[]
   damageReports     DamageReport[]
+  guestMessages     GuestMessage[]
 }
 
 // ScanLog model - tracks all scans for audit
@@ -550,39 +524,41 @@ model Checklist {
   @@index([createdAt])
 }
 
-// QRTagsPro V4 — Demo interactive (bac à sable)
-// Données supprimées automatiquement après 2 heures via cron
-model DemoScan {
-  id            String   @id @default(cuid())
-  reference     String   @default("DEMO-TEST")
-  finderName    String
-  finderPhone   String
-  location      String?
-  mapsLink      String?
-  message       String?
-  createdAt     DateTime @default(now())
-  expiresAt     DateTime
-}
-
 // Review model - user reviews/testimonials for social proof
+// ────────────────────────────────────────────────────────────────────────
+// NOTE (2026-07-26) : les avis postés depuis la page /track/[token] sont
+// publiés IMMÉDIATEMENT (isApproved=true par défaut). Aucune modération
+// admin n'est requise, conformément à la demande produit.
+// Les avis legacy soumis via le formulaire générique restent modérés.
+// ────────────────────────────────────────────────────────────────────────
 model Review {
-  id          String   @id @default(cuid())
-  name        String   // Reviewer name (public)
-  location    String?  // City/country
-  rating      Int      // 1-5 stars
-  title       String?  // Short title
-  content     String   // Review text
-  baggageRef  String?  // Optional reference to the baggage
-  isFeatured  Boolean  @default(false) // Show on landing page
-  isApproved  Boolean  @default(false) // Admin must approve
-  response    String?  // Admin reply
-  language    String   @default("fr") // "fr" | "en" | "ar"
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id              String   @id @default(cuid())
+  name            String   // Reviewer name (public) — masqué côté UI via maskName()
+  location        String?  // City/country
+  rating          Int      // 1-5 stars
+  title           String?  // Short title
+  content         String   // Review text
+  baggageRef      String?  // Optional reference to the baggage
+  // ─── Champs ajoutés pour les avis postés depuis /track/[token] ───
+  // Permettent d'afficher la photo de l'objet retrouvé + le nom du trouveur
+  // sur la page publique /avis.
+  trackingToken   String?  // Token de suivi (pour faire le lien avec le baggage)
+  finderName      String?  // Nom du trouveur (masqué côté UI)
+  objectName      String?  // Nom de l'objet retrouvé (ex: "lunettes de soleil")
+  objectPhoto     String?  // URL de la photo de l'objet (depuis baggage.objectInfo.photo)
+  objectCategory  String?  // Catégorie de l'objet (ex: "Accessoires")
+  // ──────────────────────────────────────────────────────────────────
+  isFeatured      Boolean  @default(false) // Show on landing page
+  isApproved      Boolean  @default(true)  // Publication immédiate par défaut
+  response        String?  // Admin reply
+  language        String   @default("fr") // "fr" | "en" | "ar"
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
 
   @@index([isApproved])
   @@index([isFeatured])
   @@index([createdAt])
+  @@index([trackingToken])
 }
 
 // LossAlert model - proactive loss detection alerts
@@ -615,4 +591,82 @@ model DamageReport {
 
   @@index([baggageId])
   @@index([type])
+}
+
+// ════════════════════════════════════════════════════════════════
+// BOUTIQUE EXPRESS — Produits & Commandes (Cash on Delivery)
+// Checkout sans compte, sans panier, paiement à la livraison.
+// ════════════════════════════════════════════════════════════════
+
+model Product {
+  id          String   @id @default(cuid())
+  name        String   // ex: "Pack 3 Stickers"
+  slug        String   @unique // ex: "pack-3-stickers"
+  price       Int      // en FCFA
+  quantity    Int      // nombre de stickers dans le pack (3, 5, 10, 15)
+  description String?  // courte description marketing
+  image       String?  // URL de l'image produit
+  active      Boolean  @default(true)
+  sortOrder   Int      @default(0)
+  createdAt   DateTime @default(now())
+  orders      Order[]
+}
+
+model Order {
+  id            String   @id @default(cuid())
+  productId     String
+  customerName  String   // Nom complet du client
+  customerPhone String   // Numéro +221
+  city          String?  // Ville (par défaut Dakar)
+  quartier      String?  // Quartier (optionnel)
+  quantity      Int      @default(1) // nombre de packs commandés
+  total         Int      // total en FCFA = price * quantity
+  status        String   @default("PENDING") // PENDING | CONFIRMED | SHIPPED | DELIVERED | CANCELLED
+  notes         String?  // notes internes du superadmin
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  product       Product  @relation(fields: [productId], references: [id])
+
+  @@index([status])
+  @@index([createdAt])
+}
+
+// ════════════════════════════════════════════════════════════════
+// QRIOO — Lots (Batches) pour génération en masse
+// ════════════════════════════════════════════════════════════════
+
+model Batch {
+  id              String    @id @default(cuid())
+  name            String    // Nom du lot (ex: "Lot Hajj 2026")
+  packType        String    @default("pratique") @map("pack_type") // "pratique" | "emotion" | "evenementiel" | "immobilier"
+  quantity        Int       // Nombre de QR codes dans le lot
+  agencyId        String?   @map("agency_id")                    // Agence assignée (optionnel)
+  status          String    @default("draft") // "draft" | "generated" | "distributed" | "completed"
+  pdfUrl          String?   @map("pdf_url")   // URL du PDF d'impression
+  createdAt       DateTime  @default(now()) @map("created_at")
+  updatedAt       DateTime  @updatedAt @map("updated_at")
+
+  baggages        Baggage[]
+
+  @@map("batches")
+}
+
+// ════════════════════════════════════════════════════════════════
+// QRIOO — Messages livre d'or (Pack Événementiel)
+// ════════════════════════════════════════════════════════════════
+
+model GuestMessage {
+  id              String    @id @default(cuid())
+  baggageId       String    @map("baggage_id")    // QR code de l'événement
+  authorName      String    @map("author_name")    // Nom de l'invité
+  content         String    // Texte du message
+  contentUrl      String?   @map("content_url")    // URL audio/vidéo si message vocal
+  contentType     String?   @map("content_type")   // "text" | "audio" | "video"
+  isModerated     Boolean   @default(false) @map("is_moderated")
+  createdAt       DateTime  @default(now()) @map("created_at")
+
+  baggage         Baggage   @relation(fields: [baggageId], references: [id], onDelete: Cascade)
+
+  @@index([baggageId])
+  @@map("guest_messages")
 }

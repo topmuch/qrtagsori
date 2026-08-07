@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Bell, X, AlertTriangle, CheckCircle, Clock, ExternalLink } from 'lucide-react';
+import { Bell, X, AlertTriangle, CheckCircle, Clock, ExternalLink, FileText, LogIn, UserPlus, Newspaper, ShieldAlert } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 
 interface Notification {
@@ -76,6 +76,22 @@ export default function NotificationBell() {
         return <CheckCircle className="w-5 h-5 text-blue-600" />;
       case 'urgent_scan':
         return <AlertTriangle className="w-5 h-5 text-blue-600" />;
+      case 'new_blog_post':
+        return <Newspaper className="w-5 h-5 text-amber-500" />;
+      case 'admin_login':
+        return <LogIn className="w-5 h-5 text-emerald-600" />;
+      case 'new_registration':
+      case 'new_user':
+      case 'new_agency':
+        return <UserPlus className="w-5 h-5 text-violet-600" />;
+      case 'new_message':
+      case 'agency_message':
+      case 'new_assistance_message':
+        return <FileText className="w-5 h-5 text-sky-600" />;
+      case 'new_lead':
+        return <FileText className="w-5 h-5 text-orange-500" />;
+      case 'suspicious_login':
+        return <ShieldAlert className="w-5 h-5 text-red-700" />;
       default:
         return <Bell className="w-5 h-5 text-[#2563EB]" />;
     }

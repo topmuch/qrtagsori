@@ -1,11 +1,11 @@
 {
-  "name": "QRTagsPro — Gestion d'objets perdus B2B",
-  "short_name": "QRTagsPro",
-  "description": "QRTagsPro — Plateforme SaaS de gestion d'objets perdus pour entreprises. QR codes multi-métiers, check-in, et contact WhatsApp.",
+  "name": "QRTags — Étiquettes QR pour objets perdus & retrouvés",
+  "short_name": "QRTags",
+  "description": "QRTags protège vos objets du quotidien (valise, clés, sac, lunettes, téléphone) grâce à une étiquette QR intelligente. Sans app, sans batterie, sans GPS. Alerte WhatsApp instantanée avec la position exacte du trouveur. 98% des objets étiquetés sont retrouvés.",
   "start_url": "/?from=pwa",
   "display": "standalone",
-  "background_color": "#134288",
-  "theme_color": "#134288",
+  "background_color": "#ffffff",
+  "theme_color": "#FDB900",
   "orientation": "portrait-primary",
   "scope": "/",
   "prefer_related_applications": false,
@@ -47,7 +47,7 @@
       "purpose": "any"
     },
     {
-      "src": "/icons/icon-192x192.png",
+      "src": "/icons/maskable-icon-192x192.png",
       "sizes": "192x192",
       "type": "image/png",
       "purpose": "maskable"
@@ -71,21 +71,27 @@
       "purpose": "maskable"
     }
   ],
-  "categories": ["business", "utilities", "productivity"],
+  "categories": ["business", "utilities", "productivity", "travel", "lifestyle"],
   "lang": "fr",
   "dir": "auto",
   "shortcuts": [
     {
-      "name": "Connexion agence",
-      "short_name": "Agence",
-      "description": "Espace agence QRTagsPro",
-      "url": "/agence/connexion"
+      "name": "Suivre mon objet",
+      "short_name": "Suivi",
+      "description": "Voir le suivi de votre objet QRTags",
+      "url": "/?from=pwa"
     },
     {
-      "name": "Démo interactive",
-      "short_name": "Démo",
-      "description": "Tester QRTagsPro en temps réel",
-      "url": "/demo"
+      "name": "Activer un tag",
+      "short_name": "Activer",
+      "description": "Activer un nouveau tag QRTags",
+      "url": "/inscrire"
+    },
+    {
+      "name": "Commander des tags",
+      "short_name": "Boutique",
+      "description": "Commander des étiquettes QR QRTags",
+      "url": "/#tarifs"
     }
   ],
   "handle_links": "preferred",

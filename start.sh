@@ -10,8 +10,8 @@ mkdir -p /app/data
 if [ ! -f /app/data/custom.db ]; then
     echo "📦 Initializing database..."
     cd /app
-    bun run db:push 2>/dev/null || npx prisma db push --skip-generate
-    bun run prisma/seed.ts 2>/dev/null || npx tsx prisma/seed.ts 2>/dev/null || echo "Seed skipped"
+    npx prisma db push --skip-generate
+    npx tsx prisma/seed.ts 2>/dev/null || echo "Seed skipped"
 fi
 
 # Run Prisma migrations on startup

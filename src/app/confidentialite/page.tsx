@@ -1,140 +1,156 @@
-'use client';
+import PublicLayout from '@/components/public/PublicLayout';
+import { Metadata } from 'next';
 
-/**
- * QRTagsPro — Politique de confidentialité (RGPD)
- */
+export const metadata: Metadata = {
+  title: 'Politique de confidentialité',
+  description: 'Politique de confidentialité de QRTags - Comment nous protégeons vos données personnelles.',
+};
 
-import Link from 'next/link';
-import { ArrowLeft, Shield, Lock, Eye, Trash2, Mail } from 'lucide-react';
-import QRTagsLogo from '@/components/qrtags/QRTagsLogo';
-
-export default function ConfidentialitePage() {
+export default function Confidentialite() {
   return (
-    <div className="min-h-screen bg-white">
-      <header className="sticky top-0 z-50 bg-white/95 backdrop-blur border-b border-slate-200">
-        <div className="max-w-[1600px] mx-auto px-4 md:px-6 py-3 flex items-center justify-between">
-          <QRTagsLogo size="sm" href="/" withHover />
-          <Link href="/" className="text-sm text-slate-500 hover:text-[#134288]">
-            <ArrowLeft className="w-4 h-4 inline mr-1" /> Accueil
-          </Link>
-        </div>
-      </header>
+    <PublicLayout>
+      <div className="min-h-screen py-20 px-4">
+        <div className="max-w-4xl mx-auto">
+          <h1 className="text-4xl font-bold text-slate-900 mb-8">Politique de confidentialité</h1>
+          
+          <div className="space-y-8 text-slate-700">
+            <section>
+              <h2 className="text-2xl font-semibold text-slate-900 mb-4">1. Introduction</h2>
+              <p className="mb-4">
+                La société MMASOLUTION s&apos;engage à protéger la vie privée des utilisateurs de son site QRTags. La présente politique de confidentialité a pour but de vous informer sur la manière dont nous collectons, utilisons et protégeons vos données personnelles, conformément au Règlement Général sur la Protection des Données (RGPD).
+              </p>
+              <p>
+                En utilisant notre site et nos services, vous acceptez les pratiques décrites dans cette politique de confidentialité.
+              </p>
+            </section>
 
-      <div className="max-w-4xl mx-auto px-4 md:px-6 py-12">
-        <div className="flex items-center gap-3 mb-8">
-          <div className="w-12 h-12 rounded-xl bg-[#134288] flex items-center justify-center">
-            <Shield className="w-6 h-6 text-white" />
+            <section>
+              <h2 className="text-2xl font-semibold text-slate-900 mb-4">2. Données collectées</h2>
+              <p className="mb-4">Nous collectons les types de données suivantes :</p>
+              <ul className="list-disc pl-6 space-y-2">
+                <li><strong>Données d&apos;identification :</strong> nom, prénom, adresse email, numéro de téléphone</li>
+                <li><strong>Données de voyage :</strong> informations relatives aux bagages enregistrés, dates de voyage, destinations</li>
+                <li><strong>Données de connexion :</strong> adresse IP, type de navigateur, pages visitées, durée des sessions</li>
+                <li><strong>Données de localisation :</strong> localisation approximative lors du scan des QR codes</li>
+                <li><strong>Données de communication :</strong> messages envoyés via le formulaire de contact ou le chat intégré</li>
+              </ul>
+            </section>
+
+            <section>
+              <h2 className="text-2xl font-semibold text-slate-900 mb-4">3. Finalités du traitement</h2>
+              <p className="mb-4">Vos données personnelles sont collectées et traitées pour les finalités suivantes :</p>
+              <ul className="list-disc pl-6 space-y-2">
+                <li>Gestion et suivi des bagages enregistrés via le système QRTags</li>
+                <li>Faciliter la restitution des bagages perdus ou trouvés</li>
+                <li>Communication avec les utilisateurs (notifications, alertes)</li>
+                <li>Amélioration de nos services et de l&apos;expérience utilisateur</li>
+                <li>Respect de nos obligations légales</li>
+                <li>Envoi d&apos;informations commerciales (avec votre consentement)</li>
+              </ul>
+            </section>
+
+            <section>
+              <h2 className="text-2xl font-semibold text-slate-900 mb-4">4. Base légale du traitement</h2>
+              <p className="mb-4">Le traitement de vos données personnelles repose sur les bases légales suivantes :</p>
+              <ul className="list-disc pl-6 space-y-2">
+                <li><strong>Exécution du contrat :</strong> pour la fourniture de nos services de protection des bagages</li>
+                <li><strong>Consentement :</strong> pour l&apos;envoi de communications commerciales et l&apos;utilisation de cookies non essentiels</li>
+                <li><strong>Intérêt légitime :</strong> pour l&apos;amélioration de nos services et la sécurité du site</li>
+                <li><strong>Obligation légale :</strong> pour le respect de nos obligations réglementaires</li>
+              </ul>
+            </section>
+
+            <section>
+              <h2 className="text-2xl font-semibold text-slate-900 mb-4">5. Cookies</h2>
+              <p className="mb-4">
+                Notre site utilise des cookies pour améliorer votre expérience de navigation. Un cookie est un petit fichier texte stocké sur votre appareil.
+              </p>
+              <p className="mb-4"><strong>Types de cookies utilisés :</strong></p>
+              <ul className="list-disc pl-6 space-y-2 mb-4">
+                <li><strong>Cookies essentiels :</strong> nécessaires au fonctionnement du site (session, sécurité)</li>
+                <li><strong>Cookies analytiques :</strong> pour mesurer l&apos;audience et améliorer le site (avec votre consentement)</li>
+                <li><strong>Cookies de préférence :</strong> pour mémoriser vos choix (langue, consentement RGPD)</li>
+              </ul>
+              <p>
+                Vous pouvez à tout moment modifier vos préférences en cliquant sur le bandeau cookies en bas de page ou en paramétrant votre navigateur.
+              </p>
+            </section>
+
+            <section>
+              <h2 className="text-2xl font-semibold text-slate-900 mb-4">6. Durée de conservation</h2>
+              <p className="mb-4">
+                Vos données personnelles sont conservées pendant la durée nécessaire aux finalités pour lesquelles elles ont été collectées :
+              </p>
+              <ul className="list-disc pl-6 space-y-2">
+                <li>Données de compte : durée de l&apos;inscription + 3 ans</li>
+                <li>Données de bagages : durée de validité du QR code + 1 an</li>
+                <li>Données de connexion : 13 mois maximum</li>
+                <li>Cookies : 13 mois maximum</li>
+              </ul>
+            </section>
+
+            <section>
+              <h2 className="text-2xl font-semibold text-slate-900 mb-4">7. Vos droits</h2>
+              <p className="mb-4">
+                Conformément au RGPD, vous disposez des droits suivants sur vos données personnelles :
+              </p>
+              <ul className="list-disc pl-6 space-y-2 mb-4">
+                <li><strong>Droit d&apos;accès :</strong> obtenir une copie de vos données</li>
+                <li><strong>Droit de rectification :</strong> corriger des données inexactes</li>
+                <li><strong>Droit à l&apos;effacement :</strong> demander la suppression de vos données</li>
+                <li><strong>Droit à la portabilité :</strong> recevoir vos données dans un format structuré</li>
+                <li><strong>Droit d&apos;opposition :</strong> vous opposer au traitement de vos données</li>
+                <li><strong>Droit à la limitation :</strong> limiter le traitement de vos données</li>
+              </ul>
+              <p>
+                Pour exercer ces droits, contactez-nous à : <a href="mailto:contact@qrtags.com" className="text-[#b8860b] hover:underline">contact@qrtags.com</a>
+              </p>
+            </section>
+
+            <section>
+              <h2 className="text-2xl font-semibold text-slate-900 mb-4">8. Partage des données</h2>
+              <p className="mb-4">
+                Vos données personnelles peuvent être partagées avec :
+              </p>
+              <ul className="list-disc pl-6 space-y-2">
+                <li>Nos partenaires de livraison pour l&apos;expédition des autocollants QRTags</li>
+                <li>Les autorités compétentes si la loi l&apos;exige</li>
+                <li>Nos prestataires techniques (hébergement, paiement) sous strictes conditions de confidentialité</li>
+              </ul>
+              <p className="mt-4">
+                Nous ne vendons jamais vos données personnelles à des tiers.
+              </p>
+            </section>
+
+            <section>
+              <h2 className="text-2xl font-semibold text-slate-900 mb-4">9. Sécurité</h2>
+              <p>
+                Nous mettons en œuvre des mesures techniques et organisationnelles appropriées pour protéger vos données personnelles contre tout accès non autorisé, modification, divulgation ou destruction. Ces mesures incluent le chiffrement des données, des pare-feu, et des accès restreints aux données.
+              </p>
+            </section>
+
+            <section>
+              <h2 className="text-2xl font-semibold text-slate-900 mb-4">10. Contact</h2>
+              <p className="mb-4">
+                Pour toute question relative à cette politique de confidentialité ou pour exercer vos droits, vous pouvez nous contacter :
+              </p>
+              <p>
+                <strong>Email :</strong> <a href="mailto:contact@qrtags.com" className="text-[#b8860b] hover:underline">contact@qrtags.com</a><br />
+                <strong>Adresse :</strong> Poissy, France
+              </p>
+              <p className="mt-4">
+                Vous avez également le droit d&apos;introduire une réclamation auprès de la CNIL (Commission Nationale de l&apos;Informatique et des Libertés) si vous estimez que le traitement de vos données n&apos;est pas conforme à la réglementation.
+              </p>
+            </section>
           </div>
-          <div>
-            <h1 className="text-3xl font-black text-slate-900">Politique de confidentialité</h1>
-            <p className="text-sm text-slate-500">Dernière mise à jour : {new Date().toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })}</p>
+
+          <div className="mt-12 pt-8 border-t border-[#1a2238]">
+            <p className="text-[#a0a8b8] text-sm">
+              Dernière mise à jour : {new Date().toLocaleDateString('fr-FR')}
+            </p>
           </div>
-        </div>
-
-        <div className="prose prose-slate max-w-none space-y-8">
-          <section className="bg-slate-50 rounded-2xl p-6 border border-slate-200">
-            <h2 className="text-xl font-bold text-slate-900 mb-3 flex items-center gap-2">
-              <Eye className="w-5 h-5 text-[#134288]" /> 1. Données collectées
-            </h2>
-            <p className="text-sm text-slate-700 leading-relaxed mb-3">
-              QRTagsPro collecte les données suivantes dans le cadre de son service de gestion d'objets perdus :
-            </p>
-            <ul className="text-sm text-slate-700 space-y-2 list-disc list-inside">
-              <li><strong>Données établissement</strong> : nom, adresse, téléphone, email, logo</li>
-              <li><strong>Données client</strong> : nom, prénom, n° de chambre, dates de séjour, téléphone (si opt-in)</li>
-              <li><strong>Données trouveur</strong> : nom, téléphone, position GPS (volontairement partagées)</li>
-              <li><strong>Données de connexion</strong> : email, mot de passe (chiffré bcrypt), logs de session</li>
-              <li><strong>Données de scan</strong> : position GPS, date/heure, adresse IP (anonymisée)</li>
-            </ul>
-          </section>
-
-          <section className="bg-slate-50 rounded-2xl p-6 border border-slate-200">
-            <h2 className="text-xl font-bold text-slate-900 mb-3 flex items-center gap-2">
-              <Lock className="w-5 h-5 text-[#134288]" /> 2. Protection des données
-            </h2>
-            <p className="text-sm text-slate-700 leading-relaxed mb-3">
-              QRTagsPro met en œuvre les mesures techniques suivantes pour protéger vos données :
-            </p>
-            <ul className="text-sm text-slate-700 space-y-2 list-disc list-inside">
-              <li>Mots de passe chiffrés avec bcrypt (hash irréversible)</li>
-              <li>Clés API chiffrées en base de données</li>
-              <li>Communications HTTPS/TLS sur tout le site</li>
-              <li>Le trouveur ne voit <strong>JAMAIS</strong> les coordonnées du client</li>
-              <li>Le contact direct client après séjour nécessite un <strong>opt-in explicite</strong></li>
-              <li>Les données de démo sont supprimées automatiquement après 2 heures</li>
-            </ul>
-          </section>
-
-          <section className="bg-slate-50 rounded-2xl p-6 border border-slate-200">
-            <h2 className="text-xl font-bold text-slate-900 mb-3 flex items-center gap-2">
-              <Eye className="w-5 h-5 text-[#134288]" /> 3. Utilisation des données
-            </h2>
-            <p className="text-sm text-slate-700 leading-relaxed mb-3">
-              Les données sont utilisées exclusivement pour :
-            </p>
-            <ul className="text-sm text-slate-700 space-y-2 list-disc list-inside">
-              <li>Permettre le contact entre le trouveur et l'établissement via WhatsApp</li>
-              <li>Afficher le statut des objets dans le dashboard de l'établissement</li>
-              <li>Générer des statistiques agrégées (anonymisées)</li>
-              <li>Assurer le support technique</li>
-            </ul>
-            <p className="text-sm text-slate-700 leading-relaxed mt-3">
-              <strong>QRTagsPro ne vend jamais vos données</strong> à des tiers.
-            </p>
-          </section>
-
-          <section className="bg-slate-50 rounded-2xl p-6 border border-slate-200">
-            <h2 className="text-xl font-bold text-slate-900 mb-3 flex items-center gap-2">
-              <Trash2 className="w-5 h-5 text-[#134288]" /> 4. Durée de conservation
-            </h2>
-            <ul className="text-sm text-slate-700 space-y-2 list-disc list-inside">
-              <li><strong>Données de démo</strong> : supprimées après 2 heures</li>
-              <li><strong>QR codes actifs</strong> : conservés pendant la durée du séjour + 1 an après expiration</li>
-              <li><strong>Logs de scan</strong> : conservés 90 jours puis supprimés</li>
-              <li><strong>Comptes utilisateurs</strong> : conservés tant que l'établissement est client</li>
-            </ul>
-          </section>
-
-          <section className="bg-slate-50 rounded-2xl p-6 border border-slate-200">
-            <h2 className="text-xl font-bold text-slate-900 mb-3 flex items-center gap-2">
-              <Shield className="w-5 h-5 text-[#134288]" /> 5. Vos droits (RGPD)
-            </h2>
-            <p className="text-sm text-slate-700 leading-relaxed mb-3">
-              Conformément au RGPD, vous disposez des droits suivants :
-            </p>
-            <ul className="text-sm text-slate-700 space-y-2 list-disc list-inside">
-              <li><strong>Droit d'accès</strong> : consulter les données que nous détenons sur vous</li>
-              <li><strong>Droit de rectification</strong> : corriger des données inexactes</li>
-              <li><strong>Droit à l'effacement</strong> : demander la suppression de vos données</li>
-              <li><strong>Droit à la portabilité</strong> : recevoir vos données dans un format structuré</li>
-              <li><strong>Droit d'opposition</strong> : refuser le traitement de vos données</li>
-            </ul>
-            <p className="text-sm text-slate-700 leading-relaxed mt-3">
-              Pour exercer ces droits, contactez-nous à :
-              <a href="mailto:rgpd@qrtagspro.com" className="font-semibold text-[#134288] underline ml-1">
-                rgpd@qrtagspro.com
-              </a>
-            </p>
-          </section>
-
-          <section className="bg-slate-50 rounded-2xl p-6 border border-slate-200">
-            <h2 className="text-xl font-bold text-slate-900 mb-3 flex items-center gap-2">
-              <Mail className="w-5 h-5 text-[#134288]" /> 6. Contact
-            </h2>
-            <p className="text-sm text-slate-700 leading-relaxed">
-              Pour toute question relative à la protection des données :<br />
-              <strong>Email DPO</strong> : rgpd@qrtagspro.com<br />
-              <strong>Adresse</strong> : QRTagsPro, Paris, France
-            </p>
-          </section>
-        </div>
-
-        <div className="mt-8 text-center">
-          <Link href="/" className="inline-flex items-center gap-2 text-sm text-slate-500 hover:text-[#134288]">
-            <ArrowLeft className="w-4 h-4" /> Retour à l'accueil
-          </Link>
         </div>
       </div>
-    </div>
+    </PublicLayout>
   );
 }

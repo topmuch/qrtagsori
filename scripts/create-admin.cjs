@@ -1,10 +1,8 @@
 /**
- * QRTagsPro — Création du superadmin au démarrage
+ * QRTags — Superadmin creation script (CommonJS for Docker entrypoint)
  *
- * Ce script est appelé par le Dockerfile au démarrage du container.
- * Il crée le superadmin s'il n'existe pas, avec le mot de passe "admin123".
- *
- * Usage: node scripts/create-admin.cjs
+ * Creates a default superadmin user if none exists. Safe to run multiple
+ * times (uses upsert). Called by docker-entrypoint.sh on container startup.
  */
 
 const { PrismaClient } = require('@prisma/client');
@@ -12,53 +10,72 @@ const bcrypt = require('bcryptjs');
 
 const prisma = new PrismaClient();
 
-const SUPERADMIN_EMAIL = 'admin@qrtags.com';
-const SUPERADMIN_PASSWORD = 'admin123';
-const SUPERADMIN_NAME = 'QRTagsPro SuperAdmin';
-
 async function main() {
-  console.log('══════════════════════════════════════════════════');
-  console.log('  QRTagsPro — Création du superadmin');
-  console.log('══════════════════════════════════════════════════');
+  console.log('🔐 QRTags — Vérification du compte superadmin...');
 
+  const adminEmail = (process.env.ADMIN_EMAIL || 'admin@qrtags.com').toLowerCase();
+  const adminPassword = process.env.ADMIN_PASSWORD || 'admin123';
+
+  // Check if any superadmin exists
+  let existingAdmin = null;
   try {
-    // Vérifier si le superadmin existe déjà
-    const existing = await prisma.user.findUnique({
-      where: { email: SUPERADMIN_EMAIL },
+    existingAdmin = await prisma.user.findFirst({
+      where: { role: 'superadmin' },
     });
+  } catch (e) {
+    console.log('⚠️  Table User inaccessible:', e.message);
+    console.log('   Tentative de création directe...');
+  }
 
-    // Hasher le mot de passe
-    const hashedPassword = await bcrypt.hash(SUPERADMIN_PASSWORD, 10);
-
-    if (existing) {
-      // Mettre à jour le mot de passe et le rôle
+  if (existingAdmin) {
+    console.log('✅ Superadmin déjà existant:', existingAdmin.email);
+    // QRTags : s'assurer que le mot de passe est correct
+    const isValid = await bcrypt.compare(adminPassword, existingAdmin.password || '');
+    if (!isValid) {
+      console.log('⚠️  Reset du mot de passe du superadmin...');
+      const hashedPassword = await bcrypt.hash(adminPassword, 10);
       await prisma.user.update({
-        where: { email: SUPERADMIN_EMAIL },
-        data: {
-          password: hashedPassword,
-          role: 'superadmin',
-          name: SUPERADMIN_NAME,
-        },
+        where: { id: existingAdmin.id },
+        data: { password: hashedPassword, role: 'superadmin' },
       });
-      console.log(`✅ Superadmin mis à jour: ${SUPERADMIN_EMAIL} (mot de passe: ${SUPERADMIN_PASSWORD})`);
-    } else {
-      // Créer le superadmin
-      await prisma.user.create({
-        data: {
-          email: SUPERADMIN_EMAIL,
-          name: SUPERADMIN_NAME,
-          password: hashedPassword,
-          role: 'superadmin',
-        },
-      });
-      console.log(`✅ Superadmin créé: ${SUPERADMIN_EMAIL} (mot de passe: ${SUPERADMIN_PASSWORD})`);
+      console.log('✅ Mot de passe reset:', adminEmail);
     }
-  } catch (error) {
-    console.error('❌ Erreur création superadmin:', error.message);
-    // Non-fatal — le serveur peut quand même démarrer
-  } finally {
-    await prisma.$disconnect();
+    return;
+  }
+
+  // Create default superadmin (ou reset si existe avec un autre rôle)
+  const hashedPassword = await bcrypt.hash(adminPassword, 10);
+  await prisma.user.upsert({
+    where: { email: adminEmail },
+    update: {
+      password: hashedPassword,
+      role: 'superadmin',
+      name: 'QRTags SuperAdmin',
+    },
+    create: {
+      email: adminEmail,
+      name: 'QRTags SuperAdmin',
+      password: hashedPassword,
+      role: 'superadmin',
+    },
+  });
+
+  console.log(`✅ Superadmin créé: ${adminEmail} / ${adminPassword}`);
+
+  // Vérification : lire le user pour confirmer
+  const verify = await prisma.user.findUnique({ where: { email: adminEmail } });
+  if (verify) {
+    const checkPassword = await bcrypt.compare(adminPassword, verify.password || '');
+    console.log(`✅ Vérification: ${verify.email} | role: ${verify.role} | password OK: ${checkPassword}`);
+  } else {
+    console.log('⚠️  Vérification échouée: user non retrouvé après création');
   }
 }
 
-main();
+main()
+  .catch((e) => {
+    console.error('❌ Erreur création admin:', e.message);
+  })
+  .finally(async () => {
+    await prisma.$disconnect();
+  });

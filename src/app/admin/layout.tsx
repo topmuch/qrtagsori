@@ -26,7 +26,9 @@ import {
   Megaphone,
   TrendingUp,
   Newspaper,
-  Activity
+  Activity,
+  ShoppingBag,
+  ClipboardList
 } from "lucide-react";
 import { useTheme } from '@/contexts/ThemeContext';
 import { useAuth } from '@/contexts/AuthContext';
@@ -85,6 +87,15 @@ function Sidebar({
 
     // Baggages
     { label: "Étiquettes", icon: <Layers className="w-5 h-5" />, href: "/admin/etiquettes", permission: PERMISSIONS.VIEW_BAGGAGES },
+
+    // Boutique Category — SuperAdmin uniquement
+    { label: "BOUTIQUE", icon: null, isCategory: true, roles: ['superadmin'] },
+
+    // Produits Boutique — SuperAdmin uniquement
+    { label: "Produits Boutique", icon: <ShoppingBag className="w-5 h-5" />, href: "/admin/products", roles: ['superadmin'] },
+
+    // Commandes Boutique — SuperAdmin uniquement
+    { label: "Commandes Boutique", icon: <ClipboardList className="w-5 h-5" />, href: "/admin/orders", roles: ['superadmin'] },
 
     // Travelers Category
     { label: "VOYAGEURS", icon: null, isCategory: true },

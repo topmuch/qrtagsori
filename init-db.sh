@@ -10,9 +10,26 @@ echo "  DATABASE_URL: ${DATABASE_URL:-file:/app/data/qrtags.db}"
 echo "══════════════════════════════════════════════════"
 
 mkdir -p /app/data /app/data/backups /app/public/uploads/damage
+chmod -R 777 /app/data /app/public/uploads/damage 2>/dev/null || true
+
+# ─── Verify /app/data is writable (Coolify sometimes mounts volumes RO) ──
+if [ ! -w /app/data ]; then
+  echo "❌ FATAL: /app/data is not writable. Aborting."
+  echo "  Owner: $(stat -c '%U:%G' /app/data 2>/dev/null || echo 'unknown')"
+  echo "  Perms: $(stat -c '%a' /app/data 2>/dev/null || echo 'unknown')"
+  echo "  Current user: $(id)"
+  exit 1
+fi
+echo "✅ /app/data writable (user: $(id -u):$(id -g))"
 
 DB_FILE=$(echo "${DATABASE_URL:-file:/app/data/qrtags.db}" | sed 's/^file://')
 SCHEMA_PATH="/app/prisma/schema.prisma"
+
+# ─── Touch the DB file preemptively so SQLite never sees a missing parent ──
+if [ ! -f "$DB_FILE" ]; then
+  echo "📄 Creating empty DB file: $DB_FILE"
+  touch "$DB_FILE" 2>/dev/null || echo "⚠️ Could not touch $DB_FILE (will rely on Prisma)"
+fi
 
 # ════════════════════════════════════════════════════════════════════
 # ÉTAPE 1 : Vérifier si la DB a un schéma obsolète (hard reset si oui)
@@ -66,12 +83,10 @@ fi
 # ════════════════════════════════════════════════════════════════════
 if [ -f "$DB_FILE" ]; then
   echo "📊 Vérification finale..."
-  COL_COUNT=$(sqlite3 "$DB_FILE" "PRAGMA table_info(Baggage);" 2>/dev/null | grep -c "trackingToken\|trackingEnabled\|scanCount\|isLost\|customData\|departureDate" || echo "0")
-  echo "  Colonnes QRTags (Baggage): $COL_COUNT / 6"
-  AGENCY_COL=$(sqlite3 "$DB_FILE" "PRAGMA table_info(Agency);" 2>/dev/null | grep -c "contactPhone" || echo "0")
-  echo "  Colonne QRTagsPro V1 (Agency.contactPhone): $AGENCY_COL / 1"
-  if [ "$COL_COUNT" -lt 6 ]; then
-    echo "❌ Colonnes Baggage toujours manquantes après migration"
+  COL_COUNT=$(sqlite3 "$DB_FILE" "PRAGMA table_info(Baggage);" 2>/dev/null | grep -c "trackingToken\|trackingEnabled\|scanCount\|isLost\|customData" || echo "0")
+  echo "  Colonnes QRTags: $COL_COUNT / 5"
+  if [ "$COL_COUNT" -lt 5 ]; then
+    echo "❌ Colonnes toujours manquantes après migration"
     echo "  Vérifie les logs ci-dessus pour le détail"
   fi
 fi

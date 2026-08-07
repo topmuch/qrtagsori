@@ -7,6 +7,8 @@
  * on the first API request.
  *
  * Strategy:
+ * - Ensure the SQLite database directory exists (fixes SQLITE_CANTOPEN on fresh
+ *   Coolify deploys where /app/data may not be present yet)
  * - Check if trackingToken column exists via PRAGMA
  * - If missing, ALTER TABLE ADD COLUMN for each missing QRTags column
  * - Also ensure superadmin exists
@@ -15,6 +17,8 @@
  */
 
 import { PrismaClient } from '@prisma/client';
+import { mkdirSync, existsSync } from 'fs';
+import { dirname } from 'path';
 
 const QRTAGS_BAGGAGE_COLUMNS: Array<[string, string]> = [
   ['activatedAt',      'DATETIME'],
@@ -30,11 +34,43 @@ const QRTAGS_BAGGAGE_COLUMNS: Array<[string, string]> = [
   ['lostMessage',      'TEXT'],
 ];
 
-const SUPERADMIN_HASH = '$2b$10$5JnNkrnAaKKWV6kw5Ya9X.yCPqhCi4qTEFTQ37fGRUIORU9nSx9Dq';
+// ⚠️ This hash MUST correspond to the password declared in the ADMIN_PASSWORD
+// env var (default "Admin12345!"). If these don't match, every server restart
+// resets the superadmin password to an unknown value and the admin can no
+// longer log in — which breaks every authenticated admin endpoint (e.g.
+// /api/admin/blog/upload returns 401).
+//
+// Hash generated with: bcrypt.hashSync('Admin12345!', 10)
+const SUPERADMIN_HASH = '$2b$10$sx2dt8wYmI6dk4mD.UV1HuzEHPiej0VlQPDxDnrgDMBK1s5mGfAdi';
 const SUPERADMIN_EMAIL = 'admin@qrtags.com';
 
 let migrationStarted = false;
 let migrationPromise: Promise<void> | null = null;
+
+/**
+ * Ensures the parent directory of DATABASE_URL exists before Prisma tries to
+ * open the SQLite file. Without this, Prisma throws SQLITE_CANTOPEN (errno 14)
+ * on fresh Coolify deploys where /app/data has not been created by init-db.sh
+ * (init-db.sh runs as CMD, but Prisma opens the connection at module load).
+ */
+function ensureDbDirectoryExists(): void {
+  const dbUrl = process.env.DATABASE_URL || 'file:/app/data/qrtags.db';
+  // Strip the `file:` prefix
+  const dbPath = dbUrl.replace(/^file:/, '');
+  // Skip if it's a memory or non-file DB
+  if (!dbPath || dbPath === ':memory:' || dbPath.startsWith('postgresql:') || dbPath.startsWith('mysql:')) {
+    return;
+  }
+  const parentDir = dirname(dbPath);
+  try {
+    if (!existsSync(parentDir)) {
+      mkdirSync(parentDir, { recursive: true });
+      console.log(`[migration] Created DB directory: ${parentDir}`);
+    }
+  } catch (err) {
+    console.error(`[migration] Could not create DB directory ${parentDir}:`, err instanceof Error ? err.message : err);
+  }
+}
 
 async function getExistingColumns(prisma: PrismaClient, tableName: string): Promise<string[]> {
   try {
@@ -106,7 +142,51 @@ export async function runMigrationIfNeeded(prisma: PrismaClient): Promise<void> 
 }
 
 async function doMigration(prisma: PrismaClient): Promise<void> {
+  // ─── 0. Ensure the DB parent directory exists BEFORE any query ─────────
+  // This fixes SQLITE_CANTOPEN on fresh deploys where /app/data does not
+  // exist yet (init-db.sh creates it via `mkdir -p`, but Prisma's lazy
+  // migration may run before that).
+  ensureDbDirectoryExists();
+
   try {
+    // ─── 1. Ensure critical tables exist ─────────────────────────────
+    // On a fresh DB (e.g. after deploy without `prisma db push`), critical
+    // tables like Product, BlogPost, Order might be missing. We detect this
+    // and run `prisma db push` to create the full schema from schema.prisma.
+    const CRITICAL_TABLES = [
+      'User', 'Baggage', 'Agency', 'QRCode', 'Lead',
+      'BlogPost', 'Product', 'Order', 'Notification', 'Session',
+    ];
+    const missingTables: string[] = [];
+    for (const t of CRITICAL_TABLES) {
+      if (!(await tableExists(prisma, t))) missingTables.push(t);
+    }
+
+    if (missingTables.length > 0) {
+      console.log(`[migration] Missing tables detected: ${missingTables.join(', ')}`);
+      console.log('[migration] Running `prisma db push` to create full schema...');
+      try {
+        // Use execSync to run prisma db push synchronously.
+        // This creates all tables from schema.prisma.
+        //
+        // ⚠️ Use `npx` (not `bunx`) — Coolify containers use node, not bun.
+        // Previous versions used bunx which crashed silently on Coolify.
+        const { execSync } = require('child_process');
+        execSync('npx prisma db push --skip-generate --accept-data-loss', {
+          stdio: 'inherit',
+          cwd: process.cwd(),
+          env: process.env,
+          timeout: 60_000,
+        });
+        console.log('[migration] ✅ prisma db push completed');
+      } catch (pushErr) {
+        console.error('[migration] prisma db push failed:', pushErr instanceof Error ? pushErr.message : pushErr);
+        // Continue anyway — the per-column ALTERs below might still help for
+        // partial schemas (Baggage exists but missing QRTags columns).
+      }
+    }
+
+    // ─── 2. Baggage column migration (legacy) ────────────────────────
     // Check Baggage table exists
     const hasBaggage = await tableExists(prisma, 'Baggage');
     if (!hasBaggage) {
@@ -120,6 +200,8 @@ async function doMigration(prisma: PrismaClient): Promise<void> {
     const needsMigration = !existingCols.includes('trackingToken');
 
     if (!needsMigration) {
+      // Even if Baggage is up-to-date, ensure superadmin exists
+      await ensureSuperadmin(prisma);
       return; // Already up-to-date
     }
 

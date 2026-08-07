@@ -16,11 +16,8 @@ const agencySchema = z.object({
   slug: z.string().optional(),
   email: z.string().email().optional().or(z.literal('')),
   phone: z.string().optional(),
-  contactPhone: z.string().optional(),
   address: z.string().optional(),
-  logoUrl: z.string().optional().nullable(),
-  agencyType: z.enum(['hotel', 'school', 'luggage_locker', 'car_rental', 'medical', 'custom', 'generic']).optional(),
-  customTypeId: z.string().optional().nullable(),
+  agencyType: z.enum(['hotel', 'school', 'luggage_locker', 'car_rental', 'medical', 'generic']).optional(),
 });
 
 // ─── Helper : génère un slug unique depuis le nom ──────────────────
@@ -51,8 +48,7 @@ export async function GET() {
       include: {
         _count: {
           select: { baggages: true, users: true }
-        },
-        customType: true,
+        }
       },
       orderBy: { createdAt: 'desc' }
     });
@@ -89,39 +85,14 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // V3: Si agencyType === 'custom', customTypeId est obligatoire
-    const agencyType = validatedData.agencyType || 'generic';
-    const customTypeId = agencyType === 'custom'
-      ? (validatedData.customTypeId || null)
-      : null;
-    if (agencyType === 'custom' && !customTypeId) {
-      return NextResponse.json(
-        { error: 'customTypeId est requis quand agencyType = "custom"' },
-        { status: 400 }
-      );
-    }
-    // Vérifier que le customType existe si fourni
-    if (customTypeId) {
-      const ct = await db.customAgencyType.findUnique({ where: { id: customTypeId } });
-      if (!ct) {
-        return NextResponse.json(
-          { error: 'Métier personnalisé introuvable' },
-          { status: 400 }
-        );
-      }
-    }
-
     const agency = await db.agency.create({
       data: {
         name: validatedData.name,
         slug,
         email: validatedData.email || null,
         phone: validatedData.phone || null,
-        contactPhone: validatedData.contactPhone || null,
         address: validatedData.address || null,
-        logoUrl: validatedData.logoUrl || null,
-        agencyType,
-        customTypeId,
+        agencyType: validatedData.agencyType || 'generic',
       }
     });
 
@@ -181,31 +152,9 @@ export async function PUT(request: NextRequest) {
     if (data.slug !== undefined) updateData.slug = data.slug;
     if (data.email !== undefined) updateData.email = data.email || null;
     if (data.phone !== undefined) updateData.phone = data.phone || null;
-    if (data.contactPhone !== undefined) updateData.contactPhone = data.contactPhone || null;
-    if (data.logoUrl !== undefined) updateData.logoUrl = data.logoUrl || null;
     if (data.address !== undefined) updateData.address = data.address || null;
     if (data.agencyType !== undefined) {
       updateData.agencyType = data.agencyType;
-      // V3: gérer customTypeId selon agencyType
-      if (data.agencyType === 'custom') {
-        if (data.customTypeId) {
-          // Vérifier que le customType existe
-          const ct = await db.customAgencyType.findUnique({ where: { id: data.customTypeId } });
-          if (!ct) {
-            return NextResponse.json(
-              { error: 'Métier personnalisé introuvable' },
-              { status: 400 }
-            );
-          }
-          updateData.customTypeId = data.customTypeId;
-        } else if (data.customTypeId === null) {
-          updateData.customTypeId = null;
-        }
-        // Si customTypeId non fourni (undefined), on garde l'existant
-      } else {
-        // Pas custom → on nettoie customTypeId
-        updateData.customTypeId = null;
-      }
     }
     if (active !== undefined) updateData.active = active;
 

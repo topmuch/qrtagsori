@@ -1,162 +1,267 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { db } from '@/lib/db';
+import prisma from '@/lib/prisma';
 
-/**
- * GET /api/scan/[reference]
- *
- * Page trouveur (Pro) — Renvoie les infos PUBLIQUES d'un QR code pour
- * que le trouveur contacte l'agence (pas le client directement).
- *
- * Confidentialité:
- *   ✅ Nom de l'agence + téléphone de la réception (contactPhone)
- *   ✅ Référence du QR
- *   ✅ Type d'agence (hotel, school, etc.) pour personnaliser l'affichage
- *   ✅ Statut (active / lost / expired / pending_activation)
- *   ❌ PAS le nom du client (privacy)
- *   ❌ PAS le n° de chambre (privacy)
- *   ❌ PAS le téléphone du client (le contact passe par l'agence)
- *   ❌ PAS l'email du client
- *
- * Le trouveur voit: "Objet appartenant à l'Hôtel X — contactez la réception"
- */
+// ─── Helpers ────────────────────────────────────────────────────
+
+/** Safely parse a JSON string, returning null on failure */
+function safeJsonParse(raw: string | null | undefined): Record<string, unknown> | null {
+  if (!raw) return null;
+  try {
+    return JSON.parse(raw) as Record<string, unknown>;
+  } catch {
+    return null;
+  }
+}
+
+// ─── GET handler ────────────────────────────────────────────────
+
 export async function GET(
-  _request: NextRequest,
+  request: NextRequest,
   { params }: { params: Promise<{ reference: string }> }
 ) {
   try {
     const { reference } = await params;
 
-    const baggage = await db.baggage.findUnique({
+    const baggage = await prisma.baggage.findUnique({
       where: { reference },
-      include: {
-        agency: {
-          select: {
-            id: true,
-            name: true,
-            agencyType: true,
-            contactPhone: true,
-            phone: true, // fallback si contactPhone pas défini
-            email: true,
-            logoUrl: true,
-            customType: {
-              select: {
-                id: true,
-                name: true,
-                icon: true,
-                finderMessage: true,
-              },
-            },
-          },
-        },
-      },
+      include: { agency: { select: { id: true, name: true } } },
     });
 
     if (!baggage) {
       return NextResponse.json({
         status: 'not_found',
-        message: 'Ce code QR n\'existe pas dans notre système.',
+        message: 'Code QR non valide',
       }, { status: 404 });
     }
 
-    // ─── Statut: bloqué ──────────────────────────────────────────
     if (baggage.status === 'blocked') {
       return NextResponse.json({
         status: 'blocked',
-        message: 'Ce QR code a été bloqué.',
-        agency: baggage.agency?.name || null,
+        message: 'Ce tag a été bloqué',
       });
     }
 
-    // ─── Statut: pas encore activé (en stock) ────────────────────
-    const PENDING_STATUSES = ['in_stock', 'assigned_to_agency', 'sold', 'pending_activation'];
-    if (PENDING_STATUSES.includes(baggage.status)) {
-      return NextResponse.json({
-        status: 'pending_activation',
-        message: 'Ce QR code n\'est pas encore activé.',
-        agency: baggage.agency?.name || null,
-      });
-    }
+    const packType = baggage.packType || 'pratique';
 
-    // ─── Statut: post_stay (après séjour — V4 fidélisation) ───────
-    if (baggage.status === 'post_stay') {
-      // Parser customData pour vérifier l'opt-in
-      let clientOptIn = false;
-      let clientWhatsapp: string | null = null;
-      let clientName = '';
-      if (baggage.customData) {
-        try {
-          const cd = JSON.parse(baggage.customData);
-          clientOptIn = cd.client_opt_in === true;
-          clientWhatsapp = cd.client_whatsapp || null;
-          clientName = cd.client_name || '';
-        } catch {
-          // ignore
+    // Increment scan count asynchronously (fire and forget)
+    prisma.baggage.update({
+      where: { id: baggage.id },
+      data: {
+        scanCount: { increment: 1 },
+        lastScanDate: new Date(),
+      },
+    }).catch(() => {
+      // Non-bloquant
+    });
+
+    // ─── Switch on packType ───────────────────────────────────
+
+    switch (packType) {
+      // ─── PRATIQUE : comportement QRTags existant (objets perdus) ───
+      case 'pratique': {
+        // Si le tag n'a PAS de whatsappOwner, il n'est pas activé
+        if (!baggage.whatsappOwner || baggage.whatsappOwner.trim() === '') {
+          return NextResponse.json({
+            status: 'pending_activation',
+            message: 'Ce tag n\'est pas encore activé',
+          });
         }
+
+        // Check expiration
+        if (baggage.expiresAt && new Date() > baggage.expiresAt) {
+          return NextResponse.json({
+            status: 'expired',
+            message: 'Ce tag a expiré',
+            agency: baggage.agency?.name || null,
+            baggage: {
+              type: baggage.type,
+              travelerName: `${baggage.travelerFirstName} ${baggage.travelerLastName}`,
+            },
+          });
+        }
+
+        // Check if declared lost
+        const isDeclaredLost = baggage.declaredLostAt && !baggage.foundAt;
+
+        // Parser customData pour afficher les infos objet au trouveur
+        let objectInfo: Record<string, unknown> | null = null;
+        if (baggage.customData) {
+          const parsed = safeJsonParse(baggage.customData);
+          if (parsed) {
+            const rawPhoto = typeof parsed.photo === 'string' ? parsed.photo : null;
+            const safePhoto = rawPhoto && /^data:image\/(jpeg|jpg|png|webp|gif|avif);base64,/i.test(rawPhoto)
+              ? rawPhoto
+              : null;
+            objectInfo = {
+              category: parsed.category || null,
+              category_label: parsed.category_label || null,
+              object_name: parsed.object_name || null,
+              object_description: parsed.object_description || null,
+              brand: parsed.brand || null,
+              model: parsed.model || null,
+              color: parsed.color || null,
+              reward: parsed.reward || null,
+              message_to_finder: parsed.message_to_finder || null,
+              city: parsed.city || null,
+              country: parsed.country || null,
+              photo: safePhoto,
+            };
+          }
+        }
+
+        return NextResponse.json({
+          status: isDeclaredLost ? 'lost' : 'active',
+          packType: 'pratique',
+          theme: baggage.type === 'hajj' ? 'hajj' : 'voyageur',
+          type: baggage.type,
+          baggage: {
+            reference: baggage.reference,
+            type: baggage.type,
+            travelerName: `${baggage.travelerFirstName} ${baggage.travelerLastName}`,
+            travelerFirstName: baggage.travelerFirstName || null,
+            status: baggage.status,
+            agency: baggage.agency?.name || null,
+            whatsappOwner: baggage.whatsappOwner || null,
+            declaredLostAt: baggage.declaredLostAt,
+            foundAt: baggage.foundAt,
+            createdAt: baggage.createdAt?.toISOString() || null,
+            isLost: Boolean(baggage.isLost),
+            objectInfo,
+          },
+        }, {
+          headers: {
+            'Cache-Control': 'no-store, no-cache, must-revalidate',
+          },
+        });
       }
 
-      return NextResponse.json({
-        status: 'post_stay',
-        reference: baggage.reference,
-        agency: baggage.agency ? {
-          name: baggage.agency.name,
-          agencyType: baggage.agency.agencyType,
-          contactPhone: baggage.agency.contactPhone || baggage.agency.phone || null,
-          email: baggage.agency.email,
-          logoUrl: baggage.agency.logoUrl,
-        } : null,
-        // V4 — Si opt-in, on expose le WhatsApp du client pour contact direct
-        postStay: {
-          clientOptIn,
-          clientWhatsapp: clientOptIn ? clientWhatsapp : null,
-          clientFirstName: clientName ? clientName.split(' ')[0] : '',
-        },
-      }, {
-        headers: { 'Cache-Control': 'no-store, no-cache, must-revalidate' },
-      });
+      // ─── EMOTION : message audio/texte ───
+      case 'emotion': {
+        const metadata = safeJsonParse(baggage.contentMetadata);
+
+        return NextResponse.json({
+          status: 'active',
+          packType: 'emotion',
+          contentType: baggage.contentType || 'text',
+          content: {
+            message: (metadata?.message as string) || null,
+            duration: (metadata?.duration as number) || null,
+            contentUrl: baggage.contentUrl || null,
+          },
+          baggage: {
+            reference: baggage.reference,
+            travelerName: `${baggage.travelerFirstName} ${baggage.travelerLastName}`,
+            createdAt: baggage.createdAt?.toISOString() || null,
+          },
+        }, {
+          headers: {
+            'Cache-Control': 'no-store, no-cache, must-revalidate',
+          },
+        });
+      }
+
+      // ─── EVENEMENTIEL : infos événement + livre d'or ───
+      case 'evenementiel': {
+        const metadata = safeJsonParse(baggage.contentMetadata);
+
+        // Fetch the latest 20 guest messages for this event
+        const guestMessages = await prisma.guestMessage.findMany({
+          where: { baggageId: baggage.id },
+          orderBy: { createdAt: 'desc' },
+          take: 20,
+        });
+
+        return NextResponse.json({
+          status: 'active',
+          packType: 'evenementiel',
+          event: {
+            eventName: (metadata?.eventName as string) || null,
+            eventDate: (metadata?.eventDate as string) || null,
+            guestBookEnabled: (metadata?.guestBookEnabled as boolean) ?? true,
+            playlistUrl: (metadata?.playlistUrl as string) || null,
+          },
+          guestMessages: guestMessages.map((msg) => ({
+            id: msg.id,
+            authorName: msg.authorName,
+            content: msg.content,
+            contentUrl: msg.contentUrl || null,
+            contentType: msg.contentType || 'text',
+            createdAt: msg.createdAt.toISOString(),
+          })),
+          baggage: {
+            reference: baggage.reference,
+            travelerName: `${baggage.travelerFirstName} ${baggage.travelerLastName}`,
+            createdAt: baggage.createdAt?.toISOString() || null,
+          },
+        }, {
+          headers: {
+            'Cache-Control': 'no-store, no-cache, must-revalidate',
+          },
+        });
+      }
+
+      // ─── IMMOBILIER : annonce immobilière ───
+      case 'immobilier': {
+        const metadata = safeJsonParse(baggage.contentMetadata);
+
+        return NextResponse.json({
+          status: 'active',
+          packType: 'immobilier',
+          property: {
+            title: (metadata?.title as string) || null,
+            description: (metadata?.description as string) || null,
+            price: (metadata?.price as string) || null,
+            surface: (metadata?.surface as string) || null,
+            rooms: (metadata?.rooms as number) || null,
+            images: Array.isArray(metadata?.images) ? metadata.images as string[] : [],
+            virtualTourUrl: (metadata?.virtualTourUrl as string) || null,
+            agentName: (metadata?.agentName as string) || null,
+            agentPhone: (metadata?.agentPhone as string) || null,
+          },
+          baggage: {
+            reference: baggage.reference,
+            travelerName: `${baggage.travelerFirstName} ${baggage.travelerLastName}`,
+            createdAt: baggage.createdAt?.toISOString() || null,
+          },
+        }, {
+          headers: {
+            'Cache-Control': 'no-store, no-cache, must-revalidate',
+          },
+        });
+      }
+
+      // ─── Unknown packType → fallback to pratique ───
+      default: {
+        console.warn(`[scan GET] Unknown packType "${packType}" for reference ${reference}, falling back to pratique`);
+
+        if (!baggage.whatsappOwner || baggage.whatsappOwner.trim() === '') {
+          return NextResponse.json({
+            status: 'pending_activation',
+            message: 'Ce tag n\'est pas encore activé',
+          });
+        }
+
+        return NextResponse.json({
+          status: 'active',
+          packType,
+          theme: baggage.type === 'hajj' ? 'hajj' : 'voyageur',
+          type: baggage.type,
+          baggage: {
+            reference: baggage.reference,
+            type: baggage.type,
+            travelerName: `${baggage.travelerFirstName} ${baggage.travelerLastName}`,
+            status: baggage.status,
+            agency: baggage.agency?.name || null,
+            whatsappOwner: baggage.whatsappOwner || null,
+            createdAt: baggage.createdAt?.toISOString() || null,
+          },
+        }, {
+          headers: {
+            'Cache-Control': 'no-store, no-cache, must-revalidate',
+          },
+        });
+      }
     }
-
-    // ─── Statut: expiré (check-out manuel explicite) ─────────────
-    if (baggage.status === 'expired' || (baggage.expiresAt && new Date() > baggage.expiresAt)) {
-      return NextResponse.json({
-        status: 'expired',
-        message: 'Ce QR code a expiré (séjour terminé).',
-        agency: baggage.agency?.name || null,
-      });
-    }
-
-    // ─── Statut: perdu ou actif ──────────────────────────────────
-    const isLost = Boolean(baggage.isLost) ||
-      Boolean(baggage.declaredLostAt && !baggage.foundAt);
-
-    // Téléphone de contact = contactPhone (priorité) ou phone (fallback)
-    const contactPhone = baggage.agency?.contactPhone || baggage.agency?.phone || null;
-
-    return NextResponse.json({
-      status: isLost ? 'lost' : 'active',
-      reference: baggage.reference,
-      agency: baggage.agency ? {
-        name: baggage.agency.name,
-        agencyType: baggage.agency.agencyType,
-        contactPhone,
-        email: baggage.agency.email,
-        logoUrl: baggage.agency.logoUrl,
-        customType: baggage.agency.customType ? {
-          name: baggage.agency.customType.name,
-          icon: baggage.agency.customType.icon,
-          finderMessage: baggage.agency.customType.finderMessage,
-        } : null,
-      } : null,
-      // POUR LE MOMENT on ne renvoie rien du client (privacy total V1)
-      // Plus tard, on pourra renvoyer un message personnalisé configuré par l'agence
-      isLost,
-      declaredLostAt: baggage.declaredLostAt?.toISOString() || null,
-      foundAt: baggage.foundAt?.toISOString() || null,
-      createdAt: baggage.createdAt?.toISOString() || null,
-    }, {
-      headers: {
-        'Cache-Control': 'no-store, no-cache, must-revalidate',
-      },
-    });
   } catch (error) {
     console.error('[scan GET] Error:', error);
     return NextResponse.json(
@@ -166,78 +271,35 @@ export async function GET(
   }
 }
 
-/**
- * POST /api/scan/[reference]
- *
- * Logger un scan trouveur et renvoyer l'URL WhatsApp WAME pré-remplie
- * vers l'agence (contactPhone) — PAS vers le client.
- *
- * Body:
- *   finderName:    string (nom du trouveur)
- *   finderPhone:   string (téléphone du trouveur)
- *   location?:     string (lieu précis saisi par le trouveur)
- *   latitude?:     number (GPS)
- *   longitude?:    number (GPS)
- *   message?:      string (message optionnel du trouveur)
- *
- * Retourne:
- *   whatsappUrl: string — URL wa.me pré-remplie vers l'agence
- */
+// ─── POST handler ───────────────────────────────────────────────
+
 export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ reference: string }> }
 ) {
   try {
     const { reference } = await params;
-    const body = await request.json().catch(() => ({}));
-    const {
-      location,
-      finderName,
-      finderPhone,
-      latitude,
-      longitude,
-      message,
-    } = body;
+    const body = await request.json();
 
-    const baggage = await db.baggage.findUnique({
+    const baggage = await prisma.baggage.findUnique({
       where: { reference },
-      include: {
-        agency: {
-          select: {
-            id: true,
-            name: true,
-            agencyType: true,
-            contactPhone: true,
-            phone: true,
-            customType: {
-              select: {
-                id: true,
-                name: true,
-                finderMessage: true,
-              },
-            },
-          },
-        },
-      },
     });
 
     if (!baggage) {
       return NextResponse.json(
-        { error: 'QR code introuvable' },
+        { error: 'Tag introuvable' },
         { status: 404 }
       );
     }
 
-    if (!baggage.agency) {
-      return NextResponse.json(
-        { error: 'Aucune agence associée à ce QR' },
-        { status: 400 }
-      );
-    }
+    const packType = baggage.packType || 'pratique';
 
-    // ─── Logger le scan (ScanLog) ────────────────────────────────
-    try {
-      await db.scanLog.create({
+    // ─── PRATIQUE : comportement existant (WhatsApp + scan log) ───
+    if (packType === 'pratique') {
+      const { location, finderName, finderPhone, latitude, longitude, message } = body;
+
+      // Logger le scan
+      await prisma.scanLog.create({
         data: {
           baggageId: baggage.id,
           location: location || null,
@@ -247,131 +309,156 @@ export async function POST(
           longitude: longitude || null,
           message: message || null,
         },
+      }).catch(() => {
+        // Non-bloquant si le log échoue
       });
-    } catch (err) {
-      // Non-bloquant si le log échoue
-      console.error('[scan POST] ScanLog creation failed:', err);
-    }
 
-    // ─── Mettre à jour les stats du baggage ──────────────────────
-    try {
-      await db.baggage.update({
+      // Construire la chaîne de localisation lisible pour le suivi propriétaire
+      const readableLocation = location && location.trim() !== ''
+        ? location
+        : (latitude && longitude
+            ? `${latitude.toFixed(4)}, ${longitude.toFixed(4)}`
+            : 'Position non partagée');
+
+      // Mettre à jour lastScanDate, lastLocation + INCRÉMENTER scanCount + lastScanLocation
+      await prisma.baggage.update({
         where: { id: baggage.id },
         data: {
           lastScanDate: new Date(),
           lastLocation: location || null,
-          lastScanLocation: location ||
-            (latitude && longitude
-              ? `${Number(latitude).toFixed(4)}, ${Number(longitude).toFixed(4)}`
-              : 'Position non partagée'),
+          lastScanLocation: readableLocation,
           scanCount: { increment: 1 },
           founderName: finderName || null,
           founderPhone: finderPhone || null,
           founderAt: new Date(),
         },
+      }).catch(() => {
+        // Non-bloquant
       });
-    } catch (err) {
-      // Non-bloquant
-      console.error('[scan POST] Baggage update failed:', err);
-    }
 
-    // ─── Construire l'URL WhatsApp WAME ───────────────────────────
-    // V4 — Si post_stay + opt-in, le WhatsApp va au CLIENT, pas à l'agence
-    const agencyName = baggage.agency.name;
-
-    // Parser customData pour vérifier post_stay + opt-in
-    let clientOptIn = false;
-    let clientWhatsapp: string | null = null;
-    let clientFirstName = '';
-    if (baggage.customData) {
-      try {
-        const cd = JSON.parse(baggage.customData);
-        clientOptIn = cd.client_opt_in === true;
-        clientWhatsapp = cd.client_whatsapp || null;
-        clientFirstName = cd.client_name ? cd.client_name.split(' ')[0] : '';
-      } catch {
-        // ignore
-      }
-    }
-
-    // V4 — Mode après-séjour: WhatsApp vers le CLIENT
-    if (baggage.status === 'post_stay' && clientOptIn && clientWhatsapp) {
-      const clientPhoneDigits = clientWhatsapp.replace(/[^0-9]/g, '');
-      const locationLine = latitude && longitude
+      // Construire l'URL WhatsApp WAME
+      const ownerFirstName = baggage.travelerFirstName?.trim() || '';
+      const typeLabel = 'objet';
+      const lieu = location || 'lieu non précisé';
+      const address = latitude && longitude
         ? `https://www.google.com/maps?q=${latitude},${longitude}`
-        : (location || 'Position non précisée');
+        : lieu;
 
       const whatsappText =
-        `Bonjour${clientFirstName ? ` ${clientFirstName}` : ''},\n\n` +
-        `J'ai trouvé votre objet portant le QR code de l'Hôtel ${agencyName} (réf. ${reference}).\n\n` +
-        `📍 Ma position : ${locationLine}\n` +
-        (finderName ? `👤 Trouveur : ${finderName}\n` : '') +
-        (finderPhone ? `📞 Contact : ${finderPhone}\n` : '') +
-        `\nPouvez-vous me contacter pour organiser la restitution ?\n\n` +
-        `— Message envoyé via QRTagsPro`;
+        `Bonjour${ownerFirstName ? ` ${ownerFirstName}` : ''}, ` +
+        `j'ai trouvé votre ${typeLabel} (réf. ${reference}). ` +
+        `Je suis actuellement à cette position : ${address}. ` +
+        `— Message envoyé via QRTags.` +
+        (finderName ? ` Trouveur : ${finderName}.` : '') +
+        (finderPhone ? ` Contact : ${finderPhone}.` : '');
 
-      const whatsappUrl = `https://wa.me/${clientPhoneDigits}?text=${encodeURIComponent(whatsappText)}`;
+      const phone = (baggage.whatsappOwner || '').replace(/[^0-9]/g, '');
+      const whatsappUrl = `https://wa.me/${phone}?text=${encodeURIComponent(whatsappText)}`;
 
       return NextResponse.json({
         success: true,
+        packType: 'pratique',
         whatsappUrl,
-        agencyName,
-        isLost: false,
-        mode: 'post_stay_direct',
+        isDeclaredLost: baggage.declaredLostAt && !baggage.foundAt,
       });
     }
 
-    // Mode séjour: WhatsApp vers la RÉCEPTION (comme avant)
-    const contactPhone = baggage.agency.contactPhone || baggage.agency.phone || '';
+    // ─── EVENEMENTIEL : accepter un message d'invité ───
+    if (packType === 'evenementiel') {
+      const { authorName, content, contentType } = body;
 
-    if (!contactPhone) {
+      if (!content || typeof content !== 'string' || content.trim() === '') {
+        return NextResponse.json(
+          { error: 'Le contenu du message est requis' },
+          { status: 400 }
+        );
+      }
+
+      if (!authorName || typeof authorName !== 'string' || authorName.trim() === '') {
+        return NextResponse.json(
+          { error: 'Le nom de l\'auteur est requis' },
+          { status: 400 }
+        );
+      }
+
+      // Check if guest book is enabled
+      const metadata = safeJsonParse(baggage.contentMetadata);
+      const guestBookEnabled = (metadata?.guestBookEnabled as boolean) ?? true;
+
+      if (!guestBookEnabled) {
+        return NextResponse.json(
+          { error: 'Le livre d\'or est désactivé pour cet événement' },
+          { status: 403 }
+        );
+      }
+
+      const guestMessage = await prisma.guestMessage.create({
+        data: {
+          baggageId: baggage.id,
+          authorName: authorName.trim(),
+          content: content.trim(),
+          contentUrl: body.contentUrl || null,
+          contentType: contentType || 'text',
+        },
+      });
+
+      // Log the scan
+      await prisma.scanLog.create({
+        data: {
+          baggageId: baggage.id,
+          location: body.location || null,
+          message: `Guest message from ${authorName}`,
+        },
+      }).catch(() => {});
+
+      // Increment scan count
+      prisma.baggage.update({
+        where: { id: baggage.id },
+        data: {
+          scanCount: { increment: 1 },
+          lastScanDate: new Date(),
+        },
+      }).catch(() => {});
+
       return NextResponse.json({
-        success: false,
-        error: 'Aucun numéro de contact configuré pour cette agence',
-        agencyName,
-      }, { status: 400 });
+        success: true,
+        packType: 'evenementiel',
+        guestMessage: {
+          id: guestMessage.id,
+          authorName: guestMessage.authorName,
+          content: guestMessage.content,
+          contentType: guestMessage.contentType,
+          createdAt: guestMessage.createdAt.toISOString(),
+        },
+      });
     }
 
-    // Nettoyer le numéro (garder uniquement les chiffres)
-    const phoneDigits = contactPhone.replace(/[^0-9]/g, '');
+    // ─── EMOTION & IMMOBILIER : juste logger le scan (pas de WhatsApp) ───
+    await prisma.scanLog.create({
+      data: {
+        baggageId: baggage.id,
+        location: body.location || null,
+        finderName: body.finderName || null,
+        finderPhone: body.finderPhone || null,
+        latitude: body.latitude || null,
+        longitude: body.longitude || null,
+        message: body.message || null,
+      },
+    }).catch(() => {});
 
-    // Position du trouveur
-    const locationLine = latitude && longitude
-      ? `https://www.google.com/maps?q=${latitude},${longitude}`
-      : (location || 'Position non précisée');
-
-    // Message WhatsApp pré-rempli à destination de la RÉCEPTION
-    let whatsappText: string;
-    const customFinderMessage = baggage.agency?.customType?.finderMessage;
-
-    if (customFinderMessage && customFinderMessage.trim()) {
-      whatsappText = customFinderMessage
-        .replace(/\{reference\}/g, reference)
-        .replace(/\{agencyName\}/g, agencyName)
-        .replace(/\{finderName\}/g, finderName || 'Anonyme')
-        .replace(/\{finderPhone\}/g, finderPhone || 'Non fourni')
-        .replace(/\{location\}/g, locationLine)
-        .replace(/\{message\}/g, message || '');
-    } else {
-      whatsappText =
-        `Bonjour ${agencyName},\n\n` +
-        `J'ai trouvé un objet portant votre QR code (réf. ${reference}).\n\n` +
-        `📍 Ma position : ${locationLine}\n` +
-        (finderName ? `👤 Trouveur : ${finderName}\n` : '') +
-        (finderPhone ? `📞 Contact : ${finderPhone}\n` : '') +
-        (message ? `💬 Message : ${message}\n` : '') +
-        `\nMerci de me confirmer la marche à suite pour la restitution.\n\n` +
-        `— Message envoyé via QRTagsPro`;
-    }
-
-    const whatsappUrl = `https://wa.me/${phoneDigits}?text=${encodeURIComponent(whatsappText)}`;
+    // Increment scan count
+    prisma.baggage.update({
+      where: { id: baggage.id },
+      data: {
+        scanCount: { increment: 1 },
+        lastScanDate: new Date(),
+      },
+    }).catch(() => {});
 
     return NextResponse.json({
       success: true,
-      whatsappUrl,
-      agencyName,
-      isLost: Boolean(baggage.isLost) ||
-        Boolean(baggage.declaredLostAt && !baggage.foundAt),
+      packType,
+      message: 'Scan enregistré',
     });
   } catch (error) {
     console.error('[scan POST] Error:', error);

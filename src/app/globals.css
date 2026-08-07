@@ -4,13 +4,12 @@
 @custom-variant dark (&:is(.dark *));
 
 :root {
-  /* ═══ QRTagsPro V4 Brand Tokens ═══ */
-  /* Nouvelle charte: Bleu corporate #134288 + Vert #32ba5d */
-  --qrtags-bg: #134288;            /* Bleu corporate — fond principal */
-  --qrtags-accent: #32ba5d;        /* Vert — accents, boutons, highlights */
-  --qrtags-accent-hover: #28a54f;  /* Variante hover (vert plus foncé) */
-  --qrtags-ink: #134288;           /* Bleu — texte sur fond vert */
-  --qrtags-text-on-dark: #f5f5f5;  /* Texte clair sur fond bleu */
+  /* ═══ QRTags Brand Tokens ═══ */
+  --qrtags-bg: #111111;            /* Noir — fond principal */
+  --qrtags-accent: #E3B23C;        /* Jaune Moutarde — accents */
+  --qrtags-accent-hover: #FFDB58;  /* Variante hover */
+  --qrtags-ink: #111111;           /* Noir — texte sur jaune */
+  --qrtags-text-on-dark: #f5f5f5;  /* Texte clair sur fond noir */
   --qrtags-muted: #9a9a9a;
 
   /* Modern Light Theme Colors (admin & dashboard) */
@@ -23,13 +22,10 @@
   --border-color: #e2e8f0;
   --card-bg: #ffffff;
 
-  /* Primary Brand Colors — QRTagsPro V4 (bleu + vert) */
-  --primary: #134288;              /* Bleu corporate */
-  --primary-light: #1e5bb0;        /* Bleu plus clair */
-  --primary-dark: #0d3266;         /* Bleu plus foncé */
-  --accent: #32ba5d;               /* Vert */
-  --accent-light: #4ecb76;         /* Vert plus clair */
-  --accent-dark: #28a54f;          /* Vert plus foncé */
+  /* Primary Brand Colors — QRTags (mustard on black) */
+  --primary: #E3B23C;
+  --primary-light: #FFDB58;
+  --primary-dark: #c89a2c;
 
   /* Sidebar Colors - White Modern (admin) */
   --sidebar-bg: #ffffff;
@@ -769,4 +765,164 @@ body * {
 @media (prefers-color-scheme: dark) {
   /* /suivi keeps blue bg + yellow cards — brand identity */
   /* Only admin area uses dark mode via .dark class */
+}
+
+/* ═══ Marquee scrolling animation ═══ */
+@keyframes marquee {
+  0% {
+    transform: translateX(0);
+  }
+  100% {
+    transform: translateX(-50%);
+  }
+}
+
+.animate-marquee {
+  animation: marquee 30s linear infinite;
+  will-change: transform;
+}
+
+.animate-marquee:hover {
+  animation-play-state: paused;
+}
+
+/* ═══ Marquee lent (hero carrousel — 45s, plus immersif) ═══ */
+.animate-marquee-slow {
+  animation: marquee 45s linear infinite;
+  will-change: transform;
+}
+
+.animate-marquee-slow:hover {
+  animation-play-state: paused;
+}
+
+/* ═══ CTA pulse (bouton 'Commander mes tags' du hero) — version douce ═══ */
+@keyframes cta-pulse {
+  0%, 100% {
+    transform: scale(1);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.25), 0 0 0 0 rgba(253, 185, 0, 0.35);
+  }
+  50% {
+    transform: scale(1.02);
+    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.28), 0 0 0 8px rgba(253, 185, 0, 0);
+  }
+}
+
+.cta-pulse {
+  animation: cta-pulse 3s ease-in-out infinite;
+}
+
+.cta-pulse:hover {
+  animation-play-state: paused;
+}
+
+/* ═══ WhatsApp pulse — battement vert pour attirer l'œil sur le bouton de contact trouveur ═══ */
+@keyframes wa-pulse {
+  0%, 100% {
+    box-shadow: 0 8px 20px rgba(22, 163, 74, 0.35), 0 0 0 0 rgba(22, 163, 74, 0.5);
+  }
+  50% {
+    box-shadow: 0 10px 24px rgba(22, 163, 74, 0.4), 0 0 0 12px rgba(22, 163, 74, 0);
+  }
+}
+
+/* ═══ Reward pulse — bandeau récompense flashy doré, attire l'œil du trouveur ═══ */
+@keyframes reward-pulse {
+  0%, 100% {
+    transform: scale(1);
+    box-shadow: 0 10px 28px rgba(217, 119, 6, 0.45), 0 0 0 0 rgba(245, 158, 11, 0.6);
+  }
+  50% {
+    transform: scale(1.015);
+    box-shadow: 0 14px 36px rgba(217, 119, 6, 0.55), 0 0 0 16px rgba(245, 158, 11, 0);
+  }
+}
+
+.reward-pulse {
+  animation: reward-pulse 2.4s ease-in-out infinite;
+}
+
+.reward-pulse:hover {
+  animation-play-state: paused;
+}
+
+/* Brillances diagonales qui traversent le bandeau récompense */
+@keyframes reward-shimmer {
+  0%   { transform: translateX(-120%) skewX(-18deg); }
+  60%  { transform: translateX(220%)  skewX(-18deg); }
+  100% { transform: translateX(220%)  skewX(-18deg); }
+}
+
+.reward-shimmer::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 35%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.55), transparent);
+  animation: reward-shimmer 3.2s ease-in-out infinite;
+  pointer-events: none;
+}
+
+.wa-pulse:not(:disabled):not(.disabled) {
+  animation: wa-pulse 2.2s ease-in-out infinite;
+}
+
+.wa-pulse:hover:not(:disabled) {
+  animation-play-state: paused;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cta-pulse,
+  .wa-pulse,
+  .reward-pulse,
+  .reward-shimmer::after,
+  .animate-marquee,
+  .animate-marquee-slow,
+  .track-card-animate,
+  .track-toast-enter {
+    animation: none !important;
+    opacity: 1 !important;
+    transform: none !important;
+  }
+}
+
+/* ═══ Page /track/[token] — animations Étape 3 ═══ */
+
+/* Cartes : fade-in + slide-up doux au scroll (IntersectionObserver ajoute .track-card-visible) */
+.track-card-animate {
+  opacity: 0;
+  transform: translateY(16px);
+  transition: opacity 0.5s ease-out, transform 0.5s ease-out;
+  will-change: opacity, transform;
+}
+.track-card-animate.track-card-visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* Toast : slide-up + fade-in au montage */
+@keyframes track-toast-in {
+  0%   { opacity: 0; transform: translate(-50%, 16px); }
+  100% { opacity: 1; transform: translate(-50%, 0); }
+}
+.track-toast-enter {
+  animation: track-toast-in 0.25s ease-out;
+}
+
+/* Marquee : sous prefers-reduced-motion, on fige le défilement */
+@media (prefers-reduced-motion: reduce) {
+  .animate-marquee,
+  .animate-marquee-slow {
+    animation: none;
+    /* On garde un scroll horizontal natif pour ne pas cacher le contenu */
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    -webkit-overflow-scrolling: touch;
+  }
+  .animate-marquee > *,
+  .animate-marquee-slow > * {
+    scroll-snap-align: start;
+  }
 }

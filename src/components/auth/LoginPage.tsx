@@ -417,27 +417,7 @@ export default function LoginPage({ variant }: { variant: LoginVariant }) {
             </button>
           </form>
 
-          {/* Demo Account Card */}
-          <div className="mt-6 p-4 rounded-xl bg-slate-50 border border-slate-100">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2.5">
-                <div className="w-8 h-8 rounded-lg bg-slate-900 flex items-center justify-center">
-                  <Fingerprint className="w-4 h-4 text-white" />
-                </div>
-                <div>
-                  <p className="text-xs font-semibold text-slate-700">Compte démo</p>
-                  <p className="text-[10px] text-slate-400 font-mono">{config.demoEmail} / {config.demoPassword}</p>
-                </div>
-              </div>
-              <button
-                type="button"
-                onClick={fillDemo}
-                className="text-xs font-semibold px-3 py-1.5 rounded-lg bg-slate-900 text-white hover:bg-slate-800 transition-colors"
-              >
-                Remplir
-              </button>
-            </div>
-          </div>
+          {/* Demo account card removed for production */}
 
           {/* Switch */}
           <div className="mt-8 text-center text-sm text-slate-500">
