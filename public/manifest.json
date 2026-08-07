@@ -1,0 +1,95 @@
+{
+  "name": "QRTagsPro — Gestion d'objets perdus B2B",
+  "short_name": "QRTagsPro",
+  "description": "QRTagsPro — Plateforme SaaS de gestion d'objets perdus pour entreprises. QR codes multi-métiers, check-in, et contact WhatsApp.",
+  "start_url": "/?from=pwa",
+  "display": "standalone",
+  "background_color": "#134288",
+  "theme_color": "#134288",
+  "orientation": "portrait-primary",
+  "scope": "/",
+  "prefer_related_applications": false,
+  "icons": [
+    {
+      "src": "/icons/icon-72x72.png",
+      "sizes": "72x72",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/icon-96x96.png",
+      "sizes": "96x96",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/icon-128x128.png",
+      "sizes": "128x128",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/icon-144x144.png",
+      "sizes": "144x144",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/icon-152x152.png",
+      "sizes": "152x152",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/icon-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/icon-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "maskable"
+    },
+    {
+      "src": "/icons/icon-384x384.png",
+      "sizes": "384x384",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/icon-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/maskable-icon-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ],
+  "categories": ["business", "utilities", "productivity"],
+  "lang": "fr",
+  "dir": "auto",
+  "shortcuts": [
+    {
+      "name": "Connexion agence",
+      "short_name": "Agence",
+      "description": "Espace agence QRTagsPro",
+      "url": "/agence/connexion"
+    },
+    {
+      "name": "Démo interactive",
+      "short_name": "Démo",
+      "description": "Tester QRTagsPro en temps réel",
+      "url": "/demo"
+    }
+  ],
+  "handle_links": "preferred",
+  "launch_handler": {
+    "client_mode": "navigate-existing"
+  }
+}
