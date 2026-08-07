@@ -1,0 +1,533 @@
+   210→      const data = await res.json();
+   211→
+   212→      if (res.ok) {
+   213→        setReferences(data.references || []);
+   214→        setSuccessMsg(`${data.generated} QR code(s) généré(s) avec succès !`);
+   215→      } else {
+   216→        setErrorMsg(data.error || 'Erreur lors de la génération.');
+   217→      }
+   218→    } catch {
+   219→      setErrorMsg('Erreur lors de la génération.');
+   220→    } finally {
+   221→      setGenerating(false);
+   222→    }
+   223→  };
+   224→
+   225→  const loadPreview = async (ref: string) => {
+   226→    setPreviewLoading(true);
+   227→    try {
+   228→      const url = `/api/admin/qr-design/preview?reference=${ref}&sizeCm=${sizeCm}`;
+   229→      const res = await fetch(url);
+   230→      if (res.ok) {
+   231→        const blob = await res.blob();
+   232→        const objectUrl = URL.createObjectURL(blob);
+   233→        setPreviewUrl((prev) => {
+   234→          if (prev) URL.revokeObjectURL(prev);
+   235→          return objectUrl;
+   236→        });
+   237→      }
+   238→    } catch {
+   239→      // Silent fail for preview
+   240→    } finally {
+   241→      setPreviewLoading(false);
+   242→    }
+   243→  };
+   244→
+   245→  const downloadFile = async (url: string, filename: string) => {
+   246→    const res = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ references, sizeCm }) });
+   247→    if (!res.ok) {
+   248→      const err = await res.json().catch(() => ({ error: 'Erreur' }));
+   249→      setErrorMsg(err.error || "Erreur lors de l'export.");
+   250→      return;
+   251→    }
+   252→    const blob = await res.blob();
+   253→    const objectUrl = URL.createObjectURL(blob);
+   254→    const a = document.createElement('a');
+   255→    a.href = objectUrl;
+   256→    a.download = filename;
+   257→    document.body.appendChild(a);
+   258→    a.click();
+   259→    document.body.removeChild(a);
+   260→    URL.revokeObjectURL(objectUrl);
+   261→  };
+   262→
+   263→  const handleExportPdf = async () => {
+   264→    if (references.length === 0) return;
+   265→    setExportingPdf(true);
+   266→    setErrorMsg('');
+   267→    try {
+   268→      const date = new Date().toISOString().slice(0, 10);
+   269→      await downloadFile('/api/admin/qr-design/export-pdf', `QRTags-Design-${sizeCm}cm-${references.length}QR-${date}.pdf`);
+   270→      setSuccessMsg(`PDF exporté avec ${references.length} QR codes en grille A4 !`);
+   271→    } finally {
+   272→      setExportingPdf(false);
+   273→    }
+   274→  };
+   275→
+   276→  const handleExportZip = async () => {
+   277→    if (references.length === 0) return;
+   278→    setExportingZip(true);
+   279→    setErrorMsg('');
+   280→    try {
+   281→      const date = new Date().toISOString().slice(0, 10);
+   282→      await downloadFile('/api/admin/qr-design/export-zip', `QRTags-Design-${sizeCm}cm-${references.length}QR-${date}.zip`);
+   283→      setSuccessMsg(`ZIP exporté avec ${references.length} PNG haute résolution !`);
+   284→    } finally {
+   285→      setExportingZip(false);
+   286→    }
+   287→  };
+   288→
+   289→  const hasTemplate = templateInfo?.exists ?? false;
+   290→  const canExport = references.length > 0 && hasTemplate;
+   291→
+   292→  return (
+   293→    <div className="space-y-6">
+   294→      {/* ─── Step 1: Upload Template ─── */}
+   295→      <Card className="rounded-2xl">
+   296→        <CardHeader>
+   297→          <CardTitle className="flex items-center gap-2 text-slate-800 dark:text-white">
+   298→            <div className="w-8 h-8 rounded-full bg-gradient-to-r from-orange-500 to-purple-600 flex items-center justify-center text-white text-sm font-bold">1</div>
+   299→            Template de Design
+   300→          </CardTitle>
+   301→        </CardHeader>
+   302→        <CardContent>
+   303→          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
+   304→            {hasTemplate ? (
+   305→              <div className="flex items-center gap-3 flex-1">
+   306→                <div className="w-12 h-12 rounded-xl bg-emerald-50 dark:bg-emerald-900/20 flex items-center justify-center">
+   307→                  <CheckCircle className="w-6 h-6 text-emerald-600" />
+   308→                </div>
+   309→                <div>
+   310→                  <p className="font-medium text-slate-800 dark:text-white">Template configuré</p>
+   311→                  <p className="text-sm text-slate-500">
+   312→                    {templateInfo!.width}×{templateInfo!.height}px • {templateInfo!.format.toUpperCase()}
+   313→                    • {(templateInfo!.size / 1024).toFixed(0)} Ko
+   314→                  </p>
+   315→                </div>
+   316→                <Button variant="outline" size="sm" className="ml-auto" onClick={() => fileInputRef.current?.click()}>
+   317→                  <Upload className="w-4 h-4 mr-1" /> Remplacer
+   318→                </Button>
+   319→              </div>
+   320→            ) : (
+   321→              <div className="flex items-center gap-3 flex-1">
+   322→                <div className="w-12 h-12 rounded-xl bg-amber-50 dark:bg-amber-900/20 flex items-center justify-center">
+   323→                  <Image className="w-6 h-6 text-amber-600" />
+   324→                </div>
+   325→                <div>
+   326→                  <p className="font-medium text-slate-800 dark:text-white">Aucun template</p>
+   327→                  <p className="text-sm text-slate-500">Uploadez un design PNG (carré, fond transparent)</p>
+   328→                </div>
+   329→                <Button
+   330→                  className="ml-auto bg-gradient-to-r from-orange-500 to-purple-600 hover:from-orange-600 hover:to-purple-700 text-white"
+   331→                  onClick={() => fileInputRef.current?.click()}
+   332→                >
+   333→                  <Upload className="w-4 h-4 mr-1" /> Uploader le design
+   334→                </Button>
+   335→              </div>
+   336→            )}
+   337→            <input
+   338→              ref={fileInputRef}
+   339→              type="file"
+   340→              accept="image/png"
+   341→              className="hidden"
+   342→              onChange={handleUpload}
+   343→            />
+   344→          </div>
+   345→        </CardContent>
+   346→      </Card>
+   347→
+   348→      {/* ─── Step 2: Configure & Generate ─── */}
+   349→      <Card className="rounded-2xl">
+   350→        <CardHeader>
+   351→          <CardTitle className="flex items-center gap-2 text-slate-800 dark:text-white">
+   352→            <div className="w-8 h-8 rounded-full bg-gradient-to-r from-orange-500 to-purple-600 flex items-center justify-center text-white text-sm font-bold">2</div>
+   353→            Configuration
+   354→          </CardTitle>
+   355→        </CardHeader>
+   356→        <CardContent className="space-y-5">
+   357→          {/* Agency Selection */}
+   358→          <div className="space-y-2">
+   359→            <Label className="text-slate-700 dark:text-slate-300">Agence (optionnel)</Label>
+   360→            <Select value={agencyId} onValueChange={setAgencyId}>
+   361→              <SelectTrigger className="bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700">
+   362→                <SelectValue placeholder="Sans agence (stock général)" />
+   363→              </SelectTrigger>
+   364→              <SelectContent className="bg-white dark:bg-slate-900">
+   365→                <SelectItem value="">Sans agence (stock général)</SelectItem>
+   366→                {agencies.filter((a) => a.active).map((a) => (
+   367→                  <SelectItem key={a.id} value={a.id}>{a.name}</SelectItem>
+   368→                ))}
+   369→              </SelectContent>
+   370→            </Select>
+   371→          </div>
+   372→
+   373→          {/* Quantity */}
+   374→          <div className="space-y-2">
+   375→            <Label className="text-slate-700 dark:text-slate-300">
+   376→              Nombre de QR codes <span className="text-slate-400 font-normal">(max 100)</span>
+   377→            </Label>
+   378→            <div className="flex gap-2 items-center">
+   379→              <Input
+   380→                type="number" min={1} max={100} value={quantity}
+   381→                onChange={(e) => setQuantity(Math.min(100, Math.max(1, parseInt(e.target.value) || 1)))}
+   382→                className="w-28 bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700"
+   383→              />
+   384→              <div className="flex gap-1.5 flex-wrap">
+   385→                {QUICK_QTYS.map((q) => (
+   386→                  <button
+   387→                    key={q} onClick={() => setQuantity(q)}
+   388→                    className={cn(
+   389→                      'px-3 py-1.5 rounded-lg text-sm font-medium transition-all',
+   390→                      quantity === q
+   391→                        ? 'bg-gradient-to-r from-orange-500 to-purple-600 text-white shadow-sm'
+   392→                        : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700'
+   393→                    )}
+   394→                  >{q}</button>
+   395→                ))}
+   396→              </div>
+   397→            </div>
+   398→          </div>
+   399→
+   400→          {/* Size Selection */}
+   401→          <div className="space-y-2">
+   402→            <Label className="flex items-center gap-2 text-slate-700 dark:text-slate-300">
+   403→              <Ruler className="w-4 h-4" />
+   404→              Taille du sticker (cercle complet)
+   405→            </Label>
+   406→            <div className="grid grid-cols-3 gap-3">
+   407→              {SIZES.map((s) => (
+   408→                <button
+   409→                  key={s.value}
+   410→                  onClick={() => setSizeCm(s.value)}
+   411→                  className={cn(
+   412→                    'relative p-4 rounded-xl border-2 transition-all text-center',
+   413→                    sizeCm === s.value
+   414→                      ? 'border-orange-500 bg-orange-50 dark:bg-orange-900/20 shadow-md'
+   415→                      : 'border-slate-200 dark:border-slate-700 hover:border-slate-300 dark:hover:border-slate-600'
+   416→                  )}
+   417→                >
+   418→                  <div className={cn(
+   419→                    'text-2xl font-bold',
+   420→                    sizeCm === s.value ? 'text-orange-600' : 'text-slate-700 dark:text-slate-300'
+   421→                  )}>
+   422→                    {s.value} cm
+   423→                  </div>
+   424→                  <div className="text-xs text-slate-500 mt-1">{s.gridInfo}</div>
+   425→                  {sizeCm === s.value && (
+   426→                    <div className="absolute top-2 right-2 w-5 h-5 rounded-full bg-orange-500 flex items-center justify-center">
+   427→                      <CheckCircle className="w-3 h-3 text-white" />
+   428→                    </div>
+   429→                  )}
+   430→                </button>
+   431→              ))}
+   432→            </div>
+   433→          </div>
+   434→
+   435→          {/* Generate Button */}
+   436→          <Button
+   437→            className="w-full bg-gradient-to-r from-orange-500 to-purple-600 hover:from-orange-600 hover:to-purple-700 text-white rounded-xl h-12 text-base font-semibold shadow-lg"
+   438→            onClick={handleGenerate}
+   439→            disabled={generating || !hasTemplate}
+   440→          >
+   441→            {generating ? (
+   442→              <><Loader2 className="w-5 h-5 mr-2 animate-spin" /> Génération en cours...</>
+   443→            ) : (
+   444→              <><QrCode className="w-5 h-5 mr-2" /> Générer {quantity} QR code(s)</>
+   445→            )}
+   446→          </Button>
+   447→        </CardContent>
+   448→      </Card>
+   449→
+   450→      {/* ─── Messages ─── */}
+   451→      {successMsg && (
+   452→        <div className="bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800 text-emerald-700 dark:text-emerald-400 px-4 py-3 rounded-xl flex items-center gap-2">
+   453→          <CheckCircle className="w-5 h-5 shrink-0" />
+   454→          <span className="text-sm font-medium">{successMsg}</span>
+   455→        </div>
+   456→      )}
+   457→      {errorMsg && (
+   458→        <div className="bg-rose-50 dark:bg-rose-900/20 border border-rose-200 dark:border-rose-800 text-rose-600 dark:text-rose-400 px-4 py-3 rounded-xl flex items-center gap-2">
+   459→          <AlertCircle className="w-5 h-5 shrink-0" />
+   460→          <span className="text-sm font-medium">{errorMsg}</span>
+   461→        </div>
+   462→      )}
+   463→
+   464→      {/* ─── Step 3: Preview & Export ─── */}
+   465→      {references.length > 0 && (
+   466→        <Card className="rounded-2xl">
+   467→          <CardHeader>
+   468→            <CardTitle className="flex items-center gap-2 text-slate-800 dark:text-white">
+   469→              <div className="w-8 h-8 rounded-full bg-gradient-to-r from-orange-500 to-purple-600 flex items-center justify-center text-white text-sm font-bold">3</div>
+   470→              Aperçu & Export
+   471→              <Badge variant="secondary" className="ml-2">{references.length} QR</Badge>
+   472→            </CardTitle>
+   473→          </CardHeader>
+   474→          <CardContent className="space-y-5">
+   475→            {/* Preview */}
+   476→            <div className="flex flex-col items-center gap-3">
+   477→              <p className="text-sm text-slate-500 font-medium">Aperçu — {sizeCm} × {sizeCm} cm</p>
+   478→              <div className="relative w-48 h-48 rounded-full overflow-hidden border-2 border-slate-200 dark:border-slate-700 shadow-lg">
+   479→                {previewLoading && (
+   480→                  <div className="absolute inset-0 bg-slate-100 dark:bg-slate-800 flex items-center justify-center">
+   481→                    <Loader2 className="w-8 h-8 animate-spin text-slate-400" />
+   482→                  </div>
+   483→                )}
+   484→                {previewUrl && (
+   485→                  <img src={previewUrl} alt="Aperçu QR" className="w-full h-full object-cover" />
+   486→                )}
+   487→              </div>
+   488→              <p className="text-xs font-mono text-slate-400">{references[0]}</p>
+   489→              {/* Preview navigation */}
+   490→              {references.length > 1 && (
+   491→                <div className="flex items-center gap-2">
+   492→                  <Button variant="outline" size="sm" onClick={() => loadPreview(references[0])}>
+   493→                    <Eye className="w-3 h-3 mr-1" /> Premier
+   494→                  </Button>
+   495→                  <span className="text-xs text-slate-400">1/{references.length}</span>
+   496→                </div>
+   497→              )}
+   498→            </div>
+   499→
+   500→            {/* References list (scrollable) */}
+   501→            <div className="max-h-40 overflow-y-auto rounded-lg border border-slate-200 dark:border-slate-700 p-3">
+   502→              <div className="flex flex-wrap gap-1.5">
+   503→                {references.map((ref, i) => (
+   504→                  <Badge key={ref} variant="outline" className="font-mono text-xs cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-800"
+   505→                    onClick={() => loadPreview(ref)}>
+   506→                    {ref}
+   507→                  </Badge>
+   508→                ))}
+   509→              </div>
+   510→            </div>
+   511→
+   512→            {/* Export Buttons */}
+   513→            <div className="grid grid-cols-2 gap-3">
+   514→              <Button
+   515→                className="h-12 bg-slate-800 hover:bg-slate-900 text-white rounded-xl"
+   516→                onClick={handleExportPdf}
+   517→                disabled={exportingPdf || !canExport}
+   518→              >
+   519→                {exportingPdf ? (
+   520→                  <><Loader2 className="w-5 h-5 mr-2 animate-spin" /> PDF en cours...</>
+   521→                ) : (
+   522→                  <><FileText className="w-5 h-5 mr-2" /> Télécharger PDF</>
+   523→                )}
+   524→              </Button>
+   525→              <Button
+   526→                className="h-12 bg-gradient-to-r from-orange-500 to-purple-600 hover:from-orange-600 hover:to-purple-700 text-white rounded-xl"
+   527→                onClick={handleExportZip}
+   528→                disabled={exportingZip || !canExport}
+   529→              >
+   530→                {exportingZip ? (
+   531→                  <><Loader2 className="w-5 h-5 mr-2 animate-spin" /> ZIP en cours...</>
+   532→                ) : (
+   533→                  <><Download className="w-5 h-5 mr-2" /> Télécharger ZIP</>
+   534→                )}
+   535→              </Button>
+   536→            </div>
+   537→            <p className="text-xs text-slate-400 text-center">
+   538→              PDF = Grille A4 prête à imprimer • ZIP = PNG haute résolution (600 DPI) individuels
+   539→            </p>
+   540→          </CardContent>
+   541→        </Card>
+   542→      )}
+   543→
+   544→      {/* ─── Empty State (no template) ─── */}
+   545→      {!hasTemplate && !templateLoading && (
+   546→        <div className="text-center py-12 px-6 rounded-2xl border-2 border-dashed border-slate-300 dark:border-slate-700">
+   547→          <Palette className="w-12 h-12 text-slate-400 mx-auto mb-3" />
+   548→          <h3 className="text-lg font-semibold text-slate-700 dark:text-slate-300">Commencez par uploader votre design</h3>
+   549→          <p className="text-sm text-slate-500 mt-1 max-w-md mx-auto">
+   550→            Votre design circulaire en PNG (avec fond transparent) servira de template
+   551→            pour générer les QR codes personnalisés.
+   552→          </p>
+   553→        </div>
+   554→      )}
+   555→    </div>
+   556→  );
+   557→}
+   558→
+   559→// ═══════════════════════════════════════════════════════════════════════
+   560→// CLASSIC GENERATION COMPONENT (original code preserved)
+   561→// ═══════════════════════════════════════════════════════════════════════
+   562→
+   563→function ClassicGeneration({ agencies }: { agencies: Agency[] }) {
+   564→  const [loading] = useState(false);
+   565→  const [qrGenerating, setQrGenerating] = useState(false);
+   566→  const [successMessage, setSuccessMessage] = useState('');
+   567→  const [errorMessage, setErrorMessage] = useState('');
+   568→  const [lastGeneratedRefs, setLastGeneratedRefs] = useState<string[]>([]);
+   569→  const [isExporting, setIsExporting] = useState(false);
+   570→
+   571→  const [context, setContext] = useState<'individual' | 'agency'>('agency');
+   572→  const [individualForm, setIndividualForm] = useState({
+   573→    firstName: '', lastName: '', whatsapp: '', duration: '1y' as '1y', productType: 'laptop',
+   574→  });
+   575→  const [agencyForm, setAgencyForm] = useState({
+   576→    type: 'qrtags' as 'hajj' | 'qrtags', agencyId: '', travelerCount: 1, productType: 'laptop',
+   577→  });
+   578→
+   579→  const getQrCount = () => context === 'individual' ? 1 : agencyForm.travelerCount;
+   580→
+   581→  const handleExportGenerated = async () => {
+   582→    if (lastGeneratedRefs.length === 0) return;
+   583→    setIsExporting(true);
+   584→    try {
+   585→      const QRCode = (await import('qrcode')).default;
+   586→      const baseUrl = window.location.origin;
+   587→      for (let i = 0; i < lastGeneratedRefs.length; i++) {
+   588→        const ref = lastGeneratedRefs[i];
+   589→        const targetUrl = `${baseUrl}/scan/${ref}`;
+   590→        const dataUrl = await QRCode.toDataURL(targetUrl, {
+   591→          errorCorrectionLevel: 'H', margin: 2, width: 512,
+   592→          color: { dark: '#111111', light: '#E3B23C' },
+   593→        });
+   594→        const response = await fetch(dataUrl);
+   595→        const blob = await response.blob();
+   596→        const url = URL.createObjectURL(blob);
+   597→        const a = document.createElement('a');
+   598→        a.href = url; a.download = `QRTags-${ref}.png`;
+   599→        document.body.appendChild(a); a.click();
+   600→        document.body.removeChild(a); URL.revokeObjectURL(url);
+   601→        await new Promise((r) => setTimeout(r, 300));
+   602→      }
+   603→      setSuccessMessage(`${lastGeneratedRefs.length} QR codes exportés en PNG`);
+   604→      setTimeout(() => setSuccessMessage(''), 5000);
+   605→    } catch {
+   606→      setErrorMessage("Erreur lors de l'export des QR codes");
+   607→    } finally {
+   608→      setIsExporting(false);
+   609→    }
+   610→  };
+   611→
+   612→  const handleGenerateQR = async () => {
+   613→    setErrorMessage('');
+   614→    if (context === 'individual') {
+   615→      if (!individualForm.firstName.trim()) { setErrorMessage('Le prénom est requis'); return; }
+   616→      if (!individualForm.lastName.trim()) { setErrorMessage('Le nom est requis'); return; }
+   617→      if (!individualForm.whatsapp.trim()) { setErrorMessage('Le WhatsApp est requis'); return; }
+   618→    } else {
+   619→      if (!agencyForm.agencyId) { setErrorMessage('Sélectionnez une agence'); return; }
+   620→    }
+   621→    setQrGenerating(true);
+   622→    try {
+   623→      const payload = context === 'individual'
+   624→        ? { context: 'individual', firstName: individualForm.firstName.trim(), lastName: individualForm.lastName.trim(), whatsapp: individualForm.whatsapp.trim(), duration: '1y', baggageCount: 1 }
+   625→        : { context: 'agency', type: agencyForm.type, agencyId: agencyForm.agencyId, travelerCount: agencyForm.travelerCount, count: 1 };
+   626→      const response = await fetch('/api/admin/baggages/generate', {
+   627→        method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload),
+   628→      });
+   629→      const data = await response.json();
+   630→      if (response.ok) {
+   631→        setSuccessMessage(`${data.generated} tag(s) généré(s) !`);
+   632→        setLastGeneratedRefs(data.references || []);
+   633→        setTimeout(() => { setSuccessMessage(''); setLastGeneratedRefs([]); }, 10000);
+   634→      } else {
+   635→        setErrorMessage(data.error || 'Erreur lors de la génération');
+   636→      }
+   637→    } catch {
+   638→      setErrorMessage('Erreur lors de la génération');
+   639→    } finally {
+   640→      setQrGenerating(false);
+   641→    }
+   642→  };
+   643→
+   644→  return (
+   645→    <div className="space-y-6">
+   646→      {successMessage && lastGeneratedRefs.length > 0 && (
+   647→        <div className="bg-emerald-50 dark:bg-emerald-600/10 border border-emerald-200 dark:border-emerald-800 text-emerald-700 dark:text-emerald-400 px-4 py-4 rounded-xl">
+   648→          <div className="flex items-center gap-2 mb-3"><CheckCircle className="w-5 h-5" /><span className="font-medium">{successMessage}</span></div>
+   649→          <div className="flex gap-2">
+   650→            <button onClick={handleExportGenerated} disabled={isExporting}
+   651→              className="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-[#1e7e34] to-[#0d5e34] text-white rounded-lg text-sm shadow-lg disabled:opacity-50">
+   652→              {isExporting ? <><Loader2 className="w-4 h-4 animate-spin" />Export...</> : <><Archive className="w-4 h-4" />Exporter en ZIP</>}
+   653→            </button>
+   654→            <a href="/admin/qrcodes" className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg text-sm">
+   655→              <QrCode className="w-4 h-4" />Voir tous les QR
+   656→            </a>
+   657→          </div>
+   658→        </div>
+   659→      )}
+   660→
+   661→      <div className="grid lg:grid-cols-2 gap-6">
+   662→        <Card className="rounded-2xl">
+   663→          <CardHeader>
+   664→            <CardTitle className="text-slate-800 dark:text-white flex items-center gap-2">
+   665→              <QrCode className="w-5 h-5 text-blue-600" /> {context === 'individual' ? 'Tag individuel' : 'Lot pour agence'}
+   666→            </CardTitle>
+   667→          </CardHeader>
+   668→          <CardContent className="space-y-4">
+   669→            {/* Context Selector */}
+   670→            <div className="grid grid-cols-2 gap-3">
+   671→              <button onClick={() => setContext('individual')}
+   672→                className={cn('flex items-center gap-2 p-3 rounded-xl border transition-all text-sm',
+   673→                  context === 'individual' ? 'bg-blue-600 border-blue-600 text-white' : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300')}
+   674→              ><User className="w-4 h-4" /> Individuel</button>
+   675→              <button onClick={() => setContext('agency')}
+   676→                className={cn('flex items-center gap-2 p-3 rounded-xl border transition-all text-sm',
+   677→                  context === 'agency' ? 'bg-blue-600 border-blue-600 text-white' : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300')}
+   678→              ><Building2 className="w-4 h-4" /> Agence</button>
+   679→            </div>
+   680→
+   681→            {context === 'individual' ? (
+   682→              <>
+   683→                <div className="grid grid-cols-2 gap-3">
+   684→                  <div className="space-y-1.5"><Label className="text-xs">Prénom *</Label><Input value={individualForm.firstName} onChange={(e) => setIndividualForm({...individualForm, firstName: e.target.value})} placeholder="Ahmed" className="bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700" /></div>
+   685→                  <div className="space-y-1.5"><Label className="text-xs">Nom *</Label><Input value={individualForm.lastName} onChange={(e) => setIndividualForm({...individualForm, lastName: e.target.value})} placeholder="Diop" className="bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700" /></div>
+   686→                </div>
+   687→                <div className="space-y-1.5"><Label className="text-xs">WhatsApp *</Label><Input value={individualForm.whatsapp} onChange={(e) => setIndividualForm({...individualForm, whatsapp: e.target.value})} placeholder="+33612345678" className="bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700" /></div>
+   688→              </>
+   689→            ) : (
+   690→              <>
+   691→                <div className="space-y-1.5">
+   692→                  <Label className="text-xs">Agence *</Label>
+   693→                  <Select value={agencyForm.agencyId} onValueChange={(v) => setAgencyForm({...agencyForm, agencyId: v})}>
+   694→                    <SelectTrigger className="bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700"><SelectValue placeholder="Sélectionner" /></SelectTrigger>
+   695→                    <SelectContent className="bg-white dark:bg-slate-900">
+   696→                      {agencies.filter(a => a.active).map(a => <SelectItem key={a.id} value={a.id}>{a.name}</SelectItem>)}
+   697→                    </SelectContent>
+   698→                  </Select>
+   699→                </div>
+   700→                <div className="space-y-1.5"><Label className="text-xs">Nombre</Label>
+   701→                  <Input type="number" min={1} max={1000} value={agencyForm.travelerCount} onChange={(e) => setAgencyForm({...agencyForm, travelerCount: parseInt(e.target.value) || 1})} className="bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700" />
+   702→                </div>
+   703→              </>
+   704→            )}
+   705→
+   706→            {errorMessage && <div className="bg-rose-50 dark:bg-rose-500/10 border border-rose-200 text-rose-600 px-3 py-2 rounded-lg text-sm flex items-center gap-2"><AlertCircle className="w-4 h-4" />{errorMessage}</div>}
+   707→            <Button className="w-full bg-blue-600 hover:bg-blue-700 text-white rounded-xl" onClick={handleGenerateQR} disabled={qrGenerating}>
+   708→              <RefreshCw className={cn('w-4 h-4 mr-2', qrGenerating && 'animate-spin')} /> {qrGenerating ? 'Génération...' : `Générer ${getQrCount()} tag(s)`}
+   709→            </Button>
+   710→          </CardContent>
+   711→        </Card>
+   712→
+   713→        <Card className="rounded-2xl">
+   714→          <CardHeader>
+   715→            <CardTitle className="text-slate-800 dark:text-white flex items-center gap-2"><Package className="w-5 h-5" /> Résumé</CardTitle>
+   716→          </CardHeader>
+   717→          <CardContent>
+   718→            <div className="bg-slate-50 dark:bg-slate-800 rounded-xl p-4 space-y-3 text-sm">
+   719→              <div className="flex justify-between"><span className="text-slate-500">QR à générer</span><Badge variant="secondary" className="text-lg font-bold">{getQrCount()}</Badge></div>
+   720→              <div className="flex justify-between"><span className="text-slate-500">Mode</span><span className="text-slate-800 dark:text-white font-medium">{context === 'individual' ? 'Individuel' : 'Agence'}</span></div>
+   721→              <div className="flex justify-between"><span className="text-slate-500">Agence</span><span className="text-slate-800 dark:text-white font-medium">{context === 'agency' ? (agencies.find(a => a.id === agencyForm.agencyId)?.name || '-') : 'Aucune'}</span></div>
+   722→            </div>
+   723→          </CardContent>
+   724→        </Card>
+   725→      </div>
+   726→
+   727→      {/* Stats row */}
+   728→      <div className="grid grid-cols-3 gap-4">
+   729→        <div className="bg-gradient-to-r from-blue-600 to-blue-700 rounded-2xl p-4 text-white flex items-center gap-3">
+   730→          <QrCode className="w-7 h-7" /><div><p className="text-xl font-bold">{getQrCount()}</p><p className="text-xs text-white/80">QR à générer</p></div>
+   731→        </div>
+   732→        <div className="bg-gradient-to-r from-blue-500 to-blue-600 rounded-2xl p-4 text-white flex items-center gap-3">
+   733→          <Building2 className="w-7 h-7" /><div><p className="text-xl font-bold">{agencies.filter(a => a.active).length}</p><p className="text-xs text-white/80">Agences actives</p></div>
+   734→        </div>
+   735→        <div className="bg-gradient-to-r from-blue-600 to-amber-600 rounded-2xl p-4 text-white flex items-center gap-3">
+   736→          <Shield className="w-7 h-7" /><div><p className="text-base font-bold">Anti-fraude</p><p className="text-xs text-white/80">Codes uniques</p></div>
+   737→        </div>
+   738→      </div>
+   739→    </div>
+   740→  );
+   741→}
+   742→

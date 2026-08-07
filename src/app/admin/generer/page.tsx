@@ -16,7 +16,7 @@ import {
 import {
   QrCode, RefreshCw, CheckCircle, User, Building2, Package,
   AlertCircle, Shield, Loader2, Upload, Download, FileText,
-  Ruler, Image, Eye, Palette,
+  Ruler, Image, Eye, Palette, Archive,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
