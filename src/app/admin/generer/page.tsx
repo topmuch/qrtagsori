@@ -28,7 +28,7 @@ interface Agency {
   phone: string | null; active: boolean; createdAt: string;
 }
 
-type StickerSize = 2 | 4 | 7;
+type StickerSize = 2 | 4 | 5 | 6 | 7 | 10 | 12 | 15;
 
 interface TemplateInfo {
   exists: boolean; width: number; height: number;
@@ -38,9 +38,14 @@ interface TemplateInfo {
 // ─── Constants ─────────────────────────────────────────────────────
 
 const SIZES: { value: StickerSize; label: string; gridInfo: string }[] = [
-  { value: 2, label: '2 × 2 cm', gridInfo: '~126 par page A4' },
-  { value: 4, label: '4 × 4 cm', gridInfo: '~28 par page A4' },
-  { value: 7, label: '7 × 7 cm', gridInfo: '~8 par page A4' },
+  { value: 2,  label: '2 × 2 cm',  gridInfo: '~126 par page A4' },
+  { value: 4,  label: '4 × 4 cm',  gridInfo: '~28 par page A4' },
+  { value: 5,  label: '5 × 5 cm',  gridInfo: '~16 par page A4' },
+  { value: 6,  label: '6 × 6 cm',  gridInfo: '~11 par page A4' },
+  { value: 7,  label: '7 × 7 cm',  gridInfo: '~8 par page A4' },
+  { value: 10, label: '10 × 10 cm', gridInfo: '~4 par page A4' },
+  { value: 12, label: '12 × 12 cm', gridInfo: '~2 par page A4' },
+  { value: 15, label: '15 × 15 cm', gridInfo: '~1 par page A4' },
 ];
 
 const QUICK_QTYS = [10, 25, 50, 100];

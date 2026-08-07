@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { composeQRWithDesign, DEFAULT_TEMPLATE_PATH, templateExists } from '@/lib/qr-compose';
+import { composeQRWithDesign, DEFAULT_TEMPLATE_PATH, templateExists, VALID_SIZES } from '@/lib/qr-compose';
 
 /**
  * GET /api/admin/qr-design/preview?reference=QRT26-XXXX&sizeCm=4
@@ -20,9 +20,9 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    if (![2, 4, 7].includes(sizeCm)) {
+    if (!(VALID_SIZES as readonly number[]).includes(sizeCm)) {
       return NextResponse.json(
-        { error: 'Taille invalide. Utilisez 2, 4 ou 7 cm.' },
+        { error: 'Taille invalide. Tailles disponibles : 2, 4, 5, 6, 7, 10, 12, 15 cm.' },
         { status: 400 },
       );
     }
