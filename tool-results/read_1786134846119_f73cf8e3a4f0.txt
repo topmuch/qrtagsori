@@ -1,0 +1,620 @@
+     1→'use client';
+     2→
+     3→import { useState, useEffect } from 'react';
+     4→import { Button } from "@/components/ui/button";
+     5→import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+     6→import { Input } from "@/components/ui/input";
+     7→import { Label } from "@/components/ui/label";
+     8→import {
+     9→  Select,
+    10→  SelectContent,
+    11→  SelectItem,
+    12→  SelectTrigger,
+    13→  SelectValue,
+    14→} from "@/components/ui/select";
+    15→import {
+    16→  QrCode,
+    17→  RefreshCw,
+    18→  CheckCircle,
+    19→  User,
+    20→  Building2,
+    21→  Package,
+    22→  AlertCircle,
+    23→  Shield,
+    24→  Archive,
+    25→  Loader2
+    26→} from "lucide-react";
+    27→import { Badge } from "@/components/ui/badge";
+    28→import { cn } from "@/lib/utils";
+    29→import { PRODUCT_TYPES } from '@/lib/agency-types';
+    30→
+    31→// Types
+    32→interface Agency {
+    33→  id: string;
+    34→  name: string;
+    35→  slug: string;
+    36→  email: string | null;
+    37→  phone: string | null;
+    38→  active: boolean;
+    39→  createdAt: string;
+    40→}
+    41→
+    42→type GenerationContext = 'individual' | 'agency';
+    43→
+    44→export default function GenererQRPage() {
+    45→  const [agencies, setAgencies] = useState<Agency[]>([]);
+    46→  const [loading, setLoading] = useState(false);
+    47→  const [qrGenerating, setQrGenerating] = useState(false);
+    48→  const [successMessage, setSuccessMessage] = useState('');
+    49→  const [errorMessage, setErrorMessage] = useState('');
+    50→  const [lastGeneratedRefs, setLastGeneratedRefs] = useState<string[]>([]);
+    51→  const [isExporting, setIsExporting] = useState(false);
+    52→
+    53→  // Context selection
+    54→  const [context, setContext] = useState<GenerationContext>('agency');
+    55→
+    56→  // Individual form — QRTags : duration forcée à '1y', productType remplace baggageCount
+    57→  const [individualForm, setIndividualForm] = useState({
+    58→    firstName: '',
+    59→    lastName: '',
+    60→    whatsapp: '',
+    61→    duration: '1y' as '1y', // QRTags : 1 an uniquement (7 jours supprimé)
+    62→    productType: 'laptop',  // QRTags : type d'objet à protéger
+    63→  });
+    64→
+    65→  // Agency form — QRTags : productType remplace baggagePerTraveler
+    66→  const [agencyForm, setAgencyForm] = useState({
+    67→    type: 'qrtags' as 'hajj' | 'qrtags',
+    68→    agencyId: '',
+    69→    travelerCount: 1,
+    70→    productType: 'laptop', // QRTags : type d'objet à protéger
+    71→  });
+    72→
+    73→  useEffect(() => {
+    74→    fetchAgencies();
+    75→  }, []);
+    76→
+    77→  const fetchAgencies = async () => {
+    78→    setLoading(true);
+    79→    try {
+    80→      const res = await fetch('/api/admin/agencies');
+    81→      const data = await res.json();
+    82→      setAgencies(data.agencies || []);
+    83→    } catch (error) {
+    84→      console.error('Error fetching agencies:', error);
+    85→    } finally {
+    86→      setLoading(false);
+    87→    }
+    88→  };
+    89→
+    90→  // Calculate QR count for display
+    91→  // QRTags : 1 tag par objet (plus de notion de "baggageCount" ou "baggagePerTraveler")
+    92→  const getQrCount = () => {
+    93→    if (context === 'individual') {
+    94→      return 1; // 1 tag = 1 objet
+    95→    }
+    96→    return agencyForm.travelerCount; // 1 tag par client
+    97→  };
+    98→
+    99→  // Validate individual form
+   100→  const validateIndividualForm = (): boolean => {
+   101→    if (!individualForm.firstName.trim()) {
+   102→      setErrorMessage('Le prénom est requis');
+   103→      return false;
+   104→    }
+   105→    if (!individualForm.lastName.trim()) {
+   106→      setErrorMessage('Le nom est requis');
+   107→      return false;
+   108→    }
+   109→    if (!individualForm.whatsapp.trim()) {
+   110→      setErrorMessage('Le numéro WhatsApp est requis');
+   111→      return false;
+   112→    }
+   113→    // Basic WhatsApp format validation
+   114→    const phoneRegex = /^\+?[1-9]\d{6,14}$/;
+   115→    if (!phoneRegex.test(individualForm.whatsapp.replace(/\s/g, ''))) {
+   116→      setErrorMessage('Format WhatsApp invalide (ex: +33612345678)');
+   117→      return false;
+   118→    }
+   119→    return true;
+   120→  };
+   121→
+   122→  // Validate agency form
+   123→  const validateAgencyForm = (): boolean => {
+   124→    if (!agencyForm.agencyId) {
+   125→      setErrorMessage('Veuillez sélectionner une agence');
+   126→      return false;
+   127→    }
+   128→    return true;
+   129→  };
+   130→
+   131→  // Export generated QR codes as PNG images (one ZIP-like download per QR)
+   132→  const handleExportGenerated = async () => {
+   133→    if (lastGeneratedRefs.length === 0) return;
+   134→    setIsExporting(true);
+   135→    try {
+   136→      const QRCode = (await import('qrcode')).default;
+   137→      const baseUrl = window.location.origin;
+   138→
+   139→      // Générer chaque QR code en PNG et télécharger
+   140→      for (let i = 0; i < lastGeneratedRefs.length; i++) {
+   141→        const ref = lastGeneratedRefs[i];
+   142→        const targetUrl = `${baseUrl}/scan/${ref}`;
+   143→
+   144→        // Générer le QR code en PNG (base64)
+   145→        const dataUrl = await QRCode.toDataURL(targetUrl, {
+   146→          errorCorrectionLevel: 'H',
+   147→          margin: 2,
+   148→          width: 512,
+   149→          color: {
+   150→            dark: '#111111',
+   151→            light: '#E3B23C',
+   152→          },
+   153→        });
+   154→
+   155→        // Convertir base64 en blob et télécharger
+   156→        const response = await fetch(dataUrl);
+   157→        const blob = await response.blob();
+   158→        const url = URL.createObjectURL(blob);
+   159→        const a = document.createElement('a');
+   160→        a.href = url;
+   161→        a.download = `QRTags-${ref}.png`;
+   162→        document.body.appendChild(a);
+   163→        a.click();
+   164→        document.body.removeChild(a);
+   165→        URL.revokeObjectURL(url);
+   166→
+   167→        // Petite pause entre chaque téléchargement
+   168→        await new Promise(resolve => setTimeout(resolve, 300));
+   169→      }
+   170→
+   171→      setSuccessMessage(`${lastGeneratedRefs.length} QR codes exportés en PNG`);
+   172→      setTimeout(() => setSuccessMessage(''), 5000);
+   173→    } catch (error) {
+   174→      console.error('Export error:', error);
+   175→      setErrorMessage('Erreur lors de l\'export des QR codes');
+   176→    } finally {
+   177→      setIsExporting(false);
+   178→    }
+   179→  };
+   180→  const handleGenerateQR = async () => {
+   181→    setErrorMessage('');
+   182→    
+   183→    // Validate based on context
+   184→    if (context === 'individual' && !validateIndividualForm()) {
+   185→      return;
+   186→    }
+   187→    if (context === 'agency' && !validateAgencyForm()) {
+   188→      return;
+   189→    }
+   190→    
+   191→    setQrGenerating(true);
+   192→    
+   193→    try {
+   194→      const payload = context === 'individual' 
+   195→        ? {
+   196→            context: 'individual',
+   197→            type: 'qrtags' as const,
+   198→            firstName: individualForm.firstName.trim(),
+   199→            lastName: individualForm.lastName.trim(),
+   200→            whatsapp: individualForm.whatsapp.trim(),
+   201→            duration: '1y', // QRTags : 1 an uniquement
+   202→            baggageCount: 1, // 1 tag = 1 objet
+   203→          }
+   204→        : {
+   205→            context: 'agency',
+   206→            type: agencyForm.type,
+   207→            agencyId: agencyForm.agencyId,
+   208→            travelerCount: agencyForm.travelerCount,
+   209→            count: 1, // QRTags : 1 tag par client (1 objet)
+   210→          };
+   211→      
+   212→      const response = await fetch('/api/admin/baggages/generate', {
+   213→        method: 'POST',
+   214→        headers: { 'Content-Type': 'application/json' },
+   215→        body: JSON.stringify(payload),
+   216→      });
+   217→      
+   218→      const data = await response.json();
+   219→      
+   220→      if (response.ok) {
+   221→        setSuccessMessage(`${data.generated} tag(s) QRTags généré(s) avec succès !`);
+   222→        setLastGeneratedRefs(data.references || []);
+   223→        // Reset individual form
+   224→        if (context === 'individual') {
+   225→          setIndividualForm({
+   226→            firstName: '',
+   227→            lastName: '',
+   228→            whatsapp: '',
+   229→            duration: '1y', // QRTags : 1 an par défaut
+   230→            productType: 'laptop',
+   231→          });
+   232→        }
+   233→        setTimeout(() => {
+   234→          setSuccessMessage('');
+   235→          setLastGeneratedRefs([]);
+   236→        }, 10000);
+   237→      } else {
+   238→        setErrorMessage(data.error || 'Erreur lors de la génération');
+   239→      }
+   240→    } catch (error) {
+   241→      console.error('Error generating QR codes:', error);
+   242→      setErrorMessage('Erreur lors de la génération des QR codes');
+   243→    } finally {
+   244→      setQrGenerating(false);
+   245→    }
+   246→  };
+   247→
+   248→  return (
+   249→    <div className="max-w-4xl mx-auto">
+   250→      {/* Page Header */}
+   251→      <div className="mb-8">
+   252→        <h1 className="text-2xl font-bold text-slate-800 dark:text-white">Génération QRTags</h1>
+   253→        <p className="text-slate-500 dark:text-slate-400 mt-1">Générez des tags QRTags pour retrouver vos objets perdus</p>
+   254→      </div>
+   255→
+   256→      {/* Success Message */}
+   257→      {successMessage && (
+   258→        <div className="mb-6 bg-emerald-50 dark:bg-emerald-600/10 border border-emerald-200 dark:border-emerald-800 text-emerald-700 dark:text-emerald-400 px-4 py-4 rounded-xl">
+   259→          <div className="flex items-center gap-2 mb-3">
+   260→            <CheckCircle className="w-5 h-5" />
+   261→            <span className="font-medium">{successMessage}</span>
+   262→          </div>
+   263→          {lastGeneratedRefs.length > 0 && (
+   264→            <div className="flex flex-wrap gap-2 mt-3">
+   265→              <button
+   266→                onClick={handleExportGenerated}
+   267→                disabled={isExporting}
+   268→                className="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-[#1e7e34] to-[#0d5e34] text-white rounded-lg hover:from-[#228b22] hover:to-[#1e7e34] transition-all text-sm shadow-lg shadow-green-900/20 disabled:opacity-50"
+   269→              >
+   270→                {isExporting ? (
+   271→                  <>
+   272→                    <Loader2 className="w-4 h-4 animate-spin" />
+   273→                    Export en cours...
+   274→                  </>
+   275→                ) : (
+   276→                  <>
+   277→                    <Archive className="w-4 h-4" />
+   278→                    Exporter en ZIP ({lastGeneratedRefs.length} QR)
+   279→                  </>
+   280→                )}
+   281→              </button>
+   282→              <a
+   283→                href="/admin/qrcodes"
+   284→                className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm"
+   285→              >
+   286→                <QrCode className="w-4 h-4" />
+   287→                Voir tous les QR codes
+   288→              </a>
+   289→            </div>
+   290→          )}
+   291→        </div>
+   292→      )}
+   293→
+   294→      {/* Context Selector */}
+   295→      <div className="mb-6">
+   296→        <Label className="text-slate-700 dark:text-slate-300 mb-3">Mode de génération</Label>
+   297→        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-2">
+   298→          <button
+   299→            onClick={() => setContext('individual')}
+   300→            className={cn(
+   301→              "flex items-center gap-3 p-4 rounded-xl border transition-all",
+   302→              context === 'individual' 
+   303→                ? "bg-[#2563EB] border-[#2563EB] text-white" 
+   304→                : "bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:border-slate-300"
+   305→            )}
+   306→          >
+   307→            <User className="w-5 h-5" />
+   308→            <div className="text-left">
+   309→              <p className="font-medium">Tag individuel</p>
+   310→              <p className="text-xs opacity-80">1 tag, sans entreprise</p>
+   311→            </div>
+   312→          </button>
+   313→          <button
+   314→            onClick={() => setContext('agency')}
+   315→            className={cn(
+   316→              "flex items-center gap-3 p-4 rounded-xl border transition-all",
+   317→              context === 'agency' 
+   318→                ? "bg-[#2563EB] border-[#2563EB] text-white" 
+   319→                : "bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:border-slate-300"
+   320→            )}
+   321→          >
+   322→            <Building2 className="w-5 h-5" />
+   323→            <div className="text-left">
+   324→              <p className="font-medium">Agence partenaire</p>
+   325→              <p className="text-xs opacity-80">Lot de tags pour entreprise</p>
+   326→            </div>
+   327→          </button>
+   328→        </div>
+   329→      </div>
+   330→
+   331→      <div className="grid lg:grid-cols-2 gap-6">
+   332→        {/* Main Form Card */}
+   333→        <Card className="bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 shadow-sm rounded-2xl">
+   334→          <CardHeader>
+   335→            <CardTitle className="text-slate-800 dark:text-white flex items-center gap-2">
+   336→              <QrCode className="w-5 h-5 text-blue-600" />
+   337→              {context === 'individual' ? 'Tag individuel' : 'Lot pour entreprise'}
+   338→            </CardTitle>
+   339→          </CardHeader>
+   340→          <CardContent className="space-y-4">
+   341→            {/* Individual Form */}
+   342→            {context === 'individual' ? (
+   343→              <>
+   344→                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+   345→                  <div className="space-y-2">
+   346→                    <Label className="text-slate-700 dark:text-slate-300">Prénom *</Label>
+   347→                    <Input 
+   348→                      value={individualForm.firstName}
+   349→                      onChange={(e) => setIndividualForm({ ...individualForm, firstName: e.target.value })}
+   350→                      placeholder="Ahmed"
+   351→                      className="bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-800 dark:text-white"
+   352→                    />
+   353→                  </div>
+   354→                  <div className="space-y-2">
+   355→                    <Label className="text-slate-700 dark:text-slate-300">Nom *</Label>
+   356→                    <Input 
+   357→                      value={individualForm.lastName}
+   358→                      onChange={(e) => setIndividualForm({ ...individualForm, lastName: e.target.value })}
+   359→                      placeholder="Diop"
+   360→                      className="bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-800 dark:text-white"
+   361→                    />
+   362→                  </div>
+   363→                </div>
+   364→
+   365→                <div className="space-y-2">
+   366→                  <Label className="text-slate-700 dark:text-slate-300">WhatsApp *</Label>
+   367→                  <Input 
+   368→                    value={individualForm.whatsapp}
+   369→                    onChange={(e) => setIndividualForm({ ...individualForm, whatsapp: e.target.value })}
+   370→                    placeholder="+33612345678"
+   371→                    className="bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-800 dark:text-white"
+   372→                  />
+   373→                </div>
+   374→
+   375→                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+   376→                  <div className="space-y-2">
+   377→                    <Label className="text-slate-700 dark:text-slate-300">Durée de validité</Label>
+   378→                    <Select value={individualForm.duration} onValueChange={(v) => setIndividualForm({ ...individualForm, duration: v as '1y' })}>
+   379→                      <SelectTrigger className="bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-800 dark:text-white">
+   380→                        <SelectValue />
+   381→                      </SelectTrigger>
+   382→                      <SelectContent className="bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800">
+   383→                        <SelectItem value="1y">1 an</SelectItem>
+   384→                      </SelectContent>
+   385→                    </Select>
+   386→                  </div>
+   387→                  <div className="space-y-2">
+   388→                    <Label className="text-slate-700 dark:text-slate-300">Objet à protéger</Label>
+   389→                    <Select
+   390→                      value={individualForm.productType}
+   391→                      onValueChange={(v) => setIndividualForm({ ...individualForm, productType: v })}
+   392→                    >
+   393→                      <SelectTrigger className="bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-800 dark:text-white">
+   394→                        <SelectValue />
+   395→                      </SelectTrigger>
+   396→                      <SelectContent className="bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 max-h-72 overflow-y-auto">
+   397→                        {PRODUCT_TYPES.map((p) => (
+   398→                          <SelectItem key={p.value} value={p.value}>
+   399→                            {p.icon} {p.label}
+   400→                          </SelectItem>
+   401→                        ))}
+   402→                      </SelectContent>
+   403→                    </Select>
+   404→                  </div>
+   405→                </div>
+   406→
+   407→                <div className="bg-amber-50 dark:bg-blue-600/10 border border-amber-200 dark:border-amber-800 rounded-xl p-4 text-sm text-amber-700 dark:text-blue-500">
+   408→                  <p className="font-medium">ℹ️ Le tag sera actif immédiatement avec les informations du client.</p>
+   409→                </div>
+   410→
+   411→                <div className="bg-slate-50 dark:bg-slate-800 rounded-xl p-4 text-sm text-slate-600 dark:text-slate-300">
+   412→                  <p><strong>Statut :</strong> Actif immédiatement • les infos client sont pré-remplies.</p>
+   413→                  <p><strong>Expiration :</strong> 1 an à partir de la génération</p>
+   414→                </div>
+   415→              </>
+   416→            ) : (
+   417→              /* Agency Form */
+   418→              <>
+   419→                <div className="space-y-2">
+   420→                  <Label className="text-slate-700 dark:text-slate-300">Type de voyage</Label>
+   421→                  <Select 
+   422→                    value={agencyForm.type} 
+   423→                    onValueChange={(v) => setAgencyForm({ ...agencyForm, type: v as 'hajj' | 'qrtags' })}
+   424→                  >
+   425→                    <SelectTrigger className="bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-800 dark:text-white">
+   426→                      <SelectValue />
+   427→                    </SelectTrigger>
+   428→                    <SelectContent className="bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800">
+   429→                      <SelectItem value="voyageur">Tag QRTags (1 objet)</SelectItem>
+   430→                    </SelectContent>
+   431→                  </Select>
+   432→                </div>
+   433→
+   434→                <div className="space-y-2">
+   435→                  <Label className="text-slate-700 dark:text-slate-300">Agence partenaire *</Label>
+   436→                  <Select 
+   437→                    value={agencyForm.agencyId} 
+   438→                    onValueChange={(v) => setAgencyForm({ ...agencyForm, agencyId: v })}
+   439→                  >
+   440→                    <SelectTrigger className="bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-800 dark:text-white">
+   441→                      <SelectValue placeholder="Sélectionner une agence" />
+   442→                    </SelectTrigger>
+   443→                    <SelectContent className="bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800">
+   444→                      {agencies.filter(a => a.active).map((agency) => (
+   445→                        <SelectItem key={agency.id} value={agency.id}>
+   446→                          {agency.name}
+   447→                        </SelectItem>
+   448→                      ))}
+   449→                    </SelectContent>
+   450→                  </Select>
+   451→                </div>
+   452→
+   453→                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+   454→                  <div className="space-y-2">
+   455→                    <Label className="text-slate-700 dark:text-slate-300">
+   456→                      {'Nombre de clients'}
+   457→                    </Label>
+   458→                    <Input 
+   459→                      type="number"
+   460→                      min={1}
+   461→                      max={1000}
+   462→                      value={agencyForm.travelerCount}
+   463→                      onChange={(e) => setAgencyForm({ ...agencyForm, travelerCount: parseInt(e.target.value) || 1 })}
+   464→                      className="bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-800 dark:text-white"
+   465→                    />
+   466→                  </div>
+   467→                  {agencyForm.type === 'qrtags' && (
+   468→                    <div className="space-y-2">
+   469→                      <Label className="text-slate-700 dark:text-slate-300">Objet à protéger</Label>
+   470→                      <Select
+   471→                        value={agencyForm.productType}
+   472→                        onValueChange={(v) => setAgencyForm({ ...agencyForm, productType: v })}
+   473→                      >
+   474→                        <SelectTrigger className="bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-800 dark:text-white">
+   475→                          <SelectValue />
+   476→                        </SelectTrigger>
+   477→                        <SelectContent className="bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 max-h-72 overflow-y-auto">
+   478→                          {PRODUCT_TYPES.map((p) => (
+   479→                            <SelectItem key={p.value} value={p.value}>
+   480→                              {p.icon} {p.label}
+   481→                            </SelectItem>
+   482→                          ))}
+   483→                        </SelectContent>
+   484→                      </Select>
+   485→                    </div>
+   486→                  )}
+   487→                </div>
+   488→
+   489→                {agencyForm.type === 'hajj' && (
+   490→                  <div className="bg-slate-50 dark:bg-slate-800 rounded-xl p-4 text-sm text-slate-600 dark:text-slate-300">
+   491→                    <p>ℹ️ Type legacy — utilisez QRTags pour la génération actuelle.</p>
+   492→                  </div>
+   493→                )}
+   494→                {agencyForm.type === 'qrtags' && (
+   495→                  <div className="bg-slate-50 dark:bg-slate-800 rounded-xl p-4 text-sm text-slate-600 dark:text-slate-300">
+   496→                    <p>ℹ️ Chaque client reçoit 1 tag QRTags (1 objet à protéger par tag).</p>
+   497→                  </div>
+   498→                )}
+   499→              </>
+   500→            )}
+   501→
+   502→            {errorMessage && (
+   503→              <div className="bg-rose-50 dark:bg-rose-500/10 border border-rose-200 dark:border-rose-800 text-rose-600 dark:text-rose-400 px-4 py-3 rounded-xl text-sm flex items-center gap-2">
+   504→                <AlertCircle className="w-4 h-4" />
+   505→                {errorMessage}
+   506→              </div>
+   507→            )}
+   508→            
+   509→            <Button 
+   510→              className="w-full bg-blue-600 hover:bg-blue-700 text-white rounded-xl"
+   511→              onClick={handleGenerateQR}
+   512→              disabled={qrGenerating}
+   513→            >
+   514→              <RefreshCw className={cn("w-4 h-4 mr-2", qrGenerating ? 'animate-spin' : '')} />
+   515→              {qrGenerating ? 'Génération en cours...' : `Générer ${getQrCount()} tag(s) QRTags`}
+   516→            </Button>
+   517→          </CardContent>
+   518→        </Card>
+   519→
+   520→        {/* Preview Card */}
+   521→        <Card className="bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 shadow-sm rounded-2xl">
+   522→          <CardHeader>
+   523→            <CardTitle className="text-slate-800 dark:text-white flex items-center gap-2">
+   524→              <Package className="w-5 h-5 text-slate-600" />
+   525→              Récapitulatif
+   526→            </CardTitle>
+   527→          </CardHeader>
+   528→          <CardContent className="space-y-4">
+   529→            <div className="bg-slate-50 dark:bg-slate-800 rounded-xl p-4">
+   530→              <div className="flex items-center justify-between mb-3">
+   531→                <span className="text-slate-600 dark:text-slate-300 text-sm">QR à générer</span>
+   532→                <Badge variant="secondary" className="text-lg font-bold">
+   533→                  {getQrCount()}
+   534→                </Badge>
+   535→              </div>
+   536→              <div className="text-sm text-slate-500 dark:text-slate-400">
+   537→                {context === 'individual'
+   538→                  ? `1 an de validité • Activation immédiate • 1 tag`
+   539→                  : `${agencyForm.travelerCount} tag(s) QRTags • En attente d'attribution`
+   540→                }
+   541→              </div>
+   542→            </div>
+   543→
+   544→            <div className="border-t border-slate-200 dark:border-slate-700 pt-4">
+   545→              <h4 className="text-sm font-medium text-slate-700 dark:text-slate-300 mb-3">Détails</h4>
+   546→              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
+   547→                <div>
+   548→                  <p className="text-slate-500 dark:text-slate-400">Type</p>
+   549→                  <p className="text-slate-800 dark:text-white font-medium">
+   550→                    {context === 'individual' ? 'Individuel' : agencyForm.type === 'hajj' ? 'Legacy' : 'QRTags'}
+   551→                  </p>
+   552→                </div>
+   553→                <div>
+   554→                  <p className="text-slate-500 dark:text-slate-400">Statut</p>
+   555→                  <p className="text-slate-800 dark:text-white font-medium">
+   556→                    {context === 'individual' ? 'Actif' : 'En attente'}
+   557→                  </p>
+   558→                </div>
+   559→              </div>
+   560→              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm mt-3">
+   561→                <div>
+   562→                  <p className="text-slate-500 dark:text-slate-400">Agence</p>
+   563→                  <p className="text-slate-800 dark:text-white font-medium">
+   564→                    {context === 'individual' 
+   565→                      ? 'Aucune' 
+   566→                      : agencies.find(a => a.id === agencyForm.agencyId)?.name || 'Non sélectionnée'
+   567→                    }
+   568→                  </p>
+   569→                </div>
+   570→                <div>
+   571→                  <p className="text-slate-500 dark:text-slate-400">Expiration</p>
+   572→                  <p className="text-slate-800 dark:text-white font-medium">
+   573→                    {context === 'individual'
+   574→                      ? '1 an'
+   575→                      : agencyForm.type === 'hajj'
+   576→                        ? '60 jours (legacy)'
+   577→                        : '1 an'
+   578→                    }
+   579→                  </p>
+   580→                </div>
+   581→              </div>
+   582→            </div>
+   583→          </CardContent>
+   584→        </Card>
+   585→      </div>
+   586→
+   587→      {/* Info Cards */}
+   588→      <div className="mt-6 grid grid-cols-1 md:grid-cols-3 gap-4">
+   589→        <div className="bg-gradient-to-r from-blue-600 to-blue-700 rounded-2xl p-5 text-white">
+   590→          <div className="flex items-center gap-3">
+   591→            <QrCode className="w-8 h-8" />
+   592→            <div>
+   593→              <p className="text-2xl font-bold">{getQrCount()}</p>
+   594→              <p className="text-sm text-white/80">QR à générer</p>
+   595→            </div>
+   596→          </div>
+   597→        </div>
+   598→        <div className="bg-gradient-to-r from-blue-500 to-blue-600 rounded-2xl p-5 text-white">
+   599→          <div className="flex items-center gap-3">
+   600→            <Building2 className="w-8 h-8" />
+   601→            <div>
+   602→              <p className="text-2xl font-bold">{agencies.filter(a => a.active).length}</p>
+   603→              <p className="text-sm text-white/80">Agences actives</p>
+   604→            </div>
+   605→          </div>
+   606→        </div>
+   607→        <div className="bg-gradient-to-r from-blue-600 to-amber-600 rounded-2xl p-5 text-white">
+   608→          <div className="flex items-center gap-3">
+   609→            <Shield className="w-8 h-8" />
+   610→            <div>
+   611→              <p className="text-lg font-bold">Anti-fraude</p>
+   612→              <p className="text-sm text-white/80">Codes uniques</p>
+   613→            </div>
+   614→          </div>
+   615→        </div>
+   616→      </div>
+   617→    </div>
+   618→  );
+   619→}
+   620→
