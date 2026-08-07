@@ -47,6 +47,7 @@ export interface ComposeOptions {
   templatePath: string;   // Path to the PNG template
   sizeCm: number;         // Physical size in cm (2, 4, or 7)
   dpi?: number;           // Output DPI (default 600)
+  preview?: boolean;      // If true, render at lightweight 512px (no DPI metadata)
 }
 
 export interface ComposedQR {
@@ -107,11 +108,19 @@ async function generateQRBuffer(
  * Compose a QR code onto the design template.
  * 
  * 1. Loads the template
- * 2. Resizes it to the target physical size (at given DPI)
+ * 2. Resizes it to the target output size (never below template native resolution)
  * 3. Generates a QR code matching the QR zone dimensions
  * 4. Composites the QR onto the template
  * 5. Draws the reference text below "Objet trouvé ?"
- * 6. Returns the final PNG buffer
+ * 6. Sets DPI metadata for correct print size
+ * 7. Returns the final PNG buffer
+ * 
+ * Output size logic:
+ *   - Use max(template native size, DPI-calculated size) to never downscale
+ *   - Embed DPI metadata so printer knows the physical dimensions
+ *   - For 2cm: 1024×1024 at ~1301 DPI
+ *   - For 4cm: 1024×1024 at ~650 DPI
+ *   - For 7cm: 1654×1654 at 600 DPI (upscaled from template)
  */
 export async function composeQRWithDesign(
   options: ComposeOptions,
@@ -124,8 +133,19 @@ export async function composeQRWithDesign(
     dpi = EXPORT_DPI,
   } = options;
 
-  // Calculate output size in pixels
-  const outputSize = cmToPx(sizeCm, dpi);
+  let outputSize: number;
+  let outputDpi: number | undefined;
+
+  if (options.preview) {
+    // Preview mode: lightweight 512px for on-screen display (saves memory)
+    outputSize = 512;
+  } else {
+    // Export mode: never downscale below template native resolution
+    const dpiSize = cmToPx(sizeCm, dpi);
+    outputSize = Math.max(TEMPLATE_SIZE_PX, dpiSize);
+    // Embed correct DPI metadata so printer outputs the right physical size
+    outputDpi = Math.round((outputSize / sizeCm) * 2.54);
+  }
 
   // QR zone dimensions in output pixels
   const qrZoneX = Math.round(QR_ZONE.x * outputSize);
@@ -171,7 +191,7 @@ export async function composeQRWithDesign(
     </svg>
   `);
 
-  // Step 4: Composite everything
+  // Step 4: Composite everything with DPI metadata
   const finalBuffer = await sharp(resizedTemplate)
     .composite([
       {
@@ -185,6 +205,9 @@ export async function composeQRWithDesign(
         top: 0,
       },
     ])
+    .withMetadata(
+      outputDpi ? { density: outputDpi } : {},
+    )
     .png({ quality: 100 })
     .toBuffer();
 

@@ -19,3 +19,24 @@ Stage Summary:
 - 4 fichiers modifiés : next.config.ts, src/app/admin/generer/page.tsx, src/app/api/admin/qr-design/export-zip/route.ts, public/templates/qr-design.png (copié)
 - Toutes les tailles fonctionnent (2cm, 4cm, 7cm)
 - Export PDF A4 grille et ZIP PNG haute résolution (600 DPI) opérationnels
+---
+Task ID: 1
+Agent: Main
+Task: Corriger la taille d'image QR code (945x945 → 1024x1024 pour 4cm)
+
+Work Log:
+- Analysé le problème : cmToPx(4, 600) = 945, donc le template 1024x1024 était réduit à 945x945
+- Modifié qr-compose.ts : outputSize = max(TEMPLATE_SIZE_PX, dpiSize) pour ne jamais réduire
+- Ajouté les métadonnées DPI (withMetadata) dans le PNG final pour taille d'impression correcte
+- Ajouté mode `preview: true` (512px léger) pour l'aperçu écran, mode export garde haute résolution
+- Mis à jour la route preview pour utiliser `preview: true`
+- Testé les 3 tailles d'export avec un script bun :
+  - 2cm: 1024x1024, DPI 1300 (au lieu de 472x472)
+  - 4cm: 1024x1024, DPI 650 (au lieu de 945x945)
+  - 7cm: 1654x1654, DPI 600 (inchangé, déjà au-dessus de 1024)
+- Testé la preview API: 512x512, réponse 200 en 616ms
+
+Stage Summary:
+- Les exports PDF et ZIP produisent maintenant des images 1024x1024 (2cm, 4cm) ou 1654x1654 (7cm)
+- Les métadonnées DPI sont embarquées pour une impression à la bonne taille physique
+- L'aperçu écran utilise 512px pour rester léger

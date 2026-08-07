@@ -100,7 +100,7 @@ export async function POST(request: NextRequest) {
           'QRTags — Export Design',
           `Date: ${new Date().toLocaleString('fr-FR')}`,
           `Taille: ${sizeCm}cm × ${sizeCm}cm`,
-          `Résolution: ${EXPORT_DPI} DPI`,
+          `Résolution: 1024×1024 px${sizeCm === 7 ? ' (1654×1654)' : ''} avec métadonnées DPI`,
           `Nombre de QR: ${baggages.length}`,
           '',
           '--- Références ---',

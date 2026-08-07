@@ -46,7 +46,7 @@ export async function GET(request: NextRequest) {
       scanUrl,
       templatePath: DEFAULT_TEMPLATE_PATH,
       sizeCm,
-      dpi: 150, // Lower DPI for preview (faster)
+      preview: true, // Lightweight 512px for on-screen display
     });
 
     return new NextResponse(result.buffer, {
