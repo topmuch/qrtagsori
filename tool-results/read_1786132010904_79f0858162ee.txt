@@ -1,0 +1,975 @@
+     1→'use client';
+     2→
+     3→import { useState, useEffect, useRef, useCallback } from 'react';
+     4→import Link from 'next/link';
+     5→import { QRCodeSVG } from 'qrcode.react';
+     6→import {
+     7→  Search,
+     8→  Eye,
+     9→  Download,
+    10→  Share2,
+    11→  Trash2,
+    12→  Plane,
+    13→  Luggage,
+    14→  QrCode,
+    15→  Plus,
+    16→  ArrowLeft,
+    17→  X,
+    18→  AlertTriangle,
+    19→  CheckCircle,
+    20→  Clock,
+    21→  FileArchive,
+    22→  Archive,
+    23→  Filter,
+    24→  Loader2,
+    25→} from "lucide-react";
+    26→
+    27→interface QRSet {
+    28→  id: string;
+    29→  setId: string;
+    30→  type: string;
+    31→  agencyId: string | null;
+    32→  agencyName: string | null;
+    33→  createdAt: Date;
+    34→  qrCount: number;
+    35→  references: string[];
+    36→  status: string;
+    37→  travelerName: string | null;
+    38→  baggageIds: string[];
+    39→}
+    40→
+    41→interface Stats {
+    42→  totalSets: number;
+    43→  totalQr: number;
+    44→  hajjSets: number;
+    45→  voyageurSets: number;
+    46→}
+    47→
+    48→interface Agency {
+    49→  id: string;
+    50→  name: string;
+    51→}
+    52→
+    53→export default function QRCodesPage() {
+    54→  const qrRef = useRef<HTMLDivElement>(null);
+    55→  
+    56→  const [sets, setSets] = useState<QRSet[]>([]);
+    57→  const [stats, setStats] = useState<Stats>({
+    58→    totalSets: 0,
+    59→    totalQr: 0,
+    60→    hajjSets: 0,
+    61→    voyageurSets: 0,
+    62→  });
+    63→  const [loading, setLoading] = useState(true);
+    64→  const [search, setSearch] = useState('');
+    65→  const [typeFilter, setTypeFilter] = useState('all');
+    66→  
+    67→  // Modals
+    68→  const [showDetailModal, setShowDetailModal] = useState(false);
+    69→  const [showDeleteModal, setShowDeleteModal] = useState(false);
+    70→  const [showExportModal, setShowExportModal] = useState(false);
+    71→  const [selectedSet, setSelectedSet] = useState<QRSet | null>(null);
+    72→  const [isDownloading, setIsDownloading] = useState(false);
+    73→
+    74→  // Selection for bulk export
+    75→  const [selectedSetIds, setSelectedSetIds] = useState<Set<string>>(new Set());
+    76→  const [selectAll, setSelectAll] = useState(false);
+    77→
+    78→  // Export modal state
+    79→  const [exportAgencies, setExportAgencies] = useState<Agency[]>([]);
+    80→  const [exportForm, setExportForm] = useState({
+    81→    mode: 'selected' as 'selected' | 'agency' | 'type',
+    82→    agencyId: '',
+    83→    type: 'hajj' as 'hajj' | 'voyageur',
+    84→  });
+    85→  const [isExporting, setIsExporting] = useState(false);
+    86→  const [exportProgress, setExportProgress] = useState('');
+    87→
+    88→  useEffect(() => {
+    89→    fetchSets();
+    90→    fetchAgencies();
+    91→  }, [typeFilter, search]);
+    92→
+    93→  const fetchSets = async () => {
+    94→    try {
+    95→      const params = new URLSearchParams();
+    96→      if (typeFilter !== 'all') params.set('type', typeFilter);
+    97→      if (search) params.set('search', search);
+    98→
+    99→      const response = await fetch(`/api/qrcodes?${params}`);
+   100→      const data = await response.json();
+   101→
+   102→      setSets(data.sets);
+   103→      setStats(data.stats);
+   104→    } catch (error) {
+   105→      console.error('Error fetching QR sets:', error);
+   106→    } finally {
+   107→      setLoading(false);
+   108→    }
+   109→  };
+   110→
+   111→  const fetchAgencies = async () => {
+   112→    try {
+   113→      const res = await fetch('/api/admin/agencies');
+   114→      const data = await res.json();
+   115→      setExportAgencies(data.agencies || []);
+   116→    } catch (error) {
+   117→      console.error('Error fetching agencies:', error);
+   118→    }
+   119→  };
+   120→
+   121→  // Selection handlers
+   122→  const toggleSetSelection = useCallback((setId: string) => {
+   123→    setSelectedSetIds(prev => {
+   124→      const next = new Set(prev);
+   125→      if (next.has(setId)) {
+   126→        next.delete(setId);
+   127→      } else {
+   128→        next.add(setId);
+   129→      }
+   130→      return next;
+   131→    });
+   132→  }, []);
+   133→
+   134→  const toggleSelectAll = useCallback(() => {
+   135→    if (selectAll) {
+   136→      setSelectedSetIds(new Set());
+   137→      setSelectAll(false);
+   138→    } else {
+   139→      setSelectedSetIds(new Set(sets.map(s => s.setId)));
+   140→      setSelectAll(true);
+   141→    }
+   142→  }, [selectAll, sets]);
+   143→
+   144→  // Keep selectAll in sync
+   145→  useEffect(() => {
+   146→    if (sets.length > 0 && selectedSetIds.size === sets.length) {
+   147→      setSelectAll(true);
+   148→    } else {
+   149→      setSelectAll(false);
+   150→    }
+   151→  }, [selectedSetIds, sets.length]);
+   152→
+   153→  const handleDeleteSet = async () => {
+   154→    if (!selectedSet) return;
+   155→
+   156→    try {
+   157→      const params = new URLSearchParams({ setId: selectedSet.setId });
+   158→      await fetch(`/api/qrcodes?${params}`, { method: 'DELETE' });
+   159→
+   160→      setSets(sets.filter(s => s.setId !== selectedSet.setId));
+   161→      setShowDeleteModal(false);
+   162→      setSelectedSet(null);
+   163→    } catch (error) {
+   164→      console.error('Error deleting set:', error);
+   165→    }
+   166→  };
+   167→
+   168→  const handleDownloadSet = async (set: QRSet) => {
+   169→    setIsDownloading(true);
+   170→    setSelectedSet(set);
+   171→
+   172→    try {
+   173→      // Use server-side ZIP export for single set with timeout
+   174→      const controller = new AbortController();
+   175→      const timeoutId = setTimeout(() => controller.abort(), 120000); // 2 min timeout
+   176→
+   177→      let response: Response;
+   178→      try {
+   179→        response = await fetch('/api/admin/baggages/export-zip', {
+   180→          method: 'POST',
+   181→          headers: { 'Content-Type': 'application/json' },
+   182→          body: JSON.stringify({ setId: set.setId }),
+   183→          signal: controller.signal,
+   184→        });
+   185→      } catch (fetchError) {
+   186→        clearTimeout(timeoutId);
+   187→        if (fetchError instanceof DOMException && fetchError.name === 'AbortError') {
+   188→          throw new Error('Délai d\'attente dépassé');
+   189→        }
+   190→        throw fetchError;
+   191→      }
+   192→      clearTimeout(timeoutId);
+   193→
+   194→      if (!response.ok) {
+   195→        const errorData = await response.json().catch(() => ({ error: 'Export échoué' }));
+   196→        throw new Error(errorData.error || 'Export failed');
+   197→      }
+   198→
+   199→      // Get the filename from Content-Disposition header
+   200→      const contentDisposition = response.headers.get('Content-Disposition');
+   201→      let filename = `QRTags-${set.setId}.zip`;
+   202→      if (contentDisposition) {
+   203→        const match = contentDisposition.match(/filename\*?=(?:UTF-8'')?([^;]+)/i) ||
+   204→                      contentDisposition.match(/filename="?([^"]+)"?/);
+   205→        if (match) filename = decodeURIComponent(match[1].replace(/"/g, ''));
+   206→      }
+   207→
+   208→      // Download the ZIP
+   209→      const blob = await response.blob();
+   210→
+   211→      if (blob.size === 0) {
+   212→        throw new Error('Le fichier ZIP est vide');
+   213→      }
+   214→
+   215→      const url = URL.createObjectURL(blob);
+   216→      const link = document.createElement('a');
+   217→      link.href = url;
+   218→      link.download = filename;
+   219→      document.body.appendChild(link);
+   220→      link.click();
+   221→      document.body.removeChild(link);
+   222→      setTimeout(() => URL.revokeObjectURL(url), 5000);
+   223→    } catch (error) {
+   224→      console.error('Error downloading:', error);
+   225→      alert('Erreur lors du téléchargement: ' + (error instanceof Error ? error.message : 'Erreur inconnue'));
+   226→    } finally {
+   227→      setIsDownloading(false);
+   228→      setSelectedSet(null);
+   229→    }
+   230→  };
+   231→
+   232→  // Bulk ZIP export
+   233→  const handleExportZip = async () => {
+   234→    setIsExporting(true);
+   235→    setExportProgress('Préparation de l\'export...');
+   236→
+   237→    try {
+   238→      let payload: Record<string, unknown>;
+   239→
+   240→      if (exportForm.mode === 'selected') {
+   241→        if (selectedSetIds.size === 0) {
+   242→          alert('Veuillez sélectionner au moins un set de QR codes');
+   243→          setIsExporting(false);
+   244→          return;
+   245→        }
+   246→        payload = { setIds: Array.from(selectedSetIds) };
+   247→      } else if (exportForm.mode === 'agency') {
+   248→        if (!exportForm.agencyId) {
+   249→          alert('Veuillez sélectionner une agence');
+   250→          setIsExporting(false);
+   251→          return;
+   252→        }
+   253→        payload = { agencyId: exportForm.agencyId };
+   254→      } else {
+   255→        payload = { type: exportForm.type, agencyId: '__all__' };
+   256→      }
+   257→
+   258→      setExportProgress('Génération des QR codes...');
+   259→
+   260→      // Use timeout for large exports
+   261→      const controller = new AbortController();
+   262→      const timeoutId = setTimeout(() => controller.abort(), 300000); // 5 min timeout
+   263→
+   264→      let response: Response;
+   265→      try {
+   266→        response = await fetch('/api/admin/baggages/export-zip', {
+   267→          method: 'POST',
+   268→          headers: { 'Content-Type': 'application/json' },
+   269→          body: JSON.stringify(payload),
+   270→          signal: controller.signal,
+   271→        });
+   272→      } catch (fetchError) {
+   273→        clearTimeout(timeoutId);
+   274→        if (fetchError instanceof DOMException && fetchError.name === 'AbortError') {
+   275→          throw new Error('Délai d\'attente dépassé. L\'export est trop volumineux.');
+   276→        }
+   277→        throw fetchError;
+   278→      }
+   279→      clearTimeout(timeoutId);
+   280→
+   281→      if (!response.ok) {
+   282→        const errorData = await response.json().catch(() => ({ error: 'Export échoué' }));
+   283→        throw new Error(errorData.error || 'Export failed');
+   284→      }
+   285→
+   286→      setExportProgress('Téléchargement du fichier ZIP...');
+   287→
+   288→      // Get filename
+   289→      const contentDisposition = response.headers.get('Content-Disposition');
+   290→      let filename = 'QRTags-export.zip';
+   291→      if (contentDisposition) {
+   292→        const match = contentDisposition.match(/filename\*?=(?:UTF-8'')?([^;]+)/i) ||
+   293→                      contentDisposition.match(/filename="?([^"]+)"?/);
+   294→        if (match) filename = decodeURIComponent(match[1].replace(/"/g, ''));
+   295→      }
+   296→
+   297→      const blob = await response.blob();
+   298→
+   299→      if (blob.size === 0) {
+   300→        throw new Error('Le fichier ZIP est vide');
+   301→      }
+   302→
+   303→      const url = URL.createObjectURL(blob);
+   304→      const link = document.createElement('a');
+   305→      link.href = url;
+   306→      link.download = filename;
+   307→      document.body.appendChild(link);
+   308→      link.click();
+   309→      document.body.removeChild(link);
+   310→      setTimeout(() => URL.revokeObjectURL(url), 5000);
+   311→
+   312→      setExportProgress('Export terminé !');
+   313→      setTimeout(() => {
+   314→        setShowExportModal(false);
+   315→        setExportProgress('');
+   316→        setSelectedSetIds(new Set());
+   317→      }, 1500);
+   318→    } catch (error) {
+   319→      console.error('Error exporting ZIP:', error);
+   320→      alert('Erreur lors de l\'export ZIP: ' + (error instanceof Error ? error.message : 'Erreur inconnue'));
+   321→    } finally {
+   322→      setIsExporting(false);
+   323→    }
+   324→  };
+   325→
+   326→  const handleShareSet = async (set: QRSet) => {
+   327→    const shareText = `QRTags - ${set.setId}\n${set.qrCount} QR codes générés\nType: ${set.type === 'hajj' ? 'Hajj 2026' : 'Voyageur'}`;
+   328→
+   329→    if (navigator.share) {
+   330→      try {
+   331→        await navigator.share({
+   332→          title: `QRTags - ${set.setId}`,
+   333→          text: shareText,
+   334→          url: window.location.href,
+   335→        });
+   336→      } catch (err) {
+   337→        console.log('Share cancelled');
+   338→      }
+   339→    } else {
+   340→      navigator.clipboard.writeText(shareText);
+   341→      alert('Copié dans le presse-papiers !');
+   342→    }
+   343→  };
+   344→
+   345→  const formatDate = (date: Date | string) => {
+   346→    return new Date(date).toLocaleDateString('fr-FR', {
+   347→      day: '2-digit',
+   348→      month: '2-digit',
+   349→      year: 'numeric',
+   350→    });
+   351→  };
+   352→
+   353→  // Filter buttons
+   354→  const filterButtons = [
+   355→    { id: 'all', label: 'Tous' },
+   356→    { id: 'hajj', label: 'Hajj' },
+   357→    { id: 'voyageur', label: 'Voyageur' },
+   358→  ];
+   359→
+   360→  // KPI Cards
+   361→  const kpiCards = [
+   362→    { title: 'Total Sets', value: stats.totalSets, icon: QrCode, color: 'text-[#b8860b]' },
+   363→    { title: 'Total QR', value: stats.totalQr, icon: Luggage, color: 'text-white' },
+   364→    { title: 'Hajj', value: stats.hajjSets, icon: Plane, color: 'text-green-400' },
+   365→    { title: 'Voyageur', value: stats.voyageurSets, icon: Luggage, color: 'text-blue-600' },
+   366→  ];
+   367→
+   368→  // Calculate total QR in selection
+   369→  const selectedQrCount = sets
+   370→    .filter(s => selectedSetIds.has(s.setId))
+   371→    .reduce((sum, s) => sum + s.qrCount, 0);
+   372→
+   373→  return (
+   374→    <div className="min-h-screen bg-[#080c1a]">
+   375→      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+   376→        {/* Header */}
+   377→        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8 gap-4">
+   378→          <div className="flex items-center gap-4">
+   379→            <Link
+   380→              href="/admin"
+   381→              className="p-2 rounded-lg bg-[#0d152a] hover:bg-[#1a2238] transition-colors"
+   382→            >
+   383→              <ArrowLeft className="w-5 h-5 text-[#a0a8b8]" />
+   384→            </Link>
+   385→            <div>
+   386→              <h1 className="text-2xl font-bold text-white">QR Codes Générés</h1>
+   387→              <p className="text-[#a0a8b8] text-sm">Gérez vos sets de QR codes</p>
+   388→            </div>
+   389→          </div>
+   390→          <div className="flex gap-3">
+   391→            {/* Export ZIP Button */}
+   392→            <button
+   393→              onClick={() => setShowExportModal(true)}
+   394→              className="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-[#1e7e34] to-[#0d5e34] text-white rounded-lg hover:from-[#228b22] hover:to-[#1e7e34] transition-all shadow-lg shadow-green-900/30"
+   395→            >
+   396→              <Archive className="w-4 h-4" />
+   397→              Export ZIP
+   398→            </button>
+   399→            <Link
+   400→              href="/admin/generer"
+   401→              className="inline-flex items-center gap-2 px-4 py-2 bg-[#b8860b] text-white rounded-lg hover:bg-[#3b82f6] transition-colors"
+   402→            >
+   403→              <Plus className="w-4 h-4" />
+   404→              Générer nouveau
+   405→            </Link>
+   406→          </div>
+   407→        </div>
+   408→
+   409→        {/* KPI Cards */}
+   410→        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+   411→          {kpiCards.map((card, index) => (
+   412→            <div
+   413→              key={index}
+   414→              className="bg-[#0d152a] border border-[#1a2238] rounded-xl p-5 shadow-sm"
+   415→            >
+   416→              <div className="flex items-center justify-between mb-2">
+   417→                <card.icon className={`w-5 h-5 ${card.color}`} />
+   418→              </div>
+   419→              <p className="text-2xl font-bold text-white">{card.value}</p>
+   420→              <p className="text-[#a0a8b8] text-sm">{card.title}</p>
+   421→            </div>
+   422→          ))}
+   423→        </div>
+   424→
+   425→        {/* Selection Info Bar */}
+   426→        {selectedSetIds.size > 0 && (
+   427→          <div className="mb-4 px-5 py-3 bg-gradient-to-r from-[#0d5e34] to-[#1e7e34] rounded-xl border border-[#0d5e34] flex items-center justify-between">
+   428→            <div className="flex items-center gap-3">
+   429→              <CheckCircle className="w-5 h-5 text-white" />
+   430→              <span className="text-white font-medium">
+   431→                {selectedSetIds.size} set(s) sélectionné(s) — {selectedQrCount} QR codes
+   432→              </span>
+   433→            </div>
+   434→            <div className="flex gap-2">
+   435→              <button
+   436→                onClick={() => {
+   437→                  setShowExportModal(true);
+   438→                  setExportForm(prev => ({ ...prev, mode: 'selected' }));
+   439→                }}
+   440→                className="px-3 py-1.5 bg-white text-[#0d5e34] rounded-lg text-sm font-medium hover:bg-gray-100 transition-colors flex items-center gap-1"
+   441→              >
+   442→                <Archive className="w-3.5 h-3.5" />
+   443→                Exporter ZIP
+   444→              </button>
+   445→              <button
+   446→                onClick={() => setSelectedSetIds(new Set())}
+   447→                className="px-3 py-1.5 bg-white/10 text-white rounded-lg text-sm hover:bg-white/20 transition-colors"
+   448→              >
+   449→                Tout désélectionner
+   450→              </button>
+   451→            </div>
+   452→          </div>
+   453→        )}
+   454→
+   455→        {/* Search & Filters */}
+   456→        <div className="flex flex-col sm:flex-row gap-4 mb-6">
+   457→          <div className="relative flex-1">
+   458→            <input
+   459→              type="text"
+   460→              placeholder="Rechercher par référence ou set..."
+   461→              value={search}
+   462→              onChange={(e) => setSearch(e.target.value)}
+   463→              className="w-full bg-[#0d152a] border border-[#1a2238] rounded-lg py-3 px-4 text-[#e0e6f0] placeholder-[#a0a8b8] focus:outline-none focus:border-[#b8860b]/50"
+   464→            />
+   465→            <Search className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-[#a0a8b8]" />
+   466→          </div>
+   467→          <div className="flex gap-2">
+   468→            {filterButtons.map((btn) => (
+   469→              <button
+   470→                key={btn.id}
+   471→                onClick={() => setTypeFilter(btn.id)}
+   472→                className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+   473→                  typeFilter === btn.id
+   474→                    ? 'bg-[#b8860b] text-white'
+   475→                    : 'bg-[#0d152a] text-[#a0a8b8] hover:bg-[#1a2238]'
+   476→                }`}
+   477→              >
+   478→                {btn.label}
+   479→              </button>
+   480→            ))}
+   481→          </div>
+   482→        </div>
+   483→
+   484→        {/* QR Sets List */}
+   485→        <div className="space-y-3">
+   486→          {loading ? (
+   487→            <div className="text-center py-12">
+   488→              <div className="w-12 h-12 border-2 border-[#b8860b]/30 border-t-[#b8860b] rounded-full animate-spin mx-auto mb-4" />
+   489→              <p className="text-[#a0a8b8]">Chargement...</p>
+   490→            </div>
+   491→          ) : sets.length === 0 ? (
+   492→            <div className="text-center py-12">
+   493→              <div className="w-16 h-16 bg-[#0d152a] rounded-full flex items-center justify-center mx-auto mb-4">
+   494→                <QrCode className="w-8 h-8 text-[#a0a8b8]" />
+   495→              </div>
+   496→              <p className="text-[#a0a8b8]">Aucun QR code généré</p>
+   497→              <p className="text-sm text-[#a0a8b8]/60 mt-2">
+   498→                Générez vos premiers QR codes pour commencer.
+   499→              </p>
+   500→            </div>
+   501→          ) : (
+   502→            <>
+   503→              {/* Select All Row */}
+   504→              <div className="flex items-center gap-3 px-5 py-2 bg-[#0d152a] rounded-lg border border-[#1a2238]">
+   505→                <input
+   506→                  type="checkbox"
+   507→                  checked={selectAll}
+   508→                  onChange={toggleSelectAll}
+   509→                  className="w-4 h-4 rounded border-[#1a2238] bg-[#080c1a] text-[#b8860b] focus:ring-[#b8860b] accent-[#b8860b]"
+   510→                />
+   511→                <span className="text-[#a0a8b8] text-sm">
+   512→                  Tout sélectionner ({sets.length} sets)
+   513→                </span>
+   514→              </div>
+   515→
+   516→              {sets.map((set) => (
+   517→                <div
+   518→                  key={set.id}
+   519→                  className={`flex flex-col sm:flex-row items-start sm:items-center justify-between p-5 rounded-xl border gap-4 transition-colors ${
+   520→                    selectedSetIds.has(set.setId)
+   521→                      ? 'bg-[#0d5e34]/10 border-[#0d5e34]/50'
+   522→                      : 'bg-[#0a0f2c] border-[#1a1a3a]'
+   523→                  }`}
+   524→                >
+   525→                  {/* Left: Checkbox + Info */}
+   526→                  <div className="flex items-start gap-4">
+   527→                    <input
+   528→                      type="checkbox"
+   529→                      checked={selectedSetIds.has(set.setId)}
+   530→                      onChange={() => toggleSetSelection(set.setId)}
+   531→                      className="mt-1 w-4 h-4 rounded border-[#1a2238] bg-[#080c1a] text-[#b8860b] focus:ring-[#b8860b] accent-[#b8860b]"
+   532→                    />
+   533→                    <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${
+   534→                      set.type === 'hajj' ? 'bg-[#0d5e34]' : 'bg-[#7a3e00]'
+   535→                    }`}>
+   536→                      {set.type === 'hajj' ? (
+   537→                        <Plane className="h-5 w-5 text-white" />
+   538→                      ) : (
+   539→                        <Luggage className="h-5 w-5 text-white" />
+   540→                      )}
+   541→                    </div>
+   542→
+   543→                    <div>
+   544→                      <div className="flex items-center gap-2 mb-1">
+   545→                        <h3 className="font-bold text-white">{set.setId}</h3>
+   546→                        <span className="px-2 py-0.5 bg-[#0d5e34] text-[#e0e6f0] text-xs rounded">
+   547→                          Nouveau
+   548→                        </span>
+   549→                      </div>
+   550→                      <div className="text-[#a0a8b8] text-sm flex flex-wrap gap-3">
+   551→                        <span>👤 {set.travelerName || '1 voyageur'}</span>
+   552→                        <span>🔢 {set.qrCount} QR</span>
+   553→                        <span>📅 {formatDate(set.createdAt)}</span>
+   554→                        {set.agencyName && <span>🏢 {set.agencyName}</span>}
+   555→                      </div>
+   556→                    </div>
+   557→                  </div>
+   558→
+   559→                  {/* Right: Actions */}
+   560→                  <div className="flex items-center gap-2 w-full sm:w-auto">
+   561→                    <span className="px-2 py-1 bg-[#0d152a] text-[#a0a8b8] text-xs rounded hidden sm:inline">
+   562→                      {set.status}
+   563→                    </span>
+   564→                    
+   565→                    {/* View Button */}
+   566→                    <button
+   567→                      onClick={() => {
+   568→                        setSelectedSet(set);
+   569→                        setShowDetailModal(true);
+   570→                      }}
+   571→                      className="w-10 h-10 rounded-lg bg-[#0d5e34] flex items-center justify-center text-white hover:bg-[#1e7e34] transition-colors"
+   572→                      title="Voir détails"
+   573→                    >
+   574→                      <Eye className="h-4 w-4" />
+   575→                    </button>
+   576→
+   577→                    {/* Download ZIP Button */}
+   578→                    <button
+   579→                      onClick={() => handleDownloadSet(set)}
+   580→                      disabled={isDownloading && selectedSet?.id === set.id}
+   581→                      className="w-10 h-10 rounded-lg bg-[#b8860b] flex items-center justify-center text-white hover:bg-[#3b82f6] transition-colors disabled:opacity-50"
+   582→                      title="Télécharger ZIP"
+   583→                    >
+   584→                      {isDownloading && selectedSet?.id === set.id ? (
+   585→                        <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+   586→                      ) : (
+   587→                        <FileArchive className="h-4 w-4" />
+   588→                      )}
+   589→                    </button>
+   590→
+   591→                    {/* Share Button */}
+   592→                    <button
+   593→                      onClick={() => handleShareSet(set)}
+   594→                      className="w-10 h-10 rounded-lg bg-[#1e7e34] flex items-center justify-center text-white hover:bg-[#228b22] transition-colors"
+   595→                      title="Partager"
+   596→                    >
+   597→                      <Share2 className="h-4 w-4" />
+   598→                    </button>
+   599→
+   600→                    {/* Delete Button */}
+   601→                    <button
+   602→                      onClick={() => {
+   603→                        setSelectedSet(set);
+   604→                        setShowDeleteModal(true);
+   605→                      }}
+   606→                      className="w-10 h-10 rounded-lg bg-[#7a1e1e] flex items-center justify-center text-white hover:bg-[#9c2727] transition-colors"
+   607→                      title="Supprimer"
+   608→                    >
+   609→                      <Trash2 className="h-4 w-4" />
+   610→                    </button>
+   611→                  </div>
+   612→                </div>
+   613→              ))}
+   614→            </>
+   615→          )}
+   616→        </div>
+   617→
+   618→        {/* Footer */}
+   619→        <div className="mt-6 px-6 py-4 bg-[#0d152a] border border-[#1a2238] rounded-xl flex justify-between items-center">
+   620→          <span className="text-[#a0a8b8] text-sm">
+   621→            {sets.length} set(s) affiché(s)
+   622→          </span>
+   623→          <Link
+   624→            href="/admin"
+   625→            className="text-[#b8860b] text-sm hover:underline"
+   626→          >
+   627→            ← Retour au dashboard
+   628→          </Link>
+   629→        </div>
+   630→      </div>
+   631→
+   632→      {/* Export ZIP Modal */}
+   633→      {showExportModal && (
+   634→        <div className="fixed inset-0 bg-black/70 flex items-center justify-center p-4 z-50">
+   635→          <div className="bg-[#0d152a] border border-[#1a2238] rounded-xl max-w-lg w-full">
+   636→            <div className="flex items-center justify-between p-6 border-b border-[#1a2238]">
+   637→              <div className="flex items-center gap-3">
+   638→                <div className="w-10 h-10 bg-gradient-to-r from-[#1e7e34] to-[#0d5e34] rounded-lg flex items-center justify-center">
+   639→                  <Archive className="w-5 h-5 text-white" />
+   640→                </div>
+   641→                <div>
+   642→                  <h2 className="text-lg font-bold text-white">Export ZIP</h2>
+   643→                  <p className="text-[#a0a8b8] text-sm">QR codes organisés par passager</p>
+   644→                </div>
+   645→              </div>
+   646→              <button
+   647→                onClick={() => {
+   648→                  if (!isExporting) {
+   649→                    setShowExportModal(false);
+   650→                    setExportProgress('');
+   651→                  }
+   652→                }}
+   653→                className="p-2 rounded-lg hover:bg-[#1a2238] transition-colors"
+   654→              >
+   655→                <X className="w-5 h-5 text-[#a0a8b8]" />
+   656→              </button>
+   657→            </div>
+   658→            <div className="p-6 space-y-5">
+   659→              {/* Export Mode Selection */}
+   660→              <div>
+   661→                <label className="text-[#a0a8b8] text-sm mb-3 block">Mode d'export</label>
+   662→                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+   663→                  <button
+   664→                    onClick={() => setExportForm(prev => ({ ...prev, mode: 'selected' }))}
+   665→                    className={`p-3 rounded-xl border text-center transition-all ${
+   666→                      exportForm.mode === 'selected'
+   667→                        ? 'bg-[#0d5e34] border-[#0d5e34] text-white'
+   668→                        : 'bg-[#080c1a] border-[#1a2238] text-[#a0a8b8] hover:border-[#2a2a3a]'
+   669→                    }`}
+   670→                  >
+   671→                    <CheckCircle className="w-5 h-5 mx-auto mb-1" />
+   672→                    <p className="text-xs font-medium">Sélection</p>
+   673→                    <p className="text-[10px] opacity-70">{selectedSetIds.size} sets</p>
+   674→                  </button>
+   675→                  <button
+   676→                    onClick={() => setExportForm(prev => ({ ...prev, mode: 'agency' }))}
+   677→                    className={`p-3 rounded-xl border text-center transition-all ${
+   678→                      exportForm.mode === 'agency'
+   679→                        ? 'bg-[#0d5e34] border-[#0d5e34] text-white'
+   680→                        : 'bg-[#080c1a] border-[#1a2238] text-[#a0a8b8] hover:border-[#2a2a3a]'
+   681→                    }`}
+   682→                  >
+   683→                    <Filter className="w-5 h-5 mx-auto mb-1" />
+   684→                    <p className="text-xs font-medium">Par agence</p>
+   685→                    <p className="text-[10px] opacity-70">Tous les QR</p>
+   686→                  </button>
+   687→                  <button
+   688→                    onClick={() => setExportForm(prev => ({ ...prev, mode: 'type' }))}
+   689→                    className={`p-3 rounded-xl border text-center transition-all ${
+   690→                      exportForm.mode === 'type'
+   691→                        ? 'bg-[#0d5e34] border-[#0d5e34] text-white'
+   692→                        : 'bg-[#080c1a] border-[#1a2238] text-[#a0a8b8] hover:border-[#2a2a3a]'
+   693→                    }`}
+   694→                  >
+   695→                    <QrCode className="w-5 h-5 mx-auto mb-1" />
+   696→                    <p className="text-xs font-medium">Par type</p>
+   697→                    <p className="text-[10px] opacity-70">Hajj/Voyageur</p>
+   698→                  </button>
+   699→                </div>
+   700→              </div>
+   701→
+   702→              {/* Agency selection */}
+   703→              {exportForm.mode === 'agency' && (
+   704→                <div>
+   705→                  <label className="text-[#a0a8b8] text-sm mb-2 block">Agence</label>
+   706→                  <select
+   707→                    value={exportForm.agencyId}
+   708→                    onChange={(e) => setExportForm(prev => ({ ...prev, agencyId: e.target.value }))}
+   709→                    className="w-full bg-[#080c1a] border border-[#1a2238] rounded-lg py-3 px-4 text-[#e0e6f0] focus:outline-none focus:border-[#b8860b]/50"
+   710→                  >
+   711→                    <option value="">Sélectionner une agence</option>
+   712→                    {exportAgencies.map(agency => (
+   713→                      <option key={agency.id} value={agency.id}>{agency.name}</option>
+   714→                    ))}
+   715→                  </select>
+   716→                </div>
+   717→              )}
+   718→
+   719→              {/* Type selection */}
+   720→              {exportForm.mode === 'type' && (
+   721→                <div>
+   722→                  <label className="text-[#a0a8b8] text-sm mb-2 block">Type de voyage</label>
+   723→                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+   724→                    <button
+   725→                      onClick={() => setExportForm(prev => ({ ...prev, type: 'hajj' }))}
+   726→                      className={`p-3 rounded-xl border text-center transition-all ${
+   727→                        exportForm.type === 'hajj'
+   728→                          ? 'bg-[#0d5e34] border-[#0d5e34] text-white'
+   729→                          : 'bg-[#080c1a] border-[#1a2238] text-[#a0a8b8]'
+   730→                      }`}
+   731→                    >
+   732→                      <Plane className="w-5 h-5 mx-auto mb-1" />
+   733→                      <p className="text-xs font-medium">Hajj</p>
+   734→                    </button>
+   735→                    <button
+   736→                      onClick={() => setExportForm(prev => ({ ...prev, type: 'voyageur' }))}
+   737→                      className={`p-3 rounded-xl border text-center transition-all ${
+   738→                        exportForm.type === 'voyageur'
+   739→                          ? 'bg-[#1D4ED8] border-[#1D4ED8] text-white'
+   740→                          : 'bg-[#080c1a] border-[#1a2238] text-[#a0a8b8]'
+   741→                      }`}
+   742→                    >
+   743→                      <Luggage className="w-5 h-5 mx-auto mb-1" />
+   744→                      <p className="text-xs font-medium">Voyageur</p>
+   745→                    </button>
+   746→                  </div>
+   747→                </div>
+   748→              )}
+   749→
+   750→              {/* Export Summary */}
+   751→              <div className="bg-[#080c1a] rounded-xl p-4 border border-[#1a2238]">
+   752→                <h4 className="text-[#a0a8b8] text-sm mb-2">Résumé de l'export</h4>
+   753→                <div className="space-y-2 text-sm">
+   754→                  <div className="flex justify-between">
+   755→                    <span className="text-[#a0a8b8]">Mode</span>
+   756→                    <span className="text-white">
+   757→                      {exportForm.mode === 'selected' 
+   758→                        ? `${selectedSetIds.size} sets sélectionnés`
+   759→                        : exportForm.mode === 'agency'
+   760→                          ? exportAgencies.find(a => a.id === exportForm.agencyId)?.name || 'Non défini'
+   761→                          : exportForm.type === 'hajj' ? 'Tous les Hajj' : 'Tous les Voyageurs'
+   762→                      }
+   763→                    </span>
+   764→                  </div>
+   765→                  <div className="flex justify-between">
+   766→                    <span className="text-[#a0a8b8]">QR codes estimés</span>
+   767→                    <span className="text-white font-bold">
+   768→                      {exportForm.mode === 'selected'
+   769→                        ? selectedQrCount
+   770→                        : exportForm.mode === 'agency'
+   771→                          ? 'Tous les QR de l\'agence'
+   772→                          : exportForm.type === 'hajj'
+   773→                            ? stats.hajjSets * 3
+   774→                            : stats.voyageurSets * 3
+   775→                      }
+   776→                    </span>
+   777→                  </div>
+   778→                  <div className="flex justify-between">
+   779→                    <span className="text-[#a0a8b8]">Format</span>
+   780→                    <span className="text-white">ZIP (PNG par passager)</span>
+   781→                  </div>
+   782→                </div>
+   783→              </div>
+   784→
+   785→              {/* Structure preview */}
+   786→              <div className="bg-[#080c1a] rounded-xl p-4 border border-[#1a2238]">
+   787→                <h4 className="text-[#a0a8b8] text-sm mb-2">Structure du ZIP</h4>
+   788→                <pre className="text-[#0d5e34] text-xs leading-5 font-mono">
+   789→{`QRTags-export.zip
+   790→├── Passager-001-HAJJ-2026-ABCD/
+   791→│   ├── bagage-1-cabine-HAJJ26-XXXXXX.png
+   792→│   ├── bagage-2-soute-HAJJ26-YYYYYY.png
+   793→│   ├── bagage-3-soute-HAJJ26-ZZZZZZ.png
+   794→│   └── README.txt
+   795→├── Passager-002-.../
+   796→│   └── ...
+   797→└── _MANIFEST.txt`}
+   798→                </pre>
+   799→              </div>
+   800→
+   801→              {/* Progress */}
+   802→              {exportProgress && (
+   803→                <div className="flex items-center gap-3 px-4 py-3 bg-[#080c1a] rounded-xl border border-[#1a2238]">
+   804→                  {isExporting ? (
+   805→                    <Loader2 className="w-5 h-5 text-[#0d5e34] animate-spin" />
+   806→                  ) : (
+   807→                    <CheckCircle className="w-5 h-5 text-[#0d5e34]" />
+   808→                  )}
+   809→                  <span className="text-[#e0e6f0] text-sm">{exportProgress}</span>
+   810→                </div>
+   811→              )}
+   812→
+   813→              {/* Actions */}
+   814→              <div className="flex gap-3">
+   815→                <button
+   816→                  onClick={() => {
+   817→                    if (!isExporting) {
+   818→                      setShowExportModal(false);
+   819→                      setExportProgress('');
+   820→                    }
+   821→                  }}
+   822→                  disabled={isExporting}
+   823→                  className="flex-1 py-3 bg-[#1a2238] text-[#e0e6f0] rounded-lg hover:bg-[#2a2a3a] transition-colors disabled:opacity-50"
+   824→                >
+   825→                  Annuler
+   826→                </button>
+   827→                <button
+   828→                  onClick={handleExportZip}
+   829→                  disabled={isExporting}
+   830→                  className="flex-1 py-3 bg-gradient-to-r from-[#1e7e34] to-[#0d5e34] text-white rounded-lg hover:from-[#228b22] hover:to-[#1e7e34] transition-all flex items-center justify-center gap-2 disabled:opacity-50 shadow-lg shadow-green-900/30"
+   831→                >
+   832→                  {isExporting ? (
+   833→                    <>
+   834→                      <Loader2 className="w-4 h-4 animate-spin" />
+   835→                      Export en cours...
+   836→                    </>
+   837→                  ) : (
+   838→                    <>
+   839→                      <Archive className="w-4 h-4" />
+   840→                      Exporter en ZIP
+   841→                    </>
+   842→                  )}
+   843→                </button>
+   844→              </div>
+   845→            </div>
+   846→          </div>
+   847→        </div>
+   848→      )}
+   849→
+   850→      {/* Detail Modal */}
+   851→      {showDetailModal && selectedSet && (
+   852→        <div className="fixed inset-0 bg-black/70 flex items-center justify-center p-4 z-50">
+   853→          <div className="bg-[#0d152a] border border-[#1a2238] rounded-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+   854→            <div className="flex items-center justify-between p-6 border-b border-[#1a2238]">
+   855→              <div>
+   856→                <h2 className="text-lg font-bold text-white">{selectedSet.setId}</h2>
+   857→                <p className="text-[#a0a8b8] text-sm">
+   858→                  {selectedSet.type === 'hajj' ? 'Hajj 2026' : 'Voyageur'} • {selectedSet.qrCount} QR codes
+   859→                </p>
+   860→              </div>
+   861→              <button
+   862→                onClick={() => {
+   863→                  setShowDetailModal(false);
+   864→                  setSelectedSet(null);
+   865→                }}
+   866→                className="p-2 rounded-lg hover:bg-[#1a2238] transition-colors"
+   867→              >
+   868→                <X className="w-5 h-5 text-[#a0a8b8]" />
+   869→              </button>
+   870→            </div>
+   871→            <div className="p-6">
+   872→              {/* QR Codes Grid */}
+   873→              <div 
+   874→                ref={qrRef}
+   875→                className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4"
+   876→              >
+   877→                {selectedSet.references.map((ref, index) => (
+   878→                  <div
+   879→                    key={ref}
+   880→                    className="bg-white rounded-xl p-4 text-center"
+   881→                  >
+   882→                    <QRCodeSVG
+   883→                      value={`${typeof window !== 'undefined' ? window.location.origin : ''}/scan/${ref}`}
+   884→                      size={140}
+   885→                      level="H"
+   886→                      includeMargin={true}
+   887→                      bgColor="#ffffff"
+   888→                      fgColor={selectedSet.type === 'hajj' ? '#0d5e34' : '#1D4ED8'}
+   889→                    />
+   890→                    <p className="text-gray-800 font-mono font-bold mt-2 text-sm">
+   891→                      {ref}
+   892→                    </p>
+   893→                    <p className="text-gray-500 text-xs">
+   894→                      {index === 0 ? 'Cabine' : 'Soute'} #{index + 1}
+   895→                    </p>
+   896→                  </div>
+   897→                ))}
+   898→              </div>
+   899→
+   900→              {/* Info */}
+   901→              <div className="mt-6 grid grid-cols-1 sm:grid-cols-2 gap-4">
+   902→                <div className="bg-[#0a0f2c] rounded-lg p-4">
+   903→                  <p className="text-[#a0a8b8] text-sm">Créé le</p>
+   904→                  <p className="text-white font-medium">{formatDate(selectedSet.createdAt)}</p>
+   905→                </div>
+   906→                <div className="bg-[#0a0f2c] rounded-lg p-4">
+   907→                  <p className="text-[#a0a8b8] text-sm">Agence</p>
+   908→                  <p className="text-white font-medium">{selectedSet.agencyName || 'N/A'}</p>
+   909→                </div>
+   910→              </div>
+   911→
+   912→              {/* Actions */}
+   913→              <div className="mt-6 flex gap-3">
+   914→                <button
+   915→                  onClick={() => handleDownloadSet(selectedSet)}
+   916→                  className="flex-1 py-3 bg-[#b8860b] text-white rounded-lg hover:bg-[#3b82f6] transition-colors flex items-center justify-center gap-2"
+   917→                >
+   918→                  <FileArchive className="w-4 h-4" />
+   919→                  Télécharger ZIP
+   920→                </button>
+   921→                <button
+   922→                  onClick={() => handleShareSet(selectedSet)}
+   923→                  className="flex-1 py-3 bg-[#0d5e34] text-white rounded-lg hover:bg-[#1e7e34] transition-colors flex items-center justify-center gap-2"
+   924→                >
+   925→                  <Share2 className="w-4 h-4" />
+   926→                  Partager
+   927→                </button>
+   928→              </div>
+   929→            </div>
+   930→          </div>
+   931→        </div>
+   932→      )}
+   933→
+   934→      {/* Delete Confirmation Modal */}
+   935→      {showDeleteModal && selectedSet && (
+   936→        <div className="fixed inset-0 bg-black/70 flex items-center justify-center p-4 z-50">
+   937→          <div className="bg-[#0d152a] border border-[#1a2238] rounded-xl max-w-sm w-full">
+   938→            <div className="p-6">
+   939→              <div className="flex items-center gap-3 mb-4">
+   940→                <div className="w-10 h-10 bg-[#7a1e1e]/20 rounded-lg flex items-center justify-center">
+   941→                  <AlertTriangle className="w-5 h-5 text-red-400" />
+   942→                </div>
+   943→                <div>
+   944→                  <h3 className="text-white font-bold">Supprimer ce set ?</h3>
+   945→                  <p className="text-[#a0a8b8] text-sm">{selectedSet.setId}</p>
+   946→                </div>
+   947→              </div>
+   948→              <p className="text-[#a0a8b8] text-sm mb-6">
+   949→                Cette action supprimera définitivement les {selectedSet.qrCount} QR codes de ce set.
+   950→              </p>
+   951→              <div className="flex gap-3">
+   952→                <button
+   953→                  onClick={() => {
+   954→                    setShowDeleteModal(false);
+   955→                    setSelectedSet(null);
+   956→                  }}
+   957→                  className="flex-1 py-2 px-4 bg-[#1a2238] text-[#e0e6f0] rounded-lg hover:bg-[#2a2a3a] transition-colors"
+   958→                >
+   959→                  Annuler
+   960→                </button>
+   961→                <button
+   962→                  onClick={handleDeleteSet}
+   963→                  className="flex-1 py-2 px-4 bg-[#7a1e1e] text-white rounded-lg hover:bg-[#8a2e2e] transition-colors"
+   964→                >
+   965→                  Supprimer
+   966→                </button>
+   967→              </div>
+   968→            </div>
+   969→          </div>
+   970→        </div>
+   971→      )}
+   972→    </div>
+   973→  );
+   974→}
+   975→

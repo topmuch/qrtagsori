@@ -1,0 +1,663 @@
+     1→     1→'use client';
+     2→     2→
+     3→     3→import { useState, useEffect, useRef } from 'react';
+     4→     4→import Link from 'next/link';
+     5→     5→import { QRCodeSVG } from 'qrcode.react';
+     6→     6→import {
+     7→     7→  Search,
+     8→     8→  Eye,
+     9→     9→  Download,
+    10→    10→  Share2,
+    11→    11→  Trash2,
+    12→    12→  Plane,
+    13→    13→  Luggage,
+    14→    14→  QrCode,
+    15→    15→  X,
+    16→    16→  AlertTriangle,
+    17→    17→  RefreshCw,
+    18→    18→  FileText,
+    19→    19→  Building2,
+    20→    20→  ChevronDown,
+    21→    21→  ChevronRight
+    22→    22→} from "lucide-react";
+    23→    23→
+    24→    24→interface QRSet {
+    25→    25→  id: string;
+    26→    26→  setId: string;
+    27→    27→  type: string;
+    28→    28→  agencyId: string | null;
+    29→    29→  agencyName: string | null;
+    30→    30→  createdAt: Date;
+    31→    31→  qrCount: number;
+    32→    32→  references: string[];
+    33→    33→  status: string;
+    34→    34→  travelerName: string | null;
+    35→    35→  activationStatus: 'new' | 'partial' | 'activated';
+    36→    36→  baggageIds: string[];
+    37→    37→}
+    38→    38→
+    39→    39→interface AgencyGroup {
+    40→    40→  agencyId: string | null;
+    41→    41→  agencyName: string;
+    42→    42→  sets: QRSet[];
+    43→    43→  totalQr: number;
+    44→    44→  isExpanded: boolean;
+    45→    45→}
+    46→    46→
+    47→    47→interface Stats {
+    48→    48→  totalSets: number;
+    49→    49→  totalQr: number;
+    50→    50→  hajjSets: number;
+    51→    51→  qrtagsSets: number;
+    52→    52→}
+    53→    53→
+    54→    54→export default function EtiquettesPage() {
+    55→    55→  const qrRef = useRef<HTMLDivElement>(null);
+    56→    56→
+    57→    57→  const [sets, setSets] = useState<QRSet[]>([]);
+    58→    58→  const [agencyGroups, setAgencyGroups] = useState<AgencyGroup[]>([]);
+    59→    59→  const [stats, setStats] = useState<Stats>({
+    60→    60→    totalSets: 0,
+    61→    61→    totalQr: 0,
+    62→    62→    hajjSets: 0,
+    63→    63→    qrtagsSets: 0,
+    64→    64→  });
+    65→    65→  const [loading, setLoading] = useState(true);
+    66→    66→  const [search, setSearch] = useState('');
+    67→    67→  const [activeTab, setActiveTab] = useState<'qrtags'>('qrtags');
+    68→    68→
+    69→    69→  // Modals
+    70→    70→  const [showDetailModal, setShowDetailModal] = useState(false);
+    71→    71→  const [showDeleteModal, setShowDeleteModal] = useState(false);
+    72→    72→  const [selectedSet, setSelectedSet] = useState<QRSet | null>(null);
+    73→    73→  const [isDownloading, setIsDownloading] = useState(false);
+    74→    74→
+    75→    75→  useEffect(() => {
+    76→    76→    fetchSets();
+    77→    77→  }, [activeTab, search]);
+    78→    78→
+    79→    79→  const fetchSets = async () => {
+    80→    80→    setLoading(true);
+    81→    81→    try {
+    82→    82→      const params = new URLSearchParams();
+    83→    83→      params.set('type', activeTab);
+    84→    84→      if (search) params.set('search', search);
+    85→    85→
+    86→    86→      const response = await fetch(`/api/qrcodes?${params}`, { cache: "no-store", headers: { "Cache-Control": "no-cache" } });
+    87→    87→      const data = await response.json();
+    88→    88→
+    89→    89→      // Calculate activation status for each set
+    90→    90→      const setsWithStatus = data.sets.map((set: QRSet) => ({
+    91→    91→        ...set,
+    92→    92→        activationStatus: getActivationStatus(set.status)
+    93→    93→      }));
+    94→    94→
+    95→    95→      // QRTags : ne plus filtrer par type côté frontend (l'API gère déjà le filtre)
+    96→    96→      // Afficher tous les sets retournés par l'API
+    97→    97→      const filteredSets = setsWithStatus;
+    98→    98→      
+    99→    99→      setSets(filteredSets);
+   100→   100→      setStats(data.stats);
+   101→   101→
+   102→   102→      // Group by agency
+   103→   103→      const groupedByAgency = groupByAgency(filteredSets);
+   104→   104→      setAgencyGroups(groupedByAgency);
+   105→   105→    } catch (error) {
+   106→   106→      console.error('Error fetching QR sets:', error);
+   107→   107→    } finally {
+   108→   108→      setLoading(false);
+   109→   109→    }
+   110→   110→  };
+   111→   111→
+   112→   112→  const groupByAgency = (sets: QRSet[]): AgencyGroup[] => {
+   113→   113→    const groups = new Map<string | null, AgencyGroup>();
+   114→   114→
+   115→   115→    sets.forEach(set => {
+   116→   116→      const key = set.agencyId || 'no-agency';
+   117→   117→      const agencyName = set.agencyName || 'Sans agence';
+   118→   118→
+   119→   119→      if (!groups.has(key)) {
+   120→   120→        groups.set(key, {
+   121→   121→          agencyId: set.agencyId,
+   122→   122→          agencyName,
+   123→   123→          sets: [],
+   124→   124→          totalQr: 0,
+   125→   125→          isExpanded: true, // Expanded by default
+   126→   126→        });
+   127→   127→      }
+   128→   128→
+   129→   129→      const group = groups.get(key)!;
+   130→   130→      group.sets.push(set);
+   131→   131→      group.totalQr += set.qrCount;
+   132→   132→    });
+   133→   133→
+   134→   134→    // Sort: agencies with name first, then "Sans agence"
+   135→   135→    return Array.from(groups.values()).sort((a, b) => {
+   136→   136→      if (a.agencyId === null) return 1;
+   137→   137→      if (b.agencyId === null) return -1;
+   138→   138→      return a.agencyName.localeCompare(b.agencyName);
+   139→   139→    });
+   140→   140→  };
+   141→   141→
+   142→   142→  const getActivationStatus = (status: string): 'new' | 'partial' | 'activated' => {
+   143→   143→    if (status === 'active' || status === 'scanned') return 'activated';
+   144→   144→    if (status === 'partial') return 'partial';
+   145→   145→    return 'new';
+   146→   146→  };
+   147→   147→
+   148→   148→  const toggleAgencyGroup = (agencyId: string | null) => {
+   149→   149→    setAgencyGroups(prev => 
+   150→   150→      prev.map(group => 
+   151→   151→        group.agencyId === agencyId 
+   152→   152→          ? { ...group, isExpanded: !group.isExpanded }
+   153→   153→          : group
+   154→   154→      )
+   155→   155→    );
+   156→   156→  };
+   157→   157→
+   158→   158→  const handleDeleteSet = async () => {
+   159→   159→    if (!selectedSet) return;
+   160→   160→
+   161→   161→    try {
+   162→   162→      const params = new URLSearchParams({ setId: selectedSet.setId });
+   163→   163→      const response = await fetch(`/api/qrcodes?${params}`, { method: 'DELETE' });
+   164→   164→      const data = await response.json();
+   165→   165→
+   166→   166→      if (response.ok && data.success) {
+   167→   167→        fetchSets();
+   168→   168→        setShowDeleteModal(false);
+   169→   169→        setSelectedSet(null);
+   170→   170→      } else {
+   171→   171→        alert(`Erreur: ${data.error || 'Erreur lors de la suppression'}`);
+   172→   172→      }
+   173→   173→    } catch (error) {
+   174→   174→      console.error('Error deleting set:', error);
+   175→   175→      alert('Erreur lors de la suppression');
+   176→   176→    }
+   177→   177→  };
+   178→   178→
+   179→   179→  const handleDownloadPDF = async (set: QRSet) => {
+   180→   180→    setIsDownloading(true);
+   181→   181→    setSelectedSet(set);
+   182→   182→
+   183→   183→    try {
+   184→   184→      const canvas = document.createElement('canvas');
+   185→   185→      const ctx = canvas.getContext('2d');
+   186→   186→      if (!ctx) throw new Error('Canvas not supported');
+   187→   187→
+   188→   188→      const qrSize = 300;
+   189→   189→      const padding = 40;
+   190→   190→      const headerHeight = 100;
+   191→   191→
+   192→   192→      const cols = Math.min(set.qrCount, 3);
+   193→   193→      const rows = Math.ceil(set.qrCount / 3);
+   194→   194→
+   195→   195→      canvas.width = cols * qrSize + (cols + 1) * padding;
+   196→   196→      canvas.height = headerHeight + rows * qrSize + (rows + 1) * padding + 60;
+   197→   197→
+   198→   198→      // Background
+   199→   199→      ctx.fillStyle = '#ffffff';
+   200→   200→      ctx.fillRect(0, 0, canvas.width, canvas.height);
+   201→   201→
+   202→   202→      // Header
+   203→   203→      ctx.fillStyle = '#f59e0b';
+   204→   204→      ctx.fillRect(0, 0, canvas.width, headerHeight);
+   205→   205→
+   206→   206→      ctx.fillStyle = '#ffffff';
+   207→   207→      ctx.font = 'bold 24px Arial';
+   208→   208→      ctx.textAlign = 'center';
+   209→   209→      ctx.fillText('QRTags - Étiquettes', canvas.width / 2, 35);
+   210→   210→
+   211→   211→      ctx.font = '16px Arial';
+   212→   212→      ctx.fillText(`${set.setId} | ${'QRTags'} | ${set.qrCount} QR`, canvas.width / 2, 65);
+   213→   213→      if (set.agencyName) {
+   214→   214→        ctx.font = '14px Arial';
+   215→   215→        ctx.fillText(`Agence: ${set.agencyName}`, canvas.width / 2, 85);
+   216→   216→      }
+   217→   217→
+   218→   218→      // Generate QR codes
+   219→   219→      for (let i = 0; i < set.references.length; i++) {
+   220→   220→        const col = i % 3;
+   221→   221→        const row = Math.floor(i / 3);
+   222→   222→        const x = padding + col * (qrSize + padding);
+   223→   223→        const y = headerHeight + padding + row * (qrSize + padding);
+   224→   224→
+   225→   225→        ctx.fillStyle = '#ffffff';
+   226→   226→        ctx.fillRect(x, y, qrSize, qrSize);
+   227→   227→
+   228→   228→        const qrUrl = `${window.location.origin}/scan/${set.references[i]}`;
+   229→   229→        const svgElement = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+   230→   230→        const qrSvg = <QRCodeSVG value={qrUrl} size={qrSize - 40} level="H" fgColor={'#f59e0b'} />;
+   231→   231→
+   232→   232→        // Use a promise-based approach to render SVG to canvas
+   233→   233→        const svgString = `<svg xmlns="http://www.w3.org/2000/svg" width="${qrSize - 40}" height="${qrSize - 40}">
+   234→   234→          <rect width="100%" height="100%" fill="white"/>
+   235→   235→          ${generateQRPath(qrUrl, qrSize - 40, '#f59e0b')}
+   236→   236→        </svg>`;
+   237→   237→
+   238→   238→        const img = new Image();
+   239→   239→        const svgBlob = new Blob([svgString], { type: 'image/svg+xml;charset=utf-8' });
+   240→   240→        const url = URL.createObjectURL(svgBlob);
+   241→   241→
+   242→   242→        await new Promise<void>((resolve) => {
+   243→   243→          img.onload = () => {
+   244→   244→            ctx.drawImage(img, x + 20, y + 20, qrSize - 40, qrSize - 40);
+   245→   245→            URL.revokeObjectURL(url);
+   246→   246→            resolve();
+   247→   247→          };
+   248→   248→          img.onerror = () => {
+   249→   249→            URL.revokeObjectURL(url);
+   250→   250→            resolve();
+   251→   251→          };
+   252→   252→          img.src = url;
+   253→   253→        });
+   254→   254→
+   255→   255→        // Reference label
+   256→   256→        ctx.fillStyle = '#1e293b';
+   257→   257→        ctx.font = 'bold 12px Arial';
+   258→   258→        ctx.textAlign = 'center';
+   259→   259→        ctx.fillText(set.references[i], x + qrSize / 2, y + qrSize - 15);
+   260→   260→      }
+   261→   261→
+   262→   262→      // Footer
+   263→   263→      ctx.fillStyle = '#64748b';
+   264→   264→      ctx.font = '12px Arial';
+   265→   265→      ctx.textAlign = 'center';
+   266→   266→      ctx.fillText(`Généré le ${new Date().toLocaleDateString('fr-FR')} | QRTags.com`, canvas.width / 2, canvas.height - 20);
+   267→   267→
+   268→   268→      // Download
+   269→   269→      const link = document.createElement('a');
+   270→   270→      link.download = `QRTags-${set.setId}.png`;
+   271→   271→      link.href = canvas.toDataURL('image/png');
+   272→   272→      link.click();
+   273→   273→
+   274→   274→      setIsDownloading(false);
+   275→   275→    } catch (error) {
+   276→   276→      console.error('Error generating PDF:', error);
+   277→   277→      setIsDownloading(false);
+   278→   278→      alert('Erreur lors de la génération');
+   279→   279→    }
+   280→   280→  };
+   281→   281→
+   282→   282→  // Simple QR path generator fallback
+   283→   283→  const generateQRPath = (url: string, size: number, color: string): string => {
+   284→   284→    return `<text x="50%" y="50%" text-anchor="middle" fill="${color}" font-size="10">${url}</text>`;
+   285→   285→  };
+   286→   286→
+   287→   287→  const handleShareSet = async (set: QRSet) => {
+   288→   288→    const shareUrl = `${window.location.origin}/scan/${set.references[0]}`;
+   289→   289→    if (navigator.share) {
+   290→   290→      try {
+   291→   291→        await navigator.share({
+   292→   292→          title: `QRTags - ${set.setId}`,
+   293→   293→          text: `${set.qrCount} QR codes pour ${set.agencyName || 'agence'}`,
+   294→   294→          url: shareUrl,
+   295→   295→        });
+   296→   296→      } catch (err) {
+   297→   297→        console.log('Share cancelled');
+   298→   298→      }
+   299→   299→    } else {
+   300→   300→      navigator.clipboard.writeText(shareUrl);
+   301→   301→      alert('Lien copié !');
+   302→   302→    }
+   303→   303→  };
+   304→   304→
+   305→   305→  const formatDate = (date: Date | string) => {
+   306→   306→    return new Date(date).toLocaleDateString('fr-FR', {
+   307→   307→      day: '2-digit',
+   308→   308→      month: 'short',
+   309→   309→      year: 'numeric',
+   310→   310→    });
+   311→   311→  };
+   312→   312→
+   313→   313→  return (
+   314→   314→    <div className="max-w-7xl mx-auto">
+   315→   315→      {/* Header */}
+   316→   316→      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
+   317→   317→        <div>
+   318→   318→          <h1 className="text-2xl font-bold text-slate-800 dark:text-white">Tags QRTags</h1>
+   319→   319→          <p className="text-slate-500 dark:text-slate-400 text-sm">
+   320→   320→            {stats.totalSets} sets • {stats.totalQr} QR codes
+   321→   321→          </p>
+   322→   322→        </div>
+   323→   323→
+   324→   324→        <div className="flex items-center gap-3">
+   325→   325→          <div className="relative">
+   326→   326→            <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+   327→   327→            <input
+   328→   328→              type="text"
+   329→   329→              placeholder="Rechercher..."
+   330→   330→              value={search}
+   331→   331→              onChange={(e) => setSearch(e.target.value)}
+   332→   332→              className="pl-10 pr-4 py-2 w-64 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
+   333→   333→            />
+   334→   334→          </div>
+   335→   335→
+   336→   336→          <button
+   337→   337→            onClick={() => fetchSets()}
+   338→   338→            className="p-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors"
+   339→   339→          >
+   340→   340→            <RefreshCw className={`w-4 h-4 text-slate-500 ${loading ? 'animate-spin' : ''}`} />
+   341→   341→          </button>
+   342→   342→
+   343→   343→          <Link
+   344→   344→            href="/admin/generer"
+   345→   345→            className="flex items-center gap-2 px-4 py-2 bg-green-500 hover:bg-green-600 text-white rounded-xl font-medium transition-colors"
+   346→   346→          >
+   347→   347→            <QrCode className="w-4 h-4" />
+   348→   348→            Générer QR
+   349→   349→          </Link>
+   350→   350→        </div>
+   351→   351→      </div>
+   352→   352→
+   353→   353→      {/* Tabs */}
+   354→   354→      <div className="flex gap-2 mb-6">
+   355→   355→        <button
+   356→   356→          onClick={() => setActiveTab('qrtags')}
+   357→   357→          className={`flex items-center gap-2 px-6 py-3 rounded-xl font-medium transition-all ${
+   358→   358→            activeTab === 'qrtags'
+   359→   359→              ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/30'
+   360→   360→              : 'bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700'
+   361→   361→          }`}
+   362→   362→        >
+   363→   363→          <Plane className="w-5 h-5" />
+   364→   364→          Tags QRTags
+   365→   365→          <span className={`px-2 py-0.5 rounded-full text-xs ${
+   366→   366→            activeTab === 'qrtags'
+   367→   367→              ? 'bg-white/20 text-white'
+   368→   368→              : 'bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-400'
+   369→   369→          }`}>
+   370→   370→            {stats.qrtagsSets}
+   371→   371→          </span>
+   372→   372→        </button>
+   373→   373→      </div>
+   374→   374→
+   375→   375→      {/* Content */}
+   376→   376→      {loading ? (
+   377→   377→        <div className="flex items-center justify-center py-20">
+   378→   378→          <div className="animate-spin w-8 h-8 border-4 border-slate-200 border-t-green-500 rounded-full" />
+   379→   379→        </div>
+   380→   380→      ) : agencyGroups.length === 0 ? (
+   381→   381→        <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 p-12 text-center">
+   382→   382→          <div className="w-16 h-16 mx-auto mb-4 rounded-2xl flex items-center justify-center bg-amber-100 dark:bg-blue-600/20">
+   383→   383→            <Plane className="w-8 h-8 text-amber-600" />
+   384→   384→          </div>
+   385→   385→          <h3 className="text-lg font-semibold text-slate-800 dark:text-white mb-2">
+   386→   386→            Aucun tag QRTags
+   387→   387→          </h3>
+   388→   388→          <p className="text-slate-500 dark:text-slate-400 mb-4">
+   389→   389→            {search ? 'Aucun résultat pour votre recherche' : 'Commencez par générer des QR codes'}
+   390→   390→          </p>
+   391→   391→          {!search && (
+   392→   392→            <Link
+   393→   393→              href="/admin/generer"
+   394→   394→              className="inline-flex items-center gap-2 px-4 py-2 bg-green-500 hover:bg-green-600 text-white rounded-xl font-medium transition-colors"
+   395→   395→            >
+   396→   396→              <QrCode className="w-4 h-4" />
+   397→   397→              Générer des QR codes
+   398→   398→            </Link>
+   399→   399→          )}
+   400→   400→        </div>
+   401→   401→      ) : (
+   402→   402→        <div className="space-y-4">
+   403→   403→          {agencyGroups.map((group) => (
+   404→   404→            <div
+   405→   405→              key={group.agencyId || 'no-agency'}
+   406→   406→              className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 overflow-hidden"
+   407→   407→            >
+   408→   408→              {/* Agency Header */}
+   409→   409→              <button
+   410→   410→                onClick={() => toggleAgencyGroup(group.agencyId)}
+   411→   411→                className="w-full flex items-center justify-between p-4 hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors"
+   412→   412→              >
+   413→   413→                <div className="flex items-center gap-3">
+   414→   414→                  <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${
+   415→   415→                    false 
+   416→   416→                      ? 'bg-emerald-100 dark:bg-blue-600/20' 
+   417→   417→                      : 'bg-amber-100 dark:bg-blue-600/20'
+   418→   418→                  }`}>
+   419→   419→                    <Building2 className={`w-5 h-5 ${
+   420→   420→                      false ? 'text-blue-700' : 'text-amber-600'
+   421→   421→                    }`} />
+   422→   422→                  </div>
+   423→   423→                  <div className="text-left">
+   424→   424→                    <h3 className="font-semibold text-slate-800 dark:text-white">
+   425→   425→                      {group.agencyName}
+   426→   426→                    </h3>
+   427→   427→                    <p className="text-sm text-slate-500 dark:text-slate-400">
+   428→   428→                      {group.sets.length} set{group.sets.length > 1 ? 's' : ''} • {group.totalQr} QR codes
+   429→   429→                    </p>
+   430→   430→                  </div>
+   431→   431→                </div>
+   432→   432→                <ChevronDown className={`w-5 h-5 text-slate-400 transition-transform ${
+   433→   433→                  group.isExpanded ? 'rotate-180' : ''
+   434→   434→                }`} />
+   435→   435→              </button>
+   436→   436→
+   437→   437→              {/* Sets in this agency */}
+   438→   438→              {group.isExpanded && (
+   439→   439→                <div className="border-t border-slate-200 dark:border-slate-700">
+   440→   440→                  <div className="divide-y divide-slate-100 dark:divide-slate-700">
+   441→   441→                    {group.sets.map((set) => (
+   442→   442→                      <div
+   443→   443→                        key={set.id}
+   444→   444→                        className="flex items-center justify-between p-4 hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors"
+   445→   445→                      >
+   446→   446→                        <div className="flex items-center gap-4">
+   447→   447→                          {/* QR Icon */}
+   448→   448→                          <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${
+   449→   449→                            false
+   450→   450→                              ? 'bg-emerald-100 dark:bg-blue-600/20'
+   451→   451→                              : 'bg-amber-100 dark:bg-blue-600/20'
+   452→   452→                          }`}>
+   453→   453→                            <QrCode className={`w-6 h-6 ${
+   454→   454→                              false ? 'text-blue-700' : 'text-amber-600'
+   455→   455→                            }`} />
+   456→   456→                          </div>
+   457→   457→
+   458→   458→                          {/* Info */}
+   459→   459→                          <div>
+   460→   460→                            <div className="flex items-center gap-2">
+   461→   461→                              <h4 className="font-medium text-slate-800 dark:text-white">
+   462→   462→                                {set.setId}
+   463→   463→                              </h4>
+   464→   464→                              <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${
+   465→   465→                                set.activationStatus === 'activated'
+   466→   466→                                  ? 'bg-green-100 text-green-700 dark:bg-green-500/20 dark:text-green-400'
+   467→   467→                                  : set.activationStatus === 'partial'
+   468→   468→                                  ? 'bg-yellow-100 text-yellow-700 dark:bg-yellow-500/20 dark:text-yellow-400'
+   469→   469→                                  : 'bg-slate-100 text-slate-600 dark:bg-slate-700 dark:text-slate-400'
+   470→   470→                              }`}>
+   471→   471→                                {set.activationStatus === 'activated' ? 'Activé' : set.activationStatus === 'partial' ? 'Partiel' : 'Nouveau'}
+   472→   472→                              </span>
+   473→   473→                            </div>
+   474→   474→                            <div className="flex items-center gap-4 mt-1 text-sm text-slate-500 dark:text-slate-400">
+   475→   475→                              <span>{set.qrCount} QR</span>
+   476→   476→                              {set.travelerName && (
+   477→   477→                                <span>• {set.travelerName}</span>
+   478→   478→                              )}
+   479→   479→                              <span>• {formatDate(set.createdAt)}</span>
+   480→   480→                            </div>
+   481→   481→                          </div>
+   482→   482→                        </div>
+   483→   483→
+   484→   484→                        {/* Actions */}
+   485→   485→                        <div className="flex items-center gap-2">
+   486→   486→                          <button
+   487→   487→                            onClick={() => {
+   488→   488→                              setSelectedSet(set);
+   489→   489→                              setShowDetailModal(true);
+   490→   490→                            }}
+   491→   491→                            className="p-2 text-slate-400 hover:text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-500/10 rounded-lg transition-colors"
+   492→   492→                            title="Voir les QR codes"
+   493→   493→                          >
+   494→   494→                            <Eye className="w-4 h-4" />
+   495→   495→                          </button>
+   496→   496→                          <button
+   497→   497→                            onClick={() => handleDownloadPDF(set)}
+   498→   498→                            className="p-2 text-slate-400 hover:text-blue-600 hover:bg-emerald-50 dark:hover:bg-blue-600/10 rounded-lg transition-colors"
+   499→   499→                            title="Télécharger"
+   500→   500→                          >
+   501→   501→                            <Download className="w-4 h-4" />
+   502→   502→                          </button>
+   503→   503→                          <button
+   504→   504→                            onClick={() => handleShareSet(set)}
+   505→   505→                            className="p-2 text-slate-400 hover:text-purple-500 hover:bg-purple-50 dark:hover:bg-purple-500/10 rounded-lg transition-colors"
+   506→   506→                            title="Partager"
+   507→   507→                          >
+   508→   508→                            <Share2 className="w-4 h-4" />
+   509→   509→                          </button>
+   510→   510→                          <button
+   511→   511→                            onClick={() => {
+   512→   512→                              setSelectedSet(set);
+   513→   513→                              setShowDeleteModal(true);
+   514→   514→                            }}
+   515→   515→                            className="p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 rounded-lg transition-colors"
+   516→   516→                            title="Supprimer"
+   517→   517→                          >
+   518→   518→                            <Trash2 className="w-4 h-4" />
+   519→   519→                          </button>
+   520→   520→                        </div>
+   521→   521→                      </div>
+   522→   522→                    ))}
+   523→   523→                  </div>
+   524→   524→                </div>
+   525→   525→              )}
+   526→   526→            </div>
+   527→   527→          ))}
+   528→   528→        </div>
+   529→   529→      )}
+   530→   530→
+   531→   531→      {/* Detail Modal */}
+   532→   532→      {showDetailModal && selectedSet && (
+   533→   533→        <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50 backdrop-blur-sm">
+   534→   534→          <div className="bg-white dark:bg-slate-800 rounded-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+   535→   535→            <div className="flex items-center justify-between p-6 border-b border-slate-100 dark:border-slate-700">
+   536→   536→              <div>
+   537→   537→                <h2 className="text-lg font-bold text-slate-800 dark:text-white">{selectedSet.setId}</h2>
+   538→   538→                <p className="text-slate-500 dark:text-slate-400 text-sm">
+   539→   539→                  {'QRTags'} • {selectedSet.qrCount} QR codes
+   540→   540→                  {selectedSet.agencyName && ` • ${selectedSet.agencyName}`}
+   541→   541→                </p>
+   542→   542→              </div>
+   543→   543→              <button
+   544→   544→                onClick={() => {
+   545→   545→                  setShowDetailModal(false);
+   546→   546→                  setSelectedSet(null);
+   547→   547→                }}
+   548→   548→                className="p-2 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors"
+   549→   549→              >
+   550→   550→                <X className="w-5 h-5 text-slate-400" />
+   551→   551→              </button>
+   552→   552→            </div>
+   553→   553→            <div className="p-6">
+   554→   554→              {/* QR Codes Grid */}
+   555→   555→              <div
+   556→   556→                ref={qrRef}
+   557→   557→                className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4"
+   558→   558→              >
+   559→   559→                {selectedSet.references.map((ref, index) => (
+   560→   560→                  <div
+   561→   561→                    key={ref}
+   562→   562→                    className="bg-slate-50 dark:bg-slate-700/50 rounded-xl p-4 text-center"
+   563→   563→                  >
+   564→   564→                    <QRCodeSVG
+   565→   565→                      value={`${typeof window !== 'undefined' ? window.location.origin : ''}/scan/${ref}`}
+   566→   566→                      size={120}
+   567→   567→                      level="H"
+   568→   568→                      includeMargin={true}
+   569→   569→                      bgColor="#f8fafc"
+   570→   570→                      fgColor={'#f59e0b'}
+   571→   571→                    />
+   572→   572→                    <p className="text-slate-800 dark:text-white font-mono font-bold mt-2 text-sm">
+   573→   573→                      {ref}
+   574→   574→                    </p>
+   575→   575→                    <p className="text-slate-500 dark:text-slate-400 text-xs">
+   576→   576→                      {false 
+   577→   577→                        ? (index === 0 ? 'Cabine' : `Soute #${index}`)
+   578→   578→                        : `Bagage #${index + 1}`
+   579→   579→                      }
+   580→   580→                    </p>
+   581→   581→                  </div>
+   582→   582→                ))}
+   583→   583→              </div>
+   584→   584→
+   585→   585→              {/* Info */}
+   586→   586→              <div className="mt-6 grid grid-cols-1 sm:grid-cols-2 gap-4">
+   587→   587→                <div className="bg-slate-50 dark:bg-slate-700/50 rounded-xl p-4">
+   588→   588→                  <p className="text-slate-500 dark:text-slate-400 text-sm">Créé le</p>
+   589→   589→                  <p className="text-slate-800 dark:text-white font-medium">{formatDate(selectedSet.createdAt)}</p>
+   590→   590→                </div>
+   591→   591→                <div className="bg-slate-50 dark:bg-slate-700/50 rounded-xl p-4">
+   592→   592→                  <p className="text-slate-500 dark:text-slate-400 text-sm">Statut</p>
+   593→   593→                  <p className="text-slate-800 dark:text-white font-medium capitalize">
+   594→   594→                    {selectedSet.activationStatus === 'activated' ? 'Activé' : 
+   595→   595→                     selectedSet.activationStatus === 'partial' ? 'Partiel' : 'Nouveau'}
+   596→   596→                  </p>
+   597→   597→                </div>
+   598→   598→              </div>
+   599→   599→
+   600→   600→              {/* Actions */}
+   601→   601→              <div className="mt-6 flex gap-3">
+   602→   602→                <button
+   603→   603→                  onClick={() => handleDownloadPDF(selectedSet)}
+   604→   604→                  className="flex-1 py-3 bg-indigo-600 text-white rounded-xl hover:bg-indigo-700 transition-colors flex items-center justify-center gap-2"
+   605→   605→                >
+   606→   606→                  <FileText className="w-4 h-4" />
+   607→   607→                  Télécharger PDF
+   608→   608→                </button>
+   609→   609→                <button
+   610→   610→                  onClick={() => handleShareSet(selectedSet)}
+   611→   611→                  className="flex-1 py-3 bg-blue-700 text-white rounded-xl hover:bg-emerald-700 transition-colors flex items-center justify-center gap-2"
+   612→   612→                >
+   613→   613→                  <Share2 className="w-4 h-4" />
+   614→   614→                  Partager
+   615→   615→                </button>
+   616→   616→              </div>
+   617→   617→            </div>
+   618→   618→          </div>
+   619→   619→        </div>
+   620→   620→      )}
+   621→   621→
+   622→   622→      {/* Delete Confirmation Modal */}
+   623→   623→      {showDeleteModal && selectedSet && (
+   624→   624→        <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50 backdrop-blur-sm">
+   625→   625→          <div className="bg-white dark:bg-slate-800 rounded-2xl max-w-sm w-full">
+   626→   626→            <div className="p-6">
+   627→   627→              <div className="flex items-center gap-3 mb-4">
+   628→   628→                <div className="w-10 h-10 bg-red-100 dark:bg-red-900/30 rounded-xl flex items-center justify-center">
+   629→   629→                  <AlertTriangle className="w-5 h-5 text-red-600" />
+   630→   630→                </div>
+   631→   631→                <div>
+   632→   632→                  <h3 className="text-slate-800 dark:text-white font-bold">Supprimer ce set ?</h3>
+   633→   633→                  <p className="text-slate-500 dark:text-slate-400 text-sm">{selectedSet.setId}</p>
+   634→   634→                </div>
+   635→   635→              </div>
+   636→   636→              <p className="text-slate-500 dark:text-slate-400 text-sm mb-6">
+   637→   637→                Cette action supprimera définitivement les {selectedSet.qrCount} QR codes de ce set.
+   638→   638→              </p>
+   639→   639→              <div className="flex gap-3">
+   640→   640→                <button
+   641→   641→                  onClick={() => {
+   642→   642→                    setShowDeleteModal(false);
+   643→   643→                    setSelectedSet(null);
+   644→   644→                  }}
+   645→   645→                  className="flex-1 py-2 px-4 bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-300 rounded-xl hover:bg-slate-200 dark:hover:bg-slate-600 transition-colors"
+   646→   646→                >
+   647→   647→                  Annuler
+   648→   648→                </button>
+   649→   649→                <button
+   650→   650→                  onClick={handleDeleteSet}
+   651→   651→                  className="flex-1 py-2 px-4 bg-red-600 text-white rounded-xl hover:bg-red-700 transition-colors"
+   652→   652→                >
+   653→   653→                  Supprimer
+   654→   654→                </button>
+   655→   655→              </div>
+   656→   656→            </div>
+   657→   657→          </div>
+   658→   658→        </div>
+   659→   659→      )}
+   660→   660→    </div>
+   661→   661→  );
+   662→   662→}
+   663→   663→
