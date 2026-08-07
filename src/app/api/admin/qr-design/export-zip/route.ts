@@ -7,6 +7,7 @@ import {
   DEFAULT_TEMPLATE_PATH,
   templateExists,
   EXPORT_DPI,
+  VALID_SIZES,
 } from '@/lib/qr-compose';
 
 /**
@@ -35,9 +36,9 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    if (![2, 4, 7].includes(sizeCm)) {
+    if (!(VALID_SIZES as readonly number[]).includes(sizeCm)) {
       return NextResponse.json(
-        { error: 'Taille invalide (2, 4 ou 7 cm).' },
+        { error: 'Taille invalide. Tailles : 2, 4, 5, 6, 7, 10, 12, 15 cm.' },
         { status: 400 },
       );
     }

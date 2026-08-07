@@ -33,8 +33,16 @@ const REF_TEXT = {
 export const STICKER_SIZES = [
   { label: '2 × 2 cm', value: 2 },
   { label: '4 × 4 cm', value: 4 },
+  { label: '5 × 5 cm', value: 5 },
+  { label: '6 × 6 cm', value: 6 },
   { label: '7 × 7 cm', value: 7 },
+  { label: '10 × 10 cm', value: 10 },
+  { label: '12 × 12 cm', value: 12 },
+  { label: '15 × 15 cm', value: 15 },
 ] as const;
+
+// All valid sticker sizes for API validation
+export const VALID_SIZES = [2, 4, 5, 6, 7, 10, 12, 15] as const;
 
 // DPI for high-resolution output
 export const EXPORT_DPI = 600;
