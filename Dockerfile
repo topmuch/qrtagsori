@@ -1,6 +1,10 @@
-FROM node:20-slim
+# ═══════════════════════════════════════════════════════════════
+# QRTags — Production Dockerfile (bun + Next.js standalone)
+# ═══════════════════════════════════════════════════════════════════════════
 
-# Installer sqlite3 + git + libc (Debian-slim natif, pas besoin de libc6-compat)
+FROM oven/bun:1-debian
+
+# Install system dependencies
 RUN apt-get update && apt-get install -y --no-install-recommends \
     git \
     sqlite3 \
@@ -9,17 +13,21 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 
 WORKDIR /app
 
+# Clone the repo
 RUN git clone https://github.com/topmuch/qrtagsori.git .
-RUN npm install --legacy-peer-deps --no-audit --no-fund
-RUN npx prisma generate
 
+# Install dependencies
+RUN bun install --frozen-lockfile || bun install
+
+# Generate Prisma Client
+RUN bunx prisma generate
+
+# Build Next.js (standalone output)
 ENV NEXT_TELEMETRY_DISABLED=1
-ENV DATABASE_URL=file:/tmp/build.db
-RUN npm run build
+ENV DATABASE_URL="file:/tmp/build.db"
+RUN bun run build
 
-# QRTags : Copier TOUT dans le standalone
-# Le standalone par défaut n'inclut que ~52 packages sur 653
-# Il manque prisma, bcryptjs, qrcode, etc. → crash runtime
+# Copy everything needed for runtime into standalone
 RUN cp -r .next/static .next/standalone/.next/ && \
     cp -r public .next/standalone/public && \
     cp -r node_modules .next/standalone/node_modules && \
@@ -27,6 +35,7 @@ RUN cp -r .next/static .next/standalone/.next/ && \
     cp -r scripts .next/standalone/scripts && \
     cp package.json .next/standalone/package.json
 
+# Create data directories
 RUN mkdir -p /app/data /app/data/backups /app/public/uploads/damage && \
     chmod -R 777 /app/data /app/public/uploads/damage
 RUN chmod +x init-db.sh
@@ -34,7 +43,7 @@ RUN chmod +x init-db.sh
 EXPOSE 3000
 ENV PORT=3000
 ENV HOSTNAME="0.0.0.0"
-ENV DATABASE_URL=file:/app/data/qrtags.db
+ENV DATABASE_URL="file:/app/data/qrtags.db"
 
 WORKDIR /app/.next/standalone
 CMD ["sh", "/app/init-db.sh"]
