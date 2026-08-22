@@ -27,6 +27,7 @@ import { OBJECT_CATEGORIES, getObjectCategory } from '@/lib/agency-types';
 import { useTranslation } from '@/hooks/useTranslation';
 import { Language, LANGUAGE_NAMES } from '@/lib/i18n';
 import { COUNTRIES, COUNTRY_MAP, getDialCode, type CountryInfo } from '@/lib/phone';
+import { useTravelerAuth } from '@/contexts/TravelerAuthContext';
 
 // ─── Design tokens QRTags (STRICTEMENT CONSERVÉS) ───────────────────
 const QRTAGS_BG       = '#E3B23C';   // fond de page jaune moutarde
@@ -260,6 +261,7 @@ function InscrireContent() {
   const searchParams = useSearchParams();
   const qrFromUrl = searchParams.get('qr') || '';
   const { lang, setLang } = useTranslation();
+  const { isLoggedIn, linkBaggage } = useTravelerAuth();
 
   // ─── 3 étapes (au lieu de 2 + toggle) ───
   const [step, setStep] = useState<1 | 2 | 3>(1);
@@ -674,6 +676,11 @@ function InscrireContent() {
           })
         );
       } catch {}
+
+      // ─── Lier le baggage au compte voyageur si connecté ───
+      if (isLoggedIn && formData.reference) {
+        linkBaggage(formData.reference).catch(() => {});
+      }
 
       if (typeof window !== 'undefined') {
         try {

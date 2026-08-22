@@ -132,6 +132,8 @@ model Baggage {
   // batchId : lien vers le lot de génération (si généré en masse)
   batchId           String?   @map("batch_id")
 
+  travelerId       String?
+  traveler         Traveler? @relation(fields: [travelerId], references: [id], onDelete: SetNull)
   agency            Agency?   @relation(fields: [agencyId], references: [id], onDelete: SetNull)
   batch             Batch?    @relation(fields: [batchId], references: [id], onDelete: SetNull)
   scanLogs          ScanLog[]
@@ -669,4 +671,35 @@ model GuestMessage {
 
   @@index([baggageId])
   @@map("guest_messages")
+}
+
+// ════════════════════════════════════════════════════════════════
+// Traveler — Compte voyageur (téléphone + PIN 4 chiffres)
+// ════════════════════════════════════════════════════════════════
+
+model Traveler {
+  id        String   @id @default(cuid())
+  phone     String   @unique               // Numéro international (ex: +33612345678)
+  pin       String                          // PIN hashé (bcrypt)
+  name      String?                         // Nom optionnel du voyageur
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  baggages  Baggage[]
+  sessions  TravelerSession[]
+
+  @@map("travelers")
+}
+
+model TravelerSession {
+  id        String   @id @default(cuid())
+  token     String   @unique               // Token de session
+  travelerId String
+  traveler  Traveler @relation(fields: [travelerId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+  expiresAt DateTime                       // Expiration du token
+
+  @@index([token])
+  @@map("traveler_sessions")
 }
