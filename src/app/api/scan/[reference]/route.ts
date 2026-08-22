@@ -338,6 +338,42 @@ export async function POST(
         // Non-bloquant
       });
 
+      // ─── Push notification au voyageur propriétaire ───
+      (async () => {
+        try {
+          if (!baggage.travelerId) return;
+          const subs = await prisma.travelerPushSubscription.findMany({
+            where: { travelerId: baggage.travelerId },
+          });
+          if (subs.length === 0) return;
+
+          const customData = baggage.customData ? JSON.parse(baggage.customData) : null;
+          const objectName = customData?.object_name || 'Objet';
+          const { webpush } = await import('@/lib/web-push');
+
+          const payload = JSON.stringify({
+            title: `\ud83d\udd0d ${objectName} scann\u00e9 !`,
+            body: `Quelqu'un a scann\u00e9 votre ${objectName} (${reference})${location ? ` \u00e0 ${location}` : ''}.`,
+            url: `/suivi/${reference}`,
+            tag: `qrtags-scan-${reference}`,
+          });
+
+          for (const sub of subs) {
+            try {
+              await webpush.sendNotification(
+                { endpoint: sub.endpoint, keys: { p256dh: sub.p256dh, auth: sub.auth } },
+                payload
+              );
+            } catch (err) {
+              console.error('[push] Failed for', sub.endpoint, err);
+              await prisma.travelerPushSubscription.delete({ where: { id: sub.id } }).catch(() => {});
+            }
+          }
+        } catch (err) {
+          console.error('[push] Scan push error:', err);
+        }
+      })();
+
       // Construire l'URL WhatsApp WAME
       const ownerFirstName = baggage.travelerFirstName?.trim() || '';
       const typeLabel = 'objet';

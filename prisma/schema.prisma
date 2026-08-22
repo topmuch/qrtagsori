@@ -688,8 +688,21 @@ model Traveler {
   // Relations
   baggages  Baggage[]
   sessions  TravelerSession[]
+  pushSubscriptions  TravelerPushSubscription[]
 
   @@map("travelers")
+}
+
+model TravelerPushSubscription {
+  id         String   @id @default(cuid())
+  travelerId String
+  traveler   Traveler @relation(fields: [travelerId], references: [id], onDelete: Cascade)
+  endpoint   String                       // Push subscription endpoint
+  p256dh     String                       // Encryption key
+  auth       String                       // Auth key
+  createdAt  DateTime @default(now())
+
+  @@map("traveler_push_subscriptions")
 }
 
 model TravelerSession {

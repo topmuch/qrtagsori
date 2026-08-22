@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { Luggage, Search, ArrowRight, Clock, LogIn, LogOut, User, Shield } from 'lucide-react';
+import { Luggage, Search, ArrowRight, Clock, LogIn, LogOut, User, Shield, Bell, BellOff, Loader2 } from 'lucide-react';
 import { useTravelerAuth, type TravelerBaggage } from '@/contexts/TravelerAuthContext';
 import TravelerAuthModal from '@/components/traveler/TravelerAuthModal';
 
@@ -78,6 +78,18 @@ export default function MesBagagesPage() {
   const [localLoading, setLocalLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [authModalOpen, setAuthModalOpen] = useState(false);
+  const [pushEnabled, setPushEnabled] = useState(false);
+  const [pushLoading, setPushLoading] = useState(false);
+
+  // Vérifier l'état push au chargement
+  useEffect(() => {
+    if (!isLoggedIn || typeof window === 'undefined') return;
+    if (!('serviceWorker' in navigator) || !('PushManager' in window)) return;
+    navigator.serviceWorker.ready
+      .then(reg => reg.pushManager.getSubscription())
+      .then(sub => setPushEnabled(!!sub))
+      .catch(() => {});
+  }, [isLoggedIn]);
 
   // Charger les baggages locaux (localStorage) si pas connecté
   useEffect(() => {
@@ -154,6 +166,45 @@ export default function MesBagagesPage() {
     }
   };
 
+  const togglePush = async () => {
+    setPushLoading(true);
+    try {
+      const token = localStorage.getItem('qrtags_traveler_token');
+      if (!token) return;
+      if (pushEnabled) {
+        const reg = await navigator.serviceWorker.ready;
+        const sub = await reg.pushManager.getSubscription();
+        if (sub) {
+          await sub.unsubscribe();
+          await fetch(`/api/traveler/push-subscribe?token=${token}&endpoint=${encodeURIComponent(sub.endpoint)}`, { method: 'DELETE' });
+        }
+        setPushEnabled(false);
+      } else {
+        const res = await fetch(`/api/traveler/push-subscribe?token=${token}`);
+        const { publicKey } = await res.json();
+        const permission = await Notification.requestPermission();
+        if (permission !== 'granted') { setPushLoading(false); return; }
+        const reg = await navigator.serviceWorker.ready;
+        const sub = await reg.pushManager.subscribe({
+          userVisibleOnly: true,
+          applicationServerKey: urlBase64ToUint8Array(publicKey),
+        });
+        await fetch(`/api/traveler/push-subscribe?token=${token}`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ subscription: sub.toJSON() }),
+        });
+        setPushEnabled(true);
+      }
+    } catch (err) {
+      console.error('[push] Error:', err);
+    } finally {
+      setPushLoading(false);
+    }
+  };
+
+  const pushSupported = typeof window !== 'undefined' && 'serviceWorker' in navigator && 'PushManager' in window;
+
   return (
     <main className="min-h-screen bg-[#111111] flex flex-col">
       <header className="bg-[#111111] border-b border-[#E3B23C]/30 py-4 px-4">
@@ -198,26 +249,65 @@ export default function MesBagagesPage() {
               <p className="text-xs text-white/60 mb-3">
                 Créez un compte pour retrouver vos objets depuis n'importe quel téléphone.
               </p>
-              <button
-                onClick={() => setAuthModalOpen(true)}
-                className="px-4 py-2 bg-[#E3B23C] text-black text-xs font-bold rounded-lg hover:bg-[#E3B23C]/80 transition"
-              >
-                Créer mon compte gratuitement
-              </button>
+              <div className="flex gap-2">
+                <button
+                  onClick={() => setAuthModalOpen(true)}
+                  className="px-4 py-2 bg-[#E3B23C] text-black text-xs font-bold rounded-lg hover:bg-[#E3B23C]/80 transition"
+                >
+                  Créer mon compte
+                </button>
+                <Link
+                  href="/connexion-voyageur"
+                  className="px-4 py-2 border border-[#E3B23C]/40 text-[#E3B23C] text-xs font-bold rounded-lg hover:bg-[#E3B23C]/10 transition"
+                >
+                  Se connecter
+                </Link>
+              </div>
             </div>
           </div>
         )}
 
-        {/* Compte connecté : indicateur */}
+        {/* Compte connecté : indicateur + push */}
         {isLoggedIn && !loading && (
-          <div className="bg-green-500/10 border border-green-500/30 rounded-2xl p-4 mb-6 flex items-center gap-3">
-            <Shield className="w-5 h-5 text-green-400 flex-shrink-0" />
-            <div className="flex-1">
-              <p className="text-sm font-bold text-white">
-                ✅ Connecté{traveler?.name ? ` — ${traveler.name}` : ''}
-              </p>
-              <p className="text-xs text-white/60">{displayBaggages.length} objet{displayBaggages.length !== 1 ? 's' : ''} enregistré{displayBaggages.length !== 1 ? 's' : ''}</p>
+          <div className="space-y-3 mb-6">
+            <div className="bg-green-500/10 border border-green-500/30 rounded-2xl p-4 flex items-center gap-3">
+              <Shield className="w-5 h-5 text-green-400 flex-shrink-0" />
+              <div className="flex-1">
+                <p className="text-sm font-bold text-white">
+                  ✅ Connecté{traveler?.name ? ` — ${traveler.name}` : ''}
+                </p>
+                <p className="text-xs text-white/60">{displayBaggages.length} objet{displayBaggages.length !== 1 ? 's' : ''} enregistré{displayBaggages.length !== 1 ? 's' : ''}</p>
+              </div>
             </div>
+            {/* Push notifications */}
+            {pushSupported && displayBaggages.length > 0 && (
+              <button
+                onClick={togglePush}
+                disabled={pushLoading}
+                className={`w-full rounded-2xl p-4 flex items-center gap-3 border transition ${pushEnabled
+                  ? 'bg-[#E3B23C]/10 border-[#E3B23C]/40 hover:bg-[#E3B23C]/20'
+                  : 'bg-white/5 border-white/10 hover:bg-white/10'
+                } disabled:opacity-60`}
+              >
+                {pushLoading ? (
+                  <Loader2 className="w-5 h-5 text-[#E3B23C] animate-spin flex-shrink-0" />
+                ) : pushEnabled ? (
+                  <Bell className="w-5 h-5 text-[#E3B23C] flex-shrink-0" />
+                ) : (
+                  <BellOff className="w-5 h-5 text-white/40 flex-shrink-0" />
+                )}
+                <div className="flex-1 text-left">
+                  <p className={`text-sm font-bold ${pushEnabled ? 'text-[#E3B23C]' : 'text-white'}`}>
+                    {pushEnabled ? '🔔 Notifications activées' : '🔕 Activer les notifications'}
+                  </p>
+                  <p className="text-xs text-white/60">
+                    {pushEnabled
+                      ? 'Vous serez alerté si l\'un de vos objets est scanné'
+                      : 'Recevez une alerte instantanée au scan de vos objets'}
+                  </p>
+                </div>
+              </button>
+            )}
           </div>
         )}
 
@@ -309,4 +399,16 @@ export default function MesBagagesPage() {
       <TravelerAuthModal open={authModalOpen} onClose={() => setAuthModalOpen(false)} />
     </main>
   );
+}
+
+// Helper: convert base64 VAPID key to Uint8Array
+function urlBase64ToUint8Array(base64String: string): Uint8Array {
+  const padding = '='.repeat((4 - base64String.length % 4) % 4);
+  const base64 = (base64String + padding).replace(/\-/g, '+').replace(/_/g, '/');
+  const rawData = window.atob(base64);
+  const outputArray = new Uint8Array(rawData.length);
+  for (let i = 0; i < rawData.length; ++i) {
+    outputArray[i] = rawData.charCodeAt(i);
+  }
+  return outputArray;
 }
