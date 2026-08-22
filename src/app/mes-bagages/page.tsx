@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { Luggage, Search, ArrowRight, Clock, LogIn, LogOut, User, Shield, Bell, BellOff, Loader2 } from 'lucide-react';
+import { Luggage, Search, ArrowRight, Clock, LogIn, LogOut, User, Shield, Bell, BellOff, Loader2, Link2, X, Plus } from 'lucide-react';
 import { useTravelerAuth, type TravelerBaggage } from '@/contexts/TravelerAuthContext';
 import TravelerAuthModal from '@/components/traveler/TravelerAuthModal';
 
@@ -73,13 +73,18 @@ function toDisplay(b: LocalBaggageItem | TravelerBaggage): DisplayBaggage {
 }
 
 export default function MesBagagesPage() {
-  const { traveler, baggages: accountBaggages, isLoggedIn, loading: authLoading, logout } = useTravelerAuth();
+  const { traveler, baggages: accountBaggages, isLoggedIn, loading: authLoading, logout, linkBaggage, unlinkBaggage, searchBaggage } = useTravelerAuth();
   const [localBaggages, setLocalBaggages] = useState<LocalBaggageItem[]>([]);
   const [localLoading, setLocalLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [authModalOpen, setAuthModalOpen] = useState(false);
   const [pushEnabled, setPushEnabled] = useState(false);
   const [pushLoading, setPushLoading] = useState(false);
+  const [showLinkSearch, setShowLinkSearch] = useState(false);
+  const [linkSearchQuery, setLinkSearchQuery] = useState('');
+  const [linkSearchResults, setLinkSearchResults] = useState<any[]>([]);
+  const [linkSearchLoading, setLinkSearchLoading] = useState(false);
+  const [linkingRef, setLinkingRef] = useState<string | null>(null);
 
   // Vérifier l'état push au chargement
   useEffect(() => {
@@ -164,6 +169,27 @@ export default function MesBagagesPage() {
       case 'scanned': return '📍 Scanné';
       default: return status;
     }
+  };
+
+  const handleLinkSearch = async () => {
+    if (!linkSearchQuery.trim()) return;
+    setLinkSearchLoading(true);
+    const result = await searchBaggage(linkSearchQuery.trim());
+    if (result.success && result.results) {
+      setLinkSearchResults(result.results);
+    } else {
+      setLinkSearchResults([]);
+    }
+    setLinkSearchLoading(false);
+  };
+
+  const handleLinkItem = async (ref: string) => {
+    setLinkingRef(ref);
+    const ok = await linkBaggage(ref);
+    if (ok) {
+      setLinkSearchResults(prev => prev.filter(r => r.reference !== ref));
+    }
+    setLinkingRef(null);
   };
 
   const togglePush = async () => {
@@ -308,6 +334,84 @@ export default function MesBagagesPage() {
                 </div>
               </button>
             )}
+
+            {/* Section: Lier un QR code existant */}
+            <div className="rounded-2xl border border-[#E3B23C]/30 bg-[#E3B23C]/5 overflow-hidden">
+              <button
+                onClick={() => setShowLinkSearch(!showLinkSearch)}
+                className="w-full p-4 flex items-center gap-3 hover:bg-[#E3B23C]/10 transition text-left"
+              >
+                <Link2 className="w-5 h-5 text-[#E3B23C] flex-shrink-0" />
+                <div className="flex-1">
+                  <p className="text-sm font-bold text-white">Lier un QR code existant</p>
+                  <p className="text-xs text-white/60">Vous avez déjà un QR code ? Recherchez-le et liez-le à votre compte</p>
+                </div>
+                <span className={`text-[#E3B23C] transition-transform ${showLinkSearch ? 'rotate-45' : ''}`}>
+                  <Plus className="w-5 h-5" />
+                </span>
+              </button>
+
+              {showLinkSearch && (
+                <div className="px-4 pb-4 space-y-3 border-t border-[#E3B23C]/20 pt-3">
+                  <div className="flex gap-2">
+                    <input
+                      type="text"
+                      placeholder="Entrez la référence QR (ex: QR-M1ABC...)"
+                      value={linkSearchQuery}
+                      onChange={(e) => setLinkSearchQuery(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') handleLinkSearch();
+                      }}
+                      className="flex-1 px-4 py-2.5 rounded-xl bg-white/10 border border-white/10 text-white text-sm placeholder:text-white/30 focus:ring-2 focus:ring-[#E3B23C] focus:border-transparent"
+                    />
+                    <button
+                      onClick={handleLinkSearch}
+                      disabled={linkSearchLoading || !linkSearchQuery.trim()}
+                      className="px-4 py-2.5 bg-[#E3B23C] text-black text-sm font-bold rounded-xl hover:bg-[#E3B23C]/80 transition disabled:opacity-50"
+                    >
+                      {linkSearchLoading ? '...' : 'Chercher'}
+                    </button>
+                  </div>
+
+                  {/* Résultats de recherche */}
+                  {linkSearchResults.length > 0 && (
+                    <div className="space-y-2 max-h-64 overflow-y-auto">
+                      {linkSearchResults.map((item: any) => (
+                        <div key={item.id} className="flex items-center gap-3 p-3 bg-white/5 rounded-xl border border-white/10">
+                          <div className="flex-1 min-w-0">
+                            <p className="font-mono text-sm font-bold text-white truncate">{item.reference}</p>
+                            <p className="text-xs text-white/60">
+                              {item.objectName || 'Sans nom'} · {item.status === 'active' || item.status === 'activated' ? '🟢 Actif' : item.status}
+                            </p>
+                          </div>
+                          {item.isLinked ? (
+                            <span className="text-xs text-green-400 font-bold px-3 py-1 bg-green-400/10 rounded-lg">✓ Déjà lié</span>
+                          ) : (
+                            <button
+                              onClick={() => handleLinkItem(item.reference)}
+                              disabled={linkingRef === item.reference}
+                              className="px-3 py-1.5 bg-[#E3B23C] text-black text-xs font-bold rounded-lg hover:bg-[#E3B23C]/80 transition disabled:opacity-50"
+                            >
+                              {linkingRef === item.reference ? '...' : 'Lier'}
+                            </button>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
+                  {linkSearchQuery && linkSearchResults.length === 0 && !linkSearchLoading && (
+                    <p className="text-xs text-white/40 text-center py-2">Aucun résultat trouvé</p>
+                  )}
+
+                  {linkSearchLoading && (
+                    <div className="flex justify-center py-2">
+                      <div className="animate-spin w-5 h-5 border-2 border-[#E3B23C] border-t-transparent rounded-full" />
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
           </div>
         )}
 

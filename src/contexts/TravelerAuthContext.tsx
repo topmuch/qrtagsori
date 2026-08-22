@@ -27,6 +27,15 @@ export interface TravelerBaggage {
   trackingToken: string | null;
 }
 
+export interface SearchBaggageResult {
+  id: string;
+  reference: string;
+  objectName: string | null;
+  status: string;
+  isLinked: boolean;
+  createdAt: string;
+}
+
 interface TravelerAuthContextType {
   traveler: TravelerUser | null;
   baggages: TravelerBaggage[];
@@ -37,6 +46,8 @@ interface TravelerAuthContextType {
   logout: () => Promise<void>;
   refreshBaggages: () => Promise<void>;
   linkBaggage: (reference: string) => Promise<boolean>;
+  unlinkBaggage: (reference: string) => Promise<boolean>;
+  searchBaggage: (query: string) => Promise<{ success: boolean; results?: SearchBaggageResult[]; error?: string }>;
 }
 
 const TravelerAuthContext = createContext<TravelerAuthContextType | null>(null);
@@ -159,6 +170,38 @@ export function TravelerAuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
+  const unlinkBaggage = async (reference: string) => {
+    const token = getToken();
+    if (!token) return false;
+    try {
+      const res = await fetch('/api/traveler/unlink-baggage', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ reference }),
+      });
+      if (res.ok) {
+        await refreshBaggages();
+        return true;
+      }
+      return false;
+    } catch {
+      return false;
+    }
+  };
+
+  const searchBaggage = async (query: string) => {
+    const token = getToken();
+    if (!token) return { success: false, error: 'Non connecté' };
+    try {
+      const res = await fetch(`/api/traveler/search-baggage?q=${encodeURIComponent(query)}&token=${token}`);
+      const data = await res.json();
+      if (!res.ok) return { success: false, error: data.error || 'Erreur' };
+      return { success: true, results: data.results };
+    } catch {
+      return { success: false, error: 'Erreur réseau' };
+    }
+  };
+
   return (
     <TravelerAuthContext.Provider
       value={{
@@ -171,6 +214,8 @@ export function TravelerAuthProvider({ children }: { children: ReactNode }) {
         logout,
         refreshBaggages,
         linkBaggage,
+        unlinkBaggage,
+        searchBaggage,
       }}
     >
       {children}

@@ -39,6 +39,7 @@ export async function GET(request: NextRequest) {
                 lastScanDate: true,
                 expiresAt: true,
                 customData: true,
+                trackingToken: true,
               },
             },
           },
@@ -73,10 +74,8 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json({
       success: true,
-      traveler: {
-        ...travelerData,
-        baggages,
-      },
+      traveler: travelerData,
+      baggages,
     });
   } catch (error) {
     console.error('[traveler/me] Erreur:', error);
