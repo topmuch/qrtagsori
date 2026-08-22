@@ -269,6 +269,7 @@ function InscrireContent() {
   const [acceptPrivacy, setAcceptPrivacy] = useState(false);
   const [photoPreview, setPhotoPreview] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const cameraInputRef = useRef<HTMLInputElement>(null);
 
   // ─── NOUVEAU : pays du téléphone (détecté via IP) ───
   const [phoneCountry, setPhoneCountry] = useState('FR');
@@ -1146,10 +1147,20 @@ function InscrireContent() {
                 Facultatif — facilite l'identification par le trouveur
               </p>
 
+              {/* Input galerie (choisir un fichier existant) */}
               <input
                 ref={fileInputRef}
                 type="file"
                 accept="image/*"
+                onChange={handlePhotoChange}
+                className="hidden"
+              />
+              {/* Input caméra (prendre une photo directement) */}
+              <input
+                ref={cameraInputRef}
+                type="file"
+                accept="image/*"
+                capture="environment"
                 onChange={handlePhotoChange}
                 className="hidden"
               />
@@ -1167,6 +1178,7 @@ function InscrireContent() {
                         setPhotoPreview(null);
                         setPhotoMeta(null);
                         if (fileInputRef.current) fileInputRef.current.value = '';
+                        if (cameraInputRef.current) cameraInputRef.current.value = '';
                       }}
                       className="absolute top-1 right-1 bg-red-500 text-white rounded-full w-7 h-7 flex items-center justify-center text-sm hover:bg-red-600 transition"
                       aria-label="Supprimer la photo"
@@ -1198,13 +1210,22 @@ function InscrireContent() {
                     </div>
                   )}
 
-                  <button
-                    type="button"
-                    onClick={() => fileInputRef.current?.click()}
-                    className="w-full py-2 px-4 border-2 border-black rounded-lg bg-white text-black font-bold text-sm hover:bg-gray-100 transition flex items-center justify-center gap-2"
-                  >
-                    <RefreshCw className="w-4 h-4" /> Remplacer la photo
-                  </button>
+                  <div className="flex flex-col sm:flex-row gap-3">
+                    <button
+                      type="button"
+                      onClick={() => cameraInputRef.current?.click()}
+                      className="flex-1 py-2 px-4 bg-black text-white font-bold text-sm rounded-lg hover:bg-gray-800 transition flex items-center justify-center gap-2"
+                    >
+                      <Camera className="w-4 h-4" /> Prendre une photo
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => fileInputRef.current?.click()}
+                      className="flex-1 py-2 px-4 border-2 border-black bg-white text-black font-bold text-sm rounded-lg hover:bg-gray-100 transition flex items-center justify-center gap-2"
+                    >
+                      <ImageIcon className="w-4 h-4" /> Choisir dans la galerie
+                    </button>
+                  </div>
                 </div>
               ) : photoMeta?.isProcessing ? (
                 <div className="border-2 border-dashed border-black rounded-lg p-6 text-center bg-gray-50">
@@ -1213,13 +1234,26 @@ function InscrireContent() {
                   <p className="text-xs text-gray-600 mt-1">Optimisation de l'image</p>
                 </div>
               ) : (
-                <div
-                  onClick={() => fileInputRef.current?.click()}
-                  className="border-2 border-dashed border-black rounded-lg p-6 text-center bg-gray-50 hover:bg-gray-100 transition cursor-pointer"
-                >
-                  <Camera className="w-6 h-6 mx-auto mb-2 text-black" />
-                  <p className="text-black font-semibold">Ajouter une photo</p>
-                  <p className="text-xs text-gray-600 mt-1">JPG, PNG (max 5MB) — compression automatique</p>
+                <div className="border-2 border-dashed border-black rounded-lg p-6 text-center bg-gray-50">
+                  <Camera className="w-8 h-8 mx-auto mb-3 text-black" />
+                  <p className="text-black font-semibold mb-4">Ajouter une photo</p>
+                  <div className="flex flex-col sm:flex-row gap-3">
+                    <button
+                      type="button"
+                      onClick={() => cameraInputRef.current?.click()}
+                      className="flex-1 py-3 px-4 bg-black text-white font-bold text-sm rounded-lg hover:bg-gray-800 transition flex items-center justify-center gap-2"
+                    >
+                      <Camera className="w-4 h-4" /> Prendre une photo
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => fileInputRef.current?.click()}
+                      className="flex-1 py-3 px-4 border-2 border-black bg-white text-black font-bold text-sm rounded-lg hover:bg-gray-100 transition flex items-center justify-center gap-2"
+                    >
+                      <ImageIcon className="w-4 h-4" /> Choisir dans la galerie
+                    </button>
+                  </div>
+                  <p className="text-xs text-gray-600 mt-3">JPG, PNG (max 5MB) — compression automatique</p>
                 </div>
               )}
             </div>
