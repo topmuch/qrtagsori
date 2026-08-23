@@ -1,11 +1,12 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
-import { Luggage, Search, ArrowRight, Clock, LogIn, LogOut, User, Shield, Bell, BellOff, Loader2, Link2, X, Plus, Star, MessageSquare } from 'lucide-react';
+import { Luggage, Search, ArrowRight, Clock, LogIn, LogOut, User, Shield, Bell, BellOff, Loader2, Link2, X, Plus, Star, MessageSquare, QrCode, CheckCircle2 } from 'lucide-react';
 import { useTravelerAuth, type TravelerBaggage } from '@/contexts/TravelerAuthContext';
 import TravelerAuthModal from '@/components/traveler/TravelerAuthModal';
 
+// ─── Types ───
 interface LocalBaggageItem {
   reference: string;
   type: string;
@@ -24,7 +25,6 @@ interface LocalBaggageItem {
   } | null;
 }
 
-// Type unifié pour l'affichage
 interface DisplayBaggage {
   reference: string;
   status: string;
@@ -39,6 +39,16 @@ interface DisplayBaggage {
   categoryLabel?: string | null;
 }
 
+interface SearchResult {
+  id: string;
+  reference: string;
+  objectName: string | null;
+  color: string | null;
+  categoryLabel: string | null;
+  status: string;
+  isLinked: boolean;
+}
+
 function toDisplay(b: LocalBaggageItem | TravelerBaggage): DisplayBaggage {
   if ('objectInfo' in b) {
     const lb = b as LocalBaggageItem;
@@ -51,9 +61,9 @@ function toDisplay(b: LocalBaggageItem | TravelerBaggage): DisplayBaggage {
       scanCount: lb.scanCount,
       trackingToken: lb.trackingToken,
       expiresAt: lb.expiresAt,
-      objectName: lb.objectInfo?.object_name,
-      color: lb.objectInfo?.color,
-      categoryLabel: lb.objectInfo?.category_label,
+      objectName: lb.objectInfo?.object_name || null,
+      color: lb.objectInfo?.color || null,
+      categoryLabel: lb.objectInfo?.category_label || null,
     };
   }
   const tb = b as TravelerBaggage;
@@ -73,24 +83,30 @@ function toDisplay(b: LocalBaggageItem | TravelerBaggage): DisplayBaggage {
 }
 
 export default function MesBagagesPage() {
-  const { traveler, baggages: accountBaggages, isLoggedIn, loading: authLoading, logout, linkBaggage, unlinkBaggage, searchBaggage } = useTravelerAuth();
+  const { traveler, baggages: accountBaggages, isLoggedIn, loading: authLoading, logout, linkBaggage } = useTravelerAuth();
   const [localBaggages, setLocalBaggages] = useState<LocalBaggageItem[]>([]);
   const [localLoading, setLocalLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [authModalOpen, setAuthModalOpen] = useState(false);
+  const [authModalMode, setAuthModalMode] = useState<'login' | 'signup'>('login');
   const [pushEnabled, setPushEnabled] = useState(false);
   const [pushLoading, setPushLoading] = useState(false);
-  const [showLinkSearch, setShowLinkSearch] = useState(false);
-  const [linkSearchQuery, setLinkSearchQuery] = useState('');
-  const [linkSearchResults, setLinkSearchResults] = useState<any[]>([]);
-  const [linkSearchLoading, setLinkSearchLoading] = useState(false);
+
+  // ─── Search QR (public, works even when not logged in) ───
+  const [searchQuery, setSearchQuery] = useState('');
+  const [searchResults, setSearchResults] = useState<SearchResult[]>([]);
+  const [searchLoading, setSearchLoading] = useState(false);
+  const [searchDone, setSearchDone] = useState(false);
+  const [searchError, setSearchError] = useState('');
   const [linkingRef, setLinkingRef] = useState<string | null>(null);
+  const [linkSuccess, setLinkSuccess] = useState<string | null>(null);
+  // Référence en attente de lien après inscription
+  const [pendingLinkRef, setPendingLinkRef] = useState<string | null>(null);
 
   // Vérifier l'état push au chargement
   useEffect(() => {
     if (!isLoggedIn || typeof window === 'undefined') return;
     if (!('serviceWorker' in navigator) || !('PushManager' in window)) return;
-    // Attendre que le SW soit bien enregistré
     const check = () => {
       navigator.serviceWorker.ready
         .then(reg => reg.pushManager.getSubscription())
@@ -100,9 +116,7 @@ export default function MesBagagesPage() {
     if (navigator.serviceWorker.controller) {
       check();
     } else {
-      // SW pas encore prêt, attendre l'événement
       navigator.serviceWorker.addEventListener('controllerchange', check, { once: true });
-      // Fallback après 3s
       setTimeout(check, 3000);
     }
   }, [isLoggedIn]);
@@ -157,6 +171,59 @@ export default function MesBagagesPage() {
     (b.lastScanLocation || '').toLowerCase().includes(search.toLowerCase())
   );
 
+  // ─── Recherche publique QR ───
+  const handleSearch = useCallback(async () => {
+    const q = searchQuery.trim();
+    if (!q) return;
+    setSearchLoading(true);
+    setSearchDone(false);
+    setSearchError('');
+    setSearchResults([]);
+    setLinkSuccess(null);
+    try {
+      const res = await fetch(`/api/baggage/search-public?q=${encodeURIComponent(q)}`);
+      const data = await res.json();
+      if (data.success) {
+        setSearchResults(data.results || []);
+      } else {
+        setSearchError(data.error || 'Erreur de recherche');
+      }
+    } catch {
+      setSearchError('Erreur réseau. Réessayez.');
+    } finally {
+      setSearchLoading(false);
+      setSearchDone(true);
+    }
+  }, [searchQuery]);
+
+  // ─── Lier un bagage ───
+  const handleLink = async (ref: string) => {
+    setLinkingRef(ref);
+    const ok = await linkBaggage(ref);
+    if (ok) {
+      setLinkSuccess(ref);
+      setSearchResults(prev => prev.filter(r => r.reference !== ref));
+      setPendingLinkRef(null);
+    }
+    setLinkingRef(null);
+  };
+
+  // ─── Après inscription : lier automatiquement le bagage en attente ───
+  const handleAuthSuccess = useCallback(async () => {
+ if (!pendingLinkRef) return;
+    // Petit délai pour que le token soit bien enregistré dans le context
+    setTimeout(async () => {
+      await handleLink(pendingLinkRef);
+    }, 500);
+  }, [pendingLinkRef]);
+
+  // Ouvrir la modal avec le bon mode + stocker la réf en attente
+  const openAuthForLink = (ref: string, mode: 'login' | 'signup' = 'signup') => {
+    setPendingLinkRef(ref);
+    setAuthModalMode(mode);
+    setAuthModalOpen(true);
+  };
+
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'active':
@@ -180,27 +247,6 @@ export default function MesBagagesPage() {
       case 'scanned': return '📍 Scanné';
       default: return status;
     }
-  };
-
-  const handleLinkSearch = async () => {
-    if (!linkSearchQuery.trim()) return;
-    setLinkSearchLoading(true);
-    const result = await searchBaggage(linkSearchQuery.trim());
-    if (result.success && result.results) {
-      setLinkSearchResults(result.results);
-    } else {
-      setLinkSearchResults([]);
-    }
-    setLinkSearchLoading(false);
-  };
-
-  const handleLinkItem = async (ref: string) => {
-    setLinkingRef(ref);
-    const ok = await linkBaggage(ref);
-    if (ok) {
-      setLinkSearchResults(prev => prev.filter(r => r.reference !== ref));
-    }
-    setLinkingRef(null);
   };
 
   const togglePush = async () => {
@@ -319,7 +365,7 @@ export default function MesBagagesPage() {
             </div>
           ) : (
             <button
-              onClick={() => setAuthModalOpen(true)}
+              onClick={() => { setPendingLinkRef(null); setAuthModalMode('login'); setAuthModalOpen(true); }}
               className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#E3B23C] hover:bg-[#E3B23C]/80 transition text-black text-xs font-bold"
             >
               <LogIn className="w-3.5 h-3.5" />
@@ -330,34 +376,20 @@ export default function MesBagagesPage() {
       </header>
 
       <div className="flex-1 max-w-md mx-auto w-full px-4 py-6 pb-20">
-        {/* Bannière connexion (si pas connecté) */}
-        {!isLoggedIn && !loading && (
+        {/* ─── Bannière connexion (si pas connecté, PAS de bagages) ─── */}
+        {!isLoggedIn && !loading && displayBaggages.length === 0 && !searchDone && (
           <div className="bg-[#FFF8E7] border border-[#E3B23C]/40 rounded-2xl p-4 mb-6 flex items-start gap-3">
             <Shield className="w-5 h-5 text-[#E3B23C] flex-shrink-0 mt-0.5" />
             <div className="flex-1 min-w-0">
               <p className="text-sm font-bold text-[#1a1a1a] mb-1">Sauvegardez vos objets dans le cloud ☁️</p>
-              <p className="text-xs text-[#525252] mb-3">
+              <p className="text-xs text-[#525252]">
                 Créez un compte pour retrouver vos objets depuis n'importe quel téléphone.
               </p>
-              <div className="flex gap-2">
-                <button
-                  onClick={() => setAuthModalOpen(true)}
-                  className="px-4 py-2 bg-[#E3B23C] text-black text-xs font-bold rounded-lg hover:bg-[#E3B23C]/80 transition"
-                >
-                  Créer mon compte
-                </button>
-                <Link
-                  href="/connexion-voyageur"
-                  className="px-4 py-2 border border-[#E3B23C]/40 text-[#E3B23C] text-xs font-bold rounded-lg hover:bg-[#FFF8E7] transition"
-                >
-                  Se connecter
-                </Link>
-              </div>
             </div>
           </div>
         )}
 
-        {/* Compte connecté : indicateur + push */}
+        {/* ─── Compte connecté : indicateur + push ─── */}
         {isLoggedIn && !loading && (
           <div className="space-y-3 mb-6">
             <div className="bg-green-50 border border-green-500/30 rounded-2xl p-4 flex items-center gap-3">
@@ -398,84 +430,20 @@ export default function MesBagagesPage() {
                 </div>
               </button>
             )}
+          </div>
+        )}
 
-            {/* Section: Lier un QR code existant */}
-            <div className="rounded-2xl border border-[#E3B23C]/40 bg-[#FFFDF5] overflow-hidden">
-              <button
-                onClick={() => setShowLinkSearch(!showLinkSearch)}
-                className="w-full p-4 flex items-center gap-3 hover:bg-[#FFF8E7] transition text-left"
-              >
-                <Link2 className="w-5 h-5 text-[#E3B23C] flex-shrink-0" />
-                <div className="flex-1">
-                  <p className="text-sm font-bold text-[#1a1a1a]">Lier un QR code existant</p>
-                  <p className="text-xs text-[#525252]">Vous avez déjà un QR code ? Recherchez-le et liez-le à votre compte</p>
-                </div>
-                <span className={`text-[#E3B23C] transition-transform ${showLinkSearch ? 'rotate-45' : ''}`}>
-                  <Plus className="w-5 h-5" />
-                </span>
-              </button>
-
-              {showLinkSearch && (
-                <div className="px-4 pb-4 space-y-3 border-t border-[#e5e5e5] pt-3">
-                  <div className="flex gap-2">
-                    <input
-                      type="text"
-                      placeholder="Entrez la référence QR (ex: QR-M1ABC...)"
-                      value={linkSearchQuery}
-                      onChange={(e) => setLinkSearchQuery(e.target.value)}
-                      onKeyDown={(e) => {
-                        if (e.key === 'Enter') handleLinkSearch();
-                      }}
-                      className="flex-1 px-4 py-2.5 rounded-xl bg-[#fafafa] border border-[#e5e5e5] text-[#1a1a1a] text-sm placeholder:text-[#a3a3a3] focus:ring-2 focus:ring-[#E3B23C] focus:border-transparent"
-                    />
-                    <button
-                      onClick={handleLinkSearch}
-                      disabled={linkSearchLoading || !linkSearchQuery.trim()}
-                      className="px-4 py-2.5 bg-[#E3B23C] text-black text-sm font-bold rounded-xl hover:bg-[#E3B23C]/80 transition disabled:opacity-50"
-                    >
-                      {linkSearchLoading ? '...' : 'Chercher'}
-                    </button>
-                  </div>
-
-                  {/* Résultats de recherche */}
-                  {linkSearchResults.length > 0 && (
-                    <div className="space-y-2 max-h-64 overflow-y-auto">
-                      {linkSearchResults.map((item: any) => (
-                        <div key={item.id} className="flex items-center gap-3 p-3 bg-[#fafafa] rounded-xl border border-[#e5e5e5]">
-                          <div className="flex-1 min-w-0">
-                            <p className="font-mono text-sm font-bold text-[#1a1a1a] truncate">{item.reference}</p>
-                            <p className="text-xs text-[#525252]">
-                              {item.objectName || 'Sans nom'} · {item.status === 'active' || item.status === 'activated' ? '🟢 Actif' : item.status}
-                            </p>
-                          </div>
-                          {item.isLinked ? (
-                            <span className="text-xs text-green-400 font-bold px-3 py-1 bg-green-400/10 rounded-lg">✓ Déjà lié</span>
-                          ) : (
-                            <button
-                              onClick={() => handleLinkItem(item.reference)}
-                              disabled={linkingRef === item.reference}
-                              className="px-3 py-1.5 bg-[#E3B23C] text-black text-xs font-bold rounded-lg hover:bg-[#E3B23C]/80 transition disabled:opacity-50"
-                            >
-                              {linkingRef === item.reference ? '...' : 'Lier'}
-                            </button>
-                          )}
-                        </div>
-                      ))}
-                    </div>
-                  )}
-
-                  {linkSearchQuery && linkSearchResults.length === 0 && !linkSearchLoading && (
-                    <p className="text-xs text-[#a3a3a3] text-center py-2">Aucun résultat trouvé</p>
-                  )}
-
-                  {linkSearchLoading && (
-                    <div className="flex justify-center py-2">
-                      <div className="animate-spin w-5 h-5 border-2 border-[#E3B23C] border-t-transparent rounded-full" />
-                    </div>
-                  )}
-                </div>
-              )}
+        {/* ─── LIEN SUCCÈS ─── */}
+        {linkSuccess && (
+          <div className="bg-green-50 border border-green-500/30 rounded-2xl p-4 mb-4 flex items-center gap-3">
+            <CheckCircle2 className="w-5 h-5 text-green-500 flex-shrink-0" />
+            <div className="flex-1">
+              <p className="text-sm font-bold text-green-700">✅ QR code lié avec succès !</p>
+              <p className="text-xs text-green-600 font-mono">{linkSuccess}</p>
             </div>
+            <button onClick={() => setLinkSuccess(null)} className="text-green-400 hover:text-green-600">
+              <X className="w-4 h-4" />
+            </button>
           </div>
         )}
 
@@ -484,25 +452,192 @@ export default function MesBagagesPage() {
             <div className="animate-spin w-8 h-8 border-4 border-[#e5e5e5] border-t-[#E3B23C] rounded-full mx-auto mb-3" />
             <p className="text-[#525252] text-sm">Chargement...</p>
           </div>
-        ) : displayBaggages.length === 0 ? (
-          <div className="bg-[#fafafa] border-2 border-dashed border-[#e5e5e5] rounded-2xl p-8 text-center">
-            <Luggage className="w-12 h-12 text-slate-300 mx-auto mb-4" />
-            <h2 className="text-lg font-bold text-slate-700 mb-2">Aucun bagage enregistré</h2>
-            <p className="text-sm text-slate-500 mb-6">
-              Activez un QR code QRTags pour le voir apparaître ici.
-            </p>
-            <Link href="/inscrire" className="inline-block bg-[#1a1a1a] text-white px-6 py-3 rounded-xl font-bold">
-              Activer un QR code
-            </Link>
+        ) : displayBaggages.length === 0 && !searchDone ? (
+          /* ─── ÉTAT VIDE : Recherche QR + inscription intégrée ─── */
+          <div>
+            <div className="bg-[#fafafa] border-2 border-dashed border-[#e5e5e5] rounded-2xl p-6 mb-6">
+              <QrCode className="w-12 h-12 text-[#E3B23C] mx-auto mb-3" />
+              <h2 className="text-lg font-bold text-[#1a1a1a] mb-1 text-center">Trouvez et liez votre QR code</h2>
+              <p className="text-sm text-[#525252] mb-5 text-center">
+                Entrez la référence de votre étiquette QRTags
+              </p>
+
+              {/* Champ de recherche */}
+              <div className="flex gap-2">
+                <div className="relative flex-1">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#a3a3a3]" />
+                  <input
+                    type="text"
+                    placeholder="QR-M1ABC..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value.toUpperCase())}
+                    onKeyDown={(e) => { if (e.key === 'Enter') handleSearch(); }}
+                    className="w-full pl-10 pr-4 py-3 rounded-xl bg-white border-2 border-[#1a1a1a] text-[#1a1a1a] text-sm font-mono placeholder:text-[#a3a3a3] placeholder:font-sans focus:ring-2 focus:ring-[#E3B23C] focus:border-[#E3B23C]"
+                  />
+                </div>
+                <button
+                  onClick={handleSearch}
+                  disabled={searchLoading || !searchQuery.trim()}
+                  className="px-5 py-3 bg-[#1a1a1a] text-[#E3B23C] text-sm font-bold rounded-xl hover:bg-[#1a1a1a]/80 transition disabled:opacity-50 flex items-center gap-2"
+                >
+                  {searchLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Search className="w-4 h-4" />}
+                  Chercher
+                </button>
+              </div>
+
+              {/* Erreur */}
+              {searchError && (
+                <p className="text-xs text-red-600 font-medium bg-red-50 rounded-lg p-3 mt-3">{searchError}</p>
+              )}
+
+              {/* Résultats */}
+              {searchDone && searchResults.length === 0 && !searchError && (
+                <div className="mt-4 text-center py-4">
+                  <p className="text-sm text-[#525252]">Aucun QR code trouvé avec cette référence.</p>
+                  <p className="text-xs text-[#a3a3a3] mt-1">Vérifiez la référence sur votre étiquette et réessayez.</p>
+                </div>
+              )}
+
+              {searchResults.length > 0 && (
+                <div className="mt-4 space-y-3">
+                  {searchResults.map((item) => (
+                    <div key={item.id} className="bg-white border-2 border-[#E3B23C]/40 rounded-2xl p-4">
+                      <div className="flex items-start gap-3">
+                        <div className="w-10 h-10 rounded-xl bg-[#FFF8E7] flex items-center justify-center flex-shrink-0">
+                          <QrCode className="w-5 h-5 text-[#E3B23C]" />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="font-mono text-sm font-bold text-[#1a1a1a]">{item.reference}</p>
+                          <p className="text-xs text-[#525252] mt-0.5">
+                            {item.objectName || 'Étiquette QRTags'}
+                            {item.categoryLabel ? ` · ${item.categoryLabel}` : ''}
+                          </p>
+                          <span className={`inline-block mt-1.5 px-2 py-0.5 rounded-full text-[10px] font-bold ${getStatusColor(item.status)}`}>
+                            {getStatusLabel(item.status)}
+                          </span>
+                        </div>
+                      </div>
+
+                      {/* Boutons selon état connexion */}
+                      <div className="mt-3 pt-3 border-t border-[#e5e5e5]">
+                        {item.isLinked ? (
+                          <div className="flex items-center gap-2 text-green-600">
+                            <CheckCircle2 className="w-4 h-4" />
+                            <span className="text-xs font-bold">Déjà lié à un compte</span>
+                          </div>
+                        ) : isLoggedIn ? (
+                          <div className="flex gap-2">
+                            <button
+                              onClick={() => handleLink(item.reference)}
+                              disabled={linkingRef === item.reference}
+                              className="flex-1 py-2.5 bg-[#E3B23C] text-black text-xs font-bold rounded-xl hover:bg-[#E3B23C]/80 transition disabled:opacity-50 flex items-center justify-center gap-1.5"
+                            >
+                              {linkingRef === item.reference ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Link2 className="w-3.5 h-3.5" />}
+                              {linkingRef === item.reference ? 'Liaison...' : 'Lier à mon compte'}
+                            </button>
+                          </div>
+                        ) : (
+                          <div className="space-y-2">
+                            <p className="text-xs text-[#525252] font-medium">Créez un compte pour lier ce QR code :</p>
+                            <button
+                              onClick={() => openAuthForLink(item.reference, 'signup')}
+                              className="w-full py-2.5 bg-[#1a1a1a] text-white text-xs font-bold rounded-xl hover:bg-[#1a1a1a]/80 transition flex items-center justify-center gap-1.5"
+                            >
+                              <User className="w-3.5 h-3.5" />
+                              S'inscrire et lier
+                            </button>
+                            <button
+                              onClick={() => openAuthForLink(item.reference, 'login')}
+                              className="w-full py-2 border border-[#E3B23C]/40 text-[#E3B23C] text-xs font-bold rounded-xl hover:bg-[#FFF8E7] transition flex items-center justify-center gap-1.5"
+                            >
+                              <LogIn className="w-3.5 h-3.5" />
+                              Se connecter et lier
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* Lien vers inscription classique */}
+            <div className="text-center">
+              <p className="text-xs text-[#a3a3a3] mb-2">Vous n'avez pas encore de QR code ?</p>
+              <Link href="/inscrire" className="text-xs text-[#E3B23C] font-bold hover:underline">
+                Obtenir une étiquette QRTags →
+              </Link>
+            </div>
           </div>
         ) : (
+          /* ─── LISTE DES BAGAGES ─── */
           <>
-            {/* Search */}
+            {/* Recherche QR (toujours visible quand on a des bagages) */}
+            <div className="rounded-2xl border border-[#E3B23C]/40 bg-[#FFFDF5] overflow-hidden mb-4">
+              <div className="p-3 flex gap-2">
+                <div className="relative flex-1">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#a3a3a3]" />
+                  <input
+                    type="text"
+                    placeholder="Ajouter un QR code (référence)..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value.toUpperCase())}
+                    onKeyDown={(e) => { if (e.key === 'Enter') handleSearch(); }}
+                    className="w-full pl-10 pr-3 py-2.5 rounded-xl bg-white border border-[#e5e5e5] text-[#1a1a1a] text-sm font-mono placeholder:text-[#a3a3a3] placeholder:font-sans focus:ring-2 focus:ring-[#E3B23C] focus:border-transparent"
+                  />
+                </div>
+                <button
+                  onClick={handleSearch}
+                  disabled={searchLoading || !searchQuery.trim()}
+                  className="px-4 py-2.5 bg-[#E3B23C] text-black text-xs font-bold rounded-xl hover:bg-[#E3B23C]/80 transition disabled:opacity-50"
+                >
+                  {searchLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />}
+                </button>
+              </div>
+
+              {/* Résultats de recherche inline */}
+              {searchResults.length > 0 && (
+                <div className="px-3 pb-3 space-y-2 border-t border-[#e5e5e5] pt-3">
+                  {searchResults.map((item) => (
+                    <div key={item.id} className="flex items-center gap-3 p-3 bg-white rounded-xl border border-[#e5e5e5]">
+                      <div className="flex-1 min-w-0">
+                        <p className="font-mono text-sm font-bold text-[#1a1a1a] truncate">{item.reference}</p>
+                        <p className="text-xs text-[#525252]">
+                          {item.objectName || 'Sans nom'} · {item.status === 'active' || item.status === 'activated' ? '🟢 Actif' : item.status}
+                        </p>
+                      </div>
+                      {item.isLinked ? (
+                        <span className="text-xs text-green-500 font-bold px-3 py-1 bg-green-50 rounded-lg">✓ Déjà lié</span>
+                      ) : (
+                        <button
+                          onClick={() => handleLink(item.reference)}
+                          disabled={linkingRef === item.reference}
+                          className="px-3 py-1.5 bg-[#E3B23C] text-black text-xs font-bold rounded-lg hover:bg-[#E3B23C]/80 transition disabled:opacity-50"
+                        >
+                          {linkingRef === item.reference ? '...' : 'Lier'}
+                        </button>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {searchDone && searchResults.length === 0 && !searchError && searchQuery && (
+                <p className="text-xs text-[#a3a3a3] text-center py-2">Aucun résultat trouvé</p>
+              )}
+
+              {searchError && (
+                <p className="text-xs text-red-600 bg-red-50 rounded-lg p-2 mx-3 mb-2">{searchError}</p>
+              )}
+            </div>
+
+            {/* Filtre liste */}
             <div className="relative mb-4">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
               <input
                 type="text"
-                placeholder="Rechercher (référence, nom, lieu...)..."
+                placeholder="Filtrer mes objets..."
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 className="w-full pl-10 pr-4 py-3 rounded-xl bg-white border-2 border-[#1a1a1a] text-[#1a1a1a] text-sm focus:ring-2 focus:ring-[#E3B23C]"
@@ -564,7 +699,12 @@ export default function MesBagagesPage() {
       </div>
 
       {/* Modal d'auth voyageur */}
-      <TravelerAuthModal open={authModalOpen} onClose={() => setAuthModalOpen(false)} />
+      <TravelerAuthModal
+        open={authModalOpen}
+        onClose={() => { setAuthModalOpen(false); setPendingLinkRef(null); }}
+        defaultMode={authModalMode}
+        onSuccess={handleAuthSuccess}
+      />
 
       {/* ─── Section Avis ─── */}
       {isLoggedIn && !loading && displayBaggages.length > 0 && (
@@ -593,7 +733,6 @@ export default function MesBagagesPage() {
                 </button>
               </div>
               <div className="p-4 space-y-4">
-                {/* Nom */}
                 <div>
                   <label className="block text-xs font-bold text-[#525252] mb-1.5">Votre nom</label>
                   <input
@@ -604,8 +743,6 @@ export default function MesBagagesPage() {
                     className="w-full px-4 py-2.5 rounded-xl bg-white border border-[#e5e5e5] text-[#1a1a1a] text-sm placeholder:text-[#a3a3a3] focus:ring-2 focus:ring-[#E3B23C] focus:border-transparent"
                   />
                 </div>
-
-                {/* Objet (sélecteur) */}
                 {displayBaggages.length > 0 && (
                   <div>
                     <label className="block text-xs font-bold text-[#525252] mb-1.5">Objet concerné (optionnel)</label>
@@ -623,8 +760,6 @@ export default function MesBagagesPage() {
                     </select>
                   </div>
                 )}
-
-                {/* Étoiles */}
                 <div>
                   <label className="block text-xs font-bold text-[#525252] mb-1.5">Votre note</label>
                   <div className="flex items-center gap-1">
@@ -645,8 +780,6 @@ export default function MesBagagesPage() {
                     <span className="ml-2 text-sm font-bold text-[#1a1a1a]">{reviewRating}/5</span>
                   </div>
                 </div>
-
-                {/* Commentaire */}
                 <div>
                   <label className="block text-xs font-bold text-[#525252] mb-1.5">Votre commentaire</label>
                   <textarea
@@ -657,18 +790,12 @@ export default function MesBagagesPage() {
                     className="w-full px-4 py-2.5 rounded-xl bg-white border border-[#e5e5e5] text-[#1a1a1a] text-sm placeholder:text-[#a3a3a3] focus:ring-2 focus:ring-[#E3B23C] focus:border-transparent resize-none"
                   />
                 </div>
-
-                {/* Erreur */}
                 {reviewError && (
                   <p className="text-xs text-red-600 font-medium bg-red-50 rounded-lg p-2.5">{reviewError}</p>
                 )}
-
-                {/* Succès */}
                 {reviewSuccess && (
                   <p className="text-xs text-green-700 font-medium bg-green-50 rounded-lg p-2.5">✅ Merci pour votre avis ! Il sera publié après validation.</p>
                 )}
-
-                {/* Bouton */}
                 <button
                   onClick={handleSubmitReview}
                   disabled={reviewSubmitting || reviewContent.trim().length < 10 || reviewName.trim().length < 2}
