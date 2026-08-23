@@ -9,7 +9,10 @@ const PIN_REGEX = /^\d{4}$/;
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { phone, pin, name } = body;
+    let { phone, pin, name } = body;
+
+    // Normalize phone: strip spaces, dashes, dots
+    phone = (phone || '').replace(/[\s\-\.]/g, '');
 
     // Validate phone
     if (!phone || typeof phone !== 'string' || !PHONE_REGEX.test(phone)) {
