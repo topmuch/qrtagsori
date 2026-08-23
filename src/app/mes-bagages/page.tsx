@@ -90,10 +90,21 @@ export default function MesBagagesPage() {
   useEffect(() => {
     if (!isLoggedIn || typeof window === 'undefined') return;
     if (!('serviceWorker' in navigator) || !('PushManager' in window)) return;
-    navigator.serviceWorker.ready
-      .then(reg => reg.pushManager.getSubscription())
-      .then(sub => setPushEnabled(!!sub))
-      .catch(() => {});
+    // Attendre que le SW soit bien enregistré
+    const check = () => {
+      navigator.serviceWorker.ready
+        .then(reg => reg.pushManager.getSubscription())
+        .then(sub => setPushEnabled(!!sub))
+        .catch(() => {});
+    };
+    if (navigator.serviceWorker.controller) {
+      check();
+    } else {
+      // SW pas encore prêt, attendre l'événement
+      navigator.serviceWorker.addEventListener('controllerchange', check, { once: true });
+      // Fallback après 3s
+      setTimeout(check, 3000);
+    }
   }, [isLoggedIn]);
 
   // Charger les baggages locaux (localStorage) si pas connecté
