@@ -79,3 +79,25 @@ Stage Summary:
 - Bouton "S'inscrire" visible dans le hero, noir avec icône UserPlus
 - Modal s'ouvre directement en mode inscription depuis le hero, en mode connexion depuis la navbar
 - Quand connecté, le bouton hero devient "Mes bagages"
+---
+Task ID: 4
+Agent: Main
+Task: Fix login "Identifiants invalides" + détection auto indicatif pays via IP
+
+Work Log:
+- Diagnostic : le champ téléphone autorisait les espaces (+336 12 34 56 78) mais la regex API /^\+\d{9,14}$/ rejetait les espaces → 400 "Identifiants invalides"
+- Fix API login : ajout normalisation téléphone (strip espaces, tirets, points) avant validation
+- Fix API signup : même normalisation ajoutée
+- Refonte complète de TravelerAuthModal.tsx :
+  - Indicatif pays détecté automatiquement via /api/detect-country (IP → pays → dial code)
+  - Input splité : sélecteur indicatif (dropdown 🇸🇳 +221) + champ numéro local (chiffres uniquement)
+  - 35 pays africains + Europe + Amérique du Nord dans le sélecteur
+  - Texte indicatif "🇸🇳 Sénégal (+221) — indicatif détecté automatiquement"
+  - Plus besoin de taper le +, l'utilisateur tape juste 78 123 45 67
+- Mise à jour de connexion-voyageur/page.tsx avec le même système d'indicatif auto-détecté
+- Commit + push : 77c1d3c
+
+Stage Summary:
+- 4 fichiers modifiés : login/route.ts, signup/route.ts, TravelerAuthModal.tsx, connexion-voyageur/page.tsx
+- Bug login corrigé : normalisation téléphone côté serveur
+- UX améliorée : indicatif pays auto-détecté via IP, l'utilisateur ne tape plus le +
