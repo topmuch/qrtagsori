@@ -2,9 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 
 /**
- * API PUBLIQUE — recherche un baggage par référence sans authentification.
- * Utilisée par la page /mes-bagages pour le flow :
- *   chercher QR → voir le résultat → s'inscrire → lier automatiquement
+ * API PUBLIQUE — recherche un baggage non lié par référence.
+ * Ne renvoie que les baggages où travelerId est null (disponibles pour liaison).
  */
 export async function GET(request: NextRequest) {
   try {
@@ -15,16 +14,16 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ success: true, results: [] });
     }
 
-    // Chercher par référence exacte ou partielle (majuscules pour SQLite case-insensitive)
+    // Ne chercher que les baggages NON liés (travelerId est null)
     const results = await db.baggage.findMany({
       where: {
         reference: { contains: q },
+        travelerId: null,
       },
       take: 10,
       orderBy: { createdAt: 'desc' },
     });
 
-    // Parser customData une seule fois
     const mapped = results.map(b => {
       let objectName: string | null = null;
       let color: string | null = null;
@@ -45,8 +44,6 @@ export async function GET(request: NextRequest) {
         color,
         categoryLabel,
         status: b.status,
-        isLinked: !!b.travelerId,
-        createdAt: b.createdAt,
       };
     });
 

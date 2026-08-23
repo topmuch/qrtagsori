@@ -127,11 +127,11 @@ export default function TravelerAuthModal({ open, onClose, defaultMode, onSucces
       const fn = mode === 'login' ? login : signup;
       const result = await fn(fullPhone, pin, name.trim() || undefined);
       if (result.success) {
+        onSuccess?.();
         onClose();
         setLocalNumber('');
         setPin('');
         setName('');
-        onSuccess?.();
       } else {
         setError(result.error || 'Erreur');
       }

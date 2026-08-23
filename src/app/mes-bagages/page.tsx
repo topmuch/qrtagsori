@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import Link from 'next/link';
 import { Luggage, Search, ArrowRight, Clock, LogIn, LogOut, User, Shield, Bell, BellOff, Loader2, Link2, X, Plus, Star, MessageSquare, QrCode, CheckCircle2 } from 'lucide-react';
 import { useTravelerAuth, type TravelerBaggage } from '@/contexts/TravelerAuthContext';
@@ -46,7 +46,6 @@ interface SearchResult {
   color: string | null;
   categoryLabel: string | null;
   status: string;
-  isLinked: boolean;
 }
 
 function toDisplay(b: LocalBaggageItem | TravelerBaggage): DisplayBaggage {
@@ -100,8 +99,12 @@ export default function MesBagagesPage() {
   const [searchError, setSearchError] = useState('');
   const [linkingRef, setLinkingRef] = useState<string | null>(null);
   const [linkSuccess, setLinkSuccess] = useState<string | null>(null);
-  // Référence en attente de lien après inscription
+  // Référence en attente de lien après inscription (ref pour éviter le stale closure)
   const [pendingLinkRef, setPendingLinkRef] = useState<string | null>(null);
+  const pendingLinkRefRef = useRef<string | null>(null);
+
+  // Garder la ref synchronisée
+  useEffect(() => { pendingLinkRefRef.current = pendingLinkRef; }, [pendingLinkRef]);
 
   // Vérifier l'état push au chargement
   useEffect(() => {
@@ -210,12 +213,21 @@ export default function MesBagagesPage() {
 
   // ─── Après inscription : lier automatiquement le bagage en attente ───
   const handleAuthSuccess = useCallback(async () => {
- if (!pendingLinkRef) return;
+    const ref = pendingLinkRefRef.current;
+    if (!ref) return;
     // Petit délai pour que le token soit bien enregistré dans le context
     setTimeout(async () => {
-      await handleLink(pendingLinkRef);
-    }, 500);
-  }, [pendingLinkRef]);
+      setLinkingRef(ref);
+      const ok = await linkBaggage(ref);
+      if (ok) {
+        setLinkSuccess(ref);
+        setSearchResults(prev => prev.filter(r => r.reference !== ref));
+        setPendingLinkRef(null);
+        pendingLinkRefRef.current = null;
+      }
+      setLinkingRef(null);
+    }, 600);
+  }, [linkBaggage]);
 
   // Ouvrir la modal avec le bon mode + stocker la réf en attente
   const openAuthForLink = (ref: string, mode: 'login' | 'signup' = 'signup') => {
@@ -520,22 +532,15 @@ export default function MesBagagesPage() {
 
                       {/* Boutons selon état connexion */}
                       <div className="mt-3 pt-3 border-t border-[#e5e5e5]">
-                        {item.isLinked ? (
-                          <div className="flex items-center gap-2 text-green-600">
-                            <CheckCircle2 className="w-4 h-4" />
-                            <span className="text-xs font-bold">Déjà lié à un compte</span>
-                          </div>
-                        ) : isLoggedIn ? (
-                          <div className="flex gap-2">
-                            <button
-                              onClick={() => handleLink(item.reference)}
-                              disabled={linkingRef === item.reference}
-                              className="flex-1 py-2.5 bg-[#E3B23C] text-black text-xs font-bold rounded-xl hover:bg-[#E3B23C]/80 transition disabled:opacity-50 flex items-center justify-center gap-1.5"
-                            >
-                              {linkingRef === item.reference ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Link2 className="w-3.5 h-3.5" />}
-                              {linkingRef === item.reference ? 'Liaison...' : 'Lier à mon compte'}
-                            </button>
-                          </div>
+                        {isLoggedIn ? (
+                          <button
+                            onClick={() => handleLink(item.reference)}
+                            disabled={linkingRef === item.reference}
+                            className="w-full py-2.5 bg-[#E3B23C] text-black text-xs font-bold rounded-xl hover:bg-[#E3B23C]/80 transition disabled:opacity-50 flex items-center justify-center gap-1.5"
+                          >
+                            {linkingRef === item.reference ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Link2 className="w-3.5 h-3.5" />}
+                            {linkingRef === item.reference ? 'Liaison...' : 'Lier à mon compte'}
+                          </button>
                         ) : (
                           <div className="space-y-2">
                             <p className="text-xs text-[#525252] font-medium">Créez un compte pour lier ce QR code :</p>
@@ -607,17 +612,13 @@ export default function MesBagagesPage() {
                           {item.objectName || 'Sans nom'} · {item.status === 'active' || item.status === 'activated' ? '🟢 Actif' : item.status}
                         </p>
                       </div>
-                      {item.isLinked ? (
-                        <span className="text-xs text-green-500 font-bold px-3 py-1 bg-green-50 rounded-lg">✓ Déjà lié</span>
-                      ) : (
-                        <button
-                          onClick={() => handleLink(item.reference)}
-                          disabled={linkingRef === item.reference}
-                          className="px-3 py-1.5 bg-[#E3B23C] text-black text-xs font-bold rounded-lg hover:bg-[#E3B23C]/80 transition disabled:opacity-50"
-                        >
-                          {linkingRef === item.reference ? '...' : 'Lier'}
-                        </button>
-                      )}
+                      <button
+                        onClick={() => handleLink(item.reference)}
+                        disabled={linkingRef === item.reference}
+                        className="px-3 py-1.5 bg-[#E3B23C] text-black text-xs font-bold rounded-lg hover:bg-[#E3B23C]/80 transition disabled:opacity-50"
+                      >
+                        {linkingRef === item.reference ? '...' : 'Lier'}
+                      </button>
                     </div>
                   ))}
                 </div>
