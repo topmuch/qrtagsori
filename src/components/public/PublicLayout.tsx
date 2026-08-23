@@ -13,13 +13,21 @@ import {
   Instagram,
   MapPin,
   Play,
+  Luggage,
+  LogIn,
+  LogOut,
+  User,
 } from "lucide-react";
 import RGPDConsent from './RGPDConsent';
+import { useTravelerAuth } from '@/contexts/TravelerAuthContext';
+import TravelerAuthModal from '@/components/traveler/TravelerAuthModal';
 
 // Navigation Component (Light, Clean)
 export function PublicNavigation() {
   const [isOpen, setIsOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
+  const [authModalOpen, setAuthModalOpen] = useState(false);
+  const { traveler, isLoggedIn, logout } = useTravelerAuth();
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 40);
@@ -47,11 +55,34 @@ export function PublicNavigation() {
 
           {/* CTA Buttons */}
           <div className="hidden md:flex items-center gap-3">
-            <Link href="/login">
-              <Button variant="ghost" className="text-slate-600 hover:text-slate-900 font-medium text-sm">
-                Connexion
-              </Button>
-            </Link>
+            {isLoggedIn ? (
+              <>
+                <Link href="/mes-bagages">
+                  <Button variant="ghost" className="text-slate-600 hover:text-slate-900 font-medium text-sm gap-1.5">
+                    <Luggage className="w-4 h-4" />
+                    Mes objets
+                  </Button>
+                </Link>
+                <div className="flex items-center gap-1.5 text-sm text-slate-500">
+                  <User className="w-3.5 h-3.5" />
+                  <span className="max-w-[120px] truncate">{traveler?.name || traveler?.phone}</span>
+                </div>
+                <button
+                  onClick={logout}
+                  className="text-slate-400 hover:text-red-500 transition-colors"
+                  title="Déconnexion"
+                >
+                  <LogOut className="w-4 h-4" />
+                </button>
+              </>
+            ) : (
+              <button onClick={() => setAuthModalOpen(true)}>
+                <Button variant="ghost" className="text-slate-600 hover:text-slate-900 font-medium text-sm gap-1.5">
+                  <LogIn className="w-4 h-4" />
+                  Connexion
+                </Button>
+              </button>
+            )}
             <Link href="/devenir-partenaire">
               <Button className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-semibold text-sm rounded-full px-5 shadow-lg shadow-blue-500/20 hover:shadow-blue-500/30 transition-all duration-300">
                 Devenir Partenaire
@@ -78,9 +109,33 @@ export function PublicNavigation() {
               <Link href="/avis" className="text-slate-600 hover:text-slate-900 font-medium py-2" onClick={() => setIsOpen(false)}>Avis</Link>
               <Link href="/contact" className="text-slate-600 hover:text-slate-900 font-medium py-2" onClick={() => setIsOpen(false)}>Contact</Link>
               <hr className="border-slate-100 my-1" />
-              <Link href="/login" onClick={() => setIsOpen(false)}>
-                <Button variant="ghost" className="w-full text-slate-600 font-medium justify-start">Connexion</Button>
-              </Link>
+              {isLoggedIn ? (
+                <>
+                  <Link href="/mes-bagages" onClick={() => setIsOpen(false)}>
+                    <Button variant="ghost" className="w-full text-slate-600 font-medium justify-start gap-2">
+                      <Luggage className="w-4 h-4" />
+                      Mes objets
+                    </Button>
+                  </Link>
+                  <div className="flex items-center gap-2 px-4 py-2 text-sm text-slate-500">
+                    <User className="w-3.5 h-3.5" />
+                    {traveler?.name || traveler?.phone}
+                  </div>
+                  <button onClick={() => { logout(); setIsOpen(false); }}>
+                    <Button variant="ghost" className="w-full text-red-500 font-medium justify-start gap-2">
+                      <LogOut className="w-4 h-4" />
+                      Déconnexion
+                    </Button>
+                  </button>
+                </>
+              ) : (
+                <button onClick={() => { setAuthModalOpen(true); setIsOpen(false); }}>
+                  <Button variant="ghost" className="w-full text-slate-600 font-medium justify-start gap-2">
+                    <LogIn className="w-4 h-4" />
+                    Connexion / Inscription
+                  </Button>
+                </button>
+              )}
               <Link href="/devenir-partenaire" onClick={() => setIsOpen(false)}>
                 <Button className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-medium rounded-full">
                   Devenir Partenaire
@@ -90,6 +145,9 @@ export function PublicNavigation() {
           </div>
         )}
       </div>
+
+      {/* Modal connexion voyageur */}
+      <TravelerAuthModal open={authModalOpen} onClose={() => setAuthModalOpen(false)} />
     </nav>
   );
 }
