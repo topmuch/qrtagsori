@@ -9,16 +9,16 @@ import { db } from '@/lib/db';
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
-    const q = (searchParams.get('q') || '').trim();
+    const q = (searchParams.get('q') || '').trim().toUpperCase();
 
     if (!q || q.length < 2) {
       return NextResponse.json({ success: true, results: [] });
     }
 
-    // Chercher par référence exacte ou partielle
+    // Chercher par référence exacte ou partielle (majuscules pour SQLite case-insensitive)
     const results = await db.baggage.findMany({
       where: {
-        reference: { contains: q, mode: 'insensitive' },
+        reference: { contains: q },
       },
       take: 10,
       orderBy: { createdAt: 'desc' },
