@@ -232,22 +232,22 @@ export default function MesBagagesPage() {
   const pushSupported = typeof window !== 'undefined' && 'serviceWorker' in navigator && 'PushManager' in window;
 
   return (
-    <main className="min-h-screen bg-[#111111] flex flex-col">
-      <header className="bg-[#111111] border-b border-[#E3B23C]/30 py-4 px-4">
+    <main className="min-h-screen bg-white flex flex-col">
+      <header className="bg-white border-b border-[#E3B23C]/40 py-4 px-4">
         <div className="max-w-md mx-auto flex items-center justify-between">
           <div className="flex items-center gap-2">
             <Luggage className="w-5 h-5 text-[#E3B23C]" />
-            <h1 className="text-lg font-bold text-white">Mes bagages</h1>
+            <h1 className="text-lg font-bold text-[#1a1a1a]">Mes bagages</h1>
           </div>
           {isLoggedIn ? (
             <div className="flex items-center gap-2">
-              <div className="flex items-center gap-1.5 text-white/70 text-xs">
+              <div className="flex items-center gap-1.5 text-[#525252] text-xs">
                 <User className="w-3.5 h-3.5" />
                 <span className="hidden sm:inline">{traveler?.name || traveler?.phone}</span>
               </div>
               <button
                 onClick={logout}
-                className="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-white/10 hover:bg-white/20 transition text-white text-xs font-medium"
+                className="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-[#f5f5f5] hover:bg-[#e5e5e5] transition text-[#1a1a1a] text-xs font-medium"
               >
                 <LogOut className="w-3.5 h-3.5" />
                 <span className="hidden sm:inline">Déconnexion</span>
@@ -268,11 +268,11 @@ export default function MesBagagesPage() {
       <div className="flex-1 max-w-md mx-auto w-full px-4 py-6 pb-20">
         {/* Bannière connexion (si pas connecté) */}
         {!isLoggedIn && !loading && (
-          <div className="bg-[#E3B23C]/10 border border-[#E3B23C]/30 rounded-2xl p-4 mb-6 flex items-start gap-3">
+          <div className="bg-[#FFF8E7] border border-[#E3B23C]/40 rounded-2xl p-4 mb-6 flex items-start gap-3">
             <Shield className="w-5 h-5 text-[#E3B23C] flex-shrink-0 mt-0.5" />
             <div className="flex-1 min-w-0">
-              <p className="text-sm font-bold text-white mb-1">Sauvegardez vos objets dans le cloud ☁️</p>
-              <p className="text-xs text-white/60 mb-3">
+              <p className="text-sm font-bold text-[#1a1a1a] mb-1">Sauvegardez vos objets dans le cloud ☁️</p>
+              <p className="text-xs text-[#525252] mb-3">
                 Créez un compte pour retrouver vos objets depuis n'importe quel téléphone.
               </p>
               <div className="flex gap-2">
@@ -284,7 +284,7 @@ export default function MesBagagesPage() {
                 </button>
                 <Link
                   href="/connexion-voyageur"
-                  className="px-4 py-2 border border-[#E3B23C]/40 text-[#E3B23C] text-xs font-bold rounded-lg hover:bg-[#E3B23C]/10 transition"
+                  className="px-4 py-2 border border-[#E3B23C]/40 text-[#E3B23C] text-xs font-bold rounded-lg hover:bg-[#FFF8E7] transition"
                 >
                   Se connecter
                 </Link>
@@ -296,13 +296,13 @@ export default function MesBagagesPage() {
         {/* Compte connecté : indicateur + push */}
         {isLoggedIn && !loading && (
           <div className="space-y-3 mb-6">
-            <div className="bg-green-500/10 border border-green-500/30 rounded-2xl p-4 flex items-center gap-3">
+            <div className="bg-green-50 border border-green-500/30 rounded-2xl p-4 flex items-center gap-3">
               <Shield className="w-5 h-5 text-green-400 flex-shrink-0" />
               <div className="flex-1">
-                <p className="text-sm font-bold text-white">
+                <p className="text-sm font-bold text-[#1a1a1a]">
                   ✅ Connecté{traveler?.name ? ` — ${traveler.name}` : ''}
                 </p>
-                <p className="text-xs text-white/60">{displayBaggages.length} objet{displayBaggages.length !== 1 ? 's' : ''} enregistré{displayBaggages.length !== 1 ? 's' : ''}</p>
+                <p className="text-xs text-[#525252]">{displayBaggages.length} objet{displayBaggages.length !== 1 ? 's' : ''} enregistré{displayBaggages.length !== 1 ? 's' : ''}</p>
               </div>
             </div>
             {/* Push notifications */}
@@ -311,8 +311,8 @@ export default function MesBagagesPage() {
                 onClick={togglePush}
                 disabled={pushLoading}
                 className={`w-full rounded-2xl p-4 flex items-center gap-3 border transition ${pushEnabled
-                  ? 'bg-[#E3B23C]/10 border-[#E3B23C]/40 hover:bg-[#E3B23C]/20'
-                  : 'bg-white/5 border-white/10 hover:bg-white/10'
+                  ? 'bg-[#FFF8E7] border-[#E3B23C]/40 hover:bg-[#FFF8E7]'
+                  : 'bg-[#fafafa] border-[#e5e5e5] hover:bg-[#f5f5f5]'
                 } disabled:opacity-60`}
               >
                 {pushLoading ? (
@@ -320,13 +320,13 @@ export default function MesBagagesPage() {
                 ) : pushEnabled ? (
                   <Bell className="w-5 h-5 text-[#E3B23C] flex-shrink-0" />
                 ) : (
-                  <BellOff className="w-5 h-5 text-white/40 flex-shrink-0" />
+                  <BellOff className="w-5 h-5 text-[#a3a3a3] flex-shrink-0" />
                 )}
                 <div className="flex-1 text-left">
-                  <p className={`text-sm font-bold ${pushEnabled ? 'text-[#E3B23C]' : 'text-white'}`}>
+                  <p className={`text-sm font-bold ${pushEnabled ? 'text-[#E3B23C]' : 'text-[#1a1a1a]'}`}>
                     {pushEnabled ? '🔔 Notifications activées' : '🔕 Activer les notifications'}
                   </p>
-                  <p className="text-xs text-white/60">
+                  <p className="text-xs text-[#525252]">
                     {pushEnabled
                       ? 'Vous serez alerté si l\'un de vos objets est scanné'
                       : 'Recevez une alerte instantanée au scan de vos objets'}
@@ -336,15 +336,15 @@ export default function MesBagagesPage() {
             )}
 
             {/* Section: Lier un QR code existant */}
-            <div className="rounded-2xl border border-[#E3B23C]/30 bg-[#E3B23C]/5 overflow-hidden">
+            <div className="rounded-2xl border border-[#E3B23C]/40 bg-[#FFFDF5] overflow-hidden">
               <button
                 onClick={() => setShowLinkSearch(!showLinkSearch)}
-                className="w-full p-4 flex items-center gap-3 hover:bg-[#E3B23C]/10 transition text-left"
+                className="w-full p-4 flex items-center gap-3 hover:bg-[#FFF8E7] transition text-left"
               >
                 <Link2 className="w-5 h-5 text-[#E3B23C] flex-shrink-0" />
                 <div className="flex-1">
-                  <p className="text-sm font-bold text-white">Lier un QR code existant</p>
-                  <p className="text-xs text-white/60">Vous avez déjà un QR code ? Recherchez-le et liez-le à votre compte</p>
+                  <p className="text-sm font-bold text-[#1a1a1a]">Lier un QR code existant</p>
+                  <p className="text-xs text-[#525252]">Vous avez déjà un QR code ? Recherchez-le et liez-le à votre compte</p>
                 </div>
                 <span className={`text-[#E3B23C] transition-transform ${showLinkSearch ? 'rotate-45' : ''}`}>
                   <Plus className="w-5 h-5" />
@@ -352,7 +352,7 @@ export default function MesBagagesPage() {
               </button>
 
               {showLinkSearch && (
-                <div className="px-4 pb-4 space-y-3 border-t border-[#E3B23C]/20 pt-3">
+                <div className="px-4 pb-4 space-y-3 border-t border-[#e5e5e5] pt-3">
                   <div className="flex gap-2">
                     <input
                       type="text"
@@ -362,7 +362,7 @@ export default function MesBagagesPage() {
                       onKeyDown={(e) => {
                         if (e.key === 'Enter') handleLinkSearch();
                       }}
-                      className="flex-1 px-4 py-2.5 rounded-xl bg-white/10 border border-white/10 text-white text-sm placeholder:text-white/30 focus:ring-2 focus:ring-[#E3B23C] focus:border-transparent"
+                      className="flex-1 px-4 py-2.5 rounded-xl bg-[#fafafa] border border-[#e5e5e5] text-[#1a1a1a] text-sm placeholder:text-[#a3a3a3] focus:ring-2 focus:ring-[#E3B23C] focus:border-transparent"
                     />
                     <button
                       onClick={handleLinkSearch}
@@ -377,10 +377,10 @@ export default function MesBagagesPage() {
                   {linkSearchResults.length > 0 && (
                     <div className="space-y-2 max-h-64 overflow-y-auto">
                       {linkSearchResults.map((item: any) => (
-                        <div key={item.id} className="flex items-center gap-3 p-3 bg-white/5 rounded-xl border border-white/10">
+                        <div key={item.id} className="flex items-center gap-3 p-3 bg-[#fafafa] rounded-xl border border-[#e5e5e5]">
                           <div className="flex-1 min-w-0">
-                            <p className="font-mono text-sm font-bold text-white truncate">{item.reference}</p>
-                            <p className="text-xs text-white/60">
+                            <p className="font-mono text-sm font-bold text-[#1a1a1a] truncate">{item.reference}</p>
+                            <p className="text-xs text-[#525252]">
                               {item.objectName || 'Sans nom'} · {item.status === 'active' || item.status === 'activated' ? '🟢 Actif' : item.status}
                             </p>
                           </div>
@@ -401,7 +401,7 @@ export default function MesBagagesPage() {
                   )}
 
                   {linkSearchQuery && linkSearchResults.length === 0 && !linkSearchLoading && (
-                    <p className="text-xs text-white/40 text-center py-2">Aucun résultat trouvé</p>
+                    <p className="text-xs text-[#a3a3a3] text-center py-2">Aucun résultat trouvé</p>
                   )}
 
                   {linkSearchLoading && (
@@ -417,17 +417,17 @@ export default function MesBagagesPage() {
 
         {loading ? (
           <div className="text-center">
-            <div className="animate-spin w-8 h-8 border-4 border-white/20 border-t-[#E3B23C] rounded-full mx-auto mb-3" />
-            <p className="text-white/70 text-sm">Chargement...</p>
+            <div className="animate-spin w-8 h-8 border-4 border-[#e5e5e5] border-t-[#E3B23C] rounded-full mx-auto mb-3" />
+            <p className="text-[#525252] text-sm">Chargement...</p>
           </div>
         ) : displayBaggages.length === 0 ? (
-          <div className="bg-white border-2 border-dashed border-[#1a1a1a] rounded-2xl p-8 text-center">
+          <div className="bg-[#fafafa] border-2 border-dashed border-[#e5e5e5] rounded-2xl p-8 text-center">
             <Luggage className="w-12 h-12 text-slate-300 mx-auto mb-4" />
             <h2 className="text-lg font-bold text-slate-700 mb-2">Aucun bagage enregistré</h2>
             <p className="text-sm text-slate-500 mb-6">
               Activez un QR code QRTags pour le voir apparaître ici.
             </p>
-            <Link href="/inscrire" className="inline-block bg-[#111111] text-white px-6 py-3 rounded-xl font-bold">
+            <Link href="/inscrire" className="inline-block bg-[#1a1a1a] text-white px-6 py-3 rounded-xl font-bold">
               Activer un QR code
             </Link>
           </div>
@@ -455,7 +455,7 @@ export default function MesBagagesPage() {
                   <Link
                     key={baggage.reference}
                     href={trackHref}
-                    className="block bg-white border-2 border-dashed border-[#1a1a1a] rounded-2xl p-4 hover:bg-[#E3B23C]/10 transition-colors"
+                    className="block bg-white border-2 border-dashed border-[#e5e5e5] rounded-2xl p-4 hover:bg-[#FFF8E7] transition-colors"
                   >
                     <div className="flex items-center justify-between mb-2">
                       <span className="font-mono font-bold text-[#1a1a1a]">{baggage.reference}</span>
@@ -487,7 +487,7 @@ export default function MesBagagesPage() {
                       </p>
                     )}
                     <div className="flex items-center justify-end mt-2">
-                      <span className="text-xs font-bold text-[#111111] flex items-center gap-1">
+                      <span className="text-xs font-bold text-[#1a1a1a] flex items-center gap-1">
                         Voir le suivi <ArrowRight className="w-3 h-3" />
                       </span>
                     </div>

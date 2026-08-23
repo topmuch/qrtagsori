@@ -17,7 +17,12 @@ import {
   Sparkles,
   Users,
   ShoppingBag,
+  User,
+  LogIn,
+  LogOut,
 } from 'lucide-react';
+import { useTravelerAuth } from '@/contexts/TravelerAuthContext';
+import TravelerAuthModal from '@/components/traveler/TravelerAuthModal';
 import QRTagsLogo from '@/components/qrtags/QRTagsLogo';
 import TrackingWidget from '@/components/home/TrackingWidget';
 import BlogTeaserSection from '@/components/home/BlogTeaserSection';
@@ -548,6 +553,8 @@ export default function HomePage() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [activeTab, setActiveTab] = useState<'finder' | 'owner'>('finder');
   const [shopProducts, setShopProducts] = useState<ShopProduct[]>([]);
+  const { traveler, isLoggedIn, logout } = useTravelerAuth();
+  const [authModalOpen, setAuthModalOpen] = useState(false);
 
   // Fetch active products from DB on mount
   useEffect(() => {
@@ -618,6 +625,23 @@ export default function HomePage() {
             </div>
 
             <div className="hidden md:flex items-center gap-3">
+              {isLoggedIn ? (
+                <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-1.5 text-sm text-[#525252]">
+                    <User className="w-4 h-4" />
+                    <span className="hidden lg:inline text-sm">{traveler?.name || traveler?.phone}</span>
+                  </div>
+                  <button onClick={logout} className="px-3 py-2 text-sm font-medium hover:text-[#c89a00] transition-colors flex items-center gap-1">
+                    <LogOut className="w-4 h-4" />
+                    <span className="hidden lg:inline">Déconnexion</span>
+                  </button>
+                </div>
+              ) : (
+                <button onClick={() => setAuthModalOpen(true)} className="px-4 py-2 text-sm font-medium hover:text-[#c89a00] transition-colors flex items-center gap-1.5">
+                  <LogIn className="w-4 h-4" />
+                  Mon compte
+                </button>
+              )}
               <a
                 href="#tracker"
                 className="px-4 py-2 text-sm font-medium hover:text-[#c89a00] transition-colors"
@@ -640,6 +664,16 @@ export default function HomePage() {
 
           {menuOpen && (
             <div className="md:hidden pb-4 space-y-2">
+              {isLoggedIn ? (
+                <div className="flex items-center justify-between px-4 py-2">
+                  <span className="text-sm text-[#525252]">👤 {traveler?.name || traveler?.phone}</span>
+                  <button onClick={() => { logout(); setMenuOpen(false); }} className="text-sm text-red-500 font-medium">Déconnexion</button>
+                </div>
+              ) : (
+                <button onClick={() => { setAuthModalOpen(true); setMenuOpen(false); }} className="block px-4 py-2 text-sm font-medium text-[#c89a00]">
+                  👤 Mon compte / S'inscrire
+                </button>
+              )}
               <a href="#comment" onClick={() => setMenuOpen(false)} className="block px-4 py-2 text-sm">Comment ça marche</a>
               <a href="#contact-whatsapp" onClick={() => setMenuOpen(false)} className="block px-4 py-2 text-sm">Comment suis-je contacté ?</a>
               <a href="#tarifs" onClick={() => setMenuOpen(false)} className="block px-4 py-2 text-sm">Tarifs</a>
@@ -1446,6 +1480,8 @@ export default function HomePage() {
       </footer>
 
       <LandingChatbotWidget />
+
+      <TravelerAuthModal open={authModalOpen} onClose={() => setAuthModalOpen(false)} />
     </main>
   );
 }
