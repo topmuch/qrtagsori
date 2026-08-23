@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { Luggage, Search, ArrowRight, Clock, LogIn, LogOut, User, Shield, Bell, BellOff, Loader2, Link2, X, Plus } from 'lucide-react';
+import { Luggage, Search, ArrowRight, Clock, LogIn, LogOut, User, Shield, Bell, BellOff, Loader2, Link2, X, Plus, Star, MessageSquare } from 'lucide-react';
 import { useTravelerAuth, type TravelerBaggage } from '@/contexts/TravelerAuthContext';
 import TravelerAuthModal from '@/components/traveler/TravelerAuthModal';
 
@@ -241,6 +241,59 @@ export default function MesBagagesPage() {
   };
 
   const pushSupported = typeof window !== 'undefined' && 'serviceWorker' in navigator && 'PushManager' in window;
+
+  // ─── Avis ───
+  const [showReviewForm, setShowReviewForm] = useState(false);
+  const [reviewRating, setReviewRating] = useState(5);
+  const [reviewContent, setReviewContent] = useState('');
+  const [reviewName, setReviewName] = useState('');
+  const [reviewSubmitting, setReviewSubmitting] = useState(false);
+  const [reviewSuccess, setReviewSuccess] = useState(false);
+  const [reviewError, setReviewError] = useState('');
+  const [selectedBaggageRef, setSelectedBaggageRef] = useState('');
+
+  const handleSubmitReview = async () => {
+    if (reviewContent.trim().length < 10) {
+      setReviewError('Votre avis doit contenir au moins 10 caractères.');
+      return;
+    }
+    if (reviewName.trim().length < 2) {
+      setReviewError('Votre nom est requis (2 caractères minimum).');
+      return;
+    }
+    setReviewError('');
+    setReviewSubmitting(true);
+    try {
+      const selectedBaggage = displayBaggages.find(b => b.reference === selectedBaggageRef);
+      const res = await fetch('/api/reviews', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: reviewName.trim(),
+          rating: reviewRating,
+          content: reviewContent.trim(),
+          trackingToken: selectedBaggage?.trackingToken || null,
+          baggageRef: selectedBaggageRef || null,
+          objectName: selectedBaggage?.objectName || null,
+          category: selectedBaggage?.categoryLabel || null,
+          language: 'fr',
+        }),
+      });
+      if (res.ok) {
+        setReviewSuccess(true);
+        setReviewContent('');
+        setReviewRating(5);
+        setTimeout(() => { setReviewSuccess(false); setShowReviewForm(false); }, 3000);
+      } else {
+        const data = await res.json();
+        setReviewError(data.error || 'Erreur lors de la soumission.');
+      }
+    } catch {
+      setReviewError('Erreur réseau. Réessayez.');
+    } finally {
+      setReviewSubmitting(false);
+    }
+  };
 
   return (
     <main className="min-h-screen bg-white flex flex-col">
@@ -512,6 +565,125 @@ export default function MesBagagesPage() {
 
       {/* Modal d'auth voyageur */}
       <TravelerAuthModal open={authModalOpen} onClose={() => setAuthModalOpen(false)} />
+
+      {/* ─── Section Avis ─── */}
+      {isLoggedIn && !loading && displayBaggages.length > 0 && (
+        <div className="max-w-md mx-auto w-full px-4 pb-20">
+          {!showReviewForm ? (
+            <button
+              onClick={() => { setShowReviewForm(true); setReviewName(traveler?.name || ''); }}
+              className="w-full rounded-2xl p-4 flex items-center gap-3 border border-[#E3B23C]/40 bg-[#FFFDF5] hover:bg-[#FFF8E7] transition text-left"
+            >
+              <MessageSquare className="w-5 h-5 text-[#E3B23C] flex-shrink-0" />
+              <div className="flex-1">
+                <p className="text-sm font-bold text-[#1a1a1a]">Laisser un avis ⭐</p>
+                <p className="text-xs text-[#525252]">Partagez votre expérience avec QRTags</p>
+              </div>
+              <Plus className="w-5 h-5 text-[#E3B23C]" />
+            </button>
+          ) : (
+            <div className="rounded-2xl border-2 border-[#E3B23C]/40 bg-[#FFFDF5] overflow-hidden">
+              <div className="p-4 flex items-center justify-between border-b border-[#E3B23C]/20">
+                <div className="flex items-center gap-2">
+                  <Star className="w-5 h-5 text-[#E3B23C]" />
+                  <span className="text-sm font-bold text-[#1a1a1a]">Votre avis</span>
+                </div>
+                <button onClick={() => setShowReviewForm(false)} className="text-[#525252] hover:text-[#1a1a1a]">
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+              <div className="p-4 space-y-4">
+                {/* Nom */}
+                <div>
+                  <label className="block text-xs font-bold text-[#525252] mb-1.5">Votre nom</label>
+                  <input
+                    type="text"
+                    value={reviewName}
+                    onChange={(e) => setReviewName(e.target.value)}
+                    placeholder="Votre nom"
+                    className="w-full px-4 py-2.5 rounded-xl bg-white border border-[#e5e5e5] text-[#1a1a1a] text-sm placeholder:text-[#a3a3a3] focus:ring-2 focus:ring-[#E3B23C] focus:border-transparent"
+                  />
+                </div>
+
+                {/* Objet (sélecteur) */}
+                {displayBaggages.length > 0 && (
+                  <div>
+                    <label className="block text-xs font-bold text-[#525252] mb-1.5">Objet concerné (optionnel)</label>
+                    <select
+                      value={selectedBaggageRef}
+                      onChange={(e) => setSelectedBaggageRef(e.target.value)}
+                      className="w-full px-4 py-2.5 rounded-xl bg-white border border-[#e5e5e5] text-[#1a1a1a] text-sm focus:ring-2 focus:ring-[#E3B23C] focus:border-transparent"
+                    >
+                      <option value="">— Aucun objet en particulier —</option>
+                      {displayBaggages.map(b => (
+                        <option key={b.reference} value={b.reference}>
+                          {b.objectName ? `${b.objectName} (${b.reference})` : b.reference}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                )}
+
+                {/* Étoiles */}
+                <div>
+                  <label className="block text-xs font-bold text-[#525252] mb-1.5">Votre note</label>
+                  <div className="flex items-center gap-1">
+                    {[1, 2, 3, 4, 5].map((star) => (
+                      <button
+                        key={star}
+                        type="button"
+                        onClick={() => setReviewRating(star)}
+                        className="transition-transform hover:scale-110"
+                      >
+                        <Star
+                          width={28}
+                          height={28}
+                          className={star <= reviewRating ? 'fill-current text-[#E3B23C]' : 'text-[#d4d4d4]'}
+                        />
+                      </button>
+                    ))}
+                    <span className="ml-2 text-sm font-bold text-[#1a1a1a]">{reviewRating}/5</span>
+                  </div>
+                </div>
+
+                {/* Commentaire */}
+                <div>
+                  <label className="block text-xs font-bold text-[#525252] mb-1.5">Votre commentaire</label>
+                  <textarea
+                    value={reviewContent}
+                    onChange={(e) => setReviewContent(e.target.value)}
+                    placeholder="Partagez votre expérience..."
+                    rows={3}
+                    className="w-full px-4 py-2.5 rounded-xl bg-white border border-[#e5e5e5] text-[#1a1a1a] text-sm placeholder:text-[#a3a3a3] focus:ring-2 focus:ring-[#E3B23C] focus:border-transparent resize-none"
+                  />
+                </div>
+
+                {/* Erreur */}
+                {reviewError && (
+                  <p className="text-xs text-red-600 font-medium bg-red-50 rounded-lg p-2.5">{reviewError}</p>
+                )}
+
+                {/* Succès */}
+                {reviewSuccess && (
+                  <p className="text-xs text-green-700 font-medium bg-green-50 rounded-lg p-2.5">✅ Merci pour votre avis ! Il sera publié après validation.</p>
+                )}
+
+                {/* Bouton */}
+                <button
+                  onClick={handleSubmitReview}
+                  disabled={reviewSubmitting || reviewContent.trim().length < 10 || reviewName.trim().length < 2}
+                  className="w-full py-3 bg-[#E3B23C] text-black text-sm font-bold rounded-xl hover:bg-[#E3B23C]/80 transition disabled:opacity-50 flex items-center justify-center gap-2"
+                >
+                  {reviewSubmitting ? (
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                  ) : null}
+                  {reviewSubmitting ? 'Envoi en cours...' : 'Envoyer mon avis'}
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
     </main>
   );
 }

@@ -27,7 +27,6 @@ import {
   Star, Package, MapPin, Clock, Loader2, AlertTriangle,
   ArrowLeft, ShoppingBag, BadgeCheck, ShieldCheck, X, Filter,
 } from 'lucide-react';
-import QRTagsLogo from '@/components/qrtags/QRTagsLogo';
 import { PublicNavigation, PublicFooter } from '@/components/public/PublicLayout';
 import { maskName } from '@/lib/privacy';
 
@@ -350,9 +349,6 @@ export default function AvisPage() {
       <div className="max-w-3xl mx-auto px-4 py-12">
         {/* ─── HEADER ─── */}
         <header className="text-center mb-12">
-          <div className="bg-white inline-block px-6 py-3 rounded-lg mb-4 shadow-lg border-2 border-black">
-            <QRTagsLogo size="md" variant="light" />
-          </div>
           <h1 className="text-4xl font-black mb-3" style={{ color: QRTAGS_INK }}>
             ⭐ AVIS QRTAGS
           </h1>
