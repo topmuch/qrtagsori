@@ -8,6 +8,11 @@ import { Button } from "@/components/ui/button";
 import {
   Menu,
   X,
+  Facebook,
+  Twitter,
+  Instagram,
+  MapPin,
+  Play,
   Luggage,
   LogIn,
   LogOut,
