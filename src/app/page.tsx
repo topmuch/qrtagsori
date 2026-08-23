@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import dynamic from 'next/dynamic';
 import Image from 'next/image';
 import { motion } from 'framer-motion';
@@ -554,6 +555,7 @@ export default function HomePage() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [activeTab, setActiveTab] = useState<'finder' | 'owner'>('finder');
   const [shopProducts, setShopProducts] = useState<ShopProduct[]>([]);
+  const router = useRouter();
   const { traveler, isLoggedIn, logout } = useTravelerAuth();
   const [authModalOpen, setAuthModalOpen] = useState(false);
   const [authModalMode, setAuthModalMode] = useState<'login' | 'signup'>('login');
@@ -1502,7 +1504,7 @@ export default function HomePage() {
 
       <LandingChatbotWidget />
 
-      <TravelerAuthModal open={authModalOpen} onClose={() => setAuthModalOpen(false)} defaultMode={authModalMode} />
+      <TravelerAuthModal open={authModalOpen} onClose={() => setAuthModalOpen(false)} defaultMode={authModalMode} onSuccess={() => router.push('/mes-bagages')} />
     </main>
   );
 }

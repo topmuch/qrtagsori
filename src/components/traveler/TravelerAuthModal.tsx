@@ -51,9 +51,10 @@ interface TravelerAuthModalProps {
   open: boolean;
   onClose: () => void;
   defaultMode?: 'login' | 'signup';
+  onSuccess?: () => void;
 }
 
-export default function TravelerAuthModal({ open, onClose, defaultMode }: TravelerAuthModalProps) {
+export default function TravelerAuthModal({ open, onClose, defaultMode, onSuccess }: TravelerAuthModalProps) {
   const { login, signup } = useTravelerAuth();
   const phoneInputRef = useRef<HTMLInputElement>(null);
 
@@ -130,6 +131,7 @@ export default function TravelerAuthModal({ open, onClose, defaultMode }: Travel
         setLocalNumber('');
         setPin('');
         setName('');
+        onSuccess?.();
       } else {
         setError(result.error || 'Erreur');
       }

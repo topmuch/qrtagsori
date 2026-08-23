@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import QRTagsLogo from "@/components/qrtags/QRTagsLogo";
 import Link from 'next/link';
 import { Button } from "@/components/ui/button";
@@ -18,6 +19,7 @@ import TravelerAuthModal from '@/components/traveler/TravelerAuthModal';
 
 // Navigation Component (Light, Clean)
 export function PublicNavigation() {
+  const router = useRouter();
   const [isOpen, setIsOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const [authModalOpen, setAuthModalOpen] = useState(false);
@@ -141,7 +143,7 @@ export function PublicNavigation() {
       </div>
 
       {/* Modal connexion voyageur */}
-      <TravelerAuthModal open={authModalOpen} onClose={() => setAuthModalOpen(false)} />
+      <TravelerAuthModal open={authModalOpen} onClose={() => setAuthModalOpen(false)} onSuccess={() => router.push('/mes-bagages')} />
     </nav>
   );
 }
