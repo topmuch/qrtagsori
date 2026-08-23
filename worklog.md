@@ -59,3 +59,23 @@ Stage Summary:
 - 2 fichiers modifiés : src/app/page.tsx, src/app/mes-bagages/page.tsx
 - Header desktop et mobile de la page d'accueil intègrent le bouton Mon compte avec modal auth
 - Page mes-bagages entièrement en thème clair (fond blanc, texte sombre) tout en gardant l'identité visuelle dorée
+---
+Task ID: 3
+Agent: Main
+Task: Ajouter un bouton S'inscrire dans le hero de la page d'accueil
+
+Work Log:
+- Ajouté l'import `UserPlus` de lucide-react dans page.tsx
+- Ajouté un state `authModalMode` ('login' | 'signup') pour contrôler le mode par défaut de la modal
+- Ajouté un 3ème bouton "S'inscrire" (noir, icône UserPlus) dans le hero CTA à côté de "Suivre un objet" et "Protéger mes objets"
+- Le bouton s'affiche en mode déconnecté → ouvre la modal en mode signup
+- Quand l'utilisateur est connecté → le bouton devient "Mes bagages" (lien vers /mes-bagages)
+- Modifié TravelerAuthModal pour accepter un prop `defaultMode` et réinitialiser le formulaire à l'ouverture
+- Mis à jour les boutons navbar (desktop + mobile) pour passer explicitement `authModalMode('login')`
+- Lint OK, compilation Next.js OK (GET / 200)
+
+Stage Summary:
+- 2 fichiers modifiés : src/app/page.tsx, src/components/traveler/TravelerAuthModal.tsx
+- Bouton "S'inscrire" visible dans le hero, noir avec icône UserPlus
+- Modal s'ouvre directement en mode inscription depuis le hero, en mode connexion depuis la navbar
+- Quand connecté, le bouton hero devient "Mes bagages"

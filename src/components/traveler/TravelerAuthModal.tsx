@@ -1,15 +1,16 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { X, Phone, Lock, User, Loader2, ArrowRight, ShieldCheck } from 'lucide-react';
 import { useTravelerAuth } from '@/contexts/TravelerAuthContext';
 
 interface TravelerAuthModalProps {
   open: boolean;
   onClose: () => void;
+  defaultMode?: 'login' | 'signup';
 }
 
-export default function TravelerAuthModal({ open, onClose }: TravelerAuthModalProps) {
+export default function TravelerAuthModal({ open, onClose, defaultMode }: TravelerAuthModalProps) {
   const { login, signup } = useTravelerAuth();
 
   const [mode, setMode] = useState<'login' | 'signup'>('login');
@@ -19,6 +20,17 @@ export default function TravelerAuthModal({ open, onClose }: TravelerAuthModalPr
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
+  // Reset form & apply defaultMode when modal opens
+  useEffect(() => {
+    if (open) {
+      setMode(defaultMode || 'login');
+      setPhone('');
+      setPin('');
+      setName('');
+      setError('');
+      setLoading(false);
+    }
+  }, [open, defaultMode]);
   if (!open) return null;
 
   const handleSubmit = async (e: React.FormEvent) => {

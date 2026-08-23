@@ -1,0 +1,1508 @@
+     1→'use client';
+     2→
+     3→import { useState, useEffect } from 'react';
+     4→import Link from 'next/link';
+     5→import dynamic from 'next/dynamic';
+     6→import Image from 'next/image';
+     7→import { motion } from 'framer-motion';
+     8→import {
+     9→  Menu,
+    10→  X,
+    11→  Shield,
+    12→  Search,
+    13→  MessageCircle,
+    14→  HandHelping,
+    15→  ArrowRight,
+    16→  CheckCircle2,
+    17→  Sparkles,
+    18→  Users,
+    19→  ShoppingBag,
+    20→  User,
+    21→  UserPlus,
+    22→  LogIn,
+    23→  LogOut,
+    24→} from 'lucide-react';
+    25→import { useTravelerAuth } from '@/contexts/TravelerAuthContext';
+    26→import TravelerAuthModal from '@/components/traveler/TravelerAuthModal';
+    27→import QRTagsLogo from '@/components/qrtags/QRTagsLogo';
+    28→import TrackingWidget from '@/components/home/TrackingWidget';
+    29→import BlogTeaserSection from '@/components/home/BlogTeaserSection';
+    30→
+    31→const LandingChatbotWidget = dynamic(
+    32→  () => import('@/components/finder/LandingChatbotWidget'),
+    33→  { ssr: false, loading: () => null },
+    34→);
+    35→
+    36→// ════════════════════════════════════════════════════════════════════
+    37→// QRTags — Landing ORIENTÉE OBJETS TROUVÉS / PARTICULIER
+    38→// Accent sur : "Vous avez trouvé un objet ?" & "J'ai perdu quelque chose"
+    39→// Messaging citoyen, finder-hero, pas B2B enterprise
+    40→// ════════════════════════════════════════════════════════════════════
+    41→const COLORS = {
+    42→  bg: '#ffffff',
+    43→  bgAlt: '#fafafa',
+    44→  bgCream: '#fffdf5',
+    45→  bgWarm: '#FFF8E7',      // Fond warm accent (trouvailles)
+    46→  text: '#0d0d0f',
+    47→  textMuted: '#525252',
+    48→  accent: '#FDB900',
+    49→  accentAlt: '#E3B23C',
+    50→  accentDark: '#c89a00',
+    51→  green: '#22C55E',        // Vert retrouvaille
+    52→  greenDark: '#16A34A',
+    53→  card: '#ffffff',
+    54→  cardAlt: '#fffdf5',
+    55→  border: '#e5e5e5',
+    56→  borderAccent: 'rgba(253, 185, 0, 0.3)',
+    57→};
+    58→
+    59→// ════════════════════════════════════════════════════════════════════
+    60→// DONNÉES — Orientation PARTICULIER / OBJETS TROUVÉS
+    61→// ════════════════════════════════════════════════════════════════════
+    62→
+    63→const FINDER_STEPS = [
+    64→  {
+    65→    num: '01',
+    66→    image: '/images/how-it-works/step-1-generation.png',
+    67→    title: 'Vous trouvez un objet',
+    68→    desc: 'Dans la rue, à l\'aéroport, dans un taxi, au café... Vous voyez un QR tag QRTags sur l\'objet perdu.',
+    69→    color: COLORS.accent,
+    70→    href: '/etapes/trouveur/vous-trouvez-un-objet',
+    71→  },
+    72→  {
+    73→    num: '02',
+    74→    image: '/images/how-it-works/step-3-scan-alert.png',
+    75→    title: 'Scannez le QR code',
+    76→    desc: 'Un simple scan avec votre téléphone — aucune app à installer, pas besoin de batterie ou de GPS sur l\'objet.',
+    77→    color: COLORS.accentAlt,
+    78→    href: '/etapes/trouveur/scannez-le-qr-code',
+    79→  },
+    80→  {
+    81→    num: '03',
+    82→    image: '/images/how-it-works/step-3-scan-alert.png',
+    83→    title: 'Contactez le propriétaire',
+    84→    desc: 'La page WAME s\'ouvre automatiquement avec votre position GPS. Un message WhatsApp pré-rempli est envoyé au propriétaire.',
+    85→    color: COLORS.green,
+    86→    href: '/etapes/trouveur/contactez-le-proprietaire',
+    87→  },
+    88→  {
+    89→    num: '04',
+    90→    image: '/images/how-it-works/step-4-recovered.png',
+    91→    title: 'L\'objet est rendu',
+    92→    desc: 'Le propriétaire sait exactement où vous êtes. Vous rendez l\'objet en 2h en moyenne. Un geste simple qui change une vie.',
+    93→    color: COLORS.greenDark,
+    94→    href: '/etapes/trouveur/objet-est-rendu',
+    95→  },
+    96→];
+    97→
+    98→const OWNER_STEPS = [
+    99→  {
+   100→    num: '01',
+   101→    image: '/images/how-it-works/step-1-generation.png',
+   102→    title: 'Collez un QR tag',
+   103→    desc: 'Commandez vos tags QRTags et collez-les sur vos objets : valise, clés, sac, lunettes, téléphone... Chaque tag est unique.',
+   104→    color: COLORS.accent,
+   105→    href: undefined as string | undefined,
+   106→  },
+   107→  {
+   108→    num: '02',
+   109→    image: '/images/how-it-works/step-2-activation.png',
+   110→    title: 'Activez en 30 secondes',
+   111→    desc: 'Scannez votre propre tag, entrez vos infos (prénom, WhatsApp) et l\'objet est protégé. Pas d\'app, pas de compte obligatoire.',
+   112→    color: COLORS.accentAlt,
+   113→    href: undefined as string | undefined,
+   114→  },
+   115→  {
+   116→    num: '03',
+   117→    image: '/images/how-it-works/step-3-scan-alert.png',
+   118→    title: 'Recevez une alerte',
+   119→    desc: 'Si quelqu\'un trouve votre objet, vous recevez un message WhatsApp avec la position exacte du trouveur. Instantané.',
+   120→    color: COLORS.green,
+   121→    href: undefined as string | undefined,
+   122→  },
+   123→  {
+   124→    num: '04',
+   125→    image: '/images/how-it-works/step-4-recovered.png',
+   126→    title: 'Récupérez votre objet',
+   127→    desc: 'Contactez le trouveur via WhatsApp, récupérez votre objet. 98% des objets étiquetés sont retrouvés.',
+   128→    color: COLORS.greenDark,
+   129→    href: undefined as string | undefined,
+   130→  },
+   131→];
+   132→
+   133→const STATS = [
+   134→  { value: '98%', label: 'Objets retrouvés' },
+   135→  { value: '< 2h', label: 'Délai moyen retour' },
+   136→  { value: 'Sans app', label: 'Aucune installation' },
+   137→  { value: '3 langues', label: 'FR · EN · AR' },
+   138→];
+   139→
+   140→const TESTIMONIALS = [
+   141→  {
+   142→    name: 'Lucas Dupont',
+   143→    role: 'Étudiant, Lyon',
+   144→    text: 'J\'ai trouvé un sac à dos avec un QR tag dans le métro. J\'ai scanné, WhatsApp s\'est ouvert avec la position. Le propriétaire m\'a contacté en 5 minutes. Je lui ai rendu son sac le soir même. Impressionnant !',
+   145→    avatar: 'LD',
+   146→    type: 'finder',
+   147→  },
+   148→  {
+   149→    name: 'Amira Bensaïd',
+   150→    role: 'Voyageuse, Marseille',
+   151→    text: 'Ma valise a été égarée à l\'aéroport. Quelqu\'un a scanné le tag QRTags — j\'ai reçu un WhatsApp avec sa position exacte. Je l\'ai récupérée 3h après. Sans QRTags, j\'aurais attendu des jours.',
+   152→    avatar: 'AB',
+   153→    type: 'owner',
+   154→  },
+   155→  {
+   156→    name: 'Thomas Legrand',
+   157→    role: 'Enseignant, Paris',
+   158→    text: 'Mon fils a perdu ses lunettes à l\'école. Le QR tag était collé dessus. Une maman les a trouvées, a scanné, et m\'a envoyé un WhatsApp. Récupérées le lendemain matin. Magique.',
+   159→    avatar: 'TL',
+   160→    type: 'owner',
+   161→  },
+   162→];
+   163→
+   164→// ─── Packs Boutique — fetched dynamically from DB ───
+   165→interface ShopProduct {
+   166→  id: string;
+   167→  name: string;
+   168→  slug: string;
+   169→  price: number;
+   170→  quantity: number;
+   171→  description: string | null;
+   172→  image: string | null;
+   173→  active: boolean;
+   174→  sortOrder: number;
+   175→}
+   176→
+   177→// Default fallback packs (used before API fetch completes OR if API returns image: null)
+   178→// Each pack has its own dedicated sachet image showing the correct sticker count.
+   179→const SHOP_PACKS_FALLBACK = [
+   180→  { quantity: 3, name: 'Pack 3 Stickers', slug: 'pack-3-stickers', price: 1500, desc: '3 étiquettes QR indestructibles. Idéal pour tester.', badge: '', image: '/images/shop/pack-3-stickers.png' },
+   181→  { quantity: 5, name: 'Pack 5 Stickers', slug: 'pack-5-stickers', price: 3000, desc: '5 étiquettes QR indestructibles. Le plus populaire.', badge: 'POPULAIRE', image: '/images/shop/pack-5-stickers.png' },
+   182→  { quantity: 10, name: 'Pack 10 Stickers', slug: 'pack-10-stickers', price: 4000, desc: '10 étiquettes QR indestructibles. Pour usage fréquent.', badge: '', image: '/images/shop/pack-10-stickers.png' },
+   183→  { quantity: 15, name: 'Pack 15 Stickers', slug: 'pack-15-stickers', price: 5500, desc: '15 étiquettes QR indestructibles. Le plus économique.', badge: 'ÉCONOMIQUE', image: '/images/shop/pack-15-stickers.png' },
+   184→];
+   185→
+   186→// ─── Image fallback strategy ───
+   187→// Production DB products often have either:
+   188→//   • image: null (seed not re-run)
+   189→//   • image: '/images/shop/product-XXXX.jpeg' pointing to a file that does NOT exist
+   190→//     (uploaded via admin panel, but the upload failed silently or was lost)
+   191→//   • slug variants like 'pack-5-stickers-' (trailing dash) or 'packs-10-stickers'
+   192→//     that don't match SHOP_PACKS_FALLBACK slugs exactly.
+   193→//
+   194→// To ALWAYS show a sachet image we:
+   195→//   1. Map quantity → local pack image (most reliable, the sachet shows the right number)
+   196→//   2. Map slug → local pack image (handles edge cases where quantity differs)
+   197→//   3. On <img> onError, swap the broken src to the quantity-mapped local image
+   198→//      (instead of hiding it and showing the number fallback, which is less pretty)
+   199→const PACK_IMAGE_BY_QUANTITY: Record<number, string> = Object.fromEntries(
+   200→  SHOP_PACKS_FALLBACK.map(p => [p.quantity, p.image])
+   201→);
+   202→const PACK_IMAGE_BY_SLUG: Record<string, string> = Object.fromEntries(
+   203→  SHOP_PACKS_FALLBACK.map(p => [p.slug, p.image])
+   204→);
+   205→// Generic sachet used when quantity is unknown (e.g. Pack Revendeur qty=35)
+   206→const GENERIC_PACK_IMAGE = '/images/shop/pack-15-stickers.png';
+   207→
+   208→/**
+   209→ * Resolve the best local image for a given product.
+   210→ *
+   211→ * CRITICAL: we NEVER trust DB-uploaded images (pattern: /images/shop/product-*.jpeg)
+   212→ * because they are almost always broken uploads (admin panel saved the path but
+   213→ * the file was never written, or was lost during deploy). We only trust the 4
+   214→ * known-good local sachet images that ship with the codebase.
+   215→ *
+   216→ * Strategy (in order):
+   217→ *   1. If DB image matches the known-good local pattern → use it as-is.
+   218→ *   2. Otherwise resolve by quantity (most reliable — sachet shows the right number).
+   219→ *   3. Then by slug, slug-without-trailing-dash, slug-without-s.
+   220→ *   4. Finally fall back to the generic pack-15 sachet.
+   221→ *
+   222→ * This guarantees the <img src> is ALWAYS a valid local path from the first render,
+   223→ * so there is no flash of broken image, no 30s-then-disappear bug, no need to rely
+   224→ * on the onError swap (which can race with React re-renders).
+   225→ */
+   226→function resolvePackImage(p: { image: string | null; quantity: number; slug: string }): string {
+   227→  // Only trust DB image if it matches one of our 4 known-good local sachet paths
+   228→  if (p.image && /^\/images\/shop\/pack-(3|5|10|15)-stickers\.png$/.test(p.image)) {
+   229→    return p.image;
+   230→  }
+   231→  return (
+   232→    PACK_IMAGE_BY_QUANTITY[p.quantity] ||
+   233→    PACK_IMAGE_BY_SLUG[p.slug] ||
+   234→    PACK_IMAGE_BY_SLUG[p.slug.replace(/[-\s]+$/, '')] || // strip trailing dash: 'pack-5-stickers-' → 'pack-5-stickers'
+   235→    PACK_IMAGE_BY_SLUG[p.slug.replace(/^packs-/, 'pack-')] || // 'packs-10-stickers' → 'pack-10-stickers'
+   236→    GENERIC_PACK_IMAGE
+   237→  );
+   238→}
+   239→
+   240→/**
+   241→ * Decide what to use as the <img src>. Returns the DB image ONLY if it's safe
+   242→ * (one of the 4 known-good local paths). Otherwise returns the fallback.
+   243→ *
+   244→ * This prevents the "30-second disappear" bug where:
+   245→ *   1. Initial render uses SHOP_PACKS_FALLBACK (sachets show).
+   246→ *   2. API responds ~30s later with broken DB image URLs.
+   247→ *   3. <img src> switches to broken URL → broken image icon.
+   248→ *   4. onError swap may race with React re-renders and lose the swap.
+   249→ *
+   250→ * By NEVER using a DB image that doesn't match the safe pattern, we eliminate
+   251→ * the broken-image state entirely.
+   252→ */
+   253→function getSafeImageSrc(p: { image: string | null; fallbackImage: string }): string {
+   254→  if (p.image && /^\/images\/shop\/pack-(3|5|10|15)-stickers\.png$/.test(p.image)) {
+   255→    return p.image;
+   256→  }
+   257→  return p.fallbackImage;
+   258→}
+   259→
+   260→// ─── Bande défilante — Produits protégés ───
+   261→const MARQUEE_ITEMS = [
+   262→  { image: '/images/home/marquee-keychain.png', name: 'Porte-clés' },
+   263→  { image: '/images/home/marquee-passport.png', name: 'Documents' },
+   264→  { image: '/images/home/marquee-laptop.png', name: 'Ordinateur' },
+   265→  { image: '/images/home/marquee-phone.png', name: 'Téléphone' },
+   266→  { image: '/images/home/marquee-suitcase.png', name: 'Valise' },
+   267→  { image: '/images/home/marquee-glasses.png', name: 'Lunettes' },
+   268→  { image: '/images/home/marquee-wallet.png', name: 'Portefeuille' },
+   269→  { image: '/images/home/marquee-bag.png', name: 'Sac à dos' },
+   270→  { image: '/images/home/suitcase-qr.png', name: 'Bagages' },
+   271→  { image: '/images/home/jacket-qr.png', name: 'Veste' },
+   272→];
+   273→
+   274→// ════════════════════════════════════════════════════════════════════
+   275→// COMPOSANT — Bandeau de stats live (objets retrouvés)
+   276→// Récupère les données depuis /api/stats/public (cache 5 min)
+   277→// ════════════════════════════════════════════════════════════════════
+   278→interface PublicStats {
+   279→  totalFound: number;
+   280→  foundThisMonth: number;
+   281→  totalScans: number;
+   282→  totalProtected: number;
+   283→  averageRating: number;
+   284→  totalReviews: number;
+   285→}
+   286→
+   287→function LiveStatsBar() {
+   288→  const [stats, setStats] = useState<PublicStats | null>(null);
+   289→
+   290→  useEffect(() => {
+   291→    let cancelled = false;
+   292→    async function load() {
+   293→      try {
+   294→        const res = await fetch('/api/stats/public', { cache: 'no-store' });
+   295→        if (!res.ok) return;
+   296→        const json: PublicStats = await res.json();
+   297→        if (!cancelled) setStats(json);
+   298→      } catch {
+   299→        // Silencieux : on garde le fallback statique
+   300→      }
+   301→    }
+   302→    load();
+   303→    return () => { cancelled = true; };
+   304→  }, []);
+   305→
+   306→  // ─── Fallback statique avant chargement ou en cas d'erreur ───
+   307→  const totalFound = stats?.totalFound ?? 0;
+   308→  const foundThisMonth = stats?.foundThisMonth ?? 0;
+   309→  const totalScans = stats?.totalScans ?? 0;
+   310→  const averageRating = stats?.averageRating ?? 0;
+   311→  const totalReviews = stats?.totalReviews ?? 0;
+   312→
+   313→  // Si on n'a pas encore de données live, on affiche les valeurs "marketing"
+   314→  // (98% / < 2h) plutôt que des zéros
+   315→  const hasLive = stats !== null && (totalFound > 0 || totalReviews > 0);
+   316→
+   317→  const scansDisplay = totalScans > 1000 ? `${(totalScans / 1000).toFixed(1)}k` : totalScans.toString();
+   318→  const ratingDisplay = totalReviews > 0 ? `${averageRating.toFixed(1)}/5 ★` : '—';
+   319→  const reviewsLabel = totalReviews > 0 ? `${totalReviews} avis vérifiés` : 'Avis vérifiés';
+   320→
+   321→  const items = hasLive
+   322→    ? [
+   323→        { value: foundThisMonth.toString(), label: 'Retrouvés ce mois-ci', accent: COLORS.greenDark },
+   324→        { value: totalFound.toString(), label: 'Objets retrouvés au total', accent: COLORS.accentDark },
+   325→        { value: scansDisplay, label: 'Scans QR effectués', accent: COLORS.text },
+   326→        { value: ratingDisplay, label: reviewsLabel, accent: COLORS.accentDark },
+   327→      ]
+   328→    : [
+   329→        { value: '98%', label: 'Objets retrouvés', accent: COLORS.greenDark },
+   330→        { value: '< 2h', label: 'Délai moyen retour', accent: COLORS.accentDark },
+   331→        { value: 'Sans app', label: 'Aucune installation', accent: COLORS.text },
+   332→        { value: '3 langues', label: 'FR · EN · AR', accent: COLORS.accentDark },
+   333→      ];
+   334→
+   335→  return (
+   336→    <section
+   337→      className="py-10 px-5"
+   338→      style={{
+   339→        background: COLORS.text,
+   340→        color: 'white',
+   341→      }}
+   342→      aria-label="Statistiques QRTags en temps réel"
+   343→    >
+   344→      <div className="max-w-screen-2xl mx-auto">
+   345→        <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+   346→          {items.map((item, i) => (
+   347→            <motion.div
+   348→              key={i}
+   349→              initial={{ opacity: 0, y: 10 }}
+   350→              whileInView={{ opacity: 1, y: 0 }}
+   351→              viewport={{ once: true }}
+   352→              transition={{ delay: i * 0.08 }}
+   353→              className="text-center"
+   354→            >
+   355→              <div
+   356→                className="text-3xl md:text-5xl font-black mb-1"
+   357→                style={{ color: item.accent }}
+   358→              >
+   359→                {item.value}
+   360→              </div>
+   361→              <div className="text-xs md:text-sm font-medium" style={{ color: 'rgba(255,255,255,0.7)' }}>
+   362→                {item.label}
+   363→              </div>
+   364→            </motion.div>
+   365→          ))}
+   366→        </div>
+   367→        {hasLive && (
+   368→          <p className="text-center text-xs mt-6" style={{ color: 'rgba(255,255,255,0.4)' }}>
+   369→            Données en temps réel · mises à jour automatiquement
+   370→          </p>
+   371→        )}
+   372→      </div>
+   373→    </section>
+   374→  );
+   375→}
+   376→
+   377→// ════════════════════════════════════════════════════════════════════
+   378→// COMPOSANT — Témoignages live depuis /api/reviews/public
+   379→// Si au moins 3 avis vérifiés sont publiés, on les affiche en priorité.
+   380→// Sinon on garde les témoignages marketing statiques (TESTIMONIALS).
+   381→// ════════════════════════════════════════════════════════════════════
+   382→interface LiveReview {
+   383→  id: string;
+   384→  name: string;
+   385→  rating: number;
+   386→  content: string;
+   387→  objectName: string | null;
+   388→  objectCategory: string | null;
+   389→  finderName: string | null;
+   390→  createdAt: string;
+   391→}
+   392→
+   393→function LiveTestimonials() {
+   394→  const [reviews, setReviews] = useState<LiveReview[]>([]);
+   395→  const [loaded, setLoaded] = useState(false);
+   396→
+   397→  useEffect(() => {
+   398→    let cancelled = false;
+   399→    async function load() {
+   400→      try {
+   401→        const res = await fetch('/api/reviews/public', { cache: 'no-store' });
+   402→        if (!res.ok) return;
+   403→        const json = await res.json();
+   404→        if (!cancelled && Array.isArray(json.reviews)) {
+   405→          setReviews(json.reviews);
+   406→        }
+   407→      } catch {
+   408→        // Silencieux
+   409→      } finally {
+   410→        if (!cancelled) setLoaded(true);
+   411→      }
+   412→    }
+   413→    load();
+   414→    return () => { cancelled = true; };
+   415→  }, []);
+   416→
+   417→  // Tant qu'on n'a pas chargé, on affiche les témoignages statiques
+   418→  // (pas de flash visuel)
+   419→  const useLive = loaded && reviews.length >= 3;
+   420→  const displayReviews = useLive ? reviews.slice(0, 6) : [];
+   421→
+   422→  return (
+   423→    <section id="temoignages" className="py-20 lg:py-28 px-5" style={{ background: COLORS.bgAlt }}>
+   424→      <div className="max-w-screen-2xl mx-auto">
+   425→        <div className="text-center mb-14">
+   426→          <div
+   427→            className="inline-block px-4 py-1.5 rounded-full text-sm font-bold mb-4"
+   428→            style={{ background: COLORS.bgWarm, color: COLORS.accentDark, border: `1px solid ${COLORS.borderAccent}` }}
+   429→          >
+   430→            TÉMOIGNAGES
+   431→          </div>
+   432→          <h2 className="text-3xl md:text-5xl font-black mb-4" style={{ color: COLORS.text }}>
+   433→            Ils ont <span style={{ color: COLORS.accentDark }}>retrouvé</span> ce qui comptait le{' '}
+   434→            <span style={{ color: COLORS.greenDark }}>plus.</span>
+   435→          </h2>
+   436→          {useLive && (
+   437→            <p className="text-sm" style={{ color: COLORS.textMuted }}>
+   438→              Avis vérifiés publiés par les propriétaires ·{' '}
+   439→              <Link href="/avis" className="font-bold underline hover:no-underline" style={{ color: COLORS.accentDark }}>
+   440→                Voir tous les avis
+   441→              </Link>
+   442→            </p>
+   443→          )}
+   444→        </div>
+   445→
+   446→        <div className="grid md:grid-cols-3 gap-6">
+   447→          {useLive ? (
+   448→            displayReviews.map((r, i) => (
+   449→              <motion.div
+   450→                key={r.id}
+   451→                initial={{ opacity: 0, y: 20 }}
+   452→                whileInView={{ opacity: 1, y: 0 }}
+   453→                viewport={{ once: true }}
+   454→                transition={{ delay: i * 0.1 }}
+   455→                className="rounded-2xl p-6 flex flex-col"
+   456→                style={{ background: COLORS.card, border: `1px solid ${COLORS.border}` }}
+   457→              >
+   458→                {/* Étoiles + objet retrouvé */}
+   459→                <div className="flex items-center justify-between mb-3">
+   460→                  <div className="flex items-center gap-0.5">
+   461→                    {[1, 2, 3, 4, 5].map((s) => (
+   462→                      <span
+   463→                        key={s}
+   464→                        className="text-lg"
+   465→                        style={{ color: s <= r.rating ? COLORS.greenDark : '#D1D5DB' }}
+   466→                        aria-hidden="true"
+   467→                      >
+   468→                        ★
+   469→                      </span>
+   470→                    ))}
+   471→                  </div>
+   472→                  {r.objectName && (
+   473→                    <span
+   474→                      className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded"
+   475→                      style={{ background: COLORS.green + '22', color: COLORS.greenDark }}
+   476→                    >
+   477→                      {r.objectName}
+   478→                    </span>
+   479→                  )}
+   480→                </div>
+   481→
+   482→                <div className="text-4xl mb-2" style={{ color: COLORS.green }}>&laquo;</div>
+   483→                <p className="text-sm mb-6 flex-1" style={{ color: COLORS.text }}>
+   484→                  {r.content}
+   485→                </p>
+   486→                <div className="flex items-center gap-3 pt-3" style={{ borderTop: `1px solid ${COLORS.border}` }}>
+   487→                  <div
+   488→                    className="w-10 h-10 rounded-full flex items-center justify-center font-bold text-sm"
+   489→                    style={{ background: COLORS.green, color: 'white' }}
+   490→                  >
+   491→                    {r.name.split(' ').map((n) => n[0]).slice(0, 2).join('').toUpperCase()}
+   492→                  </div>
+   493→                  <div className="min-w-0">
+   494→                    <div className="text-sm font-bold truncate" style={{ color: COLORS.text }}>{r.name}</div>
+   495→                    <div className="text-xs" style={{ color: COLORS.textMuted }}>
+   496→                      {r.finderName ? `Merci à ${r.finderName.split(' ')[0]}` : 'Propriétaire QRTags'}
+   497→                    </div>
+   498→                  </div>
+   499→                </div>
+   500→              </motion.div>
+   501→            ))
+   502→          ) : (
+   503→            TESTIMONIALS.map((t, i) => (
+   504→              <motion.div
+   505→                key={i}
+   506→                initial={{ opacity: 0, y: 20 }}
+   507→                whileInView={{ opacity: 1, y: 0 }}
+   508→                viewport={{ once: true }}
+   509→                transition={{ delay: i * 0.1 }}
+   510→                className="rounded-2xl p-6"
+   511→                style={{ background: COLORS.card, border: `1px solid ${COLORS.border}` }}
+   512→              >
+   513→                {/* Badge type */}
+   514→                <div
+   515→                  className="inline-block px-3 py-1 rounded-lg text-xs font-bold mb-4"
+   516→                  style={{
+   517→                    background: t.type === 'finder' ? COLORS.green + '22' : COLORS.accent + '22',
+   518→                    color: t.type === 'finder' ? COLORS.greenDark : COLORS.accentDark,
+   519→                  }}
+   520→                >
+   521→                  {t.type === 'finder' ? 'Trouveur' : 'Propriétaire'}
+   522→                </div>
+   523→                <div className="text-4xl mb-2" style={{ color: t.type === 'finder' ? COLORS.green : COLORS.accent }}>&laquo;</div>
+   524→                <p className="text-sm mb-6" style={{ color: COLORS.text }}>{t.text}</p>
+   525→                <div className="flex items-center gap-3">
+   526→                  <div
+   527→                    className="w-10 h-10 rounded-full flex items-center justify-center font-bold text-sm"
+   528→                    style={{
+   529→                      background: t.type === 'finder' ? COLORS.green : COLORS.accent,
+   530→                      color: t.type === 'finder' ? 'white' : COLORS.text,
+   531→                    }}
+   532→                  >
+   533→                    {t.avatar}
+   534→                  </div>
+   535→                  <div>
+   536→                    <div className="text-sm font-bold" style={{ color: COLORS.text }}>{t.name}</div>
+   537→                    <div className="text-xs" style={{ color: COLORS.textMuted }}>{t.role}</div>
+   538→                  </div>
+   539→                </div>
+   540→              </motion.div>
+   541→            ))
+   542→          )}
+   543→        </div>
+   544→      </div>
+   545→    </section>
+   546→  );
+   547→}
+   548→
+   549→// ════════════════════════════════════════════════════════════════════
+   550→// PAGE
+   551→// ════════════════════════════════════════════════════════════════════
+   552→export default function HomePage() {
+   553→  const [scrolled, setScrolled] = useState(false);
+   554→  const [menuOpen, setMenuOpen] = useState(false);
+   555→  const [activeTab, setActiveTab] = useState<'finder' | 'owner'>('finder');
+   556→  const [shopProducts, setShopProducts] = useState<ShopProduct[]>([]);
+   557→  const { traveler, isLoggedIn, logout } = useTravelerAuth();
+   558→  const [authModalOpen, setAuthModalOpen] = useState(false);
+   559→
+   560→  // Fetch active products from DB on mount
+   561→  useEffect(() => {
+   562→    fetch('/api/shop/products')
+   563→      .then(res => res.json())
+   564→      .then(data => {
+   565→        if (Array.isArray(data) && data.length > 0) {
+   566→          setShopProducts(data);
+   567→        }
+   568→      })
+   569→      .catch(() => {
+   570→        // Keep fallback if API fails
+   571→      });
+   572→  }, []);
+   573→
+   574→  // Use DB products if available, otherwise fallback.
+   575→  // resolvePackImage() guarantees every product gets a working local sachet image
+   576→  // even when DB image is null, broken, or points to a missing upload.
+   577→  const displayPacks = shopProducts.length > 0
+   578→    ? shopProducts.map(p => ({
+   579→        quantity: p.quantity,
+   580→        name: p.name,
+   581→        slug: p.slug,
+   582→        price: p.price,
+   583→        desc: p.description || `${p.quantity} étiquettes QR indestructibles.`,
+   584→        badge: p.quantity >= 10 ? 'ÉCONOMIQUE' : p.quantity === 5 ? 'POPULAIRE' : '',
+   585→        image: p.image,                              // Original DB image (may be broken)
+   586→        fallbackImage: resolvePackImage(p),          // Always a working local sachet
+   587→      }))
+   588→    : SHOP_PACKS_FALLBACK.map(p => ({ ...p, fallbackImage: p.image }));
+   589→
+   590→  useEffect(() => {
+   591→    const onScroll = () => setScrolled(window.scrollY > 20);
+   592→    window.addEventListener('scroll', onScroll);
+   593→    return () => window.removeEventListener('scroll', onScroll);
+   594→  }, []);
+   595→
+   596→  const currentSteps = activeTab === 'finder' ? FINDER_STEPS : OWNER_STEPS;
+   597→
+   598→  return (
+   599→    <main style={{ background: COLORS.bg, color: COLORS.text, minHeight: '100vh' }}>
+   600→      {/* ═══ NAVBAR ═══ */}
+   601→      <nav
+   602→        style={{
+   603→          position: 'fixed',
+   604→          top: 0,
+   605→          left: 0,
+   606→          right: 0,
+   607→          zIndex: 50,
+   608→          background: scrolled ? 'rgba(255,255,255,0.95)' : 'rgba(255,255,255,0.7)',
+   609→          backdropFilter: scrolled ? 'blur(12px)' : 'blur(6px)',
+   610→          borderBottom: scrolled ? `1px solid ${COLORS.border}` : '1px solid transparent',
+   611→          transition: 'all 0.3s',
+   612→        }}
+   613→      >
+   614→        <div className="max-w-screen-2xl mx-auto px-5 sm:px-6 lg:px-8">
+   615→          <div className="flex items-center justify-between h-16 lg:h-20">
+   616→            <Link href="/" className="flex items-center gap-2 group">
+   617→              <QRTagsLogo size="md" variant="light" withHover />
+   618→            </Link>
+   619→
+   620→            <div className="hidden md:flex items-center gap-1">
+   621→              <a href="#comment" className="px-4 py-2 text-sm font-medium hover:text-[#c89a00] transition-colors">Comment ça marche</a>
+   622→              <a href="#contact-whatsapp" className="px-4 py-2 text-sm font-medium hover:text-[#c89a00] transition-colors">Comment suis-je contacté ?</a>
+   623→              <a href="#tarifs" className="px-4 py-2 text-sm font-medium hover:text-[#c89a00] transition-colors">Tarifs</a>
+   624→              <a href="#temoignages" className="px-4 py-2 text-sm font-medium hover:text-[#c89a00] transition-colors">Témoignages</a>
+   625→              <Link href="/avis" className="px-4 py-2 text-sm font-medium hover:text-[#c89a00] transition-colors">Avis</Link>
+   626→            </div>
+   627→
+   628→            <div className="hidden md:flex items-center gap-3">
+   629→              {isLoggedIn ? (
+   630→                <div className="flex items-center gap-2">
+   631→                  <div className="flex items-center gap-1.5 text-sm text-[#525252]">
+   632→                    <User className="w-4 h-4" />
+   633→                    <span className="hidden lg:inline text-sm">{traveler?.name || traveler?.phone}</span>
+   634→                  </div>
+   635→                  <button onClick={logout} className="px-3 py-2 text-sm font-medium hover:text-[#c89a00] transition-colors flex items-center gap-1">
+   636→                    <LogOut className="w-4 h-4" />
+   637→                    <span className="hidden lg:inline">Déconnexion</span>
+   638→                  </button>
+   639→                </div>
+   640→              ) : (
+   641→                <button onClick={() => setAuthModalOpen(true)} className="px-4 py-2 text-sm font-medium hover:text-[#c89a00] transition-colors flex items-center gap-1.5">
+   642→                  <LogIn className="w-4 h-4" />
+   643→                  Mon compte
+   644→                </button>
+   645→              )}
+   646→              <a
+   647→                href="#tracker"
+   648→                className="px-4 py-2 text-sm font-medium hover:text-[#c89a00] transition-colors"
+   649→              >
+   650→                Suivre un objet
+   651→              </a>
+   652→              <Link
+   653→                href="#tarifs"
+   654→                className="px-5 py-2.5 rounded-lg text-sm font-bold transition-all hover:scale-105"
+   655→                style={{ background: COLORS.accent, color: COLORS.text }}
+   656→              >
+   657→                Protéger mes objets
+   658→              </Link>
+   659→            </div>
+   660→
+   661→            <button className="md:hidden p-2" onClick={() => setMenuOpen(!menuOpen)} aria-label="Menu">
+   662→              {menuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+   663→            </button>
+   664→          </div>
+   665→
+   666→          {menuOpen && (
+   667→            <div className="md:hidden pb-4 space-y-2">
+   668→              {isLoggedIn ? (
+   669→                <div className="flex items-center justify-between px-4 py-2">
+   670→                  <span className="text-sm text-[#525252]">👤 {traveler?.name || traveler?.phone}</span>
+   671→                  <button onClick={() => { logout(); setMenuOpen(false); }} className="text-sm text-red-500 font-medium">Déconnexion</button>
+   672→                </div>
+   673→              ) : (
+   674→                <button onClick={() => { setAuthModalOpen(true); setMenuOpen(false); }} className="block px-4 py-2 text-sm font-medium text-[#c89a00]">
+   675→                  👤 Mon compte / S'inscrire
+   676→                </button>
+   677→              )}
+   678→              <a href="#comment" onClick={() => setMenuOpen(false)} className="block px-4 py-2 text-sm">Comment ça marche</a>
+   679→              <a href="#contact-whatsapp" onClick={() => setMenuOpen(false)} className="block px-4 py-2 text-sm">Comment suis-je contacté ?</a>
+   680→              <a href="#tarifs" onClick={() => setMenuOpen(false)} className="block px-4 py-2 text-sm">Tarifs</a>
+   681→              <a href="#temoignages" onClick={() => setMenuOpen(false)} className="block px-4 py-2 text-sm">Témoignages</a>
+   682→              <Link href="/avis" onClick={() => setMenuOpen(false)} className="block px-4 py-2 text-sm">Avis</Link>
+   683→              <a href="#tracker" onClick={() => setMenuOpen(false)} className="block px-4 py-2 text-sm text-[#c89a00]">Suivre un objet</a>
+   684→              <Link href="#tarifs" onClick={() => setMenuOpen(false)} className="block px-4 py-3 text-sm font-bold text-center rounded-lg" style={{ background: COLORS.accent, color: COLORS.text }}>
+   685→                Protéger mes objets
+   686→              </Link>
+   687→            </div>
+   688→          )}
+   689→        </div>
+   690→      </nav>
+   691→
+   692→      {/* ═══ HERO — Carrousel défilant EN HAUT + infos en dessous ═══ */}
+   693→      <section id="objets" className="pt-24 pb-20 lg:pt-28 lg:pb-32 relative overflow-hidden">
+   694→        <div
+   695→          className="absolute inset-0 opacity-50"
+   696→          style={{
+   697→            background: `radial-gradient(ellipse at 20% 30%, ${COLORS.accent}22 0%, transparent 60%), radial-gradient(ellipse at 80% 70%, ${COLORS.green}11 0%, transparent 50%)`,
+   698→          }}
+   699→        />
+   700→
+   701→        {/* ─── TOP : Carrousel défilant pleine largeur (immersif, cards 500x500) ─── */}
+   702→        <motion.div
+   703→          initial={{ opacity: 0, y: -20 }}
+   704→          animate={{ opacity: 1, y: 0 }}
+   705→          transition={{ duration: 0.7 }}
+   706→          style={{
+   707→            width: '100vw',
+   708→            marginLeft: 'calc(50% - 50vw)',
+   709→            marginRight: 'calc(50% - 50vw)',
+   710→          }}
+   711→        >
+   712→          <div
+   713→            className="relative overflow-hidden"
+   714→            style={{ background: COLORS.bgWarm, padding: '32px 0 40px 0' }}
+   715→          >
+   716→            {/* Titre au-dessus du défilement */}
+   717→            <div className="px-6 md:px-12 mb-5 flex items-center justify-between">
+   718→              <p className="text-xs md:text-sm font-bold uppercase tracking-wider" style={{ color: COLORS.accentDark }}>
+   719→                Objets protégés par QRTags · défilement continu
+   720→              </p>
+   721→              <div
+   722→                className="hidden md:flex items-center gap-2 px-3 py-1 rounded-full"
+   723→                style={{ background: COLORS.card, border: `1px solid ${COLORS.border}` }}
+   724→              >
+   725→                <span className="w-2 h-2 rounded-full animate-pulse" style={{ background: COLORS.green }} />
+   726→                <span className="text-xs font-bold" style={{ color: COLORS.textMuted }}>98% retrouvés</span>
+   727→              </div>
+   728→            </div>
+   729→
+   730→            {/* Bande de cards qui défile en continu (45s, plus lent) — cards 300x300 */}
+   731→            <div className="flex animate-marquee-slow">
+   732→              {MARQUEE_ITEMS.concat(MARQUEE_ITEMS).map((item, i) => (
+   733→                <div
+   734→                  key={`hero-card-${i}`}
+   735→                  className="flex-shrink-0 mx-3 rounded-2xl overflow-hidden shadow-md hover:shadow-xl transition-shadow"
+   736→                  style={{
+   737→                    background: COLORS.card,
+   738→                    border: `1px solid ${COLORS.border}`,
+   739→                    width: 'min(300px, 85vw)',
+   740→                  }}
+   741→                >
+   742→                  {/* Image carrée 300x300 */}
+   743→                  <div className="relative" style={{ height: 'min(300px, 85vw)' }}>
+   744→                    <Image
+   745→                      src={item.image}
+   746→                      alt={item.name}
+   747→                      fill
+   748→                      className="object-cover"
+   749→                      sizes="300px"
+   750→                    />
+   751→                    {/* Badge QR en bas à droite de l'image */}
+   752→                    <div
+   753→                      className="absolute bottom-3 right-3 px-3 py-1.5 rounded-lg text-xs font-bold shadow-md"
+   754→                      style={{ background: 'rgba(255,255,255,0.95)', color: COLORS.accentDark }}
+   755→                    >
+   756→                      QR Tag
+   757→                    </div>
+   758→                  </div>
+   759→                  {/* Texte (bas) — sobre : juste le nom, pas de description répétitive */}
+   760→                  <div className="p-4">
+   761→                    <h3 className="text-base font-bold" style={{ color: COLORS.text }}>
+   762→                      {item.name}
+   763→                    </h3>
+   764→                  </div>
+   765→                </div>
+   766→              ))}
+   767→            </div>
+   768→
+   769→            {/* CTA flottant superposé au carrousel — 'Commander mes tags' */}
+   770→            <motion.div
+   771→              initial={{ opacity: 0, y: 20 }}
+   772→              animate={{ opacity: 1, y: 0 }}
+   773→              transition={{ delay: 0.6 }}
+   774→              className="absolute left-1/2 -translate-x-1/2 z-20"
+   775→              style={{ bottom: '24px' }}
+   776→            >
+   777→              <Link
+   778→                href="/#tarifs"
+   779→                className="cta-pulse flex items-center gap-3 px-7 py-4 rounded-full font-black text-base shadow-2xl transition-all hover:scale-105 hover:shadow-2xl"
+   780→                style={{
+   781→                  background: COLORS.accent,
+   782→                  color: COLORS.text,
+   783→                  border: `3px solid ${COLORS.text}`,
+   784→                  boxShadow: '0 10px 30px rgba(0,0,0,0.25)',
+   785→                }}
+   786→              >
+   787→                <ShoppingBag className="w-5 h-5" />
+   788→                Commander mes tags
+   789→                <ArrowRight className="w-5 h-5" />
+   790→              </Link>
+   791→            </motion.div>
+   792→          </div>
+   793→        </motion.div>
+   794→
+   795→        {/* ─── BOTTOM : Grille 2 colonnes — texte + preview trouvaille ─── */}
+   796→        <div className="max-w-screen-2xl mx-auto relative px-5 mt-16 lg:mt-24">
+   797→          <div className="grid lg:grid-cols-2 gap-12 items-center">
+   798→          <motion.div
+   799→            initial={{ opacity: 0, y: 30 }}
+   800→            animate={{ opacity: 1, y: 0 }}
+   801→            transition={{ duration: 0.7 }}
+   802→          >
+   803→            {/* Badge citoyen */}
+   804→            <div
+   805→              className="inline-flex items-center gap-2 px-4 py-2 rounded-full mb-6"
+   806→              style={{ background: COLORS.bgWarm, border: `1px solid ${COLORS.borderAccent}` }}
+   807→            >
+   808→              <HandHelping className="w-4 h-4" style={{ color: COLORS.greenDark }} />
+   809→              <span className="text-sm font-medium" style={{ color: COLORS.accentDark }}>
+   810→                Rendre un objet perdu — geste citoyen
+   811→              </span>
+   812→            </div>
+   813→
+   814→            <h1 className="text-4xl md:text-5xl lg:text-6xl font-black leading-tight mb-6" style={{ color: COLORS.text }}>
+   815→              Vous avez{' '}
+   816→              <span style={{ color: COLORS.greenDark }}>trouvé</span>{' '}
+   817→              un objet ?
+   818→            </h1>
+   819→            <p className="text-lg md:text-xl mb-3 max-w-xl" style={{ color: COLORS.textMuted }}>
+   820→              Scannez le QR tag, contactez le propriétaire en 1 clic via WhatsApp.
+   821→              Pas d&apos;app, pas de formulaire, pas de stress. Juste un geste simple.
+   822→            </p>
+   823→            <p className="text-base mb-8 max-w-xl" style={{ color: COLORS.textMuted }}>
+   824→              Vous avez <strong style={{ color: COLORS.accentDark }}>perdu</strong> quelque chose ?
+   825→              Collez un tag QRTags et toute personne qui trouve votre objet peut vous contacter instantanément
+   826→              avec sa position GPS.
+   827→            </p>
+   828→
+   829→            <div className="flex flex-col sm:flex-row gap-4 mb-10">
+   830→              <a
+   831→                href="#tracker"
+   832→                className="px-6 py-4 rounded-xl font-bold text-base flex items-center justify-center gap-2 transition-all hover:scale-105"
+   833→                style={{ background: COLORS.green, color: 'white' }}
+   834→              >
+   835→                <Search className="w-5 h-5" />
+   836→                Suivre un objet perdu
+   837→              </a>
+   838→              <Link
+   839→                href="#tarifs"
+   840→                className="px-6 py-4 rounded-xl font-bold text-base flex items-center justify-center gap-2 border-2 transition-all hover:bg-[#fffdf5]"
+   841→                style={{ borderColor: COLORS.accent, color: COLORS.text }}
+   842→              >
+   843→                <Sparkles className="w-5 h-5" style={{ color: COLORS.accentDark }} />
+   844→                Protéger mes objets
+   845→              </Link>
+   846→              {!isLoggedIn ? (
+   847→                <button
+   848→                  onClick={() => setAuthModalOpen(true)}
+   849→                  className="px-6 py-4 rounded-xl font-bold text-base flex items-center justify-center gap-2 transition-all hover:scale-105"
+   850→                  style={{ background: COLORS.text, color: 'white' }}
+   851→                >
+   852→                  <UserPlus className="w-5 h-5" />
+   853→                  S&apos;inscrire
+   854→                </button>
+   855→              ) : (
+   856→                <Link
+   857→                  href="/mes-bagages"
+   858→                  className="px-6 py-4 rounded-xl font-bold text-base flex items-center justify-center gap-2 border-2 transition-all hover:bg-[#fafafa]"
+   859→                  style={{ borderColor: COLORS.text, color: COLORS.text }}
+   860→                >
+   861→                  <User className="w-5 h-5" />
+   862→                  Mes bagages
+   863→                </Link>
+   864→              )}
+   865→            </div>
+   866→
+   867→            {/* Stats inline */}
+   868→            <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+   869→              {STATS.map((s, i) => (
+   870→                <motion.div
+   871→                  key={i}
+   872→                  initial={{ opacity: 0, y: 20 }}
+   873→                  animate={{ opacity: 1, y: 0 }}
+   874→                  transition={{ delay: 0.2 + i * 0.1 }}
+   875→                >
+   876→                  <div className="text-2xl md:text-3xl font-black" style={{ color: COLORS.accentDark }}>
+   877→                    {s.value}
+   878→                  </div>
+   879→                  <div className="text-xs md:text-sm" style={{ color: COLORS.textMuted }}>
+   880→                    {s.label}
+   881→                  </div>
+   882→                </motion.div>
+   883→              ))}
+   884→            </div>
+   885→          </motion.div>
+   886→
+   887→          {/* Right : Formulaire "Suivre un objet" directement dans le hero
+   888→              (colonne de droite sur desktop, sous le texte sur mobile).
+   889→              L'utilisateur peut tracker son objet dès la landing, sans scroll. */}
+   890→          <motion.div
+   891→            id="tracker"
+   892→            initial={{ opacity: 0, scale: 0.95 }}
+   893→            animate={{ opacity: 1, scale: 1 }}
+   894→            transition={{ duration: 0.7, delay: 0.3 }}
+   895→          >
+   896→            <TrackingWidget inline />
+   897→          </motion.div>
+   898→          </div>
+   899→        </div>
+   900→      </section>
+   901→
+   902→      {/* ═══ STATS LIVE — Compteur objets retrouvés ce mois + total ═══ */}
+   903→      <LiveStatsBar />
+   904→
+   905→      {/* ═══ COMMENT ÇA MARCHE — Tabs Trouveur / Propriétaire ═══ */}
+   906→      <section id="comment" className="py-20 lg:py-28 px-5" style={{ background: COLORS.bg }}>
+   907→        <div className="max-w-screen-2xl mx-auto">
+   908→          <div className="text-center mb-10">
+   909→            <div
+   910→              className="inline-block px-4 py-1.5 rounded-full text-sm font-bold mb-4"
+   911→              style={{ background: COLORS.bgWarm, color: COLORS.accentDark, border: `1px solid ${COLORS.borderAccent}` }}
+   912→            >
+   913→              SIMPLE & RAPIDE
+   914→            </div>
+   915→            <h2 className="text-3xl md:text-5xl font-black mb-4" style={{ color: COLORS.text }}>
+   916→              Comment ça <span style={{ color: COLORS.accentDark }}>marche</span> ?
+   917→            </h2>
+   918→            <p className="text-lg max-w-2xl mx-auto" style={{ color: COLORS.textMuted }}>
+   919→              Que vous soyez le trouveur ou le propriétaire, QRTags rend la retrouvaille simple.
+   920→            </p>
+   921→          </div>
+   922→
+   923→          {/* Tabs : Trouveur / Propriétaire */}
+   924→          <div className="flex justify-center gap-4 mb-12">
+   925→            <button
+   926→              onClick={() => setActiveTab('finder')}
+   927→              className="px-6 py-3 rounded-xl font-bold text-sm transition-all"
+   928→              style={{
+   929→                background: activeTab === 'finder' ? COLORS.green : COLORS.card,
+   930→                color: activeTab === 'finder' ? 'white' : COLORS.textMuted,
+   931→                border: `2px solid ${activeTab === 'finder' ? COLORS.green : COLORS.border}`,
+   932→              }}
+   933→            >
+   934→              J&apos;ai trouvé un objet
+   935→            </button>
+   936→            <button
+   937→              onClick={() => setActiveTab('owner')}
+   938→              className="px-6 py-3 rounded-xl font-bold text-sm transition-all"
+   939→              style={{
+   940→                background: activeTab === 'owner' ? COLORS.accent : COLORS.card,
+   941→                color: activeTab === 'owner' ? COLORS.text : COLORS.textMuted,
+   942→                border: `2px solid ${activeTab === 'owner' ? COLORS.accent : COLORS.border}`,
+   943→              }}
+   944→            >
+   945→              J&apos;ai perdu un objet
+   946→            </button>
+   947→          </div>
+   948→
+   949→          {/* Steps — with real images */}
+   950→          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
+   951→            {currentSteps.map((step, i) => {
+   952→              const card = (
+   953→                <motion.div
+   954→                  key={`${activeTab}-${i}`}
+   955→                  initial={{ opacity: 0, y: 30 }}
+   956→                  animate={{ opacity: 1, y: 0 }}
+   957→                  transition={{ delay: i * 0.1 }}
+   958→                  className="rounded-2xl overflow-hidden transition-all hover:scale-105 hover:shadow-xl h-full"
+   959→                  style={{ background: COLORS.card, border: `1px solid ${COLORS.border}` }}
+   960→                >
+   961→                  <div className="relative aspect-[4/3] overflow-hidden">
+   962→                    <Image
+   963→                      src={step.image}
+   964→                      alt={step.title}
+   965→                      fill
+   966→                      className="object-cover"
+   967→                      sizes="(max-width: 768px) 100vw, (max-width: 1024px) 50vw, 25vw"
+   968→                    />
+   969→                    <div
+   970→                      className="absolute top-3 left-3 text-xs font-black px-2 py-1 rounded-lg"
+   971→                      style={{ background: step.color, color: 'white' }}
+   972→                    >
+   973→                      Étape {step.num}
+   974→                    </div>
+   975→                    {step.href && (
+   976→                      <div
+   977→                        className="absolute bottom-3 right-3 text-xs font-bold px-2 py-1 rounded-lg flex items-center gap-1"
+   978→                        style={{ background: 'rgba(255,255,255,0.95)', color: COLORS.text }}
+   979→                      >
+   980→                        Voir le détail
+   981→                        <ArrowRight className="w-3 h-3" />
+   982→                      </div>
+   983→                    )}
+   984→                  </div>
+   985→                  <div className="p-5">
+   986→                    <h3 className="text-lg font-bold mb-2" style={{ color: COLORS.text }}>{step.title}</h3>
+   987→                    <p className="text-sm" style={{ color: COLORS.textMuted }}>{step.desc}</p>
+   988→                  </div>
+   989→                </motion.div>
+   990→              );
+   991→
+   992→              // Si l'étape a une page dédiée (parcours trouveur), on wrappe dans un Link.
+   993→              if (step.href) {
+   994→                return (
+   995→                  <Link key={`${activeTab}-${i}`} href={step.href} className="block h-full">
+   996→                    {card}
+   997→                  </Link>
+   998→                );
+   999→              }
+  1000→
+  1001→              return card;
+  1002→            })}
+  1003→          </div>
+  1004→        </div>
+  1005→      </section>
+  1006→
+  1007→      {/* ═══ COMMENT SUIS-JE CONTACTÉ ? — Mockup WhatsApp réaliste ═══ */}
+  1008→      <section id="contact-whatsapp" className="py-20 lg:py-28 px-5" style={{ background: COLORS.bgAlt }}>
+  1009→        <div className="max-w-screen-2xl mx-auto">
+  1010→          <div className="grid lg:grid-cols-2 gap-12 lg:gap-16 items-center">
+  1011→            {/* ─── Left : Explications ─── */}
+  1012→            <motion.div
+  1013→              initial={{ opacity: 0, x: -30 }}
+  1014→              whileInView={{ opacity: 1, x: 0 }}
+  1015→              viewport={{ once: true }}
+  1016→              transition={{ duration: 0.6 }}
+  1017→            >
+  1018→              <div
+  1019→                className="inline-flex items-center gap-2 px-4 py-2 rounded-full mb-6"
+  1020→                style={{ background: '#25D36622', border: '1px solid #25D36655' }}
+  1021→              >
+  1022→                <MessageCircle className="w-4 h-4" style={{ color: '#25D366' }} />
+  1023→                <span className="text-sm font-bold" style={{ color: '#128C7E' }}>
+  1024→                  Alerte WhatsApp instantanée
+  1025→                </span>
+  1026→              </div>
+  1027→
+  1028→              <h2 className="text-3xl md:text-4xl lg:text-5xl font-black mb-6 leading-tight" style={{ color: COLORS.text }}>
+  1029→                Comment <span style={{ color: '#128C7E' }}>suis-je contacté</span> quand on trouve mon objet&nbsp;?
+  1030→              </h2>
+  1031→
+  1032→              <p className="text-lg mb-6" style={{ color: COLORS.textMuted }}>
+  1033→                Dès qu&apos;un trouveur scanne votre QR tag, vous recevez un WhatsApp avec sa position GPS exacte.
+  1034→                Pas de spam, pas d&apos;appel inconnu — juste un message clair, et vous décidez de la suite.
+  1035→              </p>
+  1036→
+  1037→              <ul className="space-y-3 mb-8">
+  1038→                {[
+  1039→                  { icon: '📍', text: 'Position GPS du trouveur envoyée automatiquement' },
+  1040→                  { icon: '💬', text: 'Message pré-rempli : référence, objet, heure du scan' },
+  1041→                  { icon: '🔒', text: 'Votre numéro reste invisible — le trouveur passe par QRTags' },
+  1042→                  { icon: '⚡', text: 'Notification en moins de 5 secondes après le scan' },
+  1043→                ].map((item, i) => (
+  1044→                  <li key={i} className="flex items-start gap-3">
+  1045→                    <span className="text-xl flex-shrink-0" aria-hidden="true">{item.icon}</span>
+  1046→                    <span className="text-base" style={{ color: COLORS.text }}>{item.text}</span>
+  1047→                  </li>
+  1048→                ))}
+  1049→              </ul>
+  1050→
+  1051→              <Link
+  1052→                href="#tarifs"
+  1053→                className="inline-flex items-center gap-2 px-6 py-3 rounded-xl font-bold transition-all hover:scale-105"
+  1054→                style={{ background: '#25D366', color: 'white' }}
+  1055→              >
+  1056→                <MessageCircle className="w-5 h-5" />
+  1057→                Recevoir mes alertes WhatsApp
+  1058→                <ArrowRight className="w-4 h-4" />
+  1059→              </Link>
+  1060→            </motion.div>
+  1061→
+  1062→            {/* ─── Right : Mockup WhatsApp réaliste ─── */}
+  1063→            <motion.div
+  1064→              initial={{ opacity: 0, scale: 0.9, rotate: 2 }}
+  1065→              whileInView={{ opacity: 1, scale: 1, rotate: 0 }}
+  1066→              viewport={{ once: true }}
+  1067→              transition={{ duration: 0.7, delay: 0.2 }}
+  1068→              className="relative mx-auto"
+  1069→              style={{ maxWidth: '380px' }}
+  1070→            >
+  1071→              {/* Cadre téléphone */}
+  1072→              <div
+  1073→                className="rounded-[2.5rem] p-2.5 shadow-2xl"
+  1074→                style={{ background: '#1a1a1a', border: '8px solid #0a0a0a' }}
+  1075→              >
+  1076→                {/* Encoche */}
+  1077→                <div className="relative mx-auto mb-1" style={{ width: '120px', height: '22px', background: '#0a0a0a', borderRadius: '0 0 14px 14px' }} />
+  1078→
+  1079→                {/* Écran WhatsApp */}
+  1080→                <div
+  1081→                  className="rounded-[2rem] overflow-hidden"
+  1082→                  style={{ background: '#ECE5DD', height: '600px' }}
+  1083→                >
+  1084→                  {/* ─── Header vert WhatsApp ─── */}
+  1085→                  <div
+  1086→                    className="px-4 py-3 flex items-center gap-3"
+  1087→                    style={{ background: '#075E54', color: 'white' }}
+  1088→                  >
+  1089→                    {/* Avatar */}
+  1090→                    <div
+  1091→                      className="rounded-full flex items-center justify-center font-bold text-sm"
+  1092→                      style={{ width: '38px', height: '38px', background: '#FDB900', color: '#0d0d0f' }}
+  1093→                    >
+  1094→                      Q
+  1095→                    </div>
+  1096→                    <div className="flex-1">
+  1097→                      <div className="text-sm font-bold">Alerte QRTags</div>
+  1098→                      <div className="text-xs opacity-80">en ligne · vérifié</div>
+  1099→                    </div>
+  1100→                    <svg viewBox="0 0 24 24" fill="white" className="w-5 h-5 opacity-90" aria-hidden="true">
+  1101→                      <path d="M20 15.5c-1.25 0-2.45-.2-3.57-.57a1 1 0 0 0-1.02.24l-2.2 2.2a15.05 15.05 0 0 1-6.59-6.58l2.2-2.21a1 1 0 0 0 .25-1.02A11.36 11.36 0 0 1 8.5 4a1 1 0 0 0-1-1H4a1 1 0 0 0-1 1c0 9.39 7.61 17 17 17a1 1 0 0 0 1-1v-3.5a1 1 0 0 0-1-1z"/>
+  1102→                    </svg>
+  1103→                  </div>
+  1104→
+  1105→                  {/* ─── Zone de chat ─── */}
+  1106→                  <div className="px-3 py-4 space-y-2.5" style={{ height: 'calc(100% - 64px)', backgroundImage: 'url(\'data:image/svg+xml;utf8,<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"40\" height=\"40\"><circle cx=\"20\" cy=\"20\" r=\"1\" fill=\"%23d4cab1\" opacity=\"0.3\"/></svg>\')' }}>
+  1107→                    {/* Date separator */}
+  1108→                    <div className="flex justify-center">
+  1109→                      <span
+  1110→                        className="px-3 py-1 rounded-lg text-xs font-bold"
+  1111→                        style={{ background: '#E1F2FA', color: '#54656F' }}
+  1112→                      >Aujourd&rsquo;hui</span>
+  1113→                    </div>
+  1114→
+  1115→                    {/* Message entrant 1 — texte */}
+  1116→                    <div className="flex justify-start">
+  1117→                      <div
+  1118→                        className="rounded-xl rounded-tl-sm px-3 py-2 max-w-[80%] shadow-sm"
+  1119→                        style={{ background: 'white' }}
+  1120→                      >
+  1121→                        <p className="text-sm mb-1" style={{ color: '#111' }}>
+  1122→                          <strong>🔔 Objet trouvé !</strong>
+  1123→                        </p>
+  1124→                        <p className="text-sm mb-1" style={{ color: '#111' }}>
+  1125→                          Bonjour Amira 👋
+  1126→                        </p>
+  1127→                        <p className="text-sm" style={{ color: '#111' }}>
+  1128→                          Quelqu&rsquo;un vient de scanner votre valise <strong>Réf. QRT26-MLQGY7</strong>.
+  1129→                        </p>
+  1130→                        <div className="flex items-center justify-end gap-1 mt-1">
+  1131→                          <span className="text-[10px]" style={{ color: '#667781' }}>10:42</span>
+  1132→                        </div>
+  1133→                      </div>
+  1134→                    </div>
+  1135→
+  1136→                    {/* Message entrant 2 — localisation */}
+  1137→                    <div className="flex justify-start">
+  1138→                      <div
+  1139→                        className="rounded-xl rounded-tl-sm overflow-hidden max-w-[80%] shadow-sm"
+  1140→                        style={{ background: 'white' }}
+  1141→                      >
+  1142→                        {/* Preview carte (gradient simulé) */}
+  1143→                        <div
+  1144→                          className="relative flex items-center justify-center"
+  1145→                          style={{
+  1146→                            height: '120px',
+  1147→                            background: 'linear-gradient(135deg, #c8e6c9 0%, #a5d6a7 35%, #81c784 70%, #66bb6a 100%)',
+  1148→                          }}
+  1149→                        >
+  1150→                          {/* Routes simulées */}
+  1151→                          <svg viewBox="0 0 200 120" className="absolute inset-0 w-full h-full" preserveAspectRatio="none" aria-hidden="true">
+  1152→                            <path d="M0,80 Q50,60 100,75 T200,70" stroke="white" strokeWidth="3" fill="none" opacity="0.7"/>
+  1153→                            <path d="M50,0 L60,120" stroke="white" strokeWidth="2" fill="none" opacity="0.5"/>
+  1154→                            <path d="M0,30 L200,45" stroke="white" strokeWidth="2" fill="none" opacity="0.5"/>
+  1155→                          </svg>
+  1156→                          {/* Pin centrale */}
+  1157→                          <div className="relative z-10 flex flex-col items-center">
+  1158→                            <svg viewBox="0 0 24 24" className="w-8 h-8" fill="#ea4335" aria-hidden="true">
+  1159→                              <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5a2.5 2.5 0 1 1 0-5 2.5 2.5 0 0 1 0 5z"/>
+  1160→                            </svg>
+  1161→                            <span className="mt-1 px-2 py-0.5 rounded text-[10px] font-bold" style={{ background: 'white', color: '#111' }}>
+  1162→                              Position GPS
+  1163→                            </span>
+  1164→                          </div>
+  1165→                        </div>
+  1166→                        <div className="px-3 py-2">
+  1167→                          <p className="text-sm font-bold" style={{ color: '#111' }}>📍 Gare Saint-Charles, Marseille</p>
+  1168→                          <p className="text-xs" style={{ color: '#667781' }}>Précision : 8 mètres · il y a 2 min</p>
+  1169→                          <div className="flex items-center justify-end gap-1 mt-1">
+  1170→                            <span className="text-[10px]" style={{ color: '#667781' }}>10:42</span>
+  1171→                          </div>
+  1172→                        </div>
+  1173→                      </div>
+  1174→                    </div>
+  1175→
+  1176→                    {/* Message entrant 3 — message du trouveur */}
+  1177→                    <div className="flex justify-start">
+  1178→                      <div
+  1179→                        className="rounded-xl rounded-tl-sm px-3 py-2 max-w-[80%] shadow-sm"
+  1180→                        style={{ background: 'white' }}
+  1181→                      >
+  1182→                        <p className="text-sm" style={{ color: '#111' }}>
+  1183→                          « Bonjour, j&rsquo;ai trouvé votre valise à la sortie de la gare. Je peux vous la rendre tout de suite. — Lucas »
+  1184→                        </p>
+  1185→                        <div className="flex items-center justify-end gap-1 mt-1">
+  1186→                          <span className="text-[10px]" style={{ color: '#667781' }}>10:43</span>
+  1187→                        </div>
+  1188→                      </div>
+  1189→                    </div>
+  1190→
+  1191→                    {/* Message sortant — votre réponse */}
+  1192→                    <div className="flex justify-end">
+  1193→                      <div
+  1194→                        className="rounded-xl rounded-tr-sm px-3 py-2 max-w-[80%] shadow-sm"
+  1195→                        style={{ background: '#DCF8C6' }}
+  1196→                      >
+  1197→                        <p className="text-sm" style={{ color: '#111' }}>
+  1198→                          Merci Lucas !! J&rsquo;arrive dans 15 minutes 🙏
+  1199→                        </p>
+  1200→                        <div className="flex items-center justify-end gap-1 mt-1">
+  1201→                          <span className="text-[10px]" style={{ color: '#667781' }}>10:44</span>
+  1202→                          {/* Double check bleu */}
+  1203→                          <svg viewBox="0 0 16 11" className="w-4 h-3" fill="#53bdeb" aria-hidden="true">
+  1204→                            <path d="M11.07 0.65l-0.36 0.36 3.46 3.46-3.5 3.5 0.36 0.36 3.86-3.86zM7.07 0.65l-0.36 0.36 3.46 3.46-3.5 3.5 0.36 0.36 3.86-3.86z"/>
+  1205→                          </svg>
+  1206→                        </div>
+  1207→                      </div>
+  1208→                    </div>
+  1209→                  </div>
+  1210→                </div>
+  1211→              </div>
+  1212→
+  1213→              {/* Badge flottant — Stats */}
+  1214→              <motion.div
+  1215→                initial={{ opacity: 0, y: 20 }}
+  1216→                whileInView={{ opacity: 1, y: 0 }}
+  1217→                viewport={{ once: true }}
+  1218→                transition={{ delay: 0.6 }}
+  1219→                className="absolute -top-4 -right-4 lg:-right-6 rounded-2xl px-4 py-3 shadow-xl"
+  1220→                style={{ background: 'white', border: '2px solid #25D366' }}
+  1221→              >
+  1222→                <div className="flex items-center gap-2">
+  1223→                  <div
+  1224→                    className="rounded-full flex items-center justify-center"
+  1225→                    style={{ width: '32px', height: '32px', background: '#25D366', color: 'white' }}
+  1226→                  >
+  1227→                    <CheckCircle2 className="w-5 h-5" />
+  1228→                  </div>
+  1229→                  <div>
+  1230→                    <div className="text-xs font-bold" style={{ color: COLORS.text }}>98% rendus</div>
+  1231→                    <div className="text-[10px]" style={{ color: COLORS.textMuted }}>en moins de 2h</div>
+  1232→                  </div>
+  1233→                </div>
+  1234→              </motion.div>
+  1235→
+  1236→              {/* Badge flottant — Temps réel */}
+  1237→              <motion.div
+  1238→                initial={{ opacity: 0, y: 20 }}
+  1239→                whileInView={{ opacity: 1, y: 0 }}
+  1240→                viewport={{ once: true }}
+  1241→                transition={{ delay: 0.8 }}
+  1242→                className="absolute -bottom-4 -left-4 lg:-left-6 rounded-2xl px-4 py-3 shadow-xl flex items-center gap-2"
+  1243→                style={{ background: '#FDB900', color: COLORS.text }}
+  1244→              >
+  1245→                <div className="w-2 h-2 rounded-full animate-pulse" style={{ background: COLORS.greenDark }} />
+  1246→                <span className="text-xs font-bold">Temps réel</span>
+  1247→              </motion.div>
+  1248→            </motion.div>
+  1249→          </div>
+  1250→        </div>
+  1251→      </section>
+  1252→
+  1253→      {/* ═══ TÉMOIGNAGES (live depuis /api/reviews/public) ═══ */}
+  1254→      <LiveTestimonials />
+  1255→
+  1256→      {/* ═══ BOUTIQUE — Nos Packs de Stickers ═══ */}
+  1257→      <section id="tarifs" className="py-20 lg:py-28 px-5" style={{ background: '#111111' }}>
+  1258→        <div className="max-w-screen-2xl mx-auto">
+  1259→          <div className="text-center mb-12">
+  1260→            <div
+  1261→              className="inline-block px-4 py-1.5 rounded-full text-sm font-bold mb-4"
+  1262→              style={{ background: '#E3B23C', color: '#000000', border: '2px solid #000000' }}
+  1263→            >
+  1264→              <ShoppingBag className="w-4 h-4 inline mr-1" />
+  1265→              CHECKOUT EXPRESS
+  1266→            </div>
+  1267→            <h2 className="text-3xl md:text-5xl font-black mb-4" style={{ color: '#FFFFFF' }}>
+  1268→              Nos Packs de <span style={{ color: '#E3B23C' }}>Stickers</span>
+  1269→            </h2>
+  1270→            <p className="text-lg max-w-2xl mx-auto" style={{ color: '#aaaaaa' }}>
+  1271→              Commandez en 4 champs. Pas de compte, pas de panier. Paiement à la livraison à Dakar.
+  1272→            </p>
+  1273→          </div>
+  1274→
+  1275→          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
+  1276→            {displayPacks.map((pack, i) => (
+  1277→              <motion.div
+  1278→                key={pack.slug}
+  1279→                initial={{ opacity: 0, y: 20 }}
+  1280→                whileInView={{ opacity: 1, y: 0 }}
+  1281→                viewport={{ once: true }}
+  1282→                transition={{ delay: i * 0.1 }}
+  1283→                className="rounded-2xl relative overflow-hidden flex flex-col"
+  1284→                style={{
+  1285→                  background: '#E3B23C',
+  1286→                  border: '4px solid #000000',
+  1287→                }}
+  1288→              >
+  1289→                {/* Badge */}
+  1290→                {pack.badge && (
+  1291→                  <div
+  1292→                    className="absolute top-3 right-3 z-10 px-3 py-1 rounded-lg text-xs font-black"
+  1293→                    style={{ background: '#000000', color: '#E3B23C' }}
+  1294→                  >
+  1295→                    {pack.badge}
+  1296→                  </div>
+  1297→                )}
+  1298→
+  1299→                {/* Product image GRANDE (format portrait) — src TOUJOURS valide */}
+  1300→                <div className="relative w-full" style={{ aspectRatio: '3 / 4', background: '#000000' }}>
+  1301→                  <img
+  1302→                    src={getSafeImageSrc(pack)}
+  1303→                    alt={pack.name}
+  1304→                    className="w-full h-full object-cover"
+  1305→                    loading="lazy"
+  1306→                    onError={(e) => {
+  1307→                      // Filet de sécurité ultime : si l'image locale elle-même
+  1308→                      // casse (ce qui ne devrait jamais arriver), on affiche
+  1309→                      // le chiffre doré sur fond noir.
+  1310→                      const img = e.currentTarget as HTMLImageElement;
+  1311→                      img.style.display = 'none';
+  1312→                      const num = img.parentElement?.querySelector('[data-fallback-number]') as HTMLElement | null;
+  1313→                      if (num) num.style.display = 'flex';
+  1314→                    }}
+  1315→                  />
+  1316→                  {/* Number fallback — uniquement si même l'image locale casse */}
+  1317→                  <div
+  1318→                    data-fallback-number
+  1319→                    className="w-full h-full items-center justify-center"
+  1320→                    style={{ display: 'none' }}
+  1321→                  >
+  1322→                    <span className="text-7xl md:text-8xl font-black" style={{ color: '#E3B23C' }}>
+  1323→                      {pack.quantity}
+  1324→                    </span>
+  1325→                  </div>
+  1326→                </div>
+  1327→
+  1328→                <div className="p-5 flex flex-col flex-1">
+  1329→                  <h3 className="text-lg font-black mb-2" style={{ color: '#000000' }}>
+  1330→                    {pack.name}
+  1331→                  </h3>
+  1332→                  <p className="text-sm mb-4 flex-1" style={{ color: '#000000', opacity: 0.8 }}>
+  1333→                    {pack.desc}
+  1334→                  </p>
+  1335→
+  1336→                  <div className="text-2xl font-black mb-4" style={{ color: '#000000' }}>
+  1337→                    {new Intl.NumberFormat('fr-FR').format(pack.price)} FCFA
+  1338→                  </div>
+  1339→
+  1340→                  <Link
+  1341→                    href={`/shop/${pack.slug}`}
+  1342→                    className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl font-bold text-sm transition-all hover:scale-105"
+  1343→                    style={{ background: '#000000', color: '#E3B23C', border: '2px solid #E3B23C' }}
+  1344→                  >
+  1345→                    Commander maintenant
+  1346→                    <ArrowRight className="w-4 h-4" />
+  1347→                  </Link>
+  1348→                </div>
+  1349→              </motion.div>
+  1350→            ))}
+  1351→          </div>
+  1352→
+  1353→          <div className="mt-8 text-center">
+  1354→            <p className="text-sm" style={{ color: '#aaaaaa' }}>
+  1355→              <Shield className="w-4 h-4 inline mr-1" style={{ color: '#E3B23C' }} />
+  1356→              Cash on Delivery — vous payez quand vous recevez. Zéro risque.
+  1357→            </p>
+  1358→          </div>
+  1359→        </div>
+  1360→      </section>
+  1361→
+  1362→      {/* ═══ SECTION PROFESSIONNELS — lien discret ═══ */}
+  1363→      <section className="py-16 lg:py-20 px-5" style={{ background: COLORS.bg }}>
+  1364→        <div className="max-w-3xl mx-auto">
+  1365→          <motion.div
+  1366→            initial={{ opacity: 0, y: 20 }}
+  1367→            whileInView={{ opacity: 1, y: 0 }}
+  1368→            viewport={{ once: true }}
+  1369→            className="rounded-2xl p-8 text-center"
+  1370→            style={{ background: COLORS.bgAlt, border: `1px solid ${COLORS.border}` }}
+  1371→          >
+  1372→            <Users className="w-8 h-8 mb-4 mx-auto" style={{ color: COLORS.accentDark }} />
+  1373→            <h3 className="text-xl font-bold mb-3" style={{ color: COLORS.text }}>
+  1374→              Vous êtes un professionnel ?
+  1375→            </h3>
+  1376→            <p className="text-sm mb-6" style={{ color: COLORS.textMuted }}>
+  1377→              Hôtels, écoles, consignes, cliniques, loueurs — QRTags propose des solutions
+  1378→              adaptées à chaque métier avec dashboard, champs dynamiques et gestion multi-sites.
+  1379→            </p>
+  1380→            <div className="flex flex-col sm:flex-row gap-3 justify-center">
+  1381→              <Link
+  1382→                href="/devenir-partenaire"
+  1383→                className="px-6 py-3 rounded-xl font-bold text-sm inline-flex items-center justify-center gap-2 transition-all hover:scale-105"
+  1384→                style={{ background: COLORS.accent, color: COLORS.text }}
+  1385→              >
+  1386→                Devenir partenaire
+  1387→                <ArrowRight className="w-4 h-4" />
+  1388→              </Link>
+  1389→              <Link
+  1390→                href="/metiers/hotels"
+  1391→                className="px-6 py-3 rounded-xl font-bold text-sm inline-flex items-center justify-center gap-2 border-2 transition-all hover:bg-[#fffdf5]"
+  1392→                style={{ borderColor: COLORS.border, color: COLORS.text }}
+  1393→              >
+  1394→                Voir les métiers
+  1395→              </Link>
+  1396→            </div>
+  1397→          </motion.div>
+  1398→        </div>
+  1399→      </section>
+  1400→
+  1401→      {/* ═══ CTA FINAL — sobre, sans dupliquer le hero ═══ */}
+  1402→      <section className="py-14 lg:py-16 px-5" style={{ background: COLORS.bgAlt }}>
+  1403→        <div className="max-w-3xl mx-auto text-center">
+  1404→          <motion.div
+  1405→            initial={{ opacity: 0, scale: 0.95 }}
+  1406→            whileInView={{ opacity: 1, scale: 1 }}
+  1407→            viewport={{ once: true }}
+  1408→            className="rounded-2xl p-8 shadow-lg"
+  1409→            style={{ background: `linear-gradient(145deg, ${COLORS.green}, ${COLORS.greenDark})`, color: 'white' }}
+  1410→          >
+  1411→            <h2 className="text-2xl md:text-3xl font-black mb-3">
+  1412→              Chaque objet perdu peut être retrouvé
+  1413→            </h2>
+  1414→            <p className="text-base md:text-lg mb-6 opacity-90">
+  1415→              Un geste citoyen, une technologie simple. Protégez vos affaires, rendez ce que vous trouvez.
+  1416→            </p>
+  1417→            <div className="flex flex-col sm:flex-row gap-3 justify-center">
+  1418→              <Link
+  1419→                href="#tarifs"
+  1420→                className="px-6 py-3 rounded-xl font-black text-base inline-flex items-center justify-center gap-2 transition-all hover:scale-105"
+  1421→                style={{ background: COLORS.accent, color: COLORS.text }}
+  1422→              >
+  1423→                Commander mes tags
+  1424→                <ArrowRight className="w-5 h-5" />
+  1425→              </Link>
+  1426→              <a
+  1427→                href="#tracker"
+  1428→                className="px-6 py-3 rounded-xl font-bold text-base inline-flex items-center justify-center gap-2 border-2 transition-all hover:bg-white/10"
+  1429→                style={{ borderColor: 'white', color: 'white' }}
+  1430→              >
+  1431→                <Search className="w-5 h-5" />
+  1432→                Suivre un objet
+  1433→              </a>
+  1434→            </div>
+  1435→          </motion.div>
+  1436→        </div>
+  1437→      </section>
+  1438→
+  1439→      {/* ═══ DERNIERS ARTICLES DU BLOG ═══ */}
+  1440→      <BlogTeaserSection
+  1441→        limit={3}
+  1442→        title="Dernières actualités"
+  1443→        subtitle="Conseils, actualités et bonnes pratiques pour protéger vos objets du quotidien."
+  1444→        colors={{
+  1445→          bg: COLORS.bgAlt,
+  1446→          text: COLORS.text,
+  1447→          textMuted: COLORS.textMuted,
+  1448→          accentDark: COLORS.accentDark,
+  1449→          card: COLORS.card,
+  1450→          border: COLORS.border,
+  1451→        }}
+  1452→      />
+  1453→
+  1454→      {/* ═══ FOOTER ═══ */}
+  1455→      <footer className="py-12 px-5 border-t" style={{ borderColor: COLORS.border, background: COLORS.bg }}>
+  1456→        <div className="max-w-screen-2xl mx-auto">
+  1457→          <div className="grid md:grid-cols-4 gap-8 mb-8">
+  1458→            <div className="md:col-span-2">
+  1459→              <QRTagsLogo size="md" variant="light" />
+  1460→              <p className="text-sm mt-4 max-w-md" style={{ color: COLORS.textMuted }}>
+  1461→                QRTags — étiquettes QR pour objets perdus. Trouvez, rendez, protégez.
+  1462→                Simple, rapide, citoyen. Sans app, sans batterie.
+  1463→              </p>
+  1464→            </div>
+  1465→            <div>
+  1466→              <h4 className="font-bold mb-3 text-sm" style={{ color: COLORS.accentDark }}>Pour particuliers</h4>
+  1467→              <ul className="space-y-2 text-sm">
+  1468→                <li><a href="#comment" style={{ color: COLORS.textMuted }}>Comment ça marche</a></li>
+  1469→                <li><a href="#contact-whatsapp" style={{ color: COLORS.textMuted }}>Comment suis-je contacté ?</a></li>
+  1470→                <li><a href="#tracker" style={{ color: COLORS.textMuted }}>Suivre un objet</a></li>
+  1471→                <li><a href="#tarifs" style={{ color: COLORS.textMuted }}>Tarifs</a></li>
+  1472→                <li><Link href="#tarifs" style={{ color: COLORS.textMuted }}>Protéger mes objets</Link></li>
+  1473→                <li><Link href="/scan" style={{ color: COLORS.textMuted }}>Scanner un QR</Link></li>
+  1474→              </ul>
+  1475→            </div>
+  1476→            <div>
+  1477→              <h4 className="font-bold mb-3 text-sm" style={{ color: COLORS.accentDark }}>Pour professionnels</h4>
+  1478→              <ul className="space-y-2 text-sm">
+  1479→                <li><Link href="/devenir-partenaire" style={{ color: COLORS.textMuted }}>Devenir partenaire</Link></li>
+  1480→                <li><Link href="/agence/connexion" style={{ color: COLORS.textMuted }}>Espace agence</Link></li>
+  1481→                <li><Link href="/admin/connexion" style={{ color: COLORS.textMuted }}>Espace admin</Link></li>
+  1482→                <li><Link href="/contact" style={{ color: COLORS.textMuted }}>Contact</Link></li>
+  1483→              </ul>
+  1484→            </div>
+  1485→          </div>
+  1486→          <div
+  1487→            className="pt-8 border-t flex flex-col md:flex-row justify-between items-center gap-4"
+  1488→            style={{ borderColor: COLORS.border }}
+  1489→          >
+  1490→            <p className="text-xs" style={{ color: COLORS.textMuted }}>
+  1491→              &copy; {new Date().getFullYear()} QRTags. Tous droits réservés.
+  1492→            </p>
+  1493→            <div className="flex gap-4 text-xs">
+  1494→              <Link href="/cgu" style={{ color: COLORS.textMuted }}>CGU</Link>
+  1495→              <Link href="/confidentialite" style={{ color: COLORS.textMuted }}>Confidentialité</Link>
+  1496→              <Link href="/mentions-legales" style={{ color: COLORS.textMuted }}>Mentions légales</Link>
+  1497→            </div>
+  1498→          </div>
+  1499→        </div>
+  1500→      </footer>
+  1501→
+  1502→      <LandingChatbotWidget />
+  1503→
+  1504→      <TravelerAuthModal open={authModalOpen} onClose={() => setAuthModalOpen(false)} />
+  1505→    </main>
+  1506→  );
+  1507→}
+  1508→

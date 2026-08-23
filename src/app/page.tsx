@@ -18,6 +18,7 @@ import {
   Users,
   ShoppingBag,
   User,
+  UserPlus,
   LogIn,
   LogOut,
 } from 'lucide-react';
@@ -555,6 +556,7 @@ export default function HomePage() {
   const [shopProducts, setShopProducts] = useState<ShopProduct[]>([]);
   const { traveler, isLoggedIn, logout } = useTravelerAuth();
   const [authModalOpen, setAuthModalOpen] = useState(false);
+  const [authModalMode, setAuthModalMode] = useState<'login' | 'signup'>('login');
 
   // Fetch active products from DB on mount
   useEffect(() => {
@@ -637,7 +639,7 @@ export default function HomePage() {
                   </button>
                 </div>
               ) : (
-                <button onClick={() => setAuthModalOpen(true)} className="px-4 py-2 text-sm font-medium hover:text-[#c89a00] transition-colors flex items-center gap-1.5">
+                <button onClick={() => { setAuthModalMode('login'); setAuthModalOpen(true); }} className="px-4 py-2 text-sm font-medium hover:text-[#c89a00] transition-colors flex items-center gap-1.5">
                   <LogIn className="w-4 h-4" />
                   Mon compte
                 </button>
@@ -670,7 +672,7 @@ export default function HomePage() {
                   <button onClick={() => { logout(); setMenuOpen(false); }} className="text-sm text-red-500 font-medium">Déconnexion</button>
                 </div>
               ) : (
-                <button onClick={() => { setAuthModalOpen(true); setMenuOpen(false); }} className="block px-4 py-2 text-sm font-medium text-[#c89a00]">
+                <button onClick={() => { setAuthModalMode('login'); setAuthModalOpen(true); setMenuOpen(false); }} className="block px-4 py-2 text-sm font-medium text-[#c89a00]">
                   👤 Mon compte / S'inscrire
                 </button>
               )}
@@ -842,6 +844,25 @@ export default function HomePage() {
                 <Sparkles className="w-5 h-5" style={{ color: COLORS.accentDark }} />
                 Protéger mes objets
               </Link>
+              {!isLoggedIn ? (
+                <button
+                  onClick={() => { setAuthModalMode('signup'); setAuthModalOpen(true); }}
+                  className="px-6 py-4 rounded-xl font-bold text-base flex items-center justify-center gap-2 transition-all hover:scale-105"
+                  style={{ background: COLORS.text, color: 'white' }}
+                >
+                  <UserPlus className="w-5 h-5" />
+                  S&apos;inscrire
+                </button>
+              ) : (
+                <Link
+                  href="/mes-bagages"
+                  className="px-6 py-4 rounded-xl font-bold text-base flex items-center justify-center gap-2 border-2 transition-all hover:bg-[#fafafa]"
+                  style={{ borderColor: COLORS.text, color: COLORS.text }}
+                >
+                  <User className="w-5 h-5" />
+                  Mes bagages
+                </Link>
+              )}
             </div>
 
             {/* Stats inline */}
@@ -1481,7 +1502,7 @@ export default function HomePage() {
 
       <LandingChatbotWidget />
 
-      <TravelerAuthModal open={authModalOpen} onClose={() => setAuthModalOpen(false)} />
+      <TravelerAuthModal open={authModalOpen} onClose={() => setAuthModalOpen(false)} defaultMode={authModalMode} />
     </main>
   );
 }
