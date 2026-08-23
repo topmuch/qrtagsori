@@ -101,3 +101,4 @@ Stage Summary:
 - 4 fichiers modifiés : login/route.ts, signup/route.ts, TravelerAuthModal.tsx, connexion-voyageur/page.tsx
 - Bug login corrigé : normalisation téléphone côté serveur
 - UX améliorée : indicatif pays auto-détecté via IP, l'utilisateur ne tape plus le +
+---
