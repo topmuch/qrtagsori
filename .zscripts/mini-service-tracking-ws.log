@@ -1,12 +1,7 @@
 [tracking-ws] Installing dependencies...
 bun install v1.3.14 (0d9b296a)
-Resolving dependencies
-Resolved, downloaded and extracted [48]
-Saved lockfile
 
-+ socket.io@4.8.3
-
-22 packages installed [315.00ms]
+Checked 22 installs across 23 packages (no changes) [3.00ms]
 [tracking-ws] Running bun run dev...
 $ tsx watch index.ts
 /usr/bin/bash: line 1: tsx: command not found
