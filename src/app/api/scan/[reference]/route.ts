@@ -374,6 +374,66 @@ export async function POST(
         }
       })();
 
+      // ─── Notification e-mail au propriétaire (triple notification) ───
+      // Fire-and-forget : ne ralentit jamais la réponse au trouveur.
+      // L'e-mail du propriétaire est optionnel (Baggage.customData JSON).
+      (async () => {
+        try {
+          const parsedCustom = safeJsonParse(baggage.customData);
+          const ownerEmail =
+            typeof parsedCustom?.email === 'string' ? parsedCustom.email.trim() : '';
+          if (!ownerEmail || !ownerEmail.includes('@')) return;
+
+          const { sendEmail, getEmailSettings, getScanNotificationEmailTemplate } =
+            await import('@/lib/email');
+          const emailSettings = await getEmailSettings();
+          if (!emailSettings) return;
+
+          const scanDateObj = new Date();
+          const objectName =
+            (typeof parsedCustom?.object_name === 'string' && parsedCustom.object_name) ||
+            'objet';
+          const baseUrl =
+            process.env.NEXT_PUBLIC_BASE_URL ||
+            process.env.NEXT_PUBLIC_APP_URL ||
+            'https://qrtags.pro';
+          const trackingUrl = baggage.trackingToken
+            ? `${baseUrl}/track/${baggage.trackingToken}`
+            : `${baseUrl}/suivi/${reference}`;
+          const clientIp =
+            (request.headers.get('x-forwarded-for') || '').split(',')[0].trim() || 'inconnue';
+
+          const template = getScanNotificationEmailTemplate({
+            travelerName: baggage.travelerFirstName?.trim() || 'Voyageur',
+            reference,
+            scanDate: scanDateObj.toLocaleDateString('fr-FR'),
+            scanTime: scanDateObj.toLocaleTimeString('fr-FR', {
+              hour: '2-digit',
+              minute: '2-digit',
+            }),
+            city: location || null,
+            country: null,
+            countryCode: null,
+            ipAddress: clientIp,
+            finderName: finderName || null,
+            finderPhone: finderPhone || null,
+            trackingUrl,
+          });
+
+          await sendEmail({
+            to: ownerEmail,
+            subject: `\ud83d\udccd Votre ${objectName} (${reference}) vient d'\u00eatre scann\u00e9${location ? ` \u00e0 ${location}` : ''} !`,
+            html: template.html,
+            text: template.text,
+            type: 'scan_notification',
+            data: { reference, location, finderName },
+          });
+        } catch (emailErr) {
+          // Jamais bloquant pour le scan
+          console.error('[email] Scan notification error:', emailErr);
+        }
+      })();
+
       // Construire l'URL WhatsApp WAME
       const ownerFirstName = baggage.travelerFirstName?.trim() || '';
       const typeLabel = 'objet';
