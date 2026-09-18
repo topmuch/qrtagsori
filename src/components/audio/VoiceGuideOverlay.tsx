@@ -25,7 +25,7 @@ const TEXTS: Record<'finder' | 'owner', Record<Lang, GuideTexts>> = {
       subtitle:
         "Appuyez sur le bouton ci-dessous : les instructions audio vous guident pour contacter le propriétaire.",
       cta: 'Appuyez pour contacter',
-      hint: 'Instructions audio · 15 s',
+      hint: 'Instructions audio · 20 s',
       replay: 'Réécouter les instructions',
     },
     en: {
@@ -33,7 +33,7 @@ const TEXTS: Record<'finder' | 'owner', Record<Lang, GuideTexts>> = {
       subtitle:
         'Tap the button below: audio instructions will guide you to contact the owner.',
       cta: 'Tap to contact',
-      hint: 'Audio instructions · 15 s',
+      hint: 'Audio instructions · 20 s',
       replay: 'Replay instructions',
     },
     ar: {
