@@ -1,70 +1,42 @@
-# ═══════════════════════════════════════════════════════════════
-# QRTags — Production Dockerfile (multi-stage)
-# ═══════════════════════════════════════════════════════════════════════════
+# ══════════════════════════════════════════════════════════════════
+# QRTags — Dockerfile de production (déploiement Git natif Coolify)
+#
+# Le contexte de build est le dépôt cloné par Coolify À CHAQUE
+# déploiement — plus aucun `RUN git clone` ici, donc plus jamais
+# d'image obsolète resservie par le cache Docker.
+# Pipeline identique à celui validé en prod (node:20-alpine + bun).
+# ══════════════════════════════════════════════════════════════════
 
-# ── Stage 1: Build ────────────────────────────────────────────────
-FROM node:20-slim AS builder
+FROM node:20-alpine
 
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    sqlite3 \
-    ca-certificates \
-    && rm -rf /var/lib/apt/lists/*
+# Install required packages
+RUN apk add --no-cache libc6-compat sqlite
+RUN npm install -g bun
 
 WORKDIR /app
 
-COPY package.json package-lock.json* ./
-RUN npm install --legacy-peer-deps --no-audit --no-fund
+# Le code source provient du contexte de build (clone Coolify)
+COPY . .
 
-COPY prisma ./prisma/
-COPY scripts ./scripts/
-COPY next.config.ts .
-COPY tsconfig.json .
-COPY postcss.config.mjs .
-COPY public ./public/
-COPY src ./src/
-COPY init-db.sh .
+# Install dependencies
+RUN bun install
 
-ENV NEXT_TELEMETRY_DISABLED=1
-ENV DATABASE_URL="file:/tmp/build.db"
+# Generate Prisma Client
 RUN npx prisma generate
-RUN npm run build
-RUN npm prune --production
 
-# ── Stage 2: Production ──────────────────────────────────────────
-FROM node:20-slim AS runner
+# Build the application
+ENV NEXT_TELEMETRY_DISABLED=1
+ENV DATABASE_URL=file:/app/data/qrtags.db
+RUN bun run build
 
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    sqlite3 \
-    ca-certificates \
-    && rm -rf /var/lib/apt/lists/*
-
-WORKDIR /app
-
-# Copy standalone output
-COPY --from=builder /app/.next/standalone ./
-
-# Copy static assets and public
-COPY --from=builder /app/.next/static ./.next/static
-COPY --from=builder /app/public ./public
-
-# Copy prisma and scripts for runtime migrations
-COPY --from=builder /app/prisma ./prisma
-COPY --from=builder /app/scripts ./scripts
-COPY --from=builder /app/init-db.sh ./
-COPY --from=builder /app/package.json ./
-
-# Copy only production node_modules
-COPY --from=builder /app/node_modules ./node_modules
-
-# Create data directories
-RUN mkdir -p /app/data /app/data/backups /app/public/uploads/damage \
-    && chmod -R 777 /app/data /app/public/uploads/damage \
-    && chmod +x init-db.sh
+# Create data directory
+RUN mkdir -p /app/data
 
 EXPOSE 3000
-ENV NODE_ENV=production
+
 ENV PORT=3000
 ENV HOSTNAME="0.0.0.0"
-ENV DATABASE_URL="file:/app/data/qrtags.db"
+ENV DATABASE_URL=file:/app/data/qrtags.db
 
-CMD ["sh", "/app/init-db.sh"]
+# Start command - create admin and start server
+CMD sh -c "mkdir -p /app/data && export DATABASE_URL=file:/app/data/qrtags.db && npx prisma db push --skip-generate 2>/dev/null || true && node scripts/create-admin.cjs 2>/dev/null || true && exec node .next/standalone/server.js"
