@@ -50,7 +50,7 @@ const TEXTS: Record<'finder' | 'owner', Record<Lang, GuideTexts>> = {
       subtitle:
         'Appuyez sur le bouton : un guide audio vous explique le fonctionnement de la protection de votre objet.',
       cta: 'Écouter le guide',
-      hint: 'Guide audio · 25 s',
+      hint: 'Guide audio · 30 s',
       replay: 'Réécouter le guide',
     },
     en: {
@@ -58,14 +58,14 @@ const TEXTS: Record<'finder' | 'owner', Record<Lang, GuideTexts>> = {
       subtitle:
         'Tap the button: an audio guide explains how your item protection works.',
       cta: 'Listen to the guide',
-      hint: 'Audio guide · 25 s',
+      hint: 'Audio guide · 30 s',
       replay: 'Play the guide again',
     },
     ar: {
       title: 'أهلاً بك على متن الرحلة! ✨',
       subtitle: 'اضغط على الزر: يشرح لك الدليل الصوتي كيف تعمل حماية الشيء الخاص بك.',
       cta: 'استمع إلى الدليل',
-      hint: 'دليل صوتي · 25 ثانية',
+      hint: 'دليل صوتي · 35 ثانية',
       replay: 'إعادة تشغيل الدليل',
     },
   },
