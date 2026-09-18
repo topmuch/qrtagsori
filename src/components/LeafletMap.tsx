@@ -61,9 +61,18 @@ function createCircleIcon(color: string, number: number) {
 export default function LeafletMap({ scans, destination }: LeafletMapProps) {
   const mapRef = useRef<HTMLDivElement>(null);
   const mapInstance = useRef<L.Map | null>(null);
+  const pointsSignatureRef = useRef('');
 
   useEffect(() => {
     if (!mapRef.current) return;
+
+    // Anti-redraw : au refresh périodique du parent (ex: 60s), si les points
+    // sont inchangés, on ne détruit PAS la carte (conserve pan/zoom de l'utilisateur).
+    const pointsSignature = scans
+      .map((s) => `${s.id}:${s.latitude ?? ''},${s.longitude ?? ''}`)
+      .join('|');
+    if (pointsSignature === pointsSignatureRef.current) return;
+    pointsSignatureRef.current = pointsSignature;
 
     // Points with coordinates, reversed (most recent last for line drawing)
     const points = scans

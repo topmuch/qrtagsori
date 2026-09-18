@@ -1,14 +1,15 @@
 'use client';
 
-import { useEffect, useState, useCallback, useMemo } from 'react';
+import { useEffect, useState, useCallback, useMemo, useRef } from 'react';
 import {
   AlertCircle, Clock, Shield, Sparkles,
   MapPin, Loader2, CheckCircle2, ArrowLeft, RefreshCw,
   Package, Gift, MessageCircle, User, Phone, Navigation,
-  ChevronDown, ExternalLink, Zap, ShieldCheck,
+  ChevronDown, ExternalLink, Zap, ShieldCheck, MessagesSquare,
 } from 'lucide-react';
 import QRTagsLogo from '@/components/qrtags/QRTagsLogo';
 import PhoneInput from '@/components/ui/PhoneInput';
+import FinderChat from '@/components/scan/FinderChat';
 import { getDialCode, normalizePhone } from '@/lib/phone';
 
 // ─── Design tokens QRTags (fond jaune moutarde + cartes blanches) ───
@@ -166,6 +167,15 @@ export default function PackPratique({ reference, baggage }: PackPratiqueProps) 
   const [gpsStatus, setGpsStatus] = useState<GpsStatus>('idle');
   const [gpsCoords, setGpsCoords] = useState<{ lat: number; lng: number } | null>(null);
   const [gpsAddress, setGpsAddress] = useState<string>('');
+  const [chatOpen, setChatOpen] = useState(false);
+  const chatRef = useRef<HTMLDivElement | null>(null);
+
+  const openChat = useCallback(() => {
+    setChatOpen(true);
+    setTimeout(() => {
+      chatRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }, 120);
+  }, []);
   const [gpsAccuracy, setGpsAccuracy] = useState<number | null>(null);
 
   // Sync la country détectée par IP vers le PhoneInput
@@ -816,6 +826,26 @@ export default function PackPratique({ reference, baggage }: PackPratiqueProps) 
             );
           })()}
 
+          {/* Chat anonyme : sans révéler son numéro */}
+          {!chatOpen ? (
+            <button
+              type="button"
+              onClick={openChat}
+              className="w-full mt-3 px-6 py-4 rounded-xl font-bold text-base text-black transition flex items-center justify-center gap-2 shadow-md hover:shadow-lg transform hover:-translate-y-0.5 min-h-[52px]"
+              style={{ backgroundColor: 'white', border: '2px solid #111' }}
+            >
+              <MessagesSquare className="w-5 h-5" style={{ color: QRTAGS_INK }} />
+              Discuter anonymement
+              <span className="ml-1 text-[10px] font-black uppercase px-1.5 py-0.5 rounded" style={{ backgroundColor: QRTAGS_BG }}>
+                Sans numéro
+              </span>
+            </button>
+          ) : (
+            <div ref={chatRef} className="mt-3">
+              <FinderChat reference={reference} defaultName={finderName} />
+            </div>
+          )}
+
           <p className="text-center text-xs text-black/70 mt-3 flex items-center justify-center gap-1.5">
             <span className="inline-block w-1.5 h-1.5 rounded-full animate-pulse" style={{ backgroundColor: QRTAGS_GREEN }} />
             Déjà {monthlyCount} objets retrouvés ce mois-ci grâce à QRTags
@@ -897,6 +927,16 @@ export default function PackPratique({ reference, baggage }: PackPratiqueProps) 
               </a>
             );
           })()}
+          <button
+            type="button"
+            onClick={openChat}
+            aria-label="Discuter anonymement avec le propriétaire"
+            title="Discuter anonymement"
+            className="flex-shrink-0 w-[52px] h-[52px] rounded-xl font-black text-sm text-black transition flex items-center justify-center"
+            style={{ backgroundColor: QRTAGS_BG, border: '2px solid #111' }}
+          >
+            <MessagesSquare className="w-5 h-5" />
+          </button>
         </div>
       </div>
 

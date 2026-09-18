@@ -688,7 +688,7 @@ export default function MesBagagesPage() {
                     )}
                     <div className="flex items-center justify-end mt-2">
                       <span className="text-xs font-bold text-[#1a1a1a] flex items-center gap-1">
-                        Voir le suivi <ArrowRight className="w-3 h-3" />
+                        {baggage.trackingToken ? 'Voir le suivi & la carte des scans' : 'Voir le suivi'} <ArrowRight className="w-3 h-3" />
                       </span>
                     </div>
                   </Link>

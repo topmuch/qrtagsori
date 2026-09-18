@@ -139,6 +139,7 @@ model Baggage {
   scanLogs          ScanLog[]
   damageReports     DamageReport[]
   guestMessages     GuestMessage[]
+  finderChatMessages FinderChatMessage[]
 }
 
 // ScanLog model - tracks all scans for audit
@@ -715,4 +716,23 @@ model TravelerSession {
 
   @@index([token])
   @@map("traveler_sessions")
+}
+
+// ─── Chat anonyme trouveur ↔ propriétaire ───
+// Le trouveur discute via la référence scannée (capability publique),
+// le propriétaire répond via son trackingToken (/track/[token]).
+// Aucun numéro de téléphone n'est JAMAIS stocké ni renvoyé ici.
+model FinderChatMessage {
+  id           String   @id @default(cuid())
+  baggageId    String
+  sender       String   // "finder" | "owner"
+  senderLabel  String?  // Pseudo du trouveur (jamais de téléphone)
+  body         String
+  readByOwner  Boolean  @default(false)
+  readByFinder Boolean  @default(false)
+  createdAt    DateTime @default(now())
+  baggage      Baggage  @relation(fields: [baggageId], references: [id], onDelete: Cascade)
+
+  @@index([baggageId, createdAt])
+  @@map("finder_chat_messages")
 }
