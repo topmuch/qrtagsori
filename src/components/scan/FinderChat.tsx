@@ -1,7 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { MessageCircle, Send, ShieldCheck, X } from 'lucide-react';
+import { Mail, MessageCircle, Send, ShieldCheck, X } from 'lucide-react';
 
 // ─── Design tokens QRTags (or moutarde + noir) ───
 const QRTAGS_BG = '#E3B23C';
@@ -19,17 +19,24 @@ interface FinderChatProps {
   reference: string;
   /** Nom saisi dans le formulaire du trouveur (utilisé comme pseudo, jamais de téléphone) */
   defaultName?: string;
+  /** E-mail saisi dans le formulaire du trouveur (optionnel, pour être notifié d'une réponse) */
+  defaultNotifyEmail?: string;
 }
+
+const NOTIFY_EMAIL_KEY = 'qrtags_finder_notify_email';
 
 /**
  * Chat anonyme trouveur ↔ propriétaire.
  * Le trouveur discute via la référence scannée — son numéro n'est JAMAIS
  * transmis (pas de champ téléphone ici). Le pseudo est optionnel et éditable.
+ * L'e-mail est OPTIONNEL : sert uniquement à recevoir une notification quand
+ * le propriétaire répond. Jamais visible par le propriétaire.
  */
-export default function FinderChat({ reference, defaultName }: FinderChatProps) {
+export default function FinderChat({ reference, defaultName, defaultNotifyEmail }: FinderChatProps) {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [draft, setDraft] = useState('');
   const [label, setLabel] = useState(defaultName || '');
+  const [notifyEmail, setNotifyEmail] = useState(defaultNotifyEmail || '');
   const [sending, setSending] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -72,6 +79,33 @@ export default function FinderChat({ reference, defaultName }: FinderChatProps) 
 
   useEffect(scrollToBottom, [messages.length, scrollToBottom]);
 
+  // Sync depuis le formulaire (le trouveur peut taper son e-mail là ou dans le chat)
+  useEffect(() => {
+    if (defaultNotifyEmail) setNotifyEmail(defaultNotifyEmail);
+  }, [defaultNotifyEmail]);
+
+  // Restauration depuis localStorage si le formulaire est vide
+  useEffect(() => {
+    if (defaultNotifyEmail) return;
+    try {
+      const saved = localStorage.getItem(NOTIFY_EMAIL_KEY);
+      if (saved) setNotifyEmail(saved);
+    } catch {
+      /* localStorage indisponible */
+    }
+  }, [defaultNotifyEmail]);
+
+  const handleEmailChange = (value: string) => {
+    const v = value.slice(0, 100);
+    setNotifyEmail(v);
+    try {
+      if (v) localStorage.setItem(NOTIFY_EMAIL_KEY, v);
+      else localStorage.removeItem(NOTIFY_EMAIL_KEY);
+    } catch {
+      /* localStorage indisponible */
+    }
+  };
+
   const handleSend = async () => {
     const text = draft.trim();
     if (!text || sending) return;
@@ -80,7 +114,11 @@ export default function FinderChat({ reference, defaultName }: FinderChatProps) 
       const res = await fetch(`/api/scan/${encodeURIComponent(reference)}/chat`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ body: text, senderLabel: label.trim() || undefined }),
+        body: JSON.stringify({
+          body: text,
+          senderLabel: label.trim() || undefined,
+          notifyEmail: notifyEmail.trim() || undefined,
+        }),
       });
       if (res.ok) {
         setDraft('');
@@ -167,8 +205,8 @@ export default function FinderChat({ reference, defaultName }: FinderChatProps) 
         )}
       </div>
 
-      {/* Pseudo optionnel */}
-      <div className="px-3 pt-2">
+      {/* Pseudo + e-mail optionnels */}
+      <div className="px-3 pt-2 space-y-2">
         <label htmlFor={`chat-label-${reference}`} className="sr-only">
           Votre prénom (optionnel)
         </label>
@@ -181,6 +219,27 @@ export default function FinderChat({ reference, defaultName }: FinderChatProps) 
           className="w-full min-h-[40px] px-3 text-sm rounded-lg border border-black/20 bg-white focus:outline-none focus:ring-2 focus:ring-black/20"
           maxLength={40}
         />
+        <div>
+          <label htmlFor={`chat-email-${reference}`} className="sr-only">
+            Votre e-mail pour être notifié d'une réponse (optionnel)
+          </label>
+          <div className="relative">
+            <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-black/30 pointer-events-none" />
+            <input
+              id={`chat-email-${reference}`}
+              type="email"
+              value={notifyEmail}
+              onChange={(e) => handleEmailChange(e.target.value)}
+              placeholder="E-mail pour être notifié d'une réponse (optionnel)"
+              className="w-full min-h-[40px] pl-9 pr-3 text-sm rounded-lg border border-black/20 bg-white focus:outline-none focus:ring-2 focus:ring-black/20"
+              maxLength={100}
+            />
+          </div>
+          <p className="text-[10px] text-black/40 mt-1 flex items-center gap-1">
+            <ShieldCheck className="w-3 h-3 shrink-0" />
+            Jamais visible par le propriétaire — sert uniquement à vous prévenir d'une réponse.
+          </p>
+        </div>
       </div>
 
       {/* Composer */}

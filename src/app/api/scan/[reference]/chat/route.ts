@@ -10,6 +10,8 @@ import { rateLimit } from '@/lib/rate-limit';
 
 const MAX_BODY_LEN = 1000;
 const MAX_LABEL_LEN = 40;
+const MAX_EMAIL_LEN = 100;
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
 
 /** Strip HTML + normalize whitespace + hard length cap. */
 function sanitizeText(raw: unknown, maxLen: number): string {
@@ -89,6 +91,13 @@ export async function POST(
       return NextResponse.json({ error: 'Le message est requis' }, { status: 400 });
     }
     const senderLabel = sanitizeText(body?.senderLabel, MAX_LABEL_LEN) || null;
+    // E-mail OPTIONNEL du trouveur (notifié d'une réponse sans révéler de numéro).
+    // Stocké sur le message, JAMAIS renvoyé par les API (selects explicites).
+    const rawNotifyEmail = typeof body?.notifyEmail === 'string' ? body.notifyEmail.trim() : '';
+    const notifyEmail =
+      rawNotifyEmail && rawNotifyEmail.length <= MAX_EMAIL_LEN && EMAIL_RE.test(rawNotifyEmail)
+        ? rawNotifyEmail
+        : null;
 
     const baggage = await prisma.baggage.findUnique({
       where: { reference },
@@ -107,6 +116,7 @@ export async function POST(
         sender: 'finder',
         senderLabel,
         body: text,
+        notifyEmail,
         readByFinder: true, // l'auteur vient de l'écrire
       },
       select: { id: true, sender: true, senderLabel: true, body: true, createdAt: true },

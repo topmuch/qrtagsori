@@ -728,6 +728,7 @@ model FinderChatMessage {
   sender       String   // "finder" | "owner"
   senderLabel  String?  // Pseudo du trouveur (jamais de téléphone)
   body         String
+  notifyEmail  String?  // E-mail OPTIONNEL du trouveur (être notifié d'une réponse) — JAMAIS renvoyé par les API
   readByOwner  Boolean  @default(false)
   readByFinder Boolean  @default(false)
   createdAt    DateTime @default(now())

@@ -5,7 +5,7 @@ import {
   AlertCircle, Clock, Shield, Sparkles,
   MapPin, Loader2, CheckCircle2, ArrowLeft, RefreshCw,
   Package, Gift, MessageCircle, User, Phone, Navigation,
-  ChevronDown, ExternalLink, Zap, ShieldCheck, MessagesSquare,
+  ChevronDown, ExternalLink, Zap, ShieldCheck, MessagesSquare, Mail,
 } from 'lucide-react';
 import QRTagsLogo from '@/components/qrtags/QRTagsLogo';
 import PhoneInput from '@/components/ui/PhoneInput';
@@ -155,6 +155,7 @@ export default function PackPratique({ reference, baggage }: PackPratiqueProps) 
 
   const [finderName, setFinderName] = useState('');
   const [finderPhone, setFinderPhone] = useState('');
+  const [finderEmail, setFinderEmail] = useState('');
   const [phoneCountry, setPhoneCountry] = useState('FR');
   const [otherLocation, setOtherLocation] = useState('');
   const [finderMessage, setFinderMessage] = useState('');
@@ -736,6 +737,29 @@ export default function PackPratique({ reference, baggage }: PackPratiqueProps) 
               </button>
             </div>
 
+            <div>
+              <label htmlFor="finder-email" className="block text-sm font-bold text-black mb-2">
+                <Mail className="w-3 h-3 inline mr-1" /> Votre e-mail <span className="text-xs font-medium text-black/50">(optionnel)</span>
+              </label>
+              <input
+                id="finder-email"
+                type="email"
+                value={finderEmail}
+                onChange={(e) => setFinderEmail(e.target.value.slice(0, 100))}
+                placeholder="pour être notifié(e) d'une réponse"
+                className={INPUT_CLASS}
+                inputMode="email"
+                autoComplete="email"
+                maxLength={100}
+              />
+              <p className="text-[11px] text-black/50 mt-1.5 flex items-start gap-1">
+                <ShieldCheck className="w-3.5 h-3.5 shrink-0 mt-0.5" style={{ color: QRTAGS_GREEN }} />
+                <span>
+                  Aucune obligation : vous pouvez aussi chater sans laisser ni e-mail ni numéro. S'il est renseigné, il sert uniquement à vous prévenir d'une réponse — jamais visible par le propriétaire.
+                </span>
+              </p>
+            </div>
+
             <div className="border-t-2 border-gray-200 pt-3">
               <button
                 type="button"
@@ -842,7 +866,7 @@ export default function PackPratique({ reference, baggage }: PackPratiqueProps) 
             </button>
           ) : (
             <div ref={chatRef} className="mt-3">
-              <FinderChat reference={reference} defaultName={finderName} />
+              <FinderChat reference={reference} defaultName={finderName} defaultNotifyEmail={finderEmail} />
             </div>
           )}
 

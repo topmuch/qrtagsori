@@ -705,6 +705,56 @@ export function getChatMessageEmailTemplate(data: {
   };
 }
 
+export function getChatReplyEmailTemplate(data: {
+  ownerMessage: string;
+  reference: string;
+  objectName: string;
+  chatUrl: string;
+  receivedAt: string;
+}): { html: string; text: string } {
+  const esc = (raw: string) =>
+    raw.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+  const message = esc(data.ownerMessage);
+  const objectName = esc(data.objectName);
+  const reference = esc(data.reference);
+  return {
+    html: `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+        <div style="text-align: center; margin-bottom: 30px;">
+          <h1 style="color: #2563EB; margin: 0;">QRTags</h1>
+        </div>
+        <div style="background: #fffbeb; border: 2px solid #f59e0b; border-radius: 10px; padding: 30px;">
+          <h2 style="color: #d97706; margin-top: 0;">💬 Le propriétaire vous a répondu</h2>
+          <p style="color: #666; margin: 0 0 15px 0;">Le propriétaire de l'objet que vous avez trouvé vous a écrit. Continuez la discussion — vos coordonnées restent masquées.</p>
+          <table style="width: 100%; border-collapse: collapse; margin-top: 15px;">
+            <tr>
+              <td style="padding: 8px 0; color: #999; font-size: 14px; border-bottom: 1px solid #eee;">Objet</td>
+              <td style="padding: 8px 0; font-weight: bold; color: #333; border-bottom: 1px solid #eee;">${objectName} (${reference})</td>
+            </tr>
+            <tr>
+              <td style="padding: 8px 0; color: #999; font-size: 14px;">Reçu le</td>
+              <td style="padding: 8px 0; font-weight: bold; color: #333;">${data.receivedAt}</td>
+            </tr>
+          </table>
+          <div style="background: #111; border-radius: 8px; padding: 15px; margin-top: 20px;">
+            <p style="color: #E3B23C; font-size: 10px; font-weight: bold; text-transform: uppercase; letter-spacing: 0.05em; margin: 0 0 5px 0;">Propriétaire</p>
+            <p style="color: #fff; font-size: 14px; line-height: 1.6; white-space: pre-wrap; margin: 0;">${message}</p>
+          </div>
+          <div style="text-align: center; margin-top: 25px;">
+            <a href="${data.chatUrl}" style="background: #f59e0b; color: #fff; text-decoration: none; padding: 12px 30px; border-radius: 8px; font-weight: bold; display: inline-block;">💬 Voir la discussion et répondre</a>
+          </div>
+          <p style="color: #999; font-size: 12px; text-align: center; margin-top: 15px;">Vous recevez cet e-mail car vous avez laissé votre adresse en option. Aucun numéro de téléphone n'est partagé.</p>
+        </div>
+        <p style="color: #999; font-size: 12px; text-align: center; margin-top: 20px;">Notification automatique QRTags — ${data.receivedAt}</p>
+        <div style="text-align: center; color: #999; font-size: 12px;">
+          <p>© QRTags - Tous droits réservés</p>
+        </div>
+      </div>
+    `,
+    text: `💬 QRTags - Le propriétaire vous a répondu\n\nLe propriétaire de l'objet que vous avez trouvé (${objectName}, ${reference}) vous a écrit.\nReçu le: ${data.receivedAt}\n\nMessage du propriétaire:\n${data.ownerMessage}\n\nVoir la discussion et répondre: ${data.chatUrl}\n\nVous recevez cet e-mail car vous avez laissé votre adresse en option. Aucun numéro de téléphone n'est partagé.\n\nNotification automatique QRTags\n© QRTags`,
+  };
+}
+
 export function getNewLeadEmailTemplate(data: {
   name: string;
   email: string;
