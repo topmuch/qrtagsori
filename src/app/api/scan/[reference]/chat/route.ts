@@ -92,7 +92,7 @@ export async function POST(
 
     const baggage = await prisma.baggage.findUnique({
       where: { reference },
-      select: { id: true, status: true, travelerId: true, trackingToken: true },
+      select: { id: true, status: true, travelerId: true, trackingToken: true, customData: true },
     });
     if (!baggage) {
       return NextResponse.json({ error: 'Tag introuvable' }, { status: 404 });
@@ -144,6 +144,92 @@ export async function POST(
         }
       } catch (err) {
         console.error('[chat-push] Owner notify error:', err);
+      }
+    })();
+
+    // ─── Notification e-mail au propriétaire (s'il n'est pas connecté) ───
+    // Fire-and-forget : ne ralentit jamais la réponse au trouveur.
+    // Anti-spam à deux niveaux :
+    //  1. Un seul e-mail par « lot » de messages non lus (le message
+    //     précédent du trouveur doit avoir été lu, ou n'exister).
+    //  2. Maximum 1 e-mail / 60 s / référence (si le propriétaire garde
+    //     le chat ouvert pendant une conversation active).
+    (async () => {
+      try {
+        // Garde 1 : le lot de messages non lus a-t-il déjà été notifié ?
+        const prevFinderMsg = await prisma.finderChatMessage.findFirst({
+          where: {
+            baggageId: baggage.id,
+            sender: 'finder',
+            NOT: { id: message.id },
+          },
+          orderBy: { createdAt: 'desc' },
+          select: { readByOwner: true },
+        });
+        if (prevFinderMsg && !prevFinderMsg.readByOwner) return;
+
+        // E-mail du propriétaire = optionnel (Baggage.customData JSON)
+        let custom: Record<string, unknown> = {};
+        if (baggage.customData) {
+          try {
+            custom = JSON.parse(baggage.customData) as Record<string, unknown>;
+          } catch {
+            custom = {};
+          }
+        }
+        const ownerEmail = typeof custom.email === 'string' ? custom.email.trim() : '';
+        if (!ownerEmail || !ownerEmail.includes('@')) return;
+
+        const { sendEmail, getEmailSettings, getChatMessageEmailTemplate } =
+          await import('@/lib/email');
+        const emailSettings = await getEmailSettings();
+        if (!emailSettings) return;
+
+        // Garde 2 : throttle 60 s par référence
+        const recentEmail = await prisma.emailLog.findFirst({
+          where: {
+            type: 'chat_message',
+            data: { contains: `"${reference}"` },
+            createdAt: { gte: new Date(Date.now() - 60_000) },
+          },
+          select: { id: true },
+        });
+        if (recentEmail) return;
+
+        const objectName =
+          typeof custom.object_name === 'string' && custom.object_name
+            ? custom.object_name
+            : 'objet';
+        const baseUrl =
+          process.env.NEXT_PUBLIC_BASE_URL ||
+          process.env.NEXT_PUBLIC_APP_URL ||
+          'https://qrtags.pro';
+        const trackingUrl = baggage.trackingToken
+          ? `${baseUrl}/track/${baggage.trackingToken}`
+          : `${baseUrl}/suivi/${reference}`;
+
+        const template = getChatMessageEmailTemplate({
+          senderLabel: senderLabel || 'Le trouveur',
+          message: text,
+          reference,
+          objectName,
+          trackingUrl,
+          receivedAt: new Date(message.createdAt).toLocaleString('fr-FR', {
+            dateStyle: 'long',
+            timeStyle: 'short',
+          }),
+        });
+
+        await sendEmail({
+          to: ownerEmail,
+          subject: `💬 ${senderLabel || 'Un trouveur'} vous a écrit au sujet de votre ${objectName} (${reference})`,
+          html: template.html,
+          text: template.text,
+          type: 'chat_message',
+          data: { reference, senderLabel },
+        });
+      } catch (err) {
+        console.error('[chat-email] Owner notify error:', err);
       }
     })();
 

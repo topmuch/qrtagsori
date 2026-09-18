@@ -650,6 +650,61 @@ export function getAgencyMessageEmailTemplate(data: {
   };
 }
 
+export function getChatMessageEmailTemplate(data: {
+  senderLabel: string;
+  message: string;
+  reference: string;
+  objectName: string;
+  trackingUrl: string;
+  receivedAt: string;
+}): { html: string; text: string } {
+  const esc = (raw: string) =>
+    raw.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+  const senderLabel = esc(data.senderLabel);
+  const message = esc(data.message);
+  const objectName = esc(data.objectName);
+  const reference = esc(data.reference);
+  return {
+    html: `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+        <div style="text-align: center; margin-bottom: 30px;">
+          <h1 style="color: #2563EB; margin: 0;">QRTags</h1>
+        </div>
+        <div style="background: #fffbeb; border: 2px solid #f59e0b; border-radius: 10px; padding: 30px;">
+          <h2 style="color: #d97706; margin-top: 0;">💬 Nouveau message dans le chat</h2>
+          <p style="color: #666; margin: 0 0 15px 0;">Un trouveur vous a écrit au sujet de votre objet. Les coordonnées restent masquées — répondez directement depuis votre page de suivi.</p>
+          <table style="width: 100%; border-collapse: collapse; margin-top: 15px;">
+            <tr>
+              <td style="padding: 8px 0; color: #999; font-size: 14px; border-bottom: 1px solid #eee;">Expéditeur</td>
+              <td style="padding: 8px 0; font-weight: bold; color: #333; border-bottom: 1px solid #eee;">${senderLabel}</td>
+            </tr>
+            <tr>
+              <td style="padding: 8px 0; color: #999; font-size: 14px; border-bottom: 1px solid #eee;">Objet</td>
+              <td style="padding: 8px 0; font-weight: bold; color: #333; border-bottom: 1px solid #eee;">${objectName} (${reference})</td>
+            </tr>
+            <tr>
+              <td style="padding: 8px 0; color: #999; font-size: 14px;">Reçu le</td>
+              <td style="padding: 8px 0; font-weight: bold; color: #333;">${data.receivedAt}</td>
+            </tr>
+          </table>
+          <div style="background: #fff; border: 1px solid #fde68a; border-radius: 8px; padding: 15px; margin-top: 20px;">
+            <p style="color: #333; font-size: 14px; line-height: 1.6; white-space: pre-wrap;">${message}</p>
+          </div>
+          <div style="text-align: center; margin-top: 25px;">
+            <a href="${data.trackingUrl}" style="background: #f59e0b; color: #fff; text-decoration: none; padding: 12px 30px; border-radius: 8px; font-weight: bold; display: inline-block;">💬 Répondre au trouveur</a>
+          </div>
+          <p style="color: #999; font-size: 12px; text-align: center; margin-top: 15px;">Le chat est anonyme : aucun numéro de téléphone n'est partagé.</p>
+        </div>
+        <p style="color: #999; font-size: 12px; text-align: center; margin-top: 20px;">Notification automatique QRTags — ${data.receivedAt}</p>
+        <div style="text-align: center; color: #999; font-size: 12px;">
+          <p>© QRTags - Tous droits réservés</p>
+        </div>
+      </div>
+    `,
+    text: `💬 QRTags - Nouveau message dans le chat\n\n${senderLabel} vous a écrit au sujet de votre ${objectName} (${reference}).\nReçu le: ${data.receivedAt}\n\nMessage:\n${data.message}\n\nRépondre au trouveur (page de suivi): ${data.trackingUrl}\n\nLe chat est anonyme : aucun numéro de téléphone n'est partagé.\n\nNotification automatique QRTags\n© QRTags`,
+  };
+}
+
 export function getNewLeadEmailTemplate(data: {
   name: string;
   email: string;
