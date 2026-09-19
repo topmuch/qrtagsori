@@ -3,7 +3,7 @@
 import { useEffect, useState, useCallback, useMemo, useRef } from 'react';
 import {
   MapPin, Loader2, CheckCircle2, ArrowLeft,
-  Package, MessageCircle, User, Phone, Clock,
+  Package, User, Phone, Clock,
   ExternalLink, MessagesSquare,
 } from 'lucide-react';
 import QRTagsLogo from '@/components/qrtags/QRTagsLogo';
@@ -199,15 +199,10 @@ export default function PackPratique({ reference, baggage }: PackPratiqueProps) 
   const [finderPhone, setFinderPhone] = useState('');
   const [phoneCountry, setPhoneCountry] = useState('FR');
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [showSuccess, setShowSuccess] = useState(false);
-  const [gpsCaptured, setGpsCaptured] = useState(false);
   const [chatOpen, setChatOpen] = useState(false);
   const [gpsCoords, setGpsCoords] = useState<{ lat: number; lng: number } | null>(null);
   const [gpsLabel, setGpsLabel] = useState<string | null>(null);
-  const [redirectIn, setRedirectIn] = useState<number | null>(null);
-  const [whatsappBlocked, setWhatsappBlocked] = useState(false);
   const chatRef = useRef<HTMLDivElement | null>(null);
-  const [pendingUrl, setPendingUrl] = useState<string | null>(null);
 
   const openChat = useCallback(() => {
     setChatOpen(true);
@@ -280,7 +275,7 @@ export default function PackPratique({ reference, baggage }: PackPratiqueProps) 
     return null;
   }, [gpsCoords, ipLat, ipLng, positionLabel]);
 
-  // ─── Submit → géoloc silencieuse → POST scan → message 5 s → WhatsApp ───
+  // ─── Submit → géoloc silencieuse → POST scan → redirection WhatsApp AUTOMATIQUE ───
   const handleSubmit = useCallback(async () => {
     if (!finderName.trim()) {
       alert('Veuillez entrer votre nom');
@@ -295,7 +290,6 @@ export default function PackPratique({ reference, baggage }: PackPratiqueProps) 
     try {
       // GPS capturé en silence : déjà pris au chargement si accordé, sinon on retente ici
       const coords = gpsCoords ?? (await captureGpsSilently());
-      setGpsCaptured(!!coords);
       if (coords && !gpsCoords) setGpsCoords(coords);
 
       const res = await fetch(`/api/scan/${reference}`, {
@@ -313,41 +307,24 @@ export default function PackPratique({ reference, baggage }: PackPratiqueProps) 
 
       const data = await res.json();
       const whatsappUrl = (data.whatsappUrl as string) || null;
-      setPendingUrl(whatsappUrl);
       localStorage.setItem(`contacted_owner_${reference}`, 'true');
 
-      // Le message « MESSAGE ENVOYÉ ! » reste affiché au moins 5 s AVANT la redirection
-      setShowSuccess(true);
+      // Aucun message intermédiaire : ouverture immédiate de WhatsApp (évite le blocage popup)
       if (whatsappUrl) {
-        setRedirectIn(5);
-      } else {
-        setTimeout(() => setShowSuccess(false), 6000);
-        setIsSubmitting(false);
+        const win = window.open(whatsappUrl, '_blank');
+        if (!win) {
+          // Popup bloquée → navigation directe dans l'onglet courant (jamais bloquée)
+          window.location.href = whatsappUrl;
+          return;
+        }
       }
+      setIsSubmitting(false);
     } catch (err) {
       console.error(err);
       alert('Erreur lors de la notification');
       setIsSubmitting(false);
     }
   }, [finderName, finderPhone, phoneCountry, gpsCoords, positionLabel, reference]);
-
-  // ─── Compte à rebours 5 s puis ouverture de WhatsApp ───
-  useEffect(() => {
-    if (redirectIn == null) return;
-    if (redirectIn <= 0) {
-      const url = pendingUrl;
-      setRedirectIn(null);
-      if (url) {
-        const win = window.open(url, '_blank');
-        if (!win) setWhatsappBlocked(true); // bloqueur de popups → bouton manuel affiché
-      }
-      setIsSubmitting(false);
-      const hide = setTimeout(() => setShowSuccess(false), 8000);
-      return () => clearTimeout(hide);
-    }
-    const t = setTimeout(() => setRedirectIn((n) => (n == null ? null : n - 1)), 1000);
-    return () => clearTimeout(t);
-  }, [redirectIn, pendingUrl]);
 
   return (
     <main className="min-h-screen py-8 px-4 pb-32 md:pb-8" style={{ backgroundColor: QRTAGS_BG, color: QRTAGS_INK }}>
@@ -646,76 +623,6 @@ export default function PackPratique({ reference, baggage }: PackPratiqueProps) 
           </button>
         </div>
       </div>
-
-      {/* Modal de succès */}
-      {showSuccess && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
-          <div className="bg-white rounded-xl p-8 max-w-md w-full text-center border-2 border-black shadow-2xl">
-            <div
-              className="w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-4"
-              style={{ backgroundColor: QRTAGS_GREEN }}
-            >
-              <CheckCircle2 className="w-12 h-12 text-white" />
-            </div>
-            <h2 className="text-2xl font-black text-black mb-3">MESSAGE ENVOYÉ !</h2>
-
-            {redirectIn != null ? (
-              /* Compte à rebours : le message reste affiché au moins 5 s avant la redirection */
-              <div className="mb-4">
-                <p className="text-black/80 font-bold">
-                  Le propriétaire a été notifié{gpsCaptured ? ' et a reçu votre position GPS' : ''}.
-                </p>
-                <p className="text-black/70 text-sm mt-3 font-bold">Redirection vers WhatsApp dans :</p>
-                <div className="text-6xl font-black my-3" style={{ color: QRTAGS_GREEN }}>
-                  {redirectIn}
-                </div>
-                <p className="text-black/50 text-xs uppercase tracking-wide">secondes</p>
-              </div>
-            ) : (
-              <>
-                {whatsappBlocked && pendingUrl && (
-                  <button
-                    type="button"
-                    onClick={() => window.open(pendingUrl, '_blank')}
-                    className="w-full mb-4 px-6 py-4 rounded-xl font-black text-base text-white transition flex items-center justify-center gap-2 shadow-lg min-h-[52px]"
-                    style={{ backgroundColor: QRTAGS_GREEN, border: '2px solid #14532d' }}
-                  >
-                    OUVRIR WHATSAPP
-                  </button>
-                )}
-                <p className="text-black/80 mb-6">
-                  WhatsApp s&apos;est ouvert dans un nouvel onglet avec le message pré-rempli.
-                  {gpsCaptured && ' Le propriétaire a aussi reçu votre position GPS.'}
-                </p>
-                <div className="bg-gray-50 rounded-lg p-4 border-2 border-black mb-6 text-left">
-                  <p className="text-sm font-bold text-black mb-2">Prochaines étapes :</p>
-                  <ul className="text-sm text-black space-y-2">
-                    <li className="flex items-start gap-2">
-                      <CheckCircle2 className="w-4 h-4 flex-shrink-0 mt-0.5" style={{ color: QRTAGS_GREEN }} />
-                      <span>WhatsApp s&apos;est ouvert avec le message pré-rempli</span>
-                    </li>
-                    <li className="flex items-start gap-2">
-                      <MessageCircle className="w-4 h-4 flex-shrink-0 mt-0.5" style={{ color: QRTAGS_INK }} />
-                      <span>Cliquez sur &quot;Envoyer&quot; dans WhatsApp</span>
-                    </li>
-                    <li className="flex items-start gap-2">
-                      <MapPin className="w-4 h-4 flex-shrink-0 mt-0.5" style={{ color: QRTAGS_INK }} />
-                      <span>Convenez d&apos;un rendez-vous pour la restitution</span>
-                    </li>
-                  </ul>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => setShowSuccess(false)}
-                  className="w-full px-6 py-3 rounded-lg font-bold bg-black text-[#E3B23C] hover:bg-gray-900 transition min-h-[48px]"
-                >
-                  Fermer
-                </button>
-              </>
-            )}
-          </div>
-        </div>
-      )}
     </main>
   );
 }
