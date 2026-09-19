@@ -23,6 +23,7 @@ interface LocalBaggageItem {
     object_name?: string | null;
     category_label?: string | null;
     color?: string | null;
+    has_email?: boolean;
   } | null;
 }
 
@@ -38,6 +39,7 @@ interface DisplayBaggage {
   objectName?: string | null;
   color?: string | null;
   categoryLabel?: string | null;
+  hasEmail?: boolean;
 }
 
 interface SearchResult {
@@ -64,6 +66,7 @@ function toDisplay(b: LocalBaggageItem | TravelerBaggage): DisplayBaggage {
       objectName: lb.objectInfo?.object_name || null,
       color: lb.objectInfo?.color || null,
       categoryLabel: lb.objectInfo?.category_label || null,
+      hasEmail: lb.objectInfo?.has_email === true,
     };
   }
   const tb = b as TravelerBaggage;
@@ -79,6 +82,7 @@ function toDisplay(b: LocalBaggageItem | TravelerBaggage): DisplayBaggage {
     objectName: tb.customData?.object_name,
     color: tb.customData?.color,
     categoryLabel: tb.customData?.category_label,
+    hasEmail: !!(tb.customData as { email?: string } | null)?.email,
   };
 }
 
@@ -187,6 +191,9 @@ export default function MesBagagesPage() {
     (b.objectName || '').toLowerCase().includes(search.toLowerCase()) ||
     (b.lastScanLocation || '').toLowerCase().includes(search.toLowerCase())
   );
+
+  // Objets sans e-mail de notification → encart d'incitation (alertes scan + messages du chat)
+  const noEmailBaggages = displayBaggages.filter(b => b.hasEmail === false);
 
   // ─── Recherche publique QR ───
   const handleSearch = useCallback(async () => {
@@ -661,6 +668,31 @@ export default function MesBagagesPage() {
                 className="w-full pl-10 pr-4 py-3 rounded-xl bg-white border-2 border-[#1a1a1a] text-[#1a1a1a] text-sm focus:ring-2 focus:ring-[#E3B23C]"
               />
             </div>
+
+            {/* Encart : objets sans e-mail de notification */}
+            {noEmailBaggages.length > 0 && (
+              <div className="rounded-2xl border-2 border-[#E3B23C] bg-[#FFFDF5] p-4 mb-3">
+                <p className="text-sm font-bold text-[#1a1a1a] mb-1">📧 Ajoutez votre e-mail pour ne rien manquer</p>
+                <p className="text-xs text-[#525252] mb-3">
+                  Sans e-mail, vous ne recevez ni les alertes de scan, ni les messages du chat.
+                  Il n'est jamais visible du trouveur.
+                </p>
+                <div className="space-y-2">
+                  {noEmailBaggages.map((bg) => (
+                    <Link
+                      key={bg.reference}
+                      href={`/suivi/${bg.reference}/edit`}
+                      className="flex items-center justify-between rounded-xl border border-[#E3B23C]/50 bg-white px-3 py-2.5 hover:bg-[#FFF8E7] transition"
+                    >
+                      <span className="text-xs font-mono font-bold text-[#1a1a1a]">{bg.reference}</span>
+                      <span className="text-xs font-bold text-[#1a1a1a] flex items-center gap-1">
+                        Ajouter mon e-mail <ArrowRight className="w-3 h-3" />
+                      </span>
+                    </Link>
+                  ))}
+                </div>
+              </div>
+            )}
 
             {/* Baggage list */}
             <div className="space-y-3">

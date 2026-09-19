@@ -783,6 +783,19 @@ export default function ParametresPage() {
                 <Server className="w-5 h-5 text-[#2563EB]" />
                 Fournisseur Email
               </h3>
+              {emailSettings.provider === 'console' && (
+                <div className="mb-4 rounded-xl border-2 border-amber-400 bg-amber-50 p-4">
+                  <p className="text-sm font-bold text-amber-900">
+                    ⚠️ Aucun e-mail n'est envoyé en ce moment
+                  </p>
+                  <p className="text-xs text-amber-800 mt-1">
+                    Mode « Console » : les notifications (scan de votre objet, messages du chat,
+                    réinitialisation de mot de passe) sont seulement journalisées, jamais envoyées.
+                    Sélectionnez « Serveur SMTP Personnalisé » ci-dessous et renseignez votre SMTP
+                    (host, port, utilisateur, mot de passe) pour activer l'envoi réel.
+                  </p>
+                </div>
+              )}
               <div className="grid md:grid-cols-2 gap-4">
                 {EMAIL_PROVIDERS.map((provider) => (
                   <button

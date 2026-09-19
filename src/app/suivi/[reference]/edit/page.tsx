@@ -69,6 +69,7 @@ export default function EditBaggagePage() {
     travelerFirstName: '',
     travelerLastName: '',
     whatsappOwner: '',
+    email: '',
     airlineName: '',
     flightNumber: '',
     trainCompany: '',
@@ -198,6 +199,7 @@ export default function EditBaggagePage() {
             travelerFirstName: data.baggage.travelerFirstName || '',
             travelerLastName: data.baggage.travelerLastName || '',
             whatsappOwner: data.baggage.whatsappOwner || '',
+            email: data.baggage.email || '',
             airlineName: data.baggage.airlineName || '',
             flightNumber: data.baggage.flightNumber || '',
             trainCompany: data.baggage.trainCompany || '',
@@ -280,6 +282,7 @@ export default function EditBaggagePage() {
         travelerFirstName: formData.travelerFirstName,
         travelerLastName: formData.travelerLastName,
         whatsappOwner: formData.whatsappOwner,
+        email: formData.email,
         destination: formData.destination,
         departureDate: formData.departureDate || undefined,
         departureTime: formData.departureTime || undefined,
@@ -512,6 +515,22 @@ export default function EditBaggagePage() {
                 style={{ color: INK }}
               />
             </div>
+          </div>
+
+          {/* E-mail de notification (alertes scan + messages du chat) */}
+          <div className="bg-white border-2 border-dashed border-[#1a1a1a] rounded-2xl p-4">
+            <p className="text-sm font-medium mb-3" style={{ color: INK }}>📧 E-mail de notification</p>
+            <input
+              type="email"
+              placeholder="Votre e-mail (ex: marie@email.com)"
+              value={formData.email}
+              onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+              className="bg-slate-50 border-2 border-[#1a1a1a] rounded-lg px-3 py-2.5 text-base w-full focus:ring-2 focus:ring-[#111111]"
+              style={{ color: INK }}
+            />
+            <p className="text-xs text-slate-500 mt-2">
+              Reçoit les alertes de scan et les messages du chat — jamais visible du trouveur.
+            </p>
           </div>
 
           {/* Transport-specific fields */}

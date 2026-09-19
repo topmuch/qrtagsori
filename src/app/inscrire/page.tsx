@@ -463,7 +463,7 @@ function InscrireContent() {
     return null;
   }
   function validateEmail(v: string): string | null {
-    if (!v.trim()) return null;
+    if (!v.trim()) return 'L\'e-mail est requis pour recevoir les alertes et les messages du chat';
     if (!EMAIL_REGEX.test(v.trim())) return 'Adresse email invalide';
     return null;
   }
@@ -478,11 +478,12 @@ function InscrireContent() {
   };
   const hasErrors = Object.values(errors).some(Boolean);
 
-  // Champs essentiels étape 2 : firstName, lastName, whatsapp, objectName, objectDescription
+  // Champs essentiels étape 2 : firstName, lastName, whatsapp, email, objectName, objectDescription
   const step2ValidFlags = [
     !errors.firstName,
     !errors.lastName,
     !errors.whatsapp,
+    !errors.email,
     !errors.objectName,
     !errors.objectDescription,
   ];
@@ -492,7 +493,7 @@ function InscrireContent() {
   // ─── Validations par étape ───
   const canSubmitStep1 = !!selectedCategory;
   const canSubmitStep2 = !errors.firstName && !errors.lastName && !errors.whatsapp &&
-                         !errors.objectName && !errors.objectDescription;
+                         !errors.email && !errors.objectName && !errors.objectDescription;
   const canSubmitStep3 = acceptTerms && acceptPrivacy && !errors.email;
 
   function fieldError(field: keyof typeof errors): string | null {
@@ -964,6 +965,33 @@ function InscrireContent() {
                   </p>
                 )}
               </div>
+
+              {/* E-mail du propriétaire (requis — alertes scan + messages du chat) */}
+              <div className="mt-4" data-error={fieldError('email') ? 'true' : undefined}>
+                <label className="block text-sm font-bold text-black mb-1">Votre e-mail *</label>
+                <input
+                  type="email"
+                  value={formData.email}
+                  placeholder="marie@email.com"
+                  onBlur={() => markTouched('email')}
+                  onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                  className={inputClass('email')}
+                />
+                {fieldError('email') ? (
+                  <p className="text-xs mt-1 flex items-center gap-1" style={{ color: QRTAGS_RED }}>
+                    <XCircle className="w-3 h-3" /> {fieldError('email')}
+                  </p>
+                ) : touched.email && !errors.email && formData.email.trim() ? (
+                  <p className="text-xs mt-1 flex items-center gap-1" style={{ color: QRTAGS_GREEN }}>
+                    <CheckCircle2 className="w-3 h-3" /> E-mail valide
+                  </p>
+                ) : (
+                  <p className="text-xs mt-1 flex items-center gap-1" style={{ color: QRTAGS_INK }}>
+                    <AlertCircle className="w-3 h-3" />
+                    Reçoit les alertes de scan et les messages du chat — jamais visible du trouveur.
+                  </p>
+                )}
+              </div>
             </div>
 
             {/* Section Objet */}
@@ -1124,27 +1152,6 @@ function InscrireContent() {
                 />
               </div>
 
-              <div className="mt-4" data-error={fieldError('email') ? 'true' : undefined}>
-                <label className="block text-sm font-bold text-black mb-1">Email (optionnel)</label>
-                <input
-                  type="email"
-                  value={formData.email}
-                  placeholder="marie@email.com"
-                  onBlur={() => markTouched('email')}
-                  onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                  className={inputClass('email')}
-                />
-                {fieldError('email') && (
-                  <p className="text-xs mt-1 flex items-center gap-1" style={{ color: QRTAGS_RED }}>
-                    <XCircle className="w-3 h-3" /> {fieldError('email')}
-                  </p>
-                )}
-                {touched.email && !errors.email && formData.email.trim() && (
-                  <p className="text-xs mt-1 flex items-center gap-1" style={{ color: QRTAGS_GREEN }}>
-                    <CheckCircle2 className="w-3 h-3" /> Email valide
-                  </p>
-                )}
-              </div>
             </div>
 
             {/* Section Photo */}

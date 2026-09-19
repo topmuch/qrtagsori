@@ -20,6 +20,7 @@
  *   ✅ Ville / Pays du scan (approximatif)
  *   ✅ Adresse textuelle (approximative)
  *   ✅ Contexte du scan
+ *   ✅ has_email (BOOLEEN — indique uniquement si un e-mail de notification est configuré)
  */
 
 import { NextRequest, NextResponse } from 'next/server';
@@ -131,7 +132,8 @@ export async function GET(
     );
 
     // ─── Parser customData pour afficher les infos objet ───
-    let objectInfo: Record<string, unknown> | null = null;
+    // has_email : booléen seul (l'adresse e-mail n'est JAMAIS exposée ici)
+    let objectInfo: Record<string, unknown> = { has_email: false };
     if (baggage.customData) {
       try {
         const parsed = JSON.parse(baggage.customData) as Record<string, unknown>;
@@ -147,9 +149,10 @@ export async function GET(
           message_to_finder: parsed.message_to_finder || null,
           city: parsed.city || null,
           country: parsed.country || null,
+          has_email: !!parsed.email,
         };
       } catch {
-        objectInfo = null;
+        objectInfo = { has_email: false };
       }
     }
 
