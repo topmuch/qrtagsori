@@ -519,7 +519,7 @@ export default function EditBaggagePage() {
 
           {/* E-mail de notification (alertes scan + messages du chat) */}
           <div className="bg-white border-2 border-dashed border-[#1a1a1a] rounded-2xl p-4">
-            <p className="text-sm font-medium mb-3" style={{ color: INK }}>📧 E-mail de notification</p>
+            <p className="text-sm font-medium mb-3" style={{ color: INK }}>📧 E-mail de notification (optionnel)</p>
             <input
               type="email"
               placeholder="Votre e-mail (ex: marie@email.com)"

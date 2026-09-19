@@ -463,7 +463,7 @@ function InscrireContent() {
     return null;
   }
   function validateEmail(v: string): string | null {
-    if (!v.trim()) return 'L\'e-mail est requis pour recevoir les alertes et les messages du chat';
+    if (!v.trim()) return null; // e-mail OPTIONNEL — validé seulement s'il est renseigné
     if (!EMAIL_REGEX.test(v.trim())) return 'Adresse email invalide';
     return null;
   }
@@ -478,7 +478,7 @@ function InscrireContent() {
   };
   const hasErrors = Object.values(errors).some(Boolean);
 
-  // Champs essentiels étape 2 : firstName, lastName, whatsapp, email, objectName, objectDescription
+  // Champs essentiels étape 2 : firstName, lastName, whatsapp, objectName, objectDescription (e-mail optionnel)
   const step2ValidFlags = [
     !errors.firstName,
     !errors.lastName,
@@ -966,9 +966,9 @@ function InscrireContent() {
                 )}
               </div>
 
-              {/* E-mail du propriétaire (requis — alertes scan + messages du chat) */}
+              {/* E-mail du propriétaire (OPTIONNEL — alertes scan + messages du chat) */}
               <div className="mt-4" data-error={fieldError('email') ? 'true' : undefined}>
-                <label className="block text-sm font-bold text-black mb-1">Votre e-mail *</label>
+                <label className="block text-sm font-bold text-black mb-1">Votre e-mail (optionnel)</label>
                 <input
                   type="email"
                   value={formData.email}
@@ -988,7 +988,7 @@ function InscrireContent() {
                 ) : (
                   <p className="text-xs mt-1 flex items-center gap-1" style={{ color: QRTAGS_INK }}>
                     <AlertCircle className="w-3 h-3" />
-                    Reçoit les alertes de scan et les messages du chat — jamais visible du trouveur.
+                    Optionnel — reçoit les alertes de scan et les messages du chat, jamais visible du trouveur.
                   </p>
                 )}
               </div>

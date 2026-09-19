@@ -672,7 +672,7 @@ export default function MesBagagesPage() {
             {/* Encart : objets sans e-mail de notification */}
             {noEmailBaggages.length > 0 && (
               <div className="rounded-2xl border-2 border-[#E3B23C] bg-[#FFFDF5] p-4 mb-3">
-                <p className="text-sm font-bold text-[#1a1a1a] mb-1">📧 Ajoutez votre e-mail pour ne rien manquer</p>
+                <p className="text-sm font-bold text-[#1a1a1a] mb-1">📧 Ajoutez un e-mail (optionnel) pour ne rien manquer</p>
                 <p className="text-xs text-[#525252] mb-3">
                   Sans e-mail, vous ne recevez ni les alertes de scan, ni les messages du chat.
                   Il n'est jamais visible du trouveur.
