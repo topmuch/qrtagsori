@@ -1,10 +1,11 @@
 'use client';
 
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import Link from 'next/link';
 import { Luggage, Search, ArrowRight, Clock, LogIn, LogOut, User, Shield, Bell, BellOff, Loader2, Link2, X, Plus, Star, MessageSquare, QrCode, CheckCircle2 } from 'lucide-react';
 import { useTravelerAuth, type TravelerBaggage } from '@/contexts/TravelerAuthContext';
 import TravelerAuthModal from '@/components/traveler/TravelerAuthModal';
+import ScansOverview from '@/components/mes-bagages/ScansOverview';
 
 // ─── Types ───
 interface LocalBaggageItem {
@@ -164,6 +165,19 @@ export default function MesBagagesPage() {
   const displayBaggages = isLoggedIn
     ? accountBaggages.map(toDisplay)
     : localBaggages.map(toDisplay);
+
+  // Objets traçables (token) pour la carte + l'historique agrégés des scans
+  const mapItems = useMemo(
+    () =>
+      displayBaggages
+        .filter((b) => b.trackingToken)
+        .map((b) => ({
+          reference: b.reference,
+          objectName: b.objectName || null,
+          token: b.trackingToken as string,
+        })),
+    [isLoggedIn, accountBaggages, localBaggages]
+  );
 
   const loading = authLoading || localLoading;
 
@@ -632,6 +646,9 @@ export default function MesBagagesPage() {
                 <p className="text-xs text-red-600 bg-red-50 rounded-lg p-2 mx-3 mb-2">{searchError}</p>
               )}
             </div>
+
+            {/* ─── Carte des scans + historique agrégés (tous objets) ─── */}
+            {mapItems.length > 0 && <ScansOverview items={mapItems} />}
 
             {/* Filtre liste */}
             <div className="relative mb-4">
