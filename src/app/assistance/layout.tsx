@@ -3,9 +3,9 @@ import type { Metadata } from "next";
 export const metadata: Metadata = {
   title: "Assistance QRTags — Aide, FAQ, support objets perdus",
   description: "Besoin d'aide avec QRTags ? Consultez notre FAQ, guide d'activation et contactez notre support en français, anglais et arabe. Service disponible en France, Afrique et Europe.",
-  openGraph: { title: "Assistance QRTags — Aide, FAQ, support objets perdus", description: "Besoin d'aide avec QRTags ? Consultez notre FAQ, guide d'activation et contactez notre support en français, anglais et arabe. Service disponible en France, Afrique et Europe.", url: "https://qrtags.com/assistance/layout.tsx", siteName: "QRTags", type: "website", locale: "fr_FR", images: [{ url: "/hero-illustration-new.png", width: 1200, height: 630 }] },
+  openGraph: { title: "Assistance QRTags — Aide, FAQ, support objets perdus", description: "Besoin d'aide avec QRTags ? Consultez notre FAQ, guide d'activation et contactez notre support en français, anglais et arabe. Service disponible en France, Afrique et Europe.", url: "https://qrtags.com/assistance", siteName: "QRTags", type: "website", locale: "fr_FR", images: [{ url: "/hero-illustration-new.png", width: 1200, height: 630 }] },
   twitter: { card: "summary_large_image", title: "Assistance QRTags — Aide, FAQ, support objets perdus", description: "Besoin d'aide avec QRTags ? Consultez notre FAQ, guide d'activation et contactez notre support en français, anglais et arabe. Service disponible en France, Afrique et Europe.", images: ["/hero-illustration-new.png"] },
-  alternates: { canonical: "https://qrtags.com/assistance/layout.tsx" },
+  alternates: { canonical: "https://qrtags.com/assistance" },
   robots: { index: true, follow: true },
 };
 

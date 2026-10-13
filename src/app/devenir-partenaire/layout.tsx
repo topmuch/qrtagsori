@@ -3,9 +3,9 @@ import type { Metadata } from "next";
 export const metadata: Metadata = {
   title: "Devenir partenaire QRTags — Hôtels, écoles, loueurs",
   description: "Devenez partenaire QRTags et offrez le service objets trouvés à vos clients. Solutions pour hôtels, écoles, consignes, loueurs et cliniques en France, Afrique et Europe.",
-  openGraph: { title: "Devenir partenaire QRTags — Hôtels, écoles, loueurs", description: "Devenez partenaire QRTags et offrez le service objets trouvés à vos clients. Solutions pour hôtels, écoles, consignes, loueurs et cliniques en France, Afrique et Europe.", url: "https://qrtags.com/devenir-partenaire/layout.tsx", siteName: "QRTags", type: "website", locale: "fr_FR", images: [{ url: "/hero-illustration-new.png", width: 1200, height: 630 }] },
+  openGraph: { title: "Devenir partenaire QRTags — Hôtels, écoles, loueurs", description: "Devenez partenaire QRTags et offrez le service objets trouvés à vos clients. Solutions pour hôtels, écoles, consignes, loueurs et cliniques en France, Afrique et Europe.", url: "https://qrtags.com/devenir-partenaire", siteName: "QRTags", type: "website", locale: "fr_FR", images: [{ url: "/hero-illustration-new.png", width: 1200, height: 630 }] },
   twitter: { card: "summary_large_image", title: "Devenir partenaire QRTags — Hôtels, écoles, loueurs", description: "Devenez partenaire QRTags et offrez le service objets trouvés à vos clients. Solutions pour hôtels, écoles, consignes, loueurs et cliniques en France, Afrique et Europe.", images: ["/hero-illustration-new.png"] },
-  alternates: { canonical: "https://qrtags.com/devenir-partenaire/layout.tsx" },
+  alternates: { canonical: "https://qrtags.com/devenir-partenaire" },
   robots: { index: true, follow: true },
 };
 

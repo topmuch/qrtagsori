@@ -1,16 +1,19 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
-import { normalizeStatus, isPending, isActive, statusFilterIn } from '@/lib/status';
+import { normalizeStatus, statusFilterIn, statusFilterInMany } from '@/lib/status';
+import type { BaggageStatus } from '@/lib/status';
 
 export const dynamic = 'force-dynamic';
 
-// GET - List all baggages for an agency
+// GET - List baggages for an agency (paginated) with DB-level stats
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
     const agencyId = searchParams.get('agencyId');
     const status = searchParams.get('status');
     const search = searchParams.get('search');
+    const page = Math.max(1, parseInt(searchParams.get('page') || '1', 10));
+    const limit = Math.min(200, Math.max(1, parseInt(searchParams.get('limit') || '50', 10)));
 
     if (!agencyId) {
       return NextResponse.json(
@@ -24,7 +27,7 @@ export async function GET(request: NextRequest) {
 
     // If a specific status filter is requested, match BOTH French and English variants
     if (status && status !== 'all') {
-      where.status = statusFilterIn(status as 'pending_activation' | 'active' | 'scanned' | 'lost' | 'found' | 'blocked');
+      where.status = statusFilterIn(status as BaggageStatus);
     }
 
     if (search) {
@@ -35,15 +38,21 @@ export async function GET(request: NextRequest) {
       ];
     }
 
-    const baggages = await db.baggage.findMany({
-      where,
-      orderBy: { createdAt: 'desc' },
-      include: {
-        agency: {
-          select: { id: true, name: true, agencyType: true },
+    // Run paginated fetch + total count in parallel
+    const [baggages, total] = await Promise.all([
+      db.baggage.findMany({
+        where,
+        orderBy: { createdAt: 'desc' },
+        skip: (page - 1) * limit,
+        take: limit,
+        include: {
+          agency: {
+            select: { id: true, name: true, agencyType: true },
+          },
         },
-      },
-    });
+      }),
+      db.baggage.count({ where }),
+    ]);
 
     // Normalize statuses in response (frontend always gets English format)
     const normalizedBaggages = baggages.map(b => ({
@@ -53,24 +62,59 @@ export async function GET(request: NextRequest) {
       agencyType: b.agency?.agencyType || null,
     }));
 
-    // Calculate stats using normalized statuses
+    // ─── Compute stats at DB level using parallel count queries ───
+    // These counts ignore the page/limit/search — they reflect the full agency dataset
+    const statsBase = { agencyId };
+    const [
+      totalAll,
+      pendingCount,
+      activeCount,
+      scannedCount,
+      lostCount,
+      foundCount,
+      inStockCount,
+      soldCount,
+      activatedCount,
+      assignedToAgencyCount,
+      blockedCount,
+    ] = await Promise.all([
+      db.baggage.count({ where: statsBase }),
+      // pending = in_stock + assigned_to_agency + pending_activation
+      db.baggage.count({ where: { ...statsBase, status: statusFilterInMany(['in_stock', 'assigned_to_agency', 'pending_activation']) } }),
+      // active = activated + active + scanned
+      db.baggage.count({ where: { ...statsBase, status: statusFilterInMany(['activated', 'active', 'scanned']) } }),
+      db.baggage.count({ where: { ...statsBase, status: statusFilterIn('scanned') } }),
+      db.baggage.count({ where: { ...statsBase, status: statusFilterIn('lost') } }),
+      db.baggage.count({ where: { ...statsBase, status: statusFilterIn('found') } }),
+      db.baggage.count({ where: { ...statsBase, status: statusFilterIn('in_stock') } }),
+      db.baggage.count({ where: { ...statsBase, status: statusFilterIn('sold') } }),
+      db.baggage.count({ where: { ...statsBase, status: statusFilterIn('activated') } }),
+      db.baggage.count({ where: { ...statsBase, status: statusFilterIn('assigned_to_agency') } }),
+      db.baggage.count({ where: { ...statsBase, status: statusFilterIn('blocked') } }),
+    ]);
+
     const stats = {
-      total: normalizedBaggages.length,
-      pending: normalizedBaggages.filter(b => isPending(b.status)).length,
-      active: normalizedBaggages.filter(b => isActive(b.status)).length,
-      scanned: normalizedBaggages.filter(b => b.status === 'scanned').length,
-      lost: normalizedBaggages.filter(b => b.status === 'lost').length,
-      found: normalizedBaggages.filter(b => b.status === 'found').length,
-      // QRTags : stats additionnelles pour le tableau de traçabilité
-      in_stock: normalizedBaggages.filter(b => b.status === 'in_stock').length,
-      sold: normalizedBaggages.filter(b => b.status === 'sold').length,
-      activated: normalizedBaggages.filter(b => b.status === 'activated').length,
-      assigned_to_agency: normalizedBaggages.filter(b => b.status === 'assigned_to_agency').length,
-      blocked: normalizedBaggages.filter(b => b.status === 'blocked').length,
+      total: totalAll,
+      pending: pendingCount,
+      active: activeCount,
+      scanned: scannedCount,
+      lost: lostCount,
+      found: foundCount,
+      in_stock: inStockCount,
+      sold: soldCount,
+      activated: activatedCount,
+      assigned_to_agency: assignedToAgencyCount,
+      blocked: blockedCount,
     };
 
+    const totalPages = Math.ceil(total / limit);
+
     return NextResponse.json(
-      { baggages: normalizedBaggages, stats },
+      {
+        baggages: normalizedBaggages,
+        pagination: { page, limit, total, totalPages },
+        stats,
+      },
       {
         headers: {
           'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',

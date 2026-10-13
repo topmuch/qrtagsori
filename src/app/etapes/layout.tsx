@@ -3,9 +3,9 @@ import type { Metadata } from "next";
 export const metadata: Metadata = {
   title: "Comment ça marche QRTags — 4 étapes simples",
   description: "Protégez vos objets en 4 étapes : collez, activez en 30 secondes, recevez une alerte WhatsApp, récupérez-le. Solution pour la France, l'Afrique et l'Europe.",
-  openGraph: { title: "Comment ça marche QRTags — 4 étapes simples", description: "Protégez vos objets en 4 étapes : collez, activez en 30 secondes, recevez une alerte WhatsApp, récupérez-le. Solution pour la France, l'Afrique et l'Europe.", url: "https://qrtags.com/etapes/layout.tsx", siteName: "QRTags", type: "website", locale: "fr_FR", images: [{ url: "/hero-illustration-new.png", width: 1200, height: 630 }] },
+  openGraph: { title: "Comment ça marche QRTags — 4 étapes simples", description: "Protégez vos objets en 4 étapes : collez, activez en 30 secondes, recevez une alerte WhatsApp, récupérez-le. Solution pour la France, l'Afrique et l'Europe.", url: "https://qrtags.com/etapes", siteName: "QRTags", type: "website", locale: "fr_FR", images: [{ url: "/hero-illustration-new.png", width: 1200, height: 630 }] },
   twitter: { card: "summary_large_image", title: "Comment ça marche QRTags — 4 étapes simples", description: "Protégez vos objets en 4 étapes : collez, activez en 30 secondes, recevez une alerte WhatsApp, récupérez-le. Solution pour la France, l'Afrique et l'Europe.", images: ["/hero-illustration-new.png"] },
-  alternates: { canonical: "https://qrtags.com/etapes/layout.tsx" },
+  alternates: { canonical: "https://qrtags.com/etapes" },
   robots: { index: true, follow: true },
 };
 

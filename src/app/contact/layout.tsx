@@ -3,9 +3,9 @@ import type { Metadata } from "next";
 export const metadata: Metadata = {
   title: "Contactez QRTags — Partenaires et support",
   description: "Contactez QRTags pour devenir partenaire (hôtels, écoles, loueurs, cliniques), obtenir du support ou commander des étiquettes QR. Disponible en France, Afrique de l'Ouest et Europe.",
-  openGraph: { title: "Contactez QRTags — Partenaires et support", description: "Contactez QRTags pour devenir partenaire (hôtels, écoles, loueurs, cliniques), obtenir du support ou commander des étiquettes QR. Disponible en France, Afrique de l'Ouest et Europe.", url: "https://qrtags.com/contact/layout.tsx", siteName: "QRTags", type: "website", locale: "fr_FR", images: [{ url: "/hero-illustration-new.png", width: 1200, height: 630 }] },
+  openGraph: { title: "Contactez QRTags — Partenaires et support", description: "Contactez QRTags pour devenir partenaire (hôtels, écoles, loueurs, cliniques), obtenir du support ou commander des étiquettes QR. Disponible en France, Afrique de l'Ouest et Europe.", url: "https://qrtags.com/contact", siteName: "QRTags", type: "website", locale: "fr_FR", images: [{ url: "/hero-illustration-new.png", width: 1200, height: 630 }] },
   twitter: { card: "summary_large_image", title: "Contactez QRTags — Partenaires et support", description: "Contactez QRTags pour devenir partenaire (hôtels, écoles, loueurs, cliniques), obtenir du support ou commander des étiquettes QR. Disponible en France, Afrique de l'Ouest et Europe.", images: ["/hero-illustration-new.png"] },
-  alternates: { canonical: "https://qrtags.com/contact/layout.tsx" },
+  alternates: { canonical: "https://qrtags.com/contact" },
   robots: { index: true, follow: true },
 };
 

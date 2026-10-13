@@ -3,9 +3,9 @@ import type { Metadata } from "next";
 export const metadata: Metadata = {
   title: "Fonctionnalités QRTags — Sans app, sans batterie, WhatsApp",
   description: "Découvrez toutes les fonctionnalités QRTags : alertes WhatsApp instantanées, pas d'application, pas de batterie, géolocalisation du trouveur, conformité RGPD.",
-  openGraph: { title: "Fonctionnalités QRTags — Sans app, sans batterie, WhatsApp", description: "Découvrez toutes les fonctionnalités QRTags : alertes WhatsApp instantanées, pas d'application, pas de batterie, géolocalisation du trouveur, conformité RGPD.", url: "https://qrtags.com/fonctionnalites/layout.tsx", siteName: "QRTags", type: "website", locale: "fr_FR", images: [{ url: "/hero-illustration-new.png", width: 1200, height: 630 }] },
+  openGraph: { title: "Fonctionnalités QRTags — Sans app, sans batterie, WhatsApp", description: "Découvrez toutes les fonctionnalités QRTags : alertes WhatsApp instantanées, pas d'application, pas de batterie, géolocalisation du trouveur, conformité RGPD.", url: "https://qrtags.com/fonctionnalites", siteName: "QRTags", type: "website", locale: "fr_FR", images: [{ url: "/hero-illustration-new.png", width: 1200, height: 630 }] },
   twitter: { card: "summary_large_image", title: "Fonctionnalités QRTags — Sans app, sans batterie, WhatsApp", description: "Découvrez toutes les fonctionnalités QRTags : alertes WhatsApp instantanées, pas d'application, pas de batterie, géolocalisation du trouveur, conformité RGPD.", images: ["/hero-illustration-new.png"] },
-  alternates: { canonical: "https://qrtags.com/fonctionnalites/layout.tsx" },
+  alternates: { canonical: "https://qrtags.com/fonctionnalites" },
   robots: { index: true, follow: true },
 };
 

@@ -58,10 +58,6 @@ export default function GenererQRPage() {
   // Shared state
   const [agencies, setAgencies] = useState<Agency[]>([]);
 
-  useEffect(() => {
-    fetchAgencies();
-  }, []);
-
   const fetchAgencies = async () => {
     try {
       const res = await fetch('/api/admin/agencies');
@@ -71,6 +67,10 @@ export default function GenererQRPage() {
       console.error('Error fetching agencies:', e);
     }
   };
+
+  useEffect(() => {
+    fetchAgencies();
+  }, []);
 
   return (
     <div className="max-w-5xl mx-auto">

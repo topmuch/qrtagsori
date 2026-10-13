@@ -3,9 +3,9 @@ import type { Metadata } from "next";
 export const metadata: Metadata = {
   title: "QRTags pour les professionnels — Solutions par métier",
   description: "Solutions QRTags adaptées : hôtels, écoles, consignes bagagerie, loueurs, cliniques et hôpitaux. Gestion centralisée des objets trouvés en France, Afrique et Europe.",
-  openGraph: { title: "QRTags pour les professionnels — Solutions par métier", description: "Solutions QRTags adaptées : hôtels, écoles, consignes bagagerie, loueurs, cliniques et hôpitaux. Gestion centralisée des objets trouvés en France, Afrique et Europe.", url: "https://qrtags.com/metiers/layout.tsx", siteName: "QRTags", type: "website", locale: "fr_FR", images: [{ url: "/hero-illustration-new.png", width: 1200, height: 630 }] },
+  openGraph: { title: "QRTags pour les professionnels — Solutions par métier", description: "Solutions QRTags adaptées : hôtels, écoles, consignes bagagerie, loueurs, cliniques et hôpitaux. Gestion centralisée des objets trouvés en France, Afrique et Europe.", url: "https://qrtags.com/metiers", siteName: "QRTags", type: "website", locale: "fr_FR", images: [{ url: "/hero-illustration-new.png", width: 1200, height: 630 }] },
   twitter: { card: "summary_large_image", title: "QRTags pour les professionnels — Solutions par métier", description: "Solutions QRTags adaptées : hôtels, écoles, consignes bagagerie, loueurs, cliniques et hôpitaux. Gestion centralisée des objets trouvés en France, Afrique et Europe.", images: ["/hero-illustration-new.png"] },
-  alternates: { canonical: "https://qrtags.com/metiers/layout.tsx" },
+  alternates: { canonical: "https://qrtags.com/metiers" },
   robots: { index: true, follow: true },
 };
 

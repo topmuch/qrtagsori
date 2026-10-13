@@ -3,9 +3,9 @@ import type { Metadata } from "next";
 export const metadata: Metadata = {
   title: "Boutique QRTags — Étiquettes QR anti-perte",
   description: "Achetez des étiquettes QR QRTags à partir de 1500 FCFA. Packs de 3, 5, 10 ou 15 stickers. Livraison en Afrique de l'Ouest et en France. Paiement à la livraison.",
-  openGraph: { title: "Boutique QRTags — Étiquettes QR anti-perte", description: "Achetez des étiquettes QR QRTags à partir de 1500 FCFA. Packs de 3, 5, 10 ou 15 stickers. Livraison en Afrique de l'Ouest et en France. Paiement à la livraison.", url: "https://qrtags.com/shop/layout.tsx", siteName: "QRTags", type: "website", locale: "fr_FR", images: [{ url: "/hero-illustration-new.png", width: 1200, height: 630 }] },
+  openGraph: { title: "Boutique QRTags — Étiquettes QR anti-perte", description: "Achetez des étiquettes QR QRTags à partir de 1500 FCFA. Packs de 3, 5, 10 ou 15 stickers. Livraison en Afrique de l'Ouest et en France. Paiement à la livraison.", url: "https://qrtags.com/shop", siteName: "QRTags", type: "website", locale: "fr_FR", images: [{ url: "/hero-illustration-new.png", width: 1200, height: 630 }] },
   twitter: { card: "summary_large_image", title: "Boutique QRTags — Étiquettes QR anti-perte", description: "Achetez des étiquettes QR QRTags à partir de 1500 FCFA. Packs de 3, 5, 10 ou 15 stickers. Livraison en Afrique de l'Ouest et en France. Paiement à la livraison.", images: ["/hero-illustration-new.png"] },
-  alternates: { canonical: "https://qrtags.com/shop/layout.tsx" },
+  alternates: { canonical: "https://qrtags.com/shop" },
   robots: { index: true, follow: true },
 };
 

@@ -3,9 +3,9 @@ import type { Metadata } from "next";
 export const metadata: Metadata = {
   title: "Scanner un QR code QRTags — Vous avez trouvé un objet ?",
   description: "Vous avez trouvé un objet avec une étiquette QRTags ? Scannez le QR code pour alerter le propriétaire sur WhatsApp avec votre position GPS. Aucune application requise.",
-  openGraph: { title: "Scanner un QR code QRTags — Vous avez trouvé un objet ?", description: "Vous avez trouvé un objet avec une étiquette QRTags ? Scannez le QR code pour alerter le propriétaire sur WhatsApp avec votre position GPS. Aucune application requise.", url: "https://qrtags.com/scan/layout.tsx", siteName: "QRTags", type: "website", locale: "fr_FR", images: [{ url: "/hero-illustration-new.png", width: 1200, height: 630 }] },
+  openGraph: { title: "Scanner un QR code QRTags — Vous avez trouvé un objet ?", description: "Vous avez trouvé un objet avec une étiquette QRTags ? Scannez le QR code pour alerter le propriétaire sur WhatsApp avec votre position GPS. Aucune application requise.", url: "https://qrtags.com/scan", siteName: "QRTags", type: "website", locale: "fr_FR", images: [{ url: "/hero-illustration-new.png", width: 1200, height: 630 }] },
   twitter: { card: "summary_large_image", title: "Scanner un QR code QRTags — Vous avez trouvé un objet ?", description: "Vous avez trouvé un objet avec une étiquette QRTags ? Scannez le QR code pour alerter le propriétaire sur WhatsApp avec votre position GPS. Aucune application requise.", images: ["/hero-illustration-new.png"] },
-  alternates: { canonical: "https://qrtags.com/scan/layout.tsx" },
+  alternates: { canonical: "https://qrtags.com/scan" },
   robots: { index: true, follow: true },
 };
 

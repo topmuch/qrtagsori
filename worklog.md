@@ -102,3 +102,90 @@ Stage Summary:
 - Bug login corrigé : normalisation téléphone côté serveur
 - UX améliorée : indicatif pays auto-détecté via IP, l'utilisateur ne tape plus le +
 ---
+Task ID: 2
+Agent: Performance Fix Agent
+Task: Fix critical performance issues — database indexes, pagination, DB-level stats
+
+Work Log:
+
+### Task 1: Add missing database indexes to Prisma schema
+- **Baggage** model: added `@@index([agencyId])`, `@@index([status])`, `@@index([agencyId, status])`, `@@index([createdAt])`, `@@index([type])` — the 5 most critical indexes for the highest-traffic table
+- **Product** model: added `@@index([active])`, `@@index([sortOrder])`
+- **User** model: added `@@index([agencyId])`, `@@index([role])` — role filter used on every auth check
+- **Agency** model: added `@@index([active])` — agency listing filters by active
+- **Session** model: added `@@index([userId])` — session lookup per user
+- **LoginLog** model: added `@@index([userId])`, `@@index([createdAt])` — audit trail queries
+- **ScanLog** model: added `@@index([baggageId])`, `@@index([createdAt])` — scan queries + dashboard recent scans
+- **Invoice** model: added `@@index([agencyId])`, `@@index([status])`
+- **Notification** model: added `@@index([read])`, `@@index([createdAt])` — unread count + sort
+- **Lead** model: added `@@index([status])`, `@@index([assignedToId])`
+- **Message** model: added `@@index([type])`, `@@index([status])`, `@@index([agencyId])`
+- Ran `bun run db:push` — schema synced successfully
+
+### Task 2: Fix agency baggages API — pagination + optimize stats
+File: `src/app/api/agency/baggages/route.ts`
+- **Before**: `findMany` with NO take/skip → loaded ALL baggages into memory; stats computed with 8× `.filter()` passes in JS → O(n) per pass
+- **After**:
+  - Accepts `?page=1&limit=50&status=lost` query params (defaults: page=1, limit=50, max 200)
+  - Added `skip: (page-1)*limit` and `take: limit` to findMany
+  - Total count fetched in parallel with paginated query
+  - Stats computed via 11 parallel `db.baggage.count({ where: { agencyId, status: statusFilterIn(...) } })` calls — DB-level, O(1) per call with indexes
+  - Response: `{ baggages, pagination: { page, limit, total, totalPages }, stats }` — backward-compatible (baggages + stats at top level, pagination added)
+
+### Task 3: Optimize admin dashboard API
+File: `src/app/api/admin/dashboard/route.ts`
+- **Before**: `db.baggage.findMany({ select: {...} })` with NO limit → loaded ALL baggages globally into memory; all stats computed by JS `.filter()`, `.map()`, `new Set()` on full array
+- **After**:
+  - `totalQR`: `db.baggage.count()` (no table scan)
+  - `qrActivatedHajj/Voyageur`: `db.baggage.count({ where: { type, status: statusFilterInMany(['activated','active','scanned']) } })`
+  - `expiringSoon`: `db.baggage.count({ where: { expiresAt: { gt: now, lte: +7d } } })`
+  - `uniquePelerins/Voyageurs`: `db.baggage.groupBy({ by: ['travelerFirstName','travelerLastName'] })` — array length = unique count
+  - `dailyActivations`: 7 parallel `db.baggage.count({ where: { type:'hajj', createdAt: dayRange } })` instead of JS `.filter()`
+  - Placeholder activations fallback: bounded `findMany({ take: 5 })` instead of filtering full array
+  - All count queries run in parallel via `Promise.all`
+
+Stage Summary:
+- 3 files modified: prisma/schema.prisma, src/app/api/agency/baggages/route.ts, src/app/api/admin/dashboard/route.ts
+- 13 indexes added across 11 models (Baggage gets 5 critical indexes)
+- Agency baggages API: paginated (default 50/page) + DB-level stats (11 parallel count queries)
+- Admin dashboard API: eliminated full-table load; all stats via count/groupBy/parallel queries
+- Lint passes for modified files (pre-existing errors in unrelated files)
+---
+Task ID: 3
+Agent: SEO Fix Agent
+Task: Fix 404 and SEO issues — broken canonical URLs, missing /shop page, soft 404s
+
+Work Log:
+
+### Task 1: Fix 11 layout files with broken canonical URLs containing "layout.tsx"
+- All 11 layout files had canonical URLs like `https://qrtags.com/shop/layout.tsx` instead of `https://qrtags.com/shop`
+- Also affected openGraph.url in the same files
+- Fixed both `alternates.canonical` and `openGraph.url` in each file by removing `/layout.tsx`
+- Files fixed: shop, fonctionnalites, devenir-partenaire, inscription, etapes, assistance, a-propos, contact, metiers, avis, scan
+
+### Task 2: Create /shop/page.tsx (missing page in sitemap)
+- Sitemap at src/app/sitemap.ts includes `/shop` but there was no `src/app/shop/page.tsx`, causing a 404
+- Created `src/app/shop/page.tsx` as a server component (no 'use client')
+- Fetches active products from DB using Prisma (`prisma.product.findMany`)
+- Displays products in a responsive grid (1/2/3 cols) matching the shop's dark theme + mustard accent
+- Each product card links to `/shop/[slug]` with image/quantity, name, description, price, and CTA strip
+- Includes trust badges (livraison, cash on delivery, confirmation 24h) and "Comment ça marche" section
+- Proper metadata with canonical URL `https://qrtags.com/shop`
+- Empty state handled ("Boutique en préparation") if no active products
+
+### Task 3: Fix soft 404s on /shop/[slug] and /blog/[slug]
+- Both pages were 'use client' components that rendered "not found" messages with HTTP 200 instead of calling `notFound()`
+- **Solution**: Restructured each page into server component + client component pattern:
+  - `src/app/shop/[slug]/ShopProductClient.tsx` — extracted the full client component (unchanged logic)
+  - `src/app/shop/[slug]/page.tsx` — server component that validates slug via Prisma, calls `notFound()` (HTTP 404) if product doesn't exist or is inactive
+  - `src/app/blog/[slug]/BlogPostClient.tsx` — extracted the full client component (unchanged logic)
+  - `src/app/blog/[slug]/page.tsx` — server component that validates slug via Prisma, calls `notFound()` if post doesn't exist, isn't published, or has no publishedAt date
+- Also changed the "Retour à l'accueil" link in the shop error state to "Voir la boutique" (links to /shop instead of /)
+
+Stage Summary:
+- 15 files modified/created: 11 layout files fixed, 1 new /shop/page.tsx, 2 new client components (ShopProductClient.tsx, BlogPostClient.tsx), 2 page.tsx files restructured to server components
+- All canonical URLs now point to correct paths (no more /layout.tsx in URLs)
+- /shop no longer 404s — full product listing page with server-side rendering
+- /shop/[slug] and /blog/[slug] now return HTTP 404 for invalid slugs (no more soft 404s)
+- Lint passes for modified files (pre-existing errors in unrelated files)
+---
