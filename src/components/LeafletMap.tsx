@@ -29,6 +29,8 @@ export interface ScanMapPoint {
   context: string;
   scannedAt: string;
   finderName: string | null;
+  /** Titre libre du marqueur (ex: nom de l'objet) — sinon libellé du contexte */
+  label?: string | null;
 }
 
 interface LeafletMapProps {
@@ -61,9 +63,18 @@ function createCircleIcon(color: string, number: number) {
 export default function LeafletMap({ scans, destination }: LeafletMapProps) {
   const mapRef = useRef<HTMLDivElement>(null);
   const mapInstance = useRef<L.Map | null>(null);
+  const pointsSignatureRef = useRef('');
 
   useEffect(() => {
     if (!mapRef.current) return;
+
+    // Anti-redraw : au refresh périodique du parent (ex: 60s), si les points
+    // sont inchangés, on ne détruit PAS la carte (conserve pan/zoom de l'utilisateur).
+    const pointsSignature = scans
+      .map((s) => `${s.id}:${s.latitude ?? ''},${s.longitude ?? ''}`)
+      .join('|');
+    if (pointsSignature === pointsSignatureRef.current) return;
+    pointsSignatureRef.current = pointsSignature;
 
     // Points with coordinates, reversed (most recent last for line drawing)
     const points = scans
@@ -133,6 +144,13 @@ export default function LeafletMap({ scans, destination }: LeafletMapProps) {
         day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit',
       });
 
+      // Échappement HTML (contenus saisis par les utilisateurs)
+      const esc = (raw: string) =>
+        raw.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+      const safeLoc = esc(loc);
+      const safeFinder = point.finderName ? esc(point.finderName) : '';
+      const safeLabel = point.label ? esc(point.label) : '';
+
       const contextLabels: Record<string, string> = {
         departure_airport_urgent: '🛫 Départ',
         arrival_airport: '🛬 Arrivée',
@@ -140,14 +158,15 @@ export default function LeafletMap({ scans, destination }: LeafletMapProps) {
         static_location: '📍 Position',
       };
       const contextLabel = contextLabels[point.context] || '📍 Scan';
+      const popupTitle = safeLabel || contextLabel;
 
       L.marker([point.latitude, point.longitude], { icon })
         .addTo(map)
         .bindPopup(
           `<div style="font-family:system-ui;min-width:160px">
-            <div style="font-size:13px;font-weight:700;color:#1a1a1a;margin-bottom:4px">${contextLabel}</div>
-            <div style="font-size:12px;color:#1a1a1a">${loc}</div>
-            ${point.finderName ? `<div style="font-size:11px;color:#666;margin-top:2px">👤 ${point.finderName}</div>` : ''}
+            <div style="font-size:13px;font-weight:700;color:#1a1a1a;margin-bottom:4px">${popupTitle}</div>
+            <div style="font-size:12px;color:#1a1a1a">${safeLoc}</div>
+            ${safeFinder ? `<div style="font-size:11px;color:#666;margin-top:2px">👤 ${safeFinder}</div>` : ''}
             <div style="font-size:11px;color:#999;margin-top:4px">🕐 ${dateStr}</div>
           </div>`,
           { className: '' }

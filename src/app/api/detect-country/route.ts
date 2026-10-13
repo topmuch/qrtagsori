@@ -3,6 +3,9 @@ import { NextRequest, NextResponse } from 'next/server';
 interface IPApiResponse {
   country_code?: string;
   country?: string;
+  city?: string;
+  latitude?: number;
+  longitude?: number;
   error?: boolean;
   reason?: string;
 }
@@ -39,6 +42,9 @@ export async function GET(request: NextRequest) {
             return NextResponse.json({
               countryCode: selfData.country_code,
               country: selfData.country || 'Unknown',
+              city: selfData.city || null,
+              latitude: typeof selfData.latitude === 'number' ? selfData.latitude : null,
+              longitude: typeof selfData.longitude === 'number' ? selfData.longitude : null,
               ip: 'server-ip',
               isDevelopment: true
             });
@@ -52,6 +58,9 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({
         countryCode: defaultCountry,
         country: defaultCountry === 'FR' ? 'France' : defaultCountry,
+        city: null,
+        latitude: null,
+        longitude: null,
         ip: 'localhost',
         isDevelopment: true
       });
@@ -78,6 +87,9 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({
       countryCode: data.country_code || 'FR',
       country: data.country || 'Unknown',
+      city: data.city || null,
+      latitude: typeof data.latitude === 'number' ? data.latitude : null,
+      longitude: typeof data.longitude === 'number' ? data.longitude : null,
       ip: clientIp
     });
 
@@ -87,6 +99,9 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({
       countryCode: 'FR',
       country: 'France',
+      city: null,
+      latitude: null,
+      longitude: null,
       ip: 'unknown',
       error: true
     });

@@ -4,6 +4,22 @@ Guide complet pour déployer QRTags sur un serveur Coolify.
 
 ---
 
+## 🚀 Mode de déploiement ACTUEL — Git natif (octobre 2026)
+
+L'app `Qrtags` (uuid `yvzjl5po9xemksvrw8lz67zl`, https://qrtags.pro) est déployée en **déploiement Git natif Coolify** :
+
+- **Source** : dépôt public `topmuch/qrtagsori`, branche `main` — Coolify clone le dépôt lui-même **à chaque déploiement**.
+- **Build pack** : `Dockerfile` → Coolify utilise le `Dockerfile` de la racine (pipeline node:20-alpine + bun, voir Dockerfile).
+- **Port exposé** : `3000` (config Coolify « Ports Exposes »).
+- **Webhook GitHub** : un webhook `push` sur `topmuch/qrtagsori` pointe vers `http://38.247.134.241:8000/webhooks/source/github/events/manual` (secret = `manual_webhook_secret_github` de l'app) → **tout push sur main déclenche le déploiement automatiquement**.
+- Déploiement manuel possible : Coolify UI → Redeploy, ou API `POST /api/v1/deploy {"uuid":"yvzjl5po9xemksvrw8lz67zl"}`.
+
+> ⚠️ Historique : avant la migration, l'app utilisait un Dockerfile inline avec `RUN git clone --depth 1 …` — le cache Docker resservait la couche clone à chaque Redeploy (vieille image, changements invisibles). Ce piège est éliminé par le Git natif.
+
+La suite de ce document décrit le mode docker-compose (référence, non utilisé par l'app actuelle).
+
+---
+
 ## 📋 Prérequis
 
 - Un serveur Coolify opérationnel (v4.x recommandé)

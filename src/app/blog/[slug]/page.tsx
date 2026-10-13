@@ -12,6 +12,7 @@ import {
   Tag,
   ChevronLeft,
 } from "lucide-react";
+import QRTagsLogo from "@/components/qrtags/QRTagsLogo";
 
 /**
  * Page ARTICLE DE BLOG PUBLIQUE — /blog/[slug]
@@ -147,7 +148,7 @@ export default function PublicBlogPostPage() {
       <header className="bg-white border-b border-slate-200">
         <div className="max-w-4xl mx-auto px-4 py-4 flex items-center justify-between">
           <Link href="/" className="flex items-center gap-2">
-            <span className="text-xl font-black text-slate-900">QRTags</span>
+            <QRTagsLogo size="sm" variant="light" />
             <span className="text-xs px-2 py-0.5 rounded-full bg-[#c89a00]/10 text-[#a87f00] font-bold">BLOG</span>
           </Link>
           <Link
@@ -234,9 +235,14 @@ export default function PublicBlogPostPage() {
       </main>
 
       {/* Simple footer */}
-      <footer className="bg-white border-t border-slate-200 mt-12 py-6">
-        <div className="max-w-4xl mx-auto px-4 text-center text-sm text-slate-500">
-          © {new Date().getFullYear()} QRTags — Objets perdus & retrouvés
+      <footer className="bg-white border-t border-slate-200 mt-12 py-8">
+        <div className="max-w-4xl mx-auto px-4 flex flex-col items-center gap-4">
+          <Link href="/">
+            <QRTagsLogo size="sm" variant="light" />
+          </Link>
+          <p className="text-sm text-slate-500">
+            © {new Date().getFullYear()} QRTags — Objets perdus & retrouvés
+          </p>
         </div>
       </footer>
     </div>

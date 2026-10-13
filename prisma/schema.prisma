@@ -132,11 +132,14 @@ model Baggage {
   // batchId : lien vers le lot de génération (si généré en masse)
   batchId           String?   @map("batch_id")
 
+  travelerId       String?
+  traveler         Traveler? @relation(fields: [travelerId], references: [id], onDelete: SetNull)
   agency            Agency?   @relation(fields: [agencyId], references: [id], onDelete: SetNull)
   batch             Batch?    @relation(fields: [batchId], references: [id], onDelete: SetNull)
   scanLogs          ScanLog[]
   damageReports     DamageReport[]
   guestMessages     GuestMessage[]
+  finderChatMessages FinderChatMessage[]
 }
 
 // ScanLog model - tracks all scans for audit
@@ -669,4 +672,68 @@ model GuestMessage {
 
   @@index([baggageId])
   @@map("guest_messages")
+}
+
+// ════════════════════════════════════════════════════════════════
+// Traveler — Compte voyageur (téléphone + PIN 4 chiffres)
+// ════════════════════════════════════════════════════════════════
+
+model Traveler {
+  id        String   @id @default(cuid())
+  phone     String   @unique               // Numéro international (ex: +33612345678)
+  pin       String                          // PIN hashé (bcrypt)
+  name      String?                         // Nom optionnel du voyageur
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  baggages  Baggage[]
+  sessions  TravelerSession[]
+  pushSubscriptions  TravelerPushSubscription[]
+
+  @@map("travelers")
+}
+
+model TravelerPushSubscription {
+  id         String   @id @default(cuid())
+  travelerId String
+  traveler   Traveler @relation(fields: [travelerId], references: [id], onDelete: Cascade)
+  endpoint   String                       // Push subscription endpoint
+  p256dh     String                       // Encryption key
+  auth       String                       // Auth key
+  createdAt  DateTime @default(now())
+
+  @@map("traveler_push_subscriptions")
+}
+
+model TravelerSession {
+  id        String   @id @default(cuid())
+  token     String   @unique               // Token de session
+  travelerId String
+  traveler  Traveler @relation(fields: [travelerId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+  expiresAt DateTime                       // Expiration du token
+
+  @@index([token])
+  @@map("traveler_sessions")
+}
+
+// ─── Chat anonyme trouveur ↔ propriétaire ───
+// Le trouveur discute via la référence scannée (capability publique),
+// le propriétaire répond via son trackingToken (/track/[token]).
+// Aucun numéro de téléphone n'est JAMAIS stocké ni renvoyé ici.
+model FinderChatMessage {
+  id           String   @id @default(cuid())
+  baggageId    String
+  sender       String   // "finder" | "owner"
+  senderLabel  String?  // Pseudo du trouveur (jamais de téléphone)
+  body         String
+  notifyEmail  String?  // E-mail OPTIONNEL du trouveur (être notifié d'une réponse) — JAMAIS renvoyé par les API
+  readByOwner  Boolean  @default(false)
+  readByFinder Boolean  @default(false)
+  createdAt    DateTime @default(now())
+  baggage      Baggage  @relation(fields: [baggageId], references: [id], onDelete: Cascade)
+
+  @@index([baggageId, createdAt])
+  @@map("finder_chat_messages")
 }

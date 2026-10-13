@@ -21,6 +21,7 @@
 
 import { useEffect, useState, useCallback, useMemo, useRef } from 'react';
 import { useParams } from 'next/navigation';
+import dynamic from 'next/dynamic';
 import {
   MapPin, Clock, Eye, Activity, AlertTriangle, CheckCircle2,
   Copy, Flag, ArrowLeft, Loader2, MessageCircle, X,
@@ -28,7 +29,16 @@ import {
 } from 'lucide-react';
 import QRTagsLogo from '@/components/qrtags/QRTagsLogo';
 import { ReviewModal } from '@/components/ReviewModal';
+import OwnerChat from '@/components/track/OwnerChat';
 import { maskName } from '@/lib/privacy';
+
+// Leaflet touche window → import dynamique SSR-off (pattern page.tsx)
+const ScanMap = dynamic(() => import('@/components/LeafletMap'), {
+  ssr: false,
+  loading: () => (
+    <div className="h-72 w-full rounded-xl bg-black/5 animate-pulse" aria-hidden="true" />
+  ),
+});
 
 // ─── Design tokens QRTags (PALETTE SIGNATURE — non négociable) ──────────
 // Strictement alignée sur /inscrire : jaune moutarde + cartes blanches
@@ -239,7 +249,33 @@ export default function TrackPage() {
   }, [baggage?.trackingToken]);
 
   // 6. 3 derniers scans max
-  const recentScans = useMemo(() => scans.slice(0, 3), [scans]);
+  const recentScans = useMemo(() => scans.slice(0, 10), [scans]);
+
+  // Points géolocalisés pour la carte (anti-redraw : signature stable entre refreshes)
+  const scanMapSignature = useMemo(
+    () => scans.map((s) => `${s.id}:${s.latitude ?? ''},${s.longitude ?? ''}`).join('|'),
+    [scans]
+  );
+  const scanMapPoints = useMemo(() => {
+    const points = scans
+      .filter(
+        (s): s is ScanEntry & { latitude: number; longitude: number } =>
+          s.latitude != null && s.longitude != null
+      )
+      .map((s) => ({
+        id: s.id,
+        latitude: s.latitude,
+        longitude: s.longitude,
+        location: s.location,
+        city: null as string | null,
+        country: null as string | null,
+        context: 'scan',
+        scannedAt: s.scannedAt || '',
+        finderName: s.finderName,
+      }));
+    return points;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [scanMapSignature]);
 
   // 7. Dernier trouveur (pour attribuer l'avis au bon trouveur)
   // On prend le scan le plus récent contenant un finderName ou finderPhone.
@@ -788,7 +824,36 @@ export default function TrackPage() {
         </section>
 
         {/* ════════════════════════════════════════════════════════════════
-            CARTE 4 — HISTORIQUE DES SCANS (3 derniers)
+            CARTE 3.5 — CARTE DES SCANS (Leaflet)
+           ════════════════════════════════════════════════════════════════ */}
+        <section
+          aria-label="Carte des scans"
+          className={`track-card-animate ${CARD_CLASS} mb-6`}
+        >
+          <div className="flex items-center justify-between mb-4 gap-3 flex-wrap">
+            <h3 className="text-lg font-bold flex items-center gap-2" style={{ color: QRTAGS_INK }}>
+              <MapPin className="w-5 h-5" aria-hidden="true" />
+              🗺️ CARTE DES SCANS
+            </h3>
+            {scanMapPoints.length > 0 && (
+              <span
+                className="text-xs font-bold px-2.5 py-1 rounded-full"
+                style={{ backgroundColor: QRTAGS_INK, color: QRTAGS_BG }}
+              >
+                {scanMapPoints.length} position{scanMapPoints.length > 1 ? 's' : ''} GPS
+              </span>
+            )}
+          </div>
+          <div className="h-72 w-full">
+            <ScanMap scans={scanMapPoints} destination={null} />
+          </div>
+          <p className="text-xs mt-3 text-center" style={{ color: QRTAGS_INK, opacity: 0.6 }}>
+            Positions partagées volontairement par les trouveurs lors du scan.
+          </p>
+        </section>
+
+        {/* ════════════════════════════════════════════════════════════════
+            CARTE 4 — HISTORIQUE DES SCANS (10 derniers)
            ════════════════════════════════════════════════════════════════ */}
         <section
           aria-label="Historique des scans"
@@ -816,7 +881,7 @@ export default function TrackPage() {
               </p>
             </div>
           ) : (
-            <ul className="space-y-3">
+            <ul className="space-y-3 max-h-96 overflow-y-auto pr-1 chat-scroll">
               {recentScans.map((scan, idx) => (
                 <li
                   key={scan.id}
@@ -872,6 +937,22 @@ export default function TrackPage() {
               ))}
             </ul>
           )}
+        </section>
+
+        {/* ════════════════════════════════════════════════════════════════
+            CARTE 4.5 — MESSAGES (chat anonyme trouveur ↔ propriétaire)
+           ════════════════════════════════════════════════════════════════ */}
+        <section
+          aria-label="Messages du trouveur"
+          className={`track-card-animate ${CARD_CLASS} mb-6`}
+        >
+          <h3 className="text-lg font-bold mb-4" style={{ color: QRTAGS_INK }}>
+            💬 MESSAGES
+          </h3>
+          <OwnerChat token={token} />
+          <p className="text-xs mt-3 text-center" style={{ color: QRTAGS_INK, opacity: 0.6 }}>
+            Répondez au trouveur anonymement — votre numéro n'apparaît jamais dans la discussion.
+          </p>
         </section>
 
         {/* ════════════════════════════════════════════════════════════════

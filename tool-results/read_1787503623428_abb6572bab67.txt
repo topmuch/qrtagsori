@@ -1,0 +1,603 @@
+   100→    if (navigator.serviceWorker.controller) {
+   101→      check();
+   102→    } else {
+   103→      // SW pas encore prêt, attendre l'événement
+   104→      navigator.serviceWorker.addEventListener('controllerchange', check, { once: true });
+   105→      // Fallback après 3s
+   106→      setTimeout(check, 3000);
+   107→    }
+   108→  }, [isLoggedIn]);
+   109→
+   110→  // Charger les baggages locaux (localStorage) si pas connecté
+   111→  useEffect(() => {
+   112→    if (isLoggedIn) {
+   113→      setLocalLoading(false);
+   114→      return;
+   115→    }
+   116→    const refs = JSON.parse(localStorage.getItem('qrbag_my_references') || '[]');
+   117→    if (refs.length === 0) {
+   118→      setLocalLoading(false);
+   119→      return;
+   120→    }
+   121→    Promise.all(
+   122→      refs.map((ref: string) =>
+   123→        fetch(`/api/suivi/${ref}`).then(r => r.ok ? r.json() : null).catch(() => null)
+   124→      )
+   125→    ).then(results => {
+   126→      const valid: LocalBaggageItem[] = results
+   127→        .filter(r => r && r.baggage)
+   128→        .map(r => ({
+   129→          reference: r.baggage.reference,
+   130→          type: r.baggage.type,
+   131→          status: r.baggage.status,
+   132→          travelerName: r.baggage.travelerName,
+   133→          lastScanDate: r.baggage.lastScanDate,
+   134→          lastLocation: r.baggage.lastLocation,
+   135→          lastScanLocation: r.baggage.lastScanLocation,
+   136→          scanCount: r.baggage.scanCount || 0,
+   137→          trackingToken: r.baggage.trackingToken || null,
+   138→          expiresAt: r.baggage.expiresAt,
+   139→          objectInfo: r.baggage.objectInfo || null,
+   140→        }));
+   141→      setLocalBaggages(valid);
+   142→    }).finally(() => {
+   143→      setLocalLoading(false);
+   144→    });
+   145→  }, [isLoggedIn]);
+   146→
+   147→  const displayBaggages = isLoggedIn
+   148→    ? accountBaggages.map(toDisplay)
+   149→    : localBaggages.map(toDisplay);
+   150→
+   151→  const loading = authLoading || localLoading;
+   152→
+   153→  const filtered = displayBaggages.filter(b =>
+   154→    b.reference.toLowerCase().includes(search.toLowerCase()) ||
+   155→    b.travelerName.toLowerCase().includes(search.toLowerCase()) ||
+   156→    (b.objectName || '').toLowerCase().includes(search.toLowerCase()) ||
+   157→    (b.lastScanLocation || '').toLowerCase().includes(search.toLowerCase())
+   158→  );
+   159→
+   160→  const getStatusColor = (status: string) => {
+   161→    switch (status) {
+   162→      case 'active':
+   163→      case 'activated':
+   164→        return 'bg-green-500 text-white';
+   165→      case 'scanned': return 'bg-[#E3B23C] text-[#1a1a1a]';
+   166→      case 'lost': return 'bg-red-600 text-white';
+   167→      case 'found': return 'bg-green-600 text-white';
+   168→      case 'blocked': return 'bg-slate-500 text-white';
+   169→      default: return 'bg-slate-300 text-slate-700';
+   170→    }
+   171→  };
+   172→
+   173→  const getStatusLabel = (status: string) => {
+   174→    switch (status) {
+   175→      case 'active':
+   176→      case 'activated':
+   177→        return '🛡️ Actif';
+   178→      case 'lost': return '🚨 Perdu';
+   179→      case 'found': return '✅ Trouvé';
+   180→      case 'scanned': return '📍 Scanné';
+   181→      default: return status;
+   182→    }
+   183→  };
+   184→
+   185→  const handleLinkSearch = async () => {
+   186→    if (!linkSearchQuery.trim()) return;
+   187→    setLinkSearchLoading(true);
+   188→    const result = await searchBaggage(linkSearchQuery.trim());
+   189→    if (result.success && result.results) {
+   190→      setLinkSearchResults(result.results);
+   191→    } else {
+   192→      setLinkSearchResults([]);
+   193→    }
+   194→    setLinkSearchLoading(false);
+   195→  };
+   196→
+   197→  const handleLinkItem = async (ref: string) => {
+   198→    setLinkingRef(ref);
+   199→    const ok = await linkBaggage(ref);
+   200→    if (ok) {
+   201→      setLinkSearchResults(prev => prev.filter(r => r.reference !== ref));
+   202→    }
+   203→    setLinkingRef(null);
+   204→  };
+   205→
+   206→  const togglePush = async () => {
+   207→    setPushLoading(true);
+   208→    try {
+   209→      const token = localStorage.getItem('qrtags_traveler_token');
+   210→      if (!token) return;
+   211→      if (pushEnabled) {
+   212→        const reg = await navigator.serviceWorker.ready;
+   213→        const sub = await reg.pushManager.getSubscription();
+   214→        if (sub) {
+   215→          await sub.unsubscribe();
+   216→          await fetch(`/api/traveler/push-subscribe?token=${token}&endpoint=${encodeURIComponent(sub.endpoint)}`, { method: 'DELETE' });
+   217→        }
+   218→        setPushEnabled(false);
+   219→      } else {
+   220→        const res = await fetch(`/api/traveler/push-subscribe?token=${token}`);
+   221→        const { publicKey } = await res.json();
+   222→        const permission = await Notification.requestPermission();
+   223→        if (permission !== 'granted') { setPushLoading(false); return; }
+   224→        const reg = await navigator.serviceWorker.ready;
+   225→        const sub = await reg.pushManager.subscribe({
+   226→          userVisibleOnly: true,
+   227→          applicationServerKey: urlBase64ToUint8Array(publicKey),
+   228→        });
+   229→        await fetch(`/api/traveler/push-subscribe?token=${token}`, {
+   230→          method: 'POST',
+   231→          headers: { 'Content-Type': 'application/json' },
+   232→          body: JSON.stringify({ subscription: sub.toJSON() }),
+   233→        });
+   234→        setPushEnabled(true);
+   235→      }
+   236→    } catch (err) {
+   237→      console.error('[push] Error:', err);
+   238→    } finally {
+   239→      setPushLoading(false);
+   240→    }
+   241→  };
+   242→
+   243→  const pushSupported = typeof window !== 'undefined' && 'serviceWorker' in navigator && 'PushManager' in window;
+   244→
+   245→  // ─── Avis ───
+   246→  const [showReviewForm, setShowReviewForm] = useState(false);
+   247→  const [reviewRating, setReviewRating] = useState(5);
+   248→  const [reviewContent, setReviewContent] = useState('');
+   249→  const [reviewName, setReviewName] = useState('');
+   250→  const [reviewSubmitting, setReviewSubmitting] = useState(false);
+   251→  const [reviewSuccess, setReviewSuccess] = useState(false);
+   252→  const [reviewError, setReviewError] = useState('');
+   253→  const [selectedBaggageRef, setSelectedBaggageRef] = useState('');
+   254→
+   255→  const handleSubmitReview = async () => {
+   256→    if (reviewContent.trim().length < 10) {
+   257→      setReviewError('Votre avis doit contenir au moins 10 caractères.');
+   258→      return;
+   259→    }
+   260→    if (reviewName.trim().length < 2) {
+   261→      setReviewError('Votre nom est requis (2 caractères minimum).');
+   262→      return;
+   263→    }
+   264→    setReviewError('');
+   265→    setReviewSubmitting(true);
+   266→    try {
+   267→      const selectedBaggage = displayBaggages.find(b => b.reference === selectedBaggageRef);
+   268→      const res = await fetch('/api/reviews', {
+   269→        method: 'POST',
+   270→        headers: { 'Content-Type': 'application/json' },
+   271→        body: JSON.stringify({
+   272→          name: reviewName.trim(),
+   273→          rating: reviewRating,
+   274→          content: reviewContent.trim(),
+   275→          trackingToken: selectedBaggage?.trackingToken || null,
+   276→          baggageRef: selectedBaggageRef || null,
+   277→          objectName: selectedBaggage?.objectName || null,
+   278→          category: selectedBaggage?.categoryLabel || null,
+   279→          language: 'fr',
+   280→        }),
+   281→      });
+   282→      if (res.ok) {
+   283→        setReviewSuccess(true);
+   284→        setReviewContent('');
+   285→        setReviewRating(5);
+   286→        setTimeout(() => { setReviewSuccess(false); setShowReviewForm(false); }, 3000);
+   287→      } else {
+   288→        const data = await res.json();
+   289→        setReviewError(data.error || 'Erreur lors de la soumission.');
+   290→      }
+   291→    } catch {
+   292→      setReviewError('Erreur réseau. Réessayez.');
+   293→    } finally {
+   294→      setReviewSubmitting(false);
+   295→    }
+   296→  };
+   297→
+   298→  return (
+   299→    <main className="min-h-screen bg-white flex flex-col">
+   300→      <header className="bg-white border-b border-[#E3B23C]/40 py-4 px-4">
+   301→        <div className="max-w-md mx-auto flex items-center justify-between">
+   302→          <div className="flex items-center gap-2">
+   303→            <Luggage className="w-5 h-5 text-[#E3B23C]" />
+   304→            <h1 className="text-lg font-bold text-[#1a1a1a]">Mes bagages</h1>
+   305→          </div>
+   306→          {isLoggedIn ? (
+   307→            <div className="flex items-center gap-2">
+   308→              <div className="flex items-center gap-1.5 text-[#525252] text-xs">
+   309→                <User className="w-3.5 h-3.5" />
+   310→                <span className="hidden sm:inline">{traveler?.name || traveler?.phone}</span>
+   311→              </div>
+   312→              <button
+   313→                onClick={logout}
+   314→                className="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-[#f5f5f5] hover:bg-[#e5e5e5] transition text-[#1a1a1a] text-xs font-medium"
+   315→              >
+   316→                <LogOut className="w-3.5 h-3.5" />
+   317→                <span className="hidden sm:inline">Déconnexion</span>
+   318→              </button>
+   319→            </div>
+   320→          ) : (
+   321→            <button
+   322→              onClick={() => setAuthModalOpen(true)}
+   323→              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#E3B23C] hover:bg-[#E3B23C]/80 transition text-black text-xs font-bold"
+   324→            >
+   325→              <LogIn className="w-3.5 h-3.5" />
+   326→              Se connecter
+   327→            </button>
+   328→          )}
+   329→        </div>
+   330→      </header>
+   331→
+   332→      <div className="flex-1 max-w-md mx-auto w-full px-4 py-6 pb-20">
+   333→        {/* Bannière connexion (si pas connecté) */}
+   334→        {!isLoggedIn && !loading && (
+   335→          <div className="bg-[#FFF8E7] border border-[#E3B23C]/40 rounded-2xl p-4 mb-6 flex items-start gap-3">
+   336→            <Shield className="w-5 h-5 text-[#E3B23C] flex-shrink-0 mt-0.5" />
+   337→            <div className="flex-1 min-w-0">
+   338→              <p className="text-sm font-bold text-[#1a1a1a] mb-1">Sauvegardez vos objets dans le cloud ☁️</p>
+   339→              <p className="text-xs text-[#525252] mb-3">
+   340→                Créez un compte pour retrouver vos objets depuis n'importe quel téléphone.
+   341→              </p>
+   342→              <div className="flex gap-2">
+   343→                <button
+   344→                  onClick={() => setAuthModalOpen(true)}
+   345→                  className="px-4 py-2 bg-[#E3B23C] text-black text-xs font-bold rounded-lg hover:bg-[#E3B23C]/80 transition"
+   346→                >
+   347→                  Créer mon compte
+   348→                </button>
+   349→                <Link
+   350→                  href="/connexion-voyageur"
+   351→                  className="px-4 py-2 border border-[#E3B23C]/40 text-[#E3B23C] text-xs font-bold rounded-lg hover:bg-[#FFF8E7] transition"
+   352→                >
+   353→                  Se connecter
+   354→                </Link>
+   355→              </div>
+   356→            </div>
+   357→          </div>
+   358→        )}
+   359→
+   360→        {/* Compte connecté : indicateur + push */}
+   361→        {isLoggedIn && !loading && (
+   362→          <div className="space-y-3 mb-6">
+   363→            <div className="bg-green-50 border border-green-500/30 rounded-2xl p-4 flex items-center gap-3">
+   364→              <Shield className="w-5 h-5 text-green-400 flex-shrink-0" />
+   365→              <div className="flex-1">
+   366→                <p className="text-sm font-bold text-[#1a1a1a]">
+   367→                  ✅ Connecté{traveler?.name ? ` — ${traveler.name}` : ''}
+   368→                </p>
+   369→                <p className="text-xs text-[#525252]">{displayBaggages.length} objet{displayBaggages.length !== 1 ? 's' : ''} enregistré{displayBaggages.length !== 1 ? 's' : ''}</p>
+   370→              </div>
+   371→            </div>
+   372→            {/* Push notifications */}
+   373→            {pushSupported && displayBaggages.length > 0 && (
+   374→              <button
+   375→                onClick={togglePush}
+   376→                disabled={pushLoading}
+   377→                className={`w-full rounded-2xl p-4 flex items-center gap-3 border transition ${pushEnabled
+   378→                  ? 'bg-[#FFF8E7] border-[#E3B23C]/40 hover:bg-[#FFF8E7]'
+   379→                  : 'bg-[#fafafa] border-[#e5e5e5] hover:bg-[#f5f5f5]'
+   380→                } disabled:opacity-60`}
+   381→              >
+   382→                {pushLoading ? (
+   383→                  <Loader2 className="w-5 h-5 text-[#E3B23C] animate-spin flex-shrink-0" />
+   384→                ) : pushEnabled ? (
+   385→                  <Bell className="w-5 h-5 text-[#E3B23C] flex-shrink-0" />
+   386→                ) : (
+   387→                  <BellOff className="w-5 h-5 text-[#a3a3a3] flex-shrink-0" />
+   388→                )}
+   389→                <div className="flex-1 text-left">
+   390→                  <p className={`text-sm font-bold ${pushEnabled ? 'text-[#E3B23C]' : 'text-[#1a1a1a]'}`}>
+   391→                    {pushEnabled ? '🔔 Notifications activées' : '🔕 Activer les notifications'}
+   392→                  </p>
+   393→                  <p className="text-xs text-[#525252]">
+   394→                    {pushEnabled
+   395→                      ? 'Vous serez alerté si l\'un de vos objets est scanné'
+   396→                      : 'Recevez une alerte instantanée au scan de vos objets'}
+   397→                  </p>
+   398→                </div>
+   399→              </button>
+   400→            )}
+   401→
+   402→            {/* Section: Lier un QR code existant */}
+   403→            <div className="rounded-2xl border border-[#E3B23C]/40 bg-[#FFFDF5] overflow-hidden">
+   404→              <button
+   405→                onClick={() => setShowLinkSearch(!showLinkSearch)}
+   406→                className="w-full p-4 flex items-center gap-3 hover:bg-[#FFF8E7] transition text-left"
+   407→              >
+   408→                <Link2 className="w-5 h-5 text-[#E3B23C] flex-shrink-0" />
+   409→                <div className="flex-1">
+   410→                  <p className="text-sm font-bold text-[#1a1a1a]">Lier un QR code existant</p>
+   411→                  <p className="text-xs text-[#525252]">Vous avez déjà un QR code ? Recherchez-le et liez-le à votre compte</p>
+   412→                </div>
+   413→                <span className={`text-[#E3B23C] transition-transform ${showLinkSearch ? 'rotate-45' : ''}`}>
+   414→                  <Plus className="w-5 h-5" />
+   415→                </span>
+   416→              </button>
+   417→
+   418→              {showLinkSearch && (
+   419→                <div className="px-4 pb-4 space-y-3 border-t border-[#e5e5e5] pt-3">
+   420→                  <div className="flex gap-2">
+   421→                    <input
+   422→                      type="text"
+   423→                      placeholder="Entrez la référence QR (ex: QR-M1ABC...)"
+   424→                      value={linkSearchQuery}
+   425→                      onChange={(e) => setLinkSearchQuery(e.target.value)}
+   426→                      onKeyDown={(e) => {
+   427→                        if (e.key === 'Enter') handleLinkSearch();
+   428→                      }}
+   429→                      className="flex-1 px-4 py-2.5 rounded-xl bg-[#fafafa] border border-[#e5e5e5] text-[#1a1a1a] text-sm placeholder:text-[#a3a3a3] focus:ring-2 focus:ring-[#E3B23C] focus:border-transparent"
+   430→                    />
+   431→                    <button
+   432→                      onClick={handleLinkSearch}
+   433→                      disabled={linkSearchLoading || !linkSearchQuery.trim()}
+   434→                      className="px-4 py-2.5 bg-[#E3B23C] text-black text-sm font-bold rounded-xl hover:bg-[#E3B23C]/80 transition disabled:opacity-50"
+   435→                    >
+   436→                      {linkSearchLoading ? '...' : 'Chercher'}
+   437→                    </button>
+   438→                  </div>
+   439→
+   440→                  {/* Résultats de recherche */}
+   441→                  {linkSearchResults.length > 0 && (
+   442→                    <div className="space-y-2 max-h-64 overflow-y-auto">
+   443→                      {linkSearchResults.map((item: any) => (
+   444→                        <div key={item.id} className="flex items-center gap-3 p-3 bg-[#fafafa] rounded-xl border border-[#e5e5e5]">
+   445→                          <div className="flex-1 min-w-0">
+   446→                            <p className="font-mono text-sm font-bold text-[#1a1a1a] truncate">{item.reference}</p>
+   447→                            <p className="text-xs text-[#525252]">
+   448→                              {item.objectName || 'Sans nom'} · {item.status === 'active' || item.status === 'activated' ? '🟢 Actif' : item.status}
+   449→                            </p>
+   450→                          </div>
+   451→                          {item.isLinked ? (
+   452→                            <span className="text-xs text-green-400 font-bold px-3 py-1 bg-green-400/10 rounded-lg">✓ Déjà lié</span>
+   453→                          ) : (
+   454→                            <button
+   455→                              onClick={() => handleLinkItem(item.reference)}
+   456→                              disabled={linkingRef === item.reference}
+   457→                              className="px-3 py-1.5 bg-[#E3B23C] text-black text-xs font-bold rounded-lg hover:bg-[#E3B23C]/80 transition disabled:opacity-50"
+   458→                            >
+   459→                              {linkingRef === item.reference ? '...' : 'Lier'}
+   460→                            </button>
+   461→                          )}
+   462→                        </div>
+   463→                      ))}
+   464→                    </div>
+   465→                  )}
+   466→
+   467→                  {linkSearchQuery && linkSearchResults.length === 0 && !linkSearchLoading && (
+   468→                    <p className="text-xs text-[#a3a3a3] text-center py-2">Aucun résultat trouvé</p>
+   469→                  )}
+   470→
+   471→                  {linkSearchLoading && (
+   472→                    <div className="flex justify-center py-2">
+   473→                      <div className="animate-spin w-5 h-5 border-2 border-[#E3B23C] border-t-transparent rounded-full" />
+   474→                    </div>
+   475→                  )}
+   476→                </div>
+   477→              )}
+   478→            </div>
+   479→          </div>
+   480→        )}
+   481→
+   482→        {loading ? (
+   483→          <div className="text-center">
+   484→            <div className="animate-spin w-8 h-8 border-4 border-[#e5e5e5] border-t-[#E3B23C] rounded-full mx-auto mb-3" />
+   485→            <p className="text-[#525252] text-sm">Chargement...</p>
+   486→          </div>
+   487→        ) : displayBaggages.length === 0 ? (
+   488→          <div className="bg-[#fafafa] border-2 border-dashed border-[#e5e5e5] rounded-2xl p-8 text-center">
+   489→            <Luggage className="w-12 h-12 text-slate-300 mx-auto mb-4" />
+   490→            <h2 className="text-lg font-bold text-slate-700 mb-2">Aucun bagage enregistré</h2>
+   491→            <p className="text-sm text-slate-500 mb-6">
+   492→              Activez un QR code QRTags pour le voir apparaître ici.
+   493→            </p>
+   494→            <Link href="/inscrire" className="inline-block bg-[#1a1a1a] text-white px-6 py-3 rounded-xl font-bold">
+   495→              Activer un QR code
+   496→            </Link>
+   497→          </div>
+   498→        ) : (
+   499→          <>
+   500→            {/* Search */}
+   501→            <div className="relative mb-4">
+   502→              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+   503→              <input
+   504→                type="text"
+   505→                placeholder="Rechercher (référence, nom, lieu...)..."
+   506→                value={search}
+   507→                onChange={(e) => setSearch(e.target.value)}
+   508→                className="w-full pl-10 pr-4 py-3 rounded-xl bg-white border-2 border-[#1a1a1a] text-[#1a1a1a] text-sm focus:ring-2 focus:ring-[#E3B23C]"
+   509→              />
+   510→            </div>
+   511→
+   512→            {/* Baggage list */}
+   513→            <div className="space-y-3">
+   514→              {filtered.map((baggage) => {
+   515→                const trackHref = baggage.trackingToken
+   516→                  ? `/track/${baggage.trackingToken}`
+   517→                  : `/suivi/${baggage.reference}`;
+   518→                return (
+   519→                  <Link
+   520→                    key={baggage.reference}
+   521→                    href={trackHref}
+   522→                    className="block bg-white border-2 border-dashed border-[#e5e5e5] rounded-2xl p-4 hover:bg-[#FFF8E7] transition-colors"
+   523→                  >
+   524→                    <div className="flex items-center justify-between mb-2">
+   525→                      <span className="font-mono font-bold text-[#1a1a1a]">{baggage.reference}</span>
+   526→                      <span className={`px-2 py-0.5 rounded-full text-xs font-bold ${getStatusColor(baggage.status)}`}>
+   527→                        {getStatusLabel(baggage.status)}
+   528→                      </span>
+   529→                    </div>
+   530→                    {baggage.objectName && (
+   531→                      <p className="text-sm font-semibold text-slate-700 mb-1">
+   532→                        📦 {baggage.objectName}
+   533→                        {baggage.color ? ` · ${baggage.color}` : ''}
+   534→                        {baggage.categoryLabel ? ` · ${baggage.categoryLabel}` : ''}
+   535→                      </p>
+   536→                    )}
+   537→                    {baggage.travelerName && (
+   538→                      <p className="text-sm text-slate-600 mb-1">{baggage.travelerName}</p>
+   539→                    )}
+   540→                    {baggage.lastScanLocation && (
+   541→                      <p className="text-xs text-slate-500">📍 {baggage.lastScanLocation}</p>
+   542→                    )}
+   543→                    {baggage.scanCount > 0 && (
+   544→                      <p className="text-xs text-slate-500 mt-1">
+   545→                        👁️ {baggage.scanCount} scan{baggage.scanCount > 1 ? 's' : ''}
+   546→                      </p>
+   547→                    )}
+   548→                    {baggage.lastScanDate && (
+   549→                      <p className="text-xs text-slate-400 mt-1 flex items-center gap-1">
+   550→                        <Clock className="w-3 h-3" /> Dernier scan: {new Date(baggage.lastScanDate).toLocaleDateString('fr-FR')}
+   551→                      </p>
+   552→                    )}
+   553→                    <div className="flex items-center justify-end mt-2">
+   554→                      <span className="text-xs font-bold text-[#1a1a1a] flex items-center gap-1">
+   555→                        Voir le suivi <ArrowRight className="w-3 h-3" />
+   556→                      </span>
+   557→                    </div>
+   558→                  </Link>
+   559→                );
+   560→              })}
+   561→            </div>
+   562→          </>
+   563→        )}
+   564→      </div>
+   565→
+   566→      {/* Modal d'auth voyageur */}
+   567→      <TravelerAuthModal open={authModalOpen} onClose={() => setAuthModalOpen(false)} />
+   568→
+   569→      {/* ─── Section Avis ─── */}
+   570→      {isLoggedIn && !loading && displayBaggages.length > 0 && (
+   571→        <div className="max-w-md mx-auto w-full px-4 pb-20">
+   572→          {!showReviewForm ? (
+   573→            <button
+   574→              onClick={() => { setShowReviewForm(true); setReviewName(traveler?.name || ''); }}
+   575→              className="w-full rounded-2xl p-4 flex items-center gap-3 border border-[#E3B23C]/40 bg-[#FFFDF5] hover:bg-[#FFF8E7] transition text-left"
+   576→            >
+   577→              <MessageSquare className="w-5 h-5 text-[#E3B23C] flex-shrink-0" />
+   578→              <div className="flex-1">
+   579→                <p className="text-sm font-bold text-[#1a1a1a]">Laisser un avis ⭐</p>
+   580→                <p className="text-xs text-[#525252]">Partagez votre expérience avec QRTags</p>
+   581→              </div>
+   582→              <Plus className="w-5 h-5 text-[#E3B23C]" />
+   583→            </button>
+   584→          ) : (
+   585→            <div className="rounded-2xl border-2 border-[#E3B23C]/40 bg-[#FFFDF5] overflow-hidden">
+   586→              <div className="p-4 flex items-center justify-between border-b border-[#E3B23C]/20">
+   587→                <div className="flex items-center gap-2">
+   588→                  <Star className="w-5 h-5 text-[#E3B23C]" />
+   589→                  <span className="text-sm font-bold text-[#1a1a1a]">Votre avis</span>
+   590→                </div>
+   591→                <button onClick={() => setShowReviewForm(false)} className="text-[#525252] hover:text-[#1a1a1a]">
+   592→                  <X className="w-5 h-5" />
+   593→                </button>
+   594→              </div>
+   595→              <div className="p-4 space-y-4">
+   596→                {/* Nom */}
+   597→                <div>
+   598→                  <label className="block text-xs font-bold text-[#525252] mb-1.5">Votre nom</label>
+   599→                  <input
+   600→                    type="text"
+   601→                    value={reviewName}
+   602→                    onChange={(e) => setReviewName(e.target.value)}
+   603→                    placeholder="Votre nom"
+   604→                    className="w-full px-4 py-2.5 rounded-xl bg-white border border-[#e5e5e5] text-[#1a1a1a] text-sm placeholder:text-[#a3a3a3] focus:ring-2 focus:ring-[#E3B23C] focus:border-transparent"
+   605→                  />
+   606→                </div>
+   607→
+   608→                {/* Objet (sélecteur) */}
+   609→                {displayBaggages.length > 0 && (
+   610→                  <div>
+   611→                    <label className="block text-xs font-bold text-[#525252] mb-1.5">Objet concerné (optionnel)</label>
+   612→                    <select
+   613→                      value={selectedBaggageRef}
+   614→                      onChange={(e) => setSelectedBaggageRef(e.target.value)}
+   615→                      className="w-full px-4 py-2.5 rounded-xl bg-white border border-[#e5e5e5] text-[#1a1a1a] text-sm focus:ring-2 focus:ring-[#E3B23C] focus:border-transparent"
+   616→                    >
+   617→                      <option value="">— Aucun objet en particulier —</option>
+   618→                      {displayBaggages.map(b => (
+   619→                        <option key={b.reference} value={b.reference}>
+   620→                          {b.objectName ? `${b.objectName} (${b.reference})` : b.reference}
+   621→                        </option>
+   622→                      ))}
+   623→                    </select>
+   624→                  </div>
+   625→                )}
+   626→
+   627→                {/* Étoiles */}
+   628→                <div>
+   629→                  <label className="block text-xs font-bold text-[#525252] mb-1.5">Votre note</label>
+   630→                  <div className="flex items-center gap-1">
+   631→                    {[1, 2, 3, 4, 5].map((star) => (
+   632→                      <button
+   633→                        key={star}
+   634→                        type="button"
+   635→                        onClick={() => setReviewRating(star)}
+   636→                        className="transition-transform hover:scale-110"
+   637→                      >
+   638→                        <Star
+   639→                          width={28}
+   640→                          height={28}
+   641→                          className={star <= reviewRating ? 'fill-current text-[#E3B23C]' : 'text-[#d4d4d4]'}
+   642→                        />
+   643→                      </button>
+   644→                    ))}
+   645→                    <span className="ml-2 text-sm font-bold text-[#1a1a1a]">{reviewRating}/5</span>
+   646→                  </div>
+   647→                </div>
+   648→
+   649→                {/* Commentaire */}
+   650→                <div>
+   651→                  <label className="block text-xs font-bold text-[#525252] mb-1.5">Votre commentaire</label>
+   652→                  <textarea
+   653→                    value={reviewContent}
+   654→                    onChange={(e) => setReviewContent(e.target.value)}
+   655→                    placeholder="Partagez votre expérience..."
+   656→                    rows={3}
+   657→                    className="w-full px-4 py-2.5 rounded-xl bg-white border border-[#e5e5e5] text-[#1a1a1a] text-sm placeholder:text-[#a3a3a3] focus:ring-2 focus:ring-[#E3B23C] focus:border-transparent resize-none"
+   658→                  />
+   659→                </div>
+   660→
+   661→                {/* Erreur */}
+   662→                {reviewError && (
+   663→                  <p className="text-xs text-red-600 font-medium bg-red-50 rounded-lg p-2.5">{reviewError}</p>
+   664→                )}
+   665→
+   666→                {/* Succès */}
+   667→                {reviewSuccess && (
+   668→                  <p className="text-xs text-green-700 font-medium bg-green-50 rounded-lg p-2.5">✅ Merci pour votre avis ! Il sera publié après validation.</p>
+   669→                )}
+   670→
+   671→                {/* Bouton */}
+   672→                <button
+   673→                  onClick={handleSubmitReview}
+   674→                  disabled={reviewSubmitting || reviewContent.trim().length < 10 || reviewName.trim().length < 2}
+   675→                  className="w-full py-3 bg-[#E3B23C] text-black text-sm font-bold rounded-xl hover:bg-[#E3B23C]/80 transition disabled:opacity-50 flex items-center justify-center gap-2"
+   676→                >
+   677→                  {reviewSubmitting ? (
+   678→                    <Loader2 className="w-4 h-4 animate-spin" />
+   679→                  ) : null}
+   680→                  {reviewSubmitting ? 'Envoi en cours...' : 'Envoyer mon avis'}
+   681→                </button>
+   682→              </div>
+   683→            </div>
+   684→          )}
+   685→        </div>
+   686→      )}
+   687→    </main>
+   688→  );
+   689→}
+   690→
+   691→// Helper: convert base64 VAPID key to Uint8Array
+   692→function urlBase64ToUint8Array(base64String: string): Uint8Array {
+   693→  const padding = '='.repeat((4 - base64String.length % 4) % 4);
+   694→  const base64 = (base64String + padding).replace(/\-/g, '+').replace(/_/g, '/');
+   695→  const rawData = window.atob(base64);
+   696→  const outputArray = new Uint8Array(rawData.length);
+   697→  for (let i = 0; i < rawData.length; ++i) {
+   698→    outputArray[i] = rawData.charCodeAt(i);
+   699→  }
+   700→  return outputArray;
+   701→}
+   702→

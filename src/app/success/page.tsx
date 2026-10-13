@@ -6,6 +6,7 @@ import {
   CheckCircle2, Home, MessageCircle, Copy, AlertCircle,
 } from 'lucide-react';
 import QRTagsLogo from '@/components/qrtags/QRTagsLogo';
+import VoiceGuideOverlay from '@/components/audio/VoiceGuideOverlay';
 
 const QRTAGS_BG       = '#E3B23C';
 const QRTAGS_INK      = '#111111';
@@ -79,6 +80,7 @@ function SuccessContent() {
 
   return (
     <main className="min-h-screen py-8 px-4" style={{ backgroundColor: QRTAGS_BG, color: QRTAGS_INK }}>
+      <VoiceGuideOverlay variant="owner" />
       <div className="max-w-2xl mx-auto">
         {/* Header */}
         <div className="text-center mb-8">

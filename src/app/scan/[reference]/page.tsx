@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { AlertCircle, Clock, Shield, Sparkles, Loader2 } from 'lucide-react';
+import VoiceGuideOverlay from '@/components/audio/VoiceGuideOverlay';
 import PackPratique from '@/components/scan/PackPratique';
 import PackEmotion from '@/components/scan/PackEmotion';
 import PackImmobilier from '@/components/scan/PackImmobilier';
@@ -228,10 +229,13 @@ export default function ScanPage() {
     case 'pratique':
     default:
       return (
-        <PackPratique
-          reference={reference}
-          baggage={baggage}
-        />
+        <>
+          <VoiceGuideOverlay variant="finder" reference={reference} />
+          <PackPratique
+            reference={reference}
+            baggage={baggage}
+          />
+        </>
       );
   }
 }

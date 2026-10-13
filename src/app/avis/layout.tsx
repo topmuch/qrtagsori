@@ -1,60 +1,14 @@
-import type { Metadata } from 'next';
+import type { Metadata } from "next";
 
-/**
- * Metadata SEO pour la page /avis
- * - Open Graph riche pour partage WhatsApp/Facebook
- * - Twitter Card
- * - Description ciblée sur les témoignages et le taux de récupération
- */
 export const metadata: Metadata = {
-  title: 'Avis clients & témoignages — Objets retrouvés avec QRTags',
-  description:
-    "Découvrez les avis authentiques des propriétaires qui ont retrouvé leurs objets grâce à QRTags. " +
-    "Étoiles, photos des objets retrouvés, messages de remerciement. Publication immédiate, sans modération. " +
-    "98% des objets étiquetés sont retrouvés en moins de 2h.",
-  alternates: {
-    canonical: 'https://qrtags.com/avis',
-  },
-  openGraph: {
-    title: 'Avis QRTags — Témoignages de objets retrouvés',
-    description:
-      "Les propriétaires remercient les trouveurs : étoiles, photos, messages. " +
-      "98% des objets étiquetés QRTags sont retrouvés.",
-    url: 'https://qrtags.com/avis',
-    siteName: 'QRTags',
-    type: 'website',
-    locale: 'fr_FR',
-    images: [
-      {
-        url: '/icons/icon-512x512.png',
-        width: 512,
-        height: 512,
-        alt: 'Avis QRTags — Témoignages objets retrouvés',
-      },
-    ],
-  },
-  twitter: {
-    card: 'summary_large_image',
-    site: '@qrtags',
-    creator: '@qrtags',
-    title: 'Avis QRTags — Objets retrouvés',
-    description:
-      "Témoignages authentiques de propriétaires qui ont retrouvé leurs objets grâce à QRTags.",
-    images: ['/icons/icon-512x512.png'],
-  },
-  keywords: [
-    'avis QRTags',
-    'témoignages QRTags',
-    'avis étiquette QR',
-    'objet retrouvé témoignage',
-    'bagage retrouvé avis',
-    'QRTags fiable',
-    '98% objets retrouvés',
-    'avis étiquette bagage',
-    ' QR code objet perdu avis',
-  ],
+  title: "Avis QRTags — Témoignages clients vérifiés",
+  description: "Découvrez les avis vérifiés de nos utilisateurs en France, Afrique et Europe. QRTags obtient 4.8/5 en moyenne. Témoignages sur les objets retrouvés grâce aux étiquettes QR.",
+  openGraph: { title: "Avis QRTags — Témoignages clients vérifiés", description: "Découvrez les avis vérifiés de nos utilisateurs en France, Afrique et Europe. QRTags obtient 4.8/5 en moyenne. Témoignages sur les objets retrouvés grâce aux étiquettes QR.", url: "https://qrtags.com/avis/layout.tsx", siteName: "QRTags", type: "website", locale: "fr_FR", images: [{ url: "/hero-illustration-new.png", width: 1200, height: 630 }] },
+  twitter: { card: "summary_large_image", title: "Avis QRTags — Témoignages clients vérifiés", description: "Découvrez les avis vérifiés de nos utilisateurs en France, Afrique et Europe. QRTags obtient 4.8/5 en moyenne. Témoignages sur les objets retrouvés grâce aux étiquettes QR.", images: ["/hero-illustration-new.png"] },
+  alternates: { canonical: "https://qrtags.com/avis/layout.tsx" },
+  robots: { index: true, follow: true },
 };
 
-export default function AvisLayout({ children }: { children: React.ReactNode }) {
-  return children;
+export default function Layout({ children }: { children: React.ReactNode }) {
+  return (<><script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify({ "@context": "https://schema.org", "@type": "WebPage", name: "Avis QRTags", url: "https://qrtags.com/avis", isPartOf: { "@type": "WebSite", name: "QRTags" }, breadcrumb: { "@type": "BreadcrumbList", itemListElement: [{ "@type": "ListItem", position: 1, name: "Accueil", item: "https://qrtags.com" }, { "@type": "ListItem", position: 2, name: "Avis", item: "https://qrtags.com/avis" }] } }) }} />{children}</>);
 }

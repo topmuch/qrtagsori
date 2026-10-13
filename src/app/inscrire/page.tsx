@@ -27,6 +27,7 @@ import { OBJECT_CATEGORIES, getObjectCategory } from '@/lib/agency-types';
 import { useTranslation } from '@/hooks/useTranslation';
 import { Language, LANGUAGE_NAMES } from '@/lib/i18n';
 import { COUNTRIES, COUNTRY_MAP, getDialCode, type CountryInfo } from '@/lib/phone';
+import { useTravelerAuth } from '@/contexts/TravelerAuthContext';
 
 // ─── Design tokens QRTags (STRICTEMENT CONSERVÉS) ───────────────────
 const QRTAGS_BG       = '#E3B23C';   // fond de page jaune moutarde
@@ -260,6 +261,7 @@ function InscrireContent() {
   const searchParams = useSearchParams();
   const qrFromUrl = searchParams.get('qr') || '';
   const { lang, setLang } = useTranslation();
+  const { isLoggedIn, linkBaggage } = useTravelerAuth();
 
   // ─── 3 étapes (au lieu de 2 + toggle) ───
   const [step, setStep] = useState<1 | 2 | 3>(1);
@@ -269,6 +271,7 @@ function InscrireContent() {
   const [acceptPrivacy, setAcceptPrivacy] = useState(false);
   const [photoPreview, setPhotoPreview] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const cameraInputRef = useRef<HTMLInputElement>(null);
 
   // ─── NOUVEAU : pays du téléphone (détecté via IP) ───
   const [phoneCountry, setPhoneCountry] = useState('FR');
@@ -460,7 +463,7 @@ function InscrireContent() {
     return null;
   }
   function validateEmail(v: string): string | null {
-    if (!v.trim()) return null;
+    if (!v.trim()) return null; // e-mail OPTIONNEL — validé seulement s'il est renseigné
     if (!EMAIL_REGEX.test(v.trim())) return 'Adresse email invalide';
     return null;
   }
@@ -475,11 +478,12 @@ function InscrireContent() {
   };
   const hasErrors = Object.values(errors).some(Boolean);
 
-  // Champs essentiels étape 2 : firstName, lastName, whatsapp, objectName, objectDescription
+  // Champs essentiels étape 2 : firstName, lastName, whatsapp, objectName, objectDescription (e-mail optionnel)
   const step2ValidFlags = [
     !errors.firstName,
     !errors.lastName,
     !errors.whatsapp,
+    !errors.email,
     !errors.objectName,
     !errors.objectDescription,
   ];
@@ -489,7 +493,7 @@ function InscrireContent() {
   // ─── Validations par étape ───
   const canSubmitStep1 = !!selectedCategory;
   const canSubmitStep2 = !errors.firstName && !errors.lastName && !errors.whatsapp &&
-                         !errors.objectName && !errors.objectDescription;
+                         !errors.email && !errors.objectName && !errors.objectDescription;
   const canSubmitStep3 = acceptTerms && acceptPrivacy && !errors.email;
 
   function fieldError(field: keyof typeof errors): string | null {
@@ -673,6 +677,11 @@ function InscrireContent() {
           })
         );
       } catch {}
+
+      // ─── Lier le baggage au compte voyageur si connecté ───
+      if (isLoggedIn && formData.reference) {
+        linkBaggage(formData.reference).catch(() => {});
+      }
 
       if (typeof window !== 'undefined') {
         try {
@@ -956,6 +965,33 @@ function InscrireContent() {
                   </p>
                 )}
               </div>
+
+              {/* E-mail du propriétaire (OPTIONNEL — alertes scan + messages du chat) */}
+              <div className="mt-4" data-error={fieldError('email') ? 'true' : undefined}>
+                <label className="block text-sm font-bold text-black mb-1">Votre e-mail (optionnel)</label>
+                <input
+                  type="email"
+                  value={formData.email}
+                  placeholder="marie@email.com"
+                  onBlur={() => markTouched('email')}
+                  onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                  className={inputClass('email')}
+                />
+                {fieldError('email') ? (
+                  <p className="text-xs mt-1 flex items-center gap-1" style={{ color: QRTAGS_RED }}>
+                    <XCircle className="w-3 h-3" /> {fieldError('email')}
+                  </p>
+                ) : touched.email && !errors.email && formData.email.trim() ? (
+                  <p className="text-xs mt-1 flex items-center gap-1" style={{ color: QRTAGS_GREEN }}>
+                    <CheckCircle2 className="w-3 h-3" /> E-mail valide
+                  </p>
+                ) : (
+                  <p className="text-xs mt-1 flex items-center gap-1" style={{ color: QRTAGS_INK }}>
+                    <AlertCircle className="w-3 h-3" />
+                    Optionnel — reçoit les alertes de scan et les messages du chat, jamais visible du trouveur.
+                  </p>
+                )}
+              </div>
             </div>
 
             {/* Section Objet */}
@@ -1116,27 +1152,6 @@ function InscrireContent() {
                 />
               </div>
 
-              <div className="mt-4" data-error={fieldError('email') ? 'true' : undefined}>
-                <label className="block text-sm font-bold text-black mb-1">Email (optionnel)</label>
-                <input
-                  type="email"
-                  value={formData.email}
-                  placeholder="marie@email.com"
-                  onBlur={() => markTouched('email')}
-                  onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                  className={inputClass('email')}
-                />
-                {fieldError('email') && (
-                  <p className="text-xs mt-1 flex items-center gap-1" style={{ color: QRTAGS_RED }}>
-                    <XCircle className="w-3 h-3" /> {fieldError('email')}
-                  </p>
-                )}
-                {touched.email && !errors.email && formData.email.trim() && (
-                  <p className="text-xs mt-1 flex items-center gap-1" style={{ color: QRTAGS_GREEN }}>
-                    <CheckCircle2 className="w-3 h-3" /> Email valide
-                  </p>
-                )}
-              </div>
             </div>
 
             {/* Section Photo */}
@@ -1146,10 +1161,20 @@ function InscrireContent() {
                 Facultatif — facilite l'identification par le trouveur
               </p>
 
+              {/* Input galerie (choisir un fichier existant) */}
               <input
                 ref={fileInputRef}
                 type="file"
                 accept="image/*"
+                onChange={handlePhotoChange}
+                className="hidden"
+              />
+              {/* Input caméra (prendre une photo directement) */}
+              <input
+                ref={cameraInputRef}
+                type="file"
+                accept="image/*"
+                capture="environment"
                 onChange={handlePhotoChange}
                 className="hidden"
               />
@@ -1167,6 +1192,7 @@ function InscrireContent() {
                         setPhotoPreview(null);
                         setPhotoMeta(null);
                         if (fileInputRef.current) fileInputRef.current.value = '';
+                        if (cameraInputRef.current) cameraInputRef.current.value = '';
                       }}
                       className="absolute top-1 right-1 bg-red-500 text-white rounded-full w-7 h-7 flex items-center justify-center text-sm hover:bg-red-600 transition"
                       aria-label="Supprimer la photo"
@@ -1198,13 +1224,22 @@ function InscrireContent() {
                     </div>
                   )}
 
-                  <button
-                    type="button"
-                    onClick={() => fileInputRef.current?.click()}
-                    className="w-full py-2 px-4 border-2 border-black rounded-lg bg-white text-black font-bold text-sm hover:bg-gray-100 transition flex items-center justify-center gap-2"
-                  >
-                    <RefreshCw className="w-4 h-4" /> Remplacer la photo
-                  </button>
+                  <div className="flex flex-col sm:flex-row gap-3">
+                    <button
+                      type="button"
+                      onClick={() => cameraInputRef.current?.click()}
+                      className="flex-1 py-2 px-4 bg-black text-white font-bold text-sm rounded-lg hover:bg-gray-800 transition flex items-center justify-center gap-2"
+                    >
+                      <Camera className="w-4 h-4" /> Prendre une photo
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => fileInputRef.current?.click()}
+                      className="flex-1 py-2 px-4 border-2 border-black bg-white text-black font-bold text-sm rounded-lg hover:bg-gray-100 transition flex items-center justify-center gap-2"
+                    >
+                      <ImageIcon className="w-4 h-4" /> Choisir dans la galerie
+                    </button>
+                  </div>
                 </div>
               ) : photoMeta?.isProcessing ? (
                 <div className="border-2 border-dashed border-black rounded-lg p-6 text-center bg-gray-50">
@@ -1213,13 +1248,26 @@ function InscrireContent() {
                   <p className="text-xs text-gray-600 mt-1">Optimisation de l'image</p>
                 </div>
               ) : (
-                <div
-                  onClick={() => fileInputRef.current?.click()}
-                  className="border-2 border-dashed border-black rounded-lg p-6 text-center bg-gray-50 hover:bg-gray-100 transition cursor-pointer"
-                >
-                  <Camera className="w-6 h-6 mx-auto mb-2 text-black" />
-                  <p className="text-black font-semibold">Ajouter une photo</p>
-                  <p className="text-xs text-gray-600 mt-1">JPG, PNG (max 5MB) — compression automatique</p>
+                <div className="border-2 border-dashed border-black rounded-lg p-6 text-center bg-gray-50">
+                  <Camera className="w-8 h-8 mx-auto mb-3 text-black" />
+                  <p className="text-black font-semibold mb-4">Ajouter une photo</p>
+                  <div className="flex flex-col sm:flex-row gap-3">
+                    <button
+                      type="button"
+                      onClick={() => cameraInputRef.current?.click()}
+                      className="flex-1 py-3 px-4 bg-black text-white font-bold text-sm rounded-lg hover:bg-gray-800 transition flex items-center justify-center gap-2"
+                    >
+                      <Camera className="w-4 h-4" /> Prendre une photo
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => fileInputRef.current?.click()}
+                      className="flex-1 py-3 px-4 border-2 border-black bg-white text-black font-bold text-sm rounded-lg hover:bg-gray-100 transition flex items-center justify-center gap-2"
+                    >
+                      <ImageIcon className="w-4 h-4" /> Choisir dans la galerie
+                    </button>
+                  </div>
+                  <p className="text-xs text-gray-600 mt-3">JPG, PNG (max 5MB) — compression automatique</p>
                 </div>
               )}
             </div>
